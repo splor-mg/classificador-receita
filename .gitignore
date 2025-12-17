@@ -1,0 +1,338 @@
+# ============================================================================
+# Projeto Específico - Classificador de Receita
+# ============================================================================
+
+# ERD generated files
+docs/erd/*.dot
+docs/erd/*.png
+
+# ============================================================================
+# Python
+# ============================================================================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# ============================================================================
+# Virtual Environments
+# ============================================================================
+
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# ============================================================================
+# Dependency Management
+# ============================================================================
+
+# Poetry
+poetry.lock
+
+# pipenv
+Pipfile.lock
+
+# pdm
+.pdm.toml
+
+# PEP 582
+__pypackages__/
+
+# ============================================================================
+# Django
+# ============================================================================
+
+# Django stuff
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Django migrations (opcional - descomente se não quiser versionar)
+# */migrations/*.py
+# !*/migrations/__init__.py
+
+# Django static files (coletados)
+staticfiles/
+static_root/
+media/
+media_root/
+
+# Django cache
+*.pot
+*.mo
+
+# ============================================================================
+# PostgreSQL
+# ============================================================================
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# PostgreSQL dumps
+*.sql
+*.dump
+*.backup
+
+# ============================================================================
+# Docker
+# ============================================================================
+
+# Docker volumes
+docker-data/
+postgres-data/
+pgdata/
+
+# ============================================================================
+# IDEs and Editors
+# ============================================================================
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Spyder
+.spyderproject
+.spyproject
+
+# Rope
+.ropeproject
+
+# ============================================================================
+# OS generated files
+# ============================================================================
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# ============================================================================
+# Temporary files
+# ============================================================================
+
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+
+# Logs
+logs/
+*.log
+
+# ============================================================================
+# Environment variables and secrets
+# ============================================================================
+
+.env
+.env.local
+.env.*.local
+*.env
+
+# Secrets and credentials
+secrets/
+credentials/
+*.pem
+*.key
+*.cert
+*.crt
+
+# ============================================================================
+# Documentation
+# ============================================================================
+
+# Sphinx documentation
+docs/_build/
+docs/_static/
+docs/_templates/
+
+# mkdocs
+/site
+
+# ============================================================================
+# Node.js (se houver frontend)
+# ============================================================================
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+.npm
+.eslintcache
+.stylelintcache
+.yarn-integrity
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# ============================================================================
+# Application specific
+# ============================================================================
+
+# Uploads and downloads
+uploads/
+downloads/
+temp/
+tmp/
+
+# Data files (CSV, Excel, etc.)
+data/
+*.csv
+*.xlsx
+*.xls
+*.xlsm
+
+# ============================================================================
+# Other frameworks (não usados, mas mantidos para referência)
+# ============================================================================
+
+# Flask
+instance/
+.webassets-cache
+
+# Scrapy
+.scrapy
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# SageMath
+*.sage.py
+
+# PyBuilder
+.pybuilder/
+target/
+
+# ============================================================================
+# Archives
+# ============================================================================
+
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# ============================================================================
+# Compiled files
+# ============================================================================
+
+*.class
+*.o
+*.a

@@ -1,0 +1,111 @@
+fields:
+  - name: Identificador do Item
+    type: string
+    target: item_id
+    title: Identificador Único do Item de Classificação
+    description: Identificador único do item de classificação (GSIM ClassificationItem.identifier). Pode ser o código completo de 13 dígitos ou um ID substituto.
+    constraints:
+      required: true
+  - name: Código Completo
+    type: string
+    target: codigo_completo
+    title: Código Completo do Item
+    description: 'Código completo de 13 dígitos do item de classificação formatado (GSIM ClassificationItem.code). Formato: C.0.E.D.DD.D.T.II.SSS conforme estrutura do Classificador de Receita MG. Exemplo: "1.0.1.1.01.1.1.01.001".'
+    constraints:
+      required: true
+      pattern: "^[0-9]\\.[0-9]\\.[0-9]\\.[0-9]\\.[0-9]{2}\\.[0-9]\\.[0-9]\\.[0-9]{2}\\.[0-9]{3}$"
+  - name: Código Numérico
+    type: integer
+    target: codigo_numerico
+    title: Código Numérico (13 dígitos)
+    description: Código numérico de 13 dígitos sem formatação (sem pontos). Equivalente ao campo "Classificação Receita - Código" do schema receita.yaml.
+    constraints:
+      required: true
+      minimum: 1000000000000
+      maximum: 9999999999999
+  - name: Nível Hierárquico
+    type: string
+    target: nivel_id
+    title: Identificador do Nível Hierárquico
+    description: Referência ao nível hierárquico ao qual este item pertence (GSIM ClassificationItem.belongsToLevel).
+    constraints:
+      required: true
+  - name: Item Pai
+    type: string
+    target: parent_item_id
+    title: Identificador do Item Pai
+    description: Referência ao item de classificação do nível imediatamente superior na hierarquia (GSIM ClassificationItem.parentItem). NULL para itens do nível 1 (raiz).
+    constraints:
+      required: false
+  - name: Nome Oficial
+    type: string
+    target: nome_oficial
+    title: Nome Oficial do Item
+    description: Nome oficial do item de classificação (GSIM ClassificationItem.officialName).
+    constraints:
+      required: true
+  - name: Descrição
+    type: string
+    target: descricao
+    title: Descrição do Item
+    description: Descrição detalhada do item de classificação.
+    constraints:
+      required: false
+  - name: Item Gerado
+    type: boolean
+    target: item_gerado
+    title: Item Gerado Automaticamente
+    description: 'Indica se o item foi gerado automaticamente para completar o nível (GSIM ClassificationItem.generated). Valores: true (gerado) ou false (definido manualmente).'
+    constraints:
+      required: true
+  - name: Válido Atualmente
+    type: boolean
+    target: valido_atualmente
+    title: Item Válido Atualmente
+    description: Indica se o item está atualmente válido na classificação (GSIM ClassificationItem.currentlyValid).
+    constraints:
+      required: true
+  - name: Data Início Vigência
+    type: date
+    target: data_vigencia_inicio
+    title: Data de Início da Vigência
+    description: Data de início da vigência do item no domínio orçamentário (valid_time - início). GSIM ClassificationItem.validFrom.
+    constraints:
+      required: true
+  - name: Data Fim Vigência
+    type: date
+    target: data_vigencia_fim
+    title: Data de Fim da Vigência
+    description: Data de fim da vigência do item (valid_time - fim). Valor sentinela 9999-12-31 indica vigência ativa. GSIM ClassificationItem.validTo.
+    constraints:
+      required: true
+  - name: Data Registro Início
+    type: datetime
+    target: data_registro_inicio
+    title: Data/Hora de Registro Início
+    description: Data e hora em que o sistema registrou esta informação (transaction_time - início).
+    constraints:
+      required: true
+  - name: Data Registro Fim
+    type: datetime
+    target: data_registro_fim
+    title: Data/Hora de Registro Fim
+    description: Data e hora em que esta informação deixou de ser considerada verdadeira pelo sistema (transaction_time - fim). Valor sentinela 9999-12-31 23:59:59 indica registro ativo.
+    constraints:
+      required: true
+primaryKey: ["Identificador do Item", "Data Registro Início"]
+foreignKeys:
+  - fields:
+      - Nível Hierárquico
+    reference:
+      resource: nivel_hierarquico
+      fields:
+        - Identificador do Nível
+  - fields:
+      - Item Pai
+    reference:
+      resource: item_classificacao
+      fields:
+        - Identificador do Item
+missingValues: ["", "NA", "-"]
+

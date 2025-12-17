@@ -1,0 +1,92 @@
+name: classificador-receita-mg
+title: Classificador de Natureza de Receita - Estado de Minas Gerais
+description: |
+  Data Package para o Sistema de Gestão do Classificador de Natureza de Receita do Estado de Minas Gerais.
+  Este package descreve a estrutura de dados do banco de dados bitemporal, alinhado ao modelo GSIM (Generic Statistical Information Model).
+  
+  O classificador utiliza uma estrutura de 13 dígitos organizados em 9 níveis hierárquicos, permitindo maior granularidade
+  para atender às necessidades gerenciais específicas do ente estadual.
+  
+  Estrutura do código (13 dígitos): C.0.E.D.DD.D.T.II.SSS
+  - C: Categoria econômica
+  - 0: Origem
+  - E: Espécie
+  - D: Desdobramento 1
+  - DD: Desdobramento 2
+  - D: Desdobramento 3
+  - T: Tipo da receita
+  - II: Item da receita (exclusivo MG)
+  - SSS: Subitem da receita (exclusivo MG)
+
+version: "1.0.0"
+keywords:
+  - classificador
+  - receita
+  - orçamento
+  - bitemporal
+  - gsim
+  - minas-gerais
+  - mcasp
+  - natureza de receita
+
+resources:
+  - name: serie_classificacao
+    type: table
+    path: data/serie_classificacao.csv
+    scheme: file
+    format: csv
+    mediatype: text/csv
+    encoding: utf-8
+    schema: schemas/serie_classificacao.yaml
+    description: Série de classificações (GSIM ClassificationSeries). Representa uma coleção de classificações estatísticas relacionadas.
+
+  - name: classificacao_receita
+    type: table
+    path: data/classificacao_receita.csv
+    scheme: file
+    format: csv
+    mediatype: text/csv
+    encoding: utf-8
+    schema: schemas/classificacao_receita.yaml
+    description: Classificação estatística principal (GSIM StatisticalClassification). Representa o Classificador de Natureza de Receita do Estado de Minas Gerais.
+
+  - name: nivel_hierarquico
+    type: table
+    path: data/nivel_hierarquico.csv
+    scheme: file
+    format: csv
+    mediatype: text/csv
+    encoding: utf-8
+    schema: schemas/nivel_hierarquico.yaml
+    description: Níveis hierárquicos da classificação (GSIM ClassificationLevel). Define os 9 níveis do classificador de receita MG.
+
+  - name: item_classificacao
+    type: table
+    path: data/item_classificacao.csv
+    scheme: file
+    format: csv
+    mediatype: text/csv
+    encoding: utf-8
+    schema: schemas/item_classificacao.yaml
+    description: Itens de classificação (GSIM ClassificationItem). Representa cada código e sua descrição nos diferentes níveis hierárquicos.
+
+  - name: versao_classificacao
+    type: table
+    path: data/versao_classificacao.csv
+    scheme: file
+    format: csv
+    mediatype: text/csv
+    encoding: utf-8
+    schema: schemas/versao_classificacao.yaml
+    description: Versões da classificação (GSIM ClassificationVersion). Versões são reservadas para mudanças que alteram fronteiras conceituais entre categorias.
+
+  - name: variante_classificacao
+    type: table
+    path: data/variante_classificacao.csv
+    scheme: file
+    format: csv
+    mediatype: text/csv
+    encoding: utf-8
+    schema: schemas/variante_classificacao.yaml
+    description: Variantes da classificação (GSIM ClassificationVariant). Variantes são extensões, agregações ou reagrupamentos para relatórios e normas específicas de MG.
+
