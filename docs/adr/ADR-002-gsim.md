@@ -1,21 +1,15 @@
 # ADR-002 — Adoção do Modelo GSIM para o Classificador de Receita
 
+## Status
+
+- **Estado**: Proposta
+- **Data**: 2025-01-XX
+- **Decisor(es)**: AID
+- **Participantes**: DCAF
+
 ## Contexto
 
-O projeto visa implementar um **sistema de gestão do Classificador de Natureza de Receita** alinhado a padrões internacionais de classificações estatísticas.
-
-Problemas atuais:
-- Modelo de dados ad hoc, sem alinhamento explícito a padrões internacionais.
-- Dificuldade de tratar de forma consistente:
-  - **séries de classificações**,  
-  - **versões normativas** vs **atualizações menores**,  
-  - **variantes** (extensão, agregação, reagrupamento),  
-  - **classificação flutuante** e histórico.
-
-Referências já adotadas em `docs/referencias/`:
-- **GSIM: Statistical Classifications Model v1.1 (2015)**.
-- **GSIM v2.0 (2023)**.
-- **Best Practice Guidelines for Developing International Statistical Classifications (2022)**.
+O projeto visa implementar um **sistema de gestão do Classificador de Natureza de Receita** alinhado a padrões internacionais de classificações estatísticas. O modelo de dados atual é ad hoc, sem alinhamento explícito a padrões internacionais, o que dificulta tratar de forma consistente séries de classificações, versões normativas versus atualizações menores, variantes (extensão, agregação, reagrupamento) e classificação flutuante com histórico. Referências já adotadas em `docs/referencias/` incluem o GSIM Statistical Classifications Model v1.1 (2015), GSIM v2.0 (2023) e as Best Practice Guidelines for Developing International Statistical Classifications (2022).
 
 ## Decisão
 
@@ -59,32 +53,46 @@ Adotar o **GSIM Statistical Classifications Model v1.1** como **modelo conceitua
 
 ## Alternativas Consideradas
 
-1. **Modelo ad hoc específico para MG (sem GSIM)**
-   - Construir um modelo “sob medida” apenas com base em necessidades atuais.
-   - **Rejeitada**: dificulta alinhamento com padrões internacionais; aumenta risco de inconsistências conceituais (por exemplo, mistura de versões, atualizações e variantes sem distinção formal).
+### Alternativa 1: Modelo ad hoc específico para MG (sem GSIM)
 
-2. **Adoção total do GSIM v2.0 sem adaptação**
-   - Tentar transpor diretamente todo o GSIM v2.0 para o banco de dados.
-   - **Rejeitada para o MVP**: escopo excessivo; complexidade desnecessária para o domínio atual; foco do projeto é o subdomínio de classificações.
+- **Descrição**: Construir um modelo "sob medida" apenas com base em necessidades atuais.
+- **Prós**: Flexibilidade total para atender necessidades específicas de MG; sem dependência de padrões externos.
+- **Contras**: Dificulta alinhamento com padrões internacionais; aumenta risco de inconsistências conceituais (por exemplo, mistura de versões, atualizações e variantes sem distinção formal).
+- **Razão da rejeição**: Dificulta alinhamento com padrões internacionais; aumenta risco de inconsistências conceituais (por exemplo, mistura de versões, atualizações e variantes sem distinção formal).
 
-3. **Uso apenas de boas práticas, sem modelo conceitual explícito**
-   - Seguir apenas as diretrizes de boas práticas da ONU, mantendo o modelo atual.
-   - **Rejeitada**: perde os benefícios de um vocabulário e estrutura conceitual bem definidos (objetos, atributos e relacionamentos).
+### Alternativa 2: Adoção total do GSIM v2.0 sem adaptação
+
+- **Descrição**: Tentar transpor diretamente todo o GSIM v2.0 para o banco de dados.
+- **Prós**: Alinhamento completo com o padrão mais recente; cobertura abrangente de conceitos.
+- **Contras**: Escopo excessivo; complexidade desnecessária para o domínio atual; foco do projeto é o subdomínio de classificações.
+- **Razão da rejeição**: Escopo excessivo; complexidade desnecessária para o domínio atual; foco do projeto é o subdomínio de classificações.
+
+### Alternativa 3: Uso apenas de boas práticas, sem modelo conceitual explícito
+
+- **Descrição**: Seguir apenas as diretrizes de boas práticas da ONU, mantendo o modelo atual.
+- **Prós**: Menor esforço de implementação; mantém modelo existente.
+- **Contras**: Perde os benefícios de um vocabulário e estrutura conceitual bem definidos (objetos, atributos e relacionamentos).
+- **Razão da rejeição**: Perde os benefícios de um vocabulário e estrutura conceitual bem definidos (objetos, atributos e relacionamentos).
 
 ## Consequências
 
-- **Positivas**
-  - Alinhamento com o **estado da arte internacional** em classificações estatísticas.
-  - Modelo de dados mais claro e extensível (facilita futuras integrações e comparações).
-  - Melhor governança de versões, variantes e histórico, em sinergia com a bitemporalidade (ADR-001).
+### Positivas
 
-- **Negativas / Riscos**
-  - Curva de aprendizado para equipe (GSIM e terminologia relacionada).
-  - Necessidade de adaptações cuidadosas para respeitar especificidades do classificador de MG (13 dígitos, 9 níveis).
-  - Possível necessidade de ajustes no futuro para acompanhar evoluções do GSIM v2.0.
+- Alinhamento com o **estado da arte internacional** em classificações estatísticas.
+- Modelo de dados mais claro e extensível (facilita futuras integrações e comparações).
+- Melhor governança de versões, variantes e histórico, em sinergia com a bitemporalidade (ADR-001).
 
-## Status
+### Negativas / Riscos
 
-- **Proposta** — a ser revisada e aprovada pela DCAF, com eventual ajuste fino de nomenclatura e escopo de objetos GSIM incluídos no MVP.
+- Curva de aprendizado para equipe (GSIM e terminologia relacionada).
+- Necessidade de adaptações cuidadosas para respeitar especificidades do classificador de MG (13 dígitos, 9 níveis).
+- Possível necessidade de ajustes no futuro para acompanhar evoluções do GSIM v2.0.
+
+## Referências
+
+- UNECE. (2015). *GSIM: Statistical Classifications Model v1.1*. Disponível em `docs/referencias/`.
+- UNECE. (2023). *GSIM v2.0 – Generic Statistical Information Model*. Disponível em `docs/referencias/`.
+- UNSD. (2022). *Best Practice Guidelines for Developing International Statistical Classifications*. Disponível em `docs/referencias/`.
+- [ADR-001: Estratégia de Bitemporalidade no Banco de Dados do Classificador](ADR-001-bitemporalidade.md)
 
 
