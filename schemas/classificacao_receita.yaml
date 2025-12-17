@@ -1,0 +1,84 @@
+fields:
+  - name: Identificador da Classificação
+    type: string
+    target: classificacao_id
+    title: Identificador Único da Classificação Estatística
+    description: Identificador único da classificação estatística (GSIM StatisticalClassification.identifier).
+    constraints:
+      required: true
+  - name: Série de Classificações
+    type: string
+    target: serie_id
+    title: Identificador da Série de Classificações
+    description: Referência à série de classificações à qual esta classificação pertence (GSIM StatisticalClassification.belongsToClassificationSeries).
+    constraints:
+      required: true
+  - name: Nome da Classificação
+    type: string
+    target: classificacao_nome
+    title: Nome da Classificação Estatística
+    description: Nome oficial da classificação estatística (GSIM StatisticalClassification.name).
+    constraints:
+      required: true
+  - name: Descrição
+    type: string
+    target: descricao
+    title: Descrição da Classificação
+    description: Descrição detalhada da classificação, seu propósito e escopo.
+    constraints:
+      required: false
+  - name: Tipo de Classificação
+    type: string
+    target: tipo_classificacao
+    title: Tipo de Classificação
+    description: 'Tipo da classificação (ex: "hierárquica", "linear"). Para o Classificador de Receita MG, o valor é "hierárquica".'
+    constraints:
+      required: true
+      enum: ["hierárquica", "linear"]
+  - name: Número de Níveis
+    type: integer
+    target: numero_niveis
+    title: Número de Níveis Hierárquicos
+    description: Número de níveis hierárquicos da classificação. Para o Classificador de Receita MG, o valor é 9.
+    constraints:
+      required: true
+      minimum: 1
+      maximum: 20
+  - name: Data Início Vigência
+    type: date
+    target: data_vigencia_inicio
+    title: Data de Início da Vigência
+    description: Data de início da vigência da classificação no domínio orçamentário (valid_time - início).
+    constraints:
+      required: true
+  - name: Data Fim Vigência
+    type: date
+    target: data_vigencia_fim
+    title: Data de Fim da Vigência
+    description: Data de fim da vigência da classificação (valid_time - fim). Valor sentinela 9999-12-31 indica vigência ativa.
+    constraints:
+      required: true
+  - name: Data Registro Início
+    type: datetime
+    target: data_registro_inicio
+    title: Data/Hora de Registro Início
+    description: Data e hora em que o sistema registrou esta informação (transaction_time - início).
+    constraints:
+      required: true
+  - name: Data Registro Fim
+    type: datetime
+    target: data_registro_fim
+    title: Data/Hora de Registro Fim
+    description: Data e hora em que esta informação deixou de ser considerada verdadeira pelo sistema (transaction_time - fim). Valor sentinela 9999-12-31 23:59:59 indica registro ativo.
+    constraints:
+      required: true
+primaryKey: ["Identificador da Classificação", "Data Registro Início"]
+foreignKeys:
+  - fields:
+      - Série de Classificações
+    reference:
+      resource: serie_classificacao
+      fields:
+        - Identificador da Série
+missingValues: ["", "NA", "-"]
+

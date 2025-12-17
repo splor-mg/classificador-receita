@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "classificador-receita"
+version = "0.1.0"
+description = "Sistema de Gestão do Classificador de Natureza de Receita do Estado de Minas Gerais"
+authors = ["SPLOR-MG <spor@mg.gov.br>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.scripts]
+gerar-erd = "scripts.generate_erd:main"
+validar-schemas = "scripts.validate_schemas:main"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+frictionless = "^5.18.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+black = "^24.0.0"
+ruff = "^0.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+

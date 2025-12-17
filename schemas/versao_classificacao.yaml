@@ -1,0 +1,81 @@
+fields:
+  - name: Identificador da Versão
+    type: string
+    target: versao_id
+    title: Identificador Único da Versão
+    description: Identificador único da versão da classificação (GSIM ClassificationVersion.identifier).
+    constraints:
+      required: true
+  - name: Classificação
+    type: string
+    target: classificacao_id
+    title: Identificador da Classificação
+    description: Referência à classificação estatística à qual esta versão pertence (GSIM ClassificationVersion.belongsToStatisticalClassification).
+    constraints:
+      required: true
+  - name: Número da Versão
+    type: string
+    target: versao_numero
+    title: Número ou Identificador da Versão
+    description: 'Número ou identificador da versão (GSIM ClassificationVersion.versionNumber). Ex: "2024", "v1.0", etc.'
+    constraints:
+      required: true
+  - name: Nome da Versão
+    type: string
+    target: versao_nome
+    title: Nome da Versão
+    description: Nome descritivo da versão (GSIM ClassificationVersion.name).
+    constraints:
+      required: false
+  - name: Descrição
+    type: string
+    target: descricao
+    title: Descrição da Versão
+    description: Descrição das mudanças e características desta versão. Versões são reservadas para mudanças que alteram fronteiras conceituais entre categorias (divisões, fusões, realocações significativas).
+    constraints:
+      required: false
+  - name: Data de Lançamento
+    type: date
+    target: data_lancamento
+    title: Data de Lançamento da Versão
+    description: Data oficial de lançamento/publicação da versão (GSIM ClassificationVersion.releaseDate).
+    constraints:
+      required: false
+  - name: Data Início Vigência
+    type: date
+    target: data_vigencia_inicio
+    title: Data de Início da Vigência
+    description: Data de início da vigência da versão no domínio orçamentário (valid_time - início).
+    constraints:
+      required: true
+  - name: Data Fim Vigência
+    type: date
+    target: data_vigencia_fim
+    title: Data de Fim da Vigência
+    description: Data de fim da vigência da versão (valid_time - fim). Valor sentinela 9999-12-31 indica vigência ativa.
+    constraints:
+      required: true
+  - name: Data Registro Início
+    type: datetime
+    target: data_registro_inicio
+    title: Data/Hora de Registro Início
+    description: Data e hora em que o sistema registrou esta informação (transaction_time - início).
+    constraints:
+      required: true
+  - name: Data Registro Fim
+    type: datetime
+    target: data_registro_fim
+    title: Data/Hora de Registro Fim
+    description: Data e hora em que esta informação deixou de ser considerada verdadeira pelo sistema (transaction_time - fim). Valor sentinela 9999-12-31 23:59:59 indica registro ativo.
+    constraints:
+      required: true
+primaryKey: ["Identificador da Versão", "Data Registro Início"]
+foreignKeys:
+  - fields:
+      - Classificação
+    reference:
+      resource: classificacao_receita
+      fields:
+        - Identificador da Classificação
+missingValues: ["", "NA", "-"]
+
