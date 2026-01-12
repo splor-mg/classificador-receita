@@ -1,26 +1,29 @@
-[tool.poetry]
+[project]
 name = "classificador-receita"
 version = "0.1.0"
 description = "Sistema de Gestão do Classificador de Natureza de Receita do Estado de Minas Gerais"
-authors = ["SPLOR-MG <spor@mg.gov.br>"]
+authors = [
+    {name = "SPLOR-MG", email = "aid@planejamento.mg.gov.br"}
+]
 readme = "README.md"
-package-mode = false
+requires-python = ">=3.11"
+dependencies = [
+    "frictionless>=5.18.0,<6.0.0",
+]
 
-[tool.poetry.scripts]
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0,<9.0.0",
+    "black>=24.0.0,<25.0.0",
+    "ruff>=0.1.0,<0.2.0",
+]
+
+[project.scripts]
 gerar-erd = "scripts.generate_erd:main"
 validar-schemas = "scripts.validate_schemas:main"
 
-[tool.poetry.dependencies]
-python = "^3.11"
-frictionless = "^5.18.0"
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.0.0"
-black = "^24.0.0"
-ruff = "^0.1.0"
-
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.black]
