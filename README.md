@@ -46,7 +46,7 @@ O projeto inclui scripts utilitários para validação de schemas Frictionless e
 Valida todos os schemas Frictionless e o datapackage.yaml principal.
 
 ```bash
-poetry run validar-schemas
+poetry run task validar-schemas
 ```
 
 **O que faz:**
@@ -59,7 +59,7 @@ poetry run validar-schemas
 Gera diagrama Entidade-Relacionamento (ERD) a partir do `datapackage.yaml`.
 
 ```bash
-poetry run gerar-erd
+poetry run task gerar-erd
 ```
 
 **O que faz:**
@@ -81,6 +81,6 @@ Estes scripts podem ser integrados em pipelines CI/CD (ex: GitHub Actions) para 
 **Exemplo de uso no CI:**
 ```yaml
 - name: Validar schemas
-  run: poetry run validar-schemas
+  run: poetry run task validar-schemas
 ```
 
