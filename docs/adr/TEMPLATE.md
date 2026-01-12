@@ -161,7 +161,7 @@ Este template segue o formato original proposto por **Michael Nygard** em [Docum
 ### Referências
 
 Para mais informações sobre ADRs e boas práticas, consulte:
-- [Anotações sobre ADRs](../referencias/adr_architecture-decision-record_notes.md) — guia específico para este projeto
+- [Anotações sobre ADRs](../referencias/adr_architecture_decision_record_notes.md) — guia específico para este projeto
 - [architecture-decision-record](https://github.com/joelparkerhenderson/architecture-decision-record) — repositório de referência
 - [MADR (Markdown ADR)](https://adr.github.io/madr/) — formato alternativo com metadados YAML
 

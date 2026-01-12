@@ -83,6 +83,6 @@ Adotar um **modelo bitemporal implementado diretamente no banco de dados Postgre
 
 - Snodgrass, R. T. (2014). *Temporal Data & the Relational Model: A Detailed Investigation into the Application of Interval and Relation Theory to the Problem of Temporal Database Management*. Morgan Kaufmann.
 - Kimball, R., & Ross, M. (2013). *The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling* (3rd ed.). Wiley. (Slowly Changing Dimensions - SCD Type 2)
-- [ADR-002: Adoção do Modelo GSIM para o Classificador de Receita](ADR-002-gsim.md)
+- [ADR-002: Adoção do Modelo GSIM para o Classificador de Receita](adr-002_gsim.md)
 
 

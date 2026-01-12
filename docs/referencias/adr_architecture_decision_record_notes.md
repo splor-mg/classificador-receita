@@ -200,8 +200,8 @@ Ao avaliar decisões arquiteturais, considerar:
 
 ### Arquivos ADR
 
-- Formato: `ADR-XXX-[título-descritivo].md`
-- Exemplo: `ADR-001-bitemporalidade.md`, `ADR-002-gsim.md`
+- Formato: `adr-XXX_[título-descritivo].md`
+- Exemplo: `adr-001_bitemporalidade.md`, `adr-002_gsim.md`
 - Números sequenciais (001, 002, 003...)
 - Título em minúsculas com hífens
 

@@ -93,6 +93,6 @@ Adotar o **GSIM Statistical Classifications Model v1.1** como **modelo conceitua
 - UNECE. (2015). *GSIM: Statistical Classifications Model v1.1*. Disponível em `docs/referencias/`.
 - UNECE. (2023). *GSIM v2.0 – Generic Statistical Information Model*. Disponível em `docs/referencias/`.
 - UNSD. (2022). *Best Practice Guidelines for Developing International Statistical Classifications*. Disponível em `docs/referencias/`.
-- [ADR-001: Estratégia de Bitemporalidade no Banco de Dados do Classificador](ADR-001-bitemporalidade.md)
+- [ADR-001: Estratégia de Bitemporalidade no Banco de Dados do Classificador](adr-001_bitemporalidade.md)
 
 
