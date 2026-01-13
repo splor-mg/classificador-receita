@@ -1,3 +1,7 @@
+---
+title: Architecture Decision Records - ADRs
+---
+
 # Registros de Decisão Arquitetural (ADRs)
 
 Este diretório contém os **Registros de Decisão Arquitetural (Architecture Decision Records - ADRs)** do projeto do **Classificador de Natureza de Receita do Estado de Minas Gerais**.
@@ -20,13 +24,13 @@ Para mais informações sobre o formato e boas práticas de ADRs, consulte:
 
 ## Convenção de nomenclatura
 
-Os arquivos ADR seguem o padrão de nomenclatura: `adr-[número]_[nome-resumido].md`
+Os arquivos ADR seguem o padrão de nomenclatura: `adr-[número]_[nome-resumido-separado-por-hifen].md`
 
 
 **Diretrizes:**
 - Use números sequenciais para manter ordem cronológica
 - O nome deve ser curto, descritivo e em português
-- Evite caracteres especiais além de hífens no nome
+- Evite caracteres especiais além de hífens e underscore's no nome
 - Mantenha consistência na formatação
 
 ## ADRs do Projeto

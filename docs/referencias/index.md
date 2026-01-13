@@ -1,15 +1,12 @@
+---
+title: Referências
+---
+
+# Referências
+
 ## Referências do projeto de classificações
 
 Este diretório reúne as principais referências conceituais e normativas utilizadas no projeto do **Classificador de Natureza de Receita do Estado de Minas Gerais**.
-
-Cada referência listada neste diretório segue uma estrutura básica para facilitar sua identificação e uso no projeto. Os principais campos de um registro de referência são:
-
-- **Título e versão**: nome da referência, incluindo o número da versão (quando aplicável).
-- **Fonte/autoria**: o órgão ou entidade responsável pela publicação (ex.: UNECE/ONU).
-- **Tipo**: define se a referência é um modelo conceitual, uma diretriz, um manual, etc.
-- **Escopo principal**: breve descrição do foco principal da referência e dos tópicos abordados.
-- **Relação com o projeto**: explica como a referência fundamenta decisões ou processos específicos do projeto do classificador.
-- **Arquivos locais**: lista os arquivos disponíveis neste diretório (em formatos como PDF, Markdown ou links), facilitando o acesso direto ao conteúdo.
 
 ---
 
