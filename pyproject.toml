@@ -26,6 +26,8 @@ package-mode = false
 [tool.taskipy.tasks]
 validar-schemas = "python scripts/validate_schemas.py"
 gerar-erd = "python scripts/generate_erd.py"
+build-docs = "zensical build --clean" # Gera a documentação estática com Zensical removendo antes qualquer build antigo (--clean garante atualização e evita arquivos obsoletos)
+serve = "zensical serve" # Inicia o servidor de preview local para visualização da documentação em tempo real
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
