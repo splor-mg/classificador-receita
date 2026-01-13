@@ -1,3 +1,8 @@
+---
+title: ADR-001 - Bitemporalidade
+description: Estratégia de Bitemporalidade no Banco de Dados do Classificador
+---
+
 # ADR-001 — Estratégia de Bitemporalidade no Banco de Dados do Classificador
 
 ## Status

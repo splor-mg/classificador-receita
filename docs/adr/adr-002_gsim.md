@@ -1,3 +1,8 @@
+---
+title: ADR-002 - GSIM
+description: Adoção do Modelo GSIM para o Classificador de Receita
+---
+
 # ADR-002 — Adoção do Modelo GSIM para o Classificador de Receita
 
 ## Status

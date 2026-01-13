@@ -296,10 +296,11 @@ Implementar sistema de gestão do Classificador de Natureza de Receita do Estado
 - Configurar validação Frictionless para schemas (`frictionless validate schemas/*.yaml`).
 
 **Entregas:**
-- Diagrama Entidade-Relacionamento (DER).
-- Dicionário de dados estruturado em arquivo `datapackage.yaml`.
-- Schemas das entidades em `schemas/*.*`.
-- Pipeline de validação Frictionless funcional.
+- Diagrama Entidade-Relacionamento (DER) - [Ver diagrama ERD](erd/erd.png)
+- Dicionário de dados estruturado em arquivo `datapackage.yaml`
+- Schemas das entidades em `schemas/*.*`
+- Pipeline de validação Frictionless funcional
+
 
 **Critério de aceite:** DER validado pela DCAF; entidades cobrem 100% dos campos do Ementário Excel; schemas validam sem erros via Frictionless.
 
