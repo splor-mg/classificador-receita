@@ -121,10 +121,22 @@ Sem `data_registro_fim`, seria impossível distinguir entre "o que era válido" 
 
 ### Alternativa 1: Somente valid_time (modelo monotemporal simples)
 
-- **Descrição**: Implementar apenas `valid_from` / `valid_to`, sem controle de `transaction_time`.
+- **Descrição**: Implementar apenas `valid_time` (`data_vigencia_inicio` / `data_vigencia_fim`), sem controle de `transaction_time` (`data_registro_inicio` / `data_registro_fim`).
 - **Prós**: Simplicidade de implementação; menor complexidade de consultas.
 - **Contras**: Não permite saber "quando o sistema passou a saber" de uma mudança; não atende plenamente a requisitos de auditoria.
 - **Razão da rejeição**: Não atende plenamente a requisitos de auditoria (não permite saber "quando o sistema passou a saber" de uma mudança).
+
+**Exemplo**:  
+Imagine que um código "1.1.1.01" foi válido de 2020-01-01 a 2023-12-31.  
+No banco, você teria apenas:
+
+| codigo    | data_vigencia_inicio  | data_vigencia_fim    |
+|-----------|-----------------------|----------------------|
+| 1.1.1.01  | 2020-01-01            | 2023-12-31           |
+
+Caso houvesse a alteração de algum atributo do código em `2021-02-01`, dentre o período de vigência, o histórico anterior à data de alteração/atualização (entre `2020-01-01` e `2021-02-01`) ficaria perdido.
+
+---
 
 ### Alternativa 2: Implementar toda a lógica temporal apenas na aplicação
 
@@ -133,12 +145,39 @@ Sem `data_registro_fim`, seria impossível distinguir entre "o que era válido" 
 - **Contras**: Aumenta complexidade da aplicação; risco maior de inconsistências; perde o potencial do PostgreSQL para garantir invariantes no próprio banco.
 - **Razão da rejeição**: Aumenta complexidade da aplicação; risco maior de inconsistências; perde o potencial do PostgreSQL para garantir invariantes no próprio banco.
 
+**Exemplo**:  
+O banco de dados não impõe nenhuma restrição temporal, apenas armazena múltiplos registros como:
+
+| id | codigo    | periodo      | outros_campos      |
+|----|-----------|--------------|--------------------|
+| 1  | 1.1.1.01  | 2020-2023    | ...                |
+| 2  | 1.1.1.01  | 2024-2025    | ...                |
+
+A aplicação (e não o banco) é responsável por evitar sobreposição de períodos ou por garantir que não haja lapsos, podendo esquecer regras de integridade e causar erros silenciosos.
+
+**Problema adicional**: Esta abordagem também **não rastreia quando o sistema conheceu cada versão** (falta o eixo `transaction_time`). Se uma correção retrospectiva for feita (ex.: descobrir em 2024-06-20 que o período 2020-2023 estava errado), não há como saber:
+- O que o sistema "sabia" em uma data específica do passado (consultas "as-of" do ponto de vista de `transaction_time`)
+- Quando uma informação foi corrigida ou atualizada no sistema
+- Como reproduzir análises históricas exatamente como foram feitas na época
+
+Isso compromete a auditoria completa e a capacidade de responder perguntas como "o que o sistema mostrava sobre este código em 2024-03-01?", essenciais para conformidade legal e transparência.
+
+---
+
 ### Alternativa 3: Extensões específicas de temporalidade ou bancos especializados
 
 - **Descrição**: Uso de extensões externas ou bancos de dados temporais dedicados.
 - **Prós**: Funcionalidades especializadas; possível melhor performance para consultas temporais.
 - **Contras**: Eleva complexidade operacional; reduz portabilidade; pode não ser necessário para o escopo atual.
 - **Razão da rejeição**: Eleva complexidade operacional; reduz portabilidade; não é necessário para o escopo atual se PostgreSQL for bem utilizado.
+
+**Exemplo**:  
+Utilizar uma extensão como [temporal_tables](https://pgxn.org/dist/temporal_tables/doc/temporal_tables.html) no PostgreSQL, onde as operações de histórico e consultas as-of são feitas automaticamente:
+
+```sql
+SELECT * FROM classificacao AS OF TIMESTAMP '2024-03-01' WHERE codigo = '1.1.1.01';
+```
+Ou então adotar um banco especializado, como o [Apache Phoenix](https://phoenix.apache.org/) ou sistemas temporal SQL padronizados, implicando em nova infraestrutura e curva de aprendizado.
 
 ## Consequências
 
