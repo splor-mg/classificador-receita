@@ -63,8 +63,10 @@ Dessa forma, o modelo consegue ao mesmo tempo preservar todas as versões histó
     - Fechar `data_registro_fim` do registro anterior em uma alteração.
     - Inserir o novo registro com `data_registro_inicio` atual e `data_registro_fim` aberto.
   - A **aplicação/regras de negócio** será responsável por:
-    - Decidir _quando_ criar novas “versões temporais” (regras de negócio).
-    - Expor APIs e consultas já “as-of” / “current” para os consumidores.
+    - Decidir _quando_ criar novas "versões temporais" (regras de negócio).
+    - Expor APIs e consultas temporais para os consumidores:
+      - **Consultas "current"**: Retornam o estado atual dos dados, ou seja, o que é válido e conhecido pelo sistema na data de hoje. Essas são as consultas mais comuns no uso operacional do sistema.
+      - **Consultas "as-of"** (também chamadas de _point-in-time queries_): Permitem consultar o estado dos dados em uma data específica do passado, seja do ponto de vista de validade (`valid_time`) ou do conhecimento do sistema (`transaction_time`). Por exemplo: "qual era a classificação vigente em 2023-06-15?" ou "o que o sistema sabia sobre essa classificação em 2023-06-15?". Essas consultas são essenciais para auditoria, reprodução de análises históricas e conformidade legal.
   - Ou seja, a lógica de integridade temporal básica fica no banco; a semântica de negócio (quando considerar mudança relevante) fica na aplicação / regras de negócio da DCAF.
 
 ### Por que `data_registro_fim` é diferente de `data_vigencia_fim`?
