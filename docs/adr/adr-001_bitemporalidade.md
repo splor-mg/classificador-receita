@@ -16,36 +16,89 @@ description: Estratégia de Bitemporalidade no Banco de Dados do Classificador
 
 O Classificador de Natureza de Receita de Minas Gerais é usado há muitos anos como base para registro, controle e análise das receitas, mas a forma como seu histórico é armazenado hoje torna a evolução das classificações **irrastreável de forma sistemática**. O SISOR conserva apenas as classificações ativas do ano corrente e, eventualmente, do ano seguinte, sem o histórico completo de versões anteriores. Em paralelo, o Ementário Excel mantido pela DCAF tenta suprir essa lacuna acumulando códigos vigentes e inativos ao longo do tempo, porém sem um modelo formal de dados temporais e sem garantias de integridade ou consistência entre períodos.
 
-Nesse cenário, responder perguntas como “qual era a situação exata deste código em uma data específica?” ou “quando o sistema passou a conhecer determinada mudança?” depende de buscas manuais em planilhas e da memória institucional, em vez de consultas reprodutíveis ao banco de dados. Sem um modelo bitemporal, o sistema não consegue representar de forma estruturada **quando** uma classificação era válida no mundo real (tempo de validade) e **quando** essa informação foi registrada, alterada ou corrigida no sistema (tempo de transação), o que compromete auditoria, transparência e reprodutibilidade de análises históricas.
+Nesse cenário, responder perguntas como **“qual era a situação exata deste código em uma data específica?”** ou **“quando o sistema passou a conhecer determinada mudança?”** depende de buscas manuais em planilhas e da memória institucional, em vez de consultas reprodutíveis ao banco de dados. Sem um modelo bitemporal, o sistema não consegue representar de forma estruturada **quando** uma classificação era válida no mundo real (tempo de validade) e **quando** essa informação foi registrada, alterada ou corrigida no sistema (tempo de transação), o que compromete auditoria, transparência e reprodutibilidade de análises históricas.
 
-Para resolver esse problema, este ADR propõe a adoção explícita de um **modelo de banco de dados bitemporal**, em que cada registro relevante das classificações passa a carregar dois eixos de tempo: o `valid_time` (`data_vigencia_inicio` / `data_vigencia_fim`), que representa o período em que aquela informação vale no domínio orçamentário, e o `transaction_time` (`data_registro`), que registra o período em que o sistema tomou conhecimento da alteração.
+Para resolver esse problema, este ADR propõe a adoção explícita de um **modelo de banco de dados bitemporal**, em que cada registro relevante das classificações passa a carregar dois eixos de tempo: o `valid_time` (`data_vigencia_inicio` / `data_vigencia_fim`), que representa o período em que aquela informação vale no domínio orçamentário, e o `transaction_time` (`data_registro_inicio` / `data_registro_fim`), que registra o período em que o sistema tomou conhecimento da alteração.
 
 ## Decisão
 
 Adotar um **modelo bitemporal implementado diretamente no banco de dados PostgreSQL**, com as seguintes diretrizes:
 
-1. **Camada de dados bitemporal (núcleo do modelo)**
-   - Cada entidade temporalmente sensível (ex.: itens de classificação, versões, variantes) terá, no mínimo:
-     - Colunas de **tempo de validade (valid_time)**: por exemplo, `data_vigencia_inicio` e `data_vigencia_fim`, representando o período em que a informação é válida e é capaz de surtir efeitos no domínio orçamentário.
-     - Colunas de **tempo de transação (transaction_time)**: por exemplo, `data_registro_inicio` e `data_registro_fim`, registrando o período em que o sistema considerou aquela informação como verdadeira.
-   - Adotar convenção de intervalos “abertos à direita” (ex.: `[data_vigencia_inicio, data_vigencia_fim)` e `[sys_from, data_registro_fim)`), com um valor sentinela para “aberto” (ex.: `9999-12-31`).
+1 - **Camada de dados bitemporal (núcleo do modelo)**
 
-2. **Registro de histórico como _append-only_ lógico**
-   - Alterações relevantes (inativação, reclassificação, correções) não sobrescrevem registros, mas **criam novas linhas** com novos intervalos de `valid_time` e `transaction_time`.
-   - Este padrão é compatível com o **Slowly Changing Dimensions (SCD) Type 2**, indo além ao incorporar também o tempo de transação (transaction_time) para suporte completo a auditoria.
-   - **Sobre SCD Type 2**: O padrão Slowly Changing Dimensions (SCD) Type 2, proposto por Kimball e Ross para data warehousing, trata de como gerenciar mudanças históricas em dimensões. No SCD Type 2, quando um atributo de uma dimensão muda, em vez de atualizar o registro existente, cria-se um novo registro com uma nova chave substituta e mantém-se o registro antigo para preservar o histórico. O modelo bitemporal adotado aqui segue essa lógica de "append-only" (criar novos registros em vez de sobrescrever), mas estende o SCD Type 2 ao incorporar dois eixos temporais: o tempo de validade (valid_time), e o tempo de transação (transaction_time). Isso permite não apenas rastrear "o que era válido em uma data" (como no SCD Type 2 tradicional), mas também "o que o sistema sabia em uma data", essencial para auditoria completa.
-   - O estado "corrente" é sempre o registro com:
-     - `data_registro_fim` igual ao valor sentinela, e
-     - intervalo de `valid_time` que contenha a data de referência (ou "hoje").
+Cada entidade temporalmente sensível (ex.: itens de classificação, versões, variantes) terá, no mínimo:
+  
+  - Colunas de **tempo de validade (valid_time)**: por exemplo, `data_vigencia_inicio` e `data_vigencia_fim`, representando o período em que a informação é válida e é capaz de surtir efeitos no domínio orçamentário.
+  - Colunas de **tempo de transação (transaction_time)**: por exemplo, `data_registro_inicio` e `data_registro_fim`, registrando o período em que o sistema considerou aquela informação como verdadeira, diferente de `data_vigencia_fim`, que representa quando a informação deixou de ser válida no mundo real. O `data_registro_fim` é fechado quando o sistema atualiza ou corrige aquela informação, permitindo auditoria completa do que o sistema "sabia" em cada momento.
+   
+Adotar convenção de intervalos "abertos à direita" (ex.: `data_vigencia_fim` e `data_registro_fim`), utilizando um **valor sentinela** (_sentinel value_) para representar intervalos que permanecem abertos no futuro. O valor sentinela escolhido é `9999-12-31`, que representa uma data suficientemente distante no futuro para ser tratada como "indefinida" ou "até o momento presente". Algumas implementações tratam intervalos abertos usando `NULL` em vez de um valor sentinela. Optamos por não adotar `NULL` porque: (1) simplifica consultas SQL ao evitar condições `IS NULL` em cláusulas `WHERE` e comparações de intervalo; (2) permite índices mais eficientes em colunas de data sem necessidade de lógica especial para `NULL`; (3) facilita operações de comparação temporal (ex.: `data_vigencia_fim >= CURRENT_DATE`) sem tratamento de casos especiais; (4) mantém consistência com a literatura de bancos temporais que recomenda valores sentinela para intervalos abertos.
 
-3. **Responsabilidade principal no banco, com apoio da aplicação (modelo híbrido simples)**
-   - **Triggers em PostgreSQL** serão usados para:
-     - Fechar `data_registro_fim` do registro anterior em uma alteração.
-     - Inserir o novo registro com `data_registro_inicio` atual e `data_registro_fim` aberto.
-   - A **aplicação/regras de negócio** será responsável por:
-     - Decidir _quando_ criar novas “versões temporais” (regras de negócio).
-     - Expor APIs e consultas já “as-of” / “current” para os consumidores.
-   - Ou seja, a lógica de integridade temporal básica fica no banco; a semântica de negócio (quando considerar mudança relevante) fica na aplicação / regras de negócio da DCAF.
+2 - **Registro de histórico como _append-only_ lógico**
+
+  - Alterações relevantes (inativação, reclassificação, correções) não sobrescrevem registros, mas **criam novas linhas** com novos intervalos de `valid_time` e `transaction_time`.
+  - Este padrão é compatível com o **Slowly Changing Dimensions (SCD) Type 2**, indo além ao incorporar também o tempo de transação (`transaction_time`) para suporte completo a auditoria.
+  - **Sobre SCD Type 2**: O padrão Slowly Changing Dimensions (SCD) Type 2, proposto por Kimball e Ross para data warehousing, trata de como gerenciar mudanças históricas em dimensões. No SCD Type 2, quando um atributo de uma dimensão muda, em vez de atualizar o registro existente, cria-se um novo registro com uma nova chave substituta e mantém-se o registro antigo para preservar o histórico. O modelo bitemporal adotado aqui segue essa lógica de "append-only" (criar novos registros em vez de sobrescrever), mas estende o SCD Type 2 ao incorporar dois eixos temporais. Isso permite não apenas rastrear "o que era válido em uma data" (como no SCD Type 2 tradicional), mas também "o que o sistema sabia em uma data", essencial para auditoria completa.
+  - O estado "corrente" é sempre o registro com:
+    - `data_registro_fim` igual ao valor sentinela, e
+    - intervalo de `valid_time` que contenha a data de referência (ou "hoje").
+
+3 - **Responsabilidade principal no banco, com apoio da aplicação (modelo híbrido simples)**
+
+  - **Triggers em PostgreSQL** serão usados para:
+    - Fechar `data_registro_fim` do registro anterior em uma alteração.
+    - Inserir o novo registro com `data_registro_inicio` atual e `data_registro_fim` aberto.
+  - A **aplicação/regras de negócio** será responsável por:
+    - Decidir _quando_ criar novas “versões temporais” (regras de negócio).
+    - Expor APIs e consultas já “as-of” / “current” para os consumidores.
+  - Ou seja, a lógica de integridade temporal básica fica no banco; a semântica de negócio (quando considerar mudança relevante) fica na aplicação / regras de negócio da DCAF.
+
+### Por que `data_registro_fim` é diferente de `data_vigencia_fim`?
+
+**Importante**: `data_registro_fim` e `data_vigencia_fim` servem a propósitos completamente diferentes e **não são coincidentes**. A confusão entre esses dois eixos temporais é comum, mas entender a diferença é fundamental para o modelo bitemporal.
+
+#### Diferença conceitual
+
+- **`data_vigencia_fim`** (valid_time): Representa **quando a informação deixa de ser válida no mundo real** (domínio de negócio). Por exemplo, um código pode ter sido válido de 2020-01-01 a 2023-12-31 no contexto orçamentário.
+
+- **`data_registro_fim`** (transaction_time): Representa **quando o sistema deixa de considerar aquela versão como a "verdade atual"** que ele conhece. Isso permite rastrear quando o sistema passou a conhecer uma informação e quando ela foi corrigida ou atualizada. Por exemplo, usando o mesmo código da linha anterior (válido de 2020-01-01 a 2023-12-31): se o sistema registrou essa informação em 2024-03-10 e depois descobriu um erro em 2024-08-15, o `data_registro_fim` do registro original seria 2024-08-15 (quando o sistema deixou de considerar aquela versão como verdadeira), enquanto o `data_vigencia_fim` permaneceria 2023-12-31 (quando a informação realmente deixou de ser válida no mundo real). Assim, `data_registro_fim` = 2024-08-15 ≠ `data_vigencia_fim` = 2023-12-31.
+
+#### Exemplo prático: Correção retrospectiva
+
+Considere o seguinte cenário:
+
+1. **2024-01-15**: O sistema registra que o código "1.1.1.01" foi válido de **2020-01-01 a 2023-12-31**.
+   - `data_vigencia_inicio` = 2020-01-01
+   - `data_vigencia_fim` = 2023-12-31
+   - `data_registro_inicio` = 2024-01-15
+   - `data_registro_fim` = 9999-12-31 (aberto)
+
+2. **2024-06-20**: Descobre-se um erro. Na verdade, o código foi válido apenas até **2022-12-31**, não até 2023-12-31. O sistema faz uma correção:
+   - O registro anterior é fechado:
+     - `data_registro_fim` = 2024-06-20 (fechado)
+   - Um novo registro é criado com a informação corrigida:
+     - `data_vigencia_inicio` = 2020-01-01
+     - `data_vigencia_fim` = 2022-12-31 (corrigido)
+     - `data_registro_inicio` = 2024-06-20
+     - `data_registro_fim` = 9999-12-31 (aberto)
+
+**Análise do exemplo**:
+- `data_vigencia_fim` mudou de 2023-12-31 para 2022-12-31 (correção do período de validade real)
+- `data_registro_fim` do primeiro registro foi fechado em 2024-06-20 (quando o sistema deixou de considerar aquela versão como verdadeira)
+- Essas datas **não são coincidentes**: a vigência real terminou em 2022-12-31, mas o sistema só descobriu o erro em 2024-06-20
+
+#### Utilidade do `data_registro_fim`
+
+O `data_registro_fim` permite:
+
+1. **Auditoria completa**: Saber exatamente o que o sistema "sabia" em qualquer momento do passado. Por exemplo: "O que o sistema mostrava em 2024-03-01?" → O primeiro registro (ainda com erro), pois `data_registro_fim` ainda estava aberto.
+
+2. **Consultas "as-of"**: Consultar o estado do sistema em uma data específica, não apenas o que era válido naquela data. Isso é essencial para reproduzir análises históricas exatamente como foram feitas na época.
+
+3. **Rastreamento de correções**: Identificar quando e como informações foram corrigidas, permitindo entender a evolução do conhecimento do sistema sobre os dados.
+
+4. **Conformidade e transparência**: Demonstrar que o sistema mantém histórico completo de todas as versões que já foram consideradas verdadeiras, mesmo após correções.
+
+Sem `data_registro_fim`, seria impossível distinguir entre "o que era válido" e "o que o sistema sabia", comprometendo a capacidade de auditoria e reprodução de análises históricas.
 
 ## Alternativas Consideradas
 
@@ -89,5 +142,3 @@ Adotar um **modelo bitemporal implementado diretamente no banco de dados Postgre
 - Snodgrass, R. T. (2014). *Temporal Data & the Relational Model: A Detailed Investigation into the Application of Interval and Relation Theory to the Problem of Temporal Database Management*. Morgan Kaufmann.
 - Kimball, R., & Ross, M. (2013). *The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling* (3rd ed.). Wiley. (Slowly Changing Dimensions - SCD Type 2)
 - [ADR-002: Adoção do Modelo GSIM para o Classificador de Receita](adr-002_gsim.md)
-
-
