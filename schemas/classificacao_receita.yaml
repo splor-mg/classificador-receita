@@ -43,7 +43,7 @@ fields:
     constraints:
       required: true
       minimum: 1
-      maximum: 20
+      maximum: 9
   - name: Data Início Vigência
     type: date
     target: data_vigencia_inicio
