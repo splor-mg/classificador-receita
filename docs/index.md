@@ -1,5 +1,5 @@
 ---
-title: Início
+title: Apresentação
 description: Sistema de Gestão do Classificador de Natureza de Receita do Estado de Minas Gerais
 ---
 
@@ -25,6 +25,9 @@ O Classificador de Natureza de Receita do Estado de Minas Gerais utiliza uma est
 
 ### [📋 Projeto](projeto.md)
 Documentação completa do projeto, incluindo contexto, escopo, requisitos e plano de trabalho.
+
+### [🗺️ Diagrama ERD](erd/)
+Visão geral do modelo entidade-relacionamento (ERD) do banco de dados do Classificador de Natureza de Receita - MG.
 
 ### [📝 ADRs - Architecture Decision Records](adr/)
 Registros de decisões arquiteturais importantes do projeto:

@@ -20,36 +20,44 @@ O projeto visa implementar um **sistema de gestão do Classificador de Natureza 
 
 Adotar o **GSIM Statistical Classifications Model v1.1** como **modelo conceitual de referência** para o domínio de classificações de receita, com as seguintes diretrizes:
 
-1. **Adoção de objetos centrais do GSIM**
-   - Modelar explicitamente, no banco de dados, pelo menos os seguintes conceitos:
-     - `ClassificationSeries` (Série de Classificações).
-     - `StatisticalClassification` (Classificação Estatística).
-     - `ClassificationVersion` (Versão da Classificação).
-     - `ClassificationVariant` (Variante de Classificação).
-     - `ClassificationItem` (Item/Código de Classificação).
-     - `ClassificationLevel` (Nível hierárquico).
-   - Outras entidades do GSIM poderão ser adicionadas conforme necessidade (por exemplo, correspondências entre classificações, notas explicativas, remissivas).
+### 1 - **Adoção de objetos centrais do GSIM**
 
-2. **Terminologia padronizada**
-   - Utilizar a terminologia do GSIM nas tabelas, documentação e APIs, sempre que possível:
-     - Ex.: “versão da classificação” ≈ `ClassificationVersion`; “série de classificações” ≈ `ClassificationSeries`.
-   - Quando houver conflito com termos do MCASP ou legislações nacionais, registrar claramente os mapeamentos e diferenças na documentação (`docs/referencias`).
+Modelar explicitamente, no banco de dados, pelo menos os seguintes conceitos:
 
-3. **Tratamento formal de versões, atualizações e variantes**
-   - **Versão (Version)**:
-     - Reservada para mudanças que alteram **fronteiras conceituais** entre categorias (divisões, fusões, realocações significativas).
-   - **Atualização (Update)**:
-     - Para mudanças editoriais ou incrementais que **não** alteram fronteiras de categorias (ajustes de texto, notas, exemplos).
-   - **Variantes (Variants)**:
-     - Modeladas explicitamente para extensões, agregações e reagrupamentos necessários a relatórios e normas específicas de MG, mantendo vínculo conceitual com a classificação de origem.
-   - Essa distinção deve ser refletida no schema e na governança (fluxos de aprovação da DCAF).
+  - `ClassificationSeries` (Série de Classificações).
+  - `StatisticalClassification` (Classificação Estatística).
+  - `ClassificationVersion` (Versão da Classificação).
+  - `ClassificationVariant` (Variante de Classificação).
+  - `ClassificationItem` (Item/Código de Classificação).
+  - `ClassificationLevel` (Nível hierárquico).
 
-4. **Base predominantemente descritiva com referência prescritiva**
-   - O banco de dados será uma **base descritiva**:
-     - Registra não apenas as classificações padrão, mas também variantes e usos reais (relatórios, exigências legais subnacionais).
-   - As classificações padrão (nacionais/internacionais) serão tratadas como **núcleo prescritivo**, servindo como referência conceitual e ponto de ancoragem para as variantes de MG.
+Outras entidades do GSIM poderão ser adicionadas conforme necessidade (por exemplo, correspondências entre classificações, notas explicativas, remissivas).
 
-5. **Alinhamento com GSIM v2.0 e boas práticas**
+### 2 - **Terminologia padronizada**
+
+  - Utilizar a terminologia do GSIM nas tabelas, documentação e APIs, sempre que possível:
+    Ex.: “versão da classificação” ≈ `ClassificationVersion`; “série de classificações” ≈ `ClassificationSeries`.
+  - Quando houver conflito com termos do MCASP ou legislações nacionais, registrar claramente os mapeamentos e diferenças na documentação (`docs/referencias`).
+
+### 3 - **Tratamento formal de versões, atualizações e variantes**
+
+  - **Versão (Version)**:
+    Reservada para mudanças que alteram **fronteiras conceituais** entre categorias (divisões, fusões, realocações significativas).
+  - **Atualização (Update)**:
+    Para mudanças editoriais ou incrementais que **não** alteram fronteiras de categorias (ajustes de texto, notas, exemplos).
+  - **Variantes (Variants)**:
+    Modeladas explicitamente para extensões, agregações e reagrupamentos necessários a relatórios e normas específicas de MG, mantendo víncul  conceitual com a classificação de origem.
+
+Essa distinção deve ser refletida no schema e na governança (fluxos de aprovação da DCAF).
+
+### 4 - **Base predominantemente descritiva com referência prescritiva**
+
+  - O banco de dados será uma **base descritiva**:
+    Registra não apenas as classificações padrão, mas também variantes e usos reais (relatórios, exigências legais subnacionais).
+
+  - As classificações padrão (nacionais/internacionais) serão tratadas como **núcleo prescritivo**, servindo como referência conceitual e ponto de ancoragem para as variantes de MG.
+
+### 5 - **Alinhamento com GSIM v2.0 e boas práticas**
    - Usar o GSIM v1.1 como **modelo principal** para classificações,
    - Mas consultar o **GSIM v2.0** e as **Best Practice Guidelines** para:
      - Governança de alterações,

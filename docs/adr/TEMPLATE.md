@@ -1,3 +1,8 @@
+---
+title: [ADR-TEMPLATE]
+---
+
+
 # ADR-XXX — [Título Descritivo e Específico da Decisão]
 
 ## Status
@@ -29,23 +34,9 @@ Listar diretrizes, padrões ou convenções que devem ser seguidas:
 
 Listar as alternativas que foram avaliadas, incluindo:
 
-### Alternativa 1: [Nome da alternativa]
+### Alternativa X: [Nome da alternativa]
 
 - **Descrição**: O que seria feito
-- **Prós**: Vantagens
-- **Contras**: Desvantagens
-- **Razão da rejeição**: Por que não foi escolhida
-
-### Alternativa 2: [Nome da alternativa]
-
-- **Descrição**: O que seria feito
-- **Prós**: Vantagens
-- **Contras**: Desvantagens
-- **Razão da rejeição**: Por que não foi escolhida
-
-### Alternativa 3: [Nome da alternativa - pode ser "Não fazer nada"]
-
-- **Descrição**: O que seria feito (ou não feito)
 - **Prós**: Vantagens
 - **Contras**: Desvantagens
 - **Razão da rejeição**: Por que não foi escolhida
@@ -90,7 +81,7 @@ Esta decisão pode gerar necessidade de ADRs adicionais:
 - **Documentação**: [O que precisa ser documentado]
 - **Treinamento**: [Conhecimento necessário para a equipe]
 
-## Assumptions
+## Premissas
 
 *(Opcional - quando relevante)*
 
@@ -110,7 +101,7 @@ Restrições adicionais que a decisão pode impor ao ambiente:
 - [Restrição 1]
 - [Restrição 2]
 
-## Governance
+## Governança
 
 *(Opcional - quando relevante para auditoria e conformidade)*
 
