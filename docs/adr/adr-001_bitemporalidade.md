@@ -42,6 +42,21 @@ Adotar convenção de intervalos "abertos à direita" (ex.: `data_vigencia_fim` 
     - `data_registro_fim` igual ao valor sentinela, e
     - intervalo de `valid_time` que contenha a data de referência (ou "hoje").
 
+2 - **Registro de histórico como _append-only_ lógico**
+
+O Slowly Changing Dimensions (SCD) é uma metodologia/abordagem amplamente utilizada em data warehousing para gerenciar mudanças em dados dimensionais ao longo do tempo, e identifica diferentes modelos de gestão, distinguindo-os em relação à forma de recuperação de um registro histórico vigente no tempo.
+
+O modelo proposto para este projeto segue a lógica do **SCD Type 2**, em que o histórico é preservado por meio da criação de **novas linhas** a cada mudança relevante, em vez de sobrescrever o registro anterior. Em outras palavras, quando algo muda na classificação (por exemplo, um código é inativado, reclassificado ou corrigido), não alteramos a linha antiga: **abrimos uma nova linha**, com novos valores de `valid_time` e `transaction_time`, e fechamos adequadamente os intervalos da linha anterior.
+
+Esse comportamento _append-only_ permite reconstruir, a qualquer momento, **como o dado era considerado válido** (eixo de vigência) e **o que o sistema sabia em cada data** (eixo de transação). Assim, o histórico não é apenas reprodutível, mas também auditável, o que é especialmente importante em um contexto de legalidade estrita.
+
+O **estado "corrente"** de uma classificação, em uma data de referência, é identificado de forma objetiva:  
+- é a linha cujo `data_registro_fim` ainda está com o **valor sentinela** (ou seja, o sistema ainda considera aquela versão como verdadeira); e  
+- cujo intervalo de `valid_time` (`data_vigencia_inicio` e `data_vigencia_fim`) contém a data de referência. Por exemplo, a data de hoje está entre `data_vigencia_inicio` e `data_vigencia_fim`, considerando também o valor sentinela para vigência em aberto.
+
+Dessa forma, o modelo consegue ao mesmo tempo preservar todas as versões históricas e oferecer uma regra clara para saber **qual linha representa a situação vigente em determinada data**.
+
+
 3 - **Responsabilidade principal no banco, com apoio da aplicação (modelo híbrido simples)**
 
   - **Triggers em PostgreSQL** serão usados para:
