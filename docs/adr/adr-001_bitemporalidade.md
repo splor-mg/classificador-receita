@@ -142,8 +142,8 @@ Caso houvesse a alteração de algum atributo do código em `2021-02-01`, dentre
 
 - **Descrição**: Manter histórico em tabelas comuns, deixando para a aplicação garantir integridade e consistência temporal.
 - **Prós**: Flexibilidade na implementação; controle total pela aplicação.
-- **Contras**: Aumenta complexidade da aplicação; risco maior de inconsistências; perde o potencial do PostgreSQL para garantir invariantes no próprio banco.
-- **Razão da rejeição**: Aumenta complexidade da aplicação; risco maior de inconsistências; perde o potencial do PostgreSQL para garantir invariantes no próprio banco.
+- **Contras**: Aumenta complexidade da aplicação; risco maior de inconsistências; perde o potencial do PostgreSQL para garantir invariantes[^1] no próprio banco.
+- **Razão da rejeição**: Aumenta complexidade da aplicação; risco maior de inconsistências; perde o potencial do PostgreSQL para garantir invariantes[^1] no próprio banco.
 
 **Exemplo**:  
 O banco de dados não impõe nenhuma restrição temporal, apenas armazena múltiplos registros como:
@@ -192,6 +192,8 @@ Ou então adotar um banco especializado, como o [Apache Phoenix](https://phoenix
 - Maior complexidade de modelagem e consultas SQL (necessidade de capacitação da equipe).
 - Custo adicional de implementação de triggers e _views_ específicas.
 - Necessidade de documentação rigorosa para evitar uso incorreto das tabelas temporais.
+
+[^1]: **Invariantes** são regras de negócio essenciais que garantem a consistência semântica do banco de dados. Uma invariante é uma condição lógica sobre os dados que deve ser verdadeira em todos os momentos. São regras estruturantes do banco que guardam sintonia com as regras de negócio mais fundamentais que se aplicam ao sistema. Exemplos de invariantes incluem: a definição de chave primária, garantindo a não sobreposição de intervalos temporais para o mesmo código, e a continuidade temporal sem lacunas. O PostgreSQL pode garantir essas invariantes através de constraints, triggers e outras restrições no próprio banco, protegendo a integridade dos dados mesmo quando a aplicação falha ou quando há acesso direto ao banco.
 
 ## Referências
 
