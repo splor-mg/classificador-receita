@@ -1,7 +1,11 @@
+---
+title: Projeto
+---
+
 # PROJETO SISTEMA DE GESTÃO DO CLASSIFICADOR DA NATUREZA DE RECEITA
 
 
-# 1. Contexto
+## 1. Contexto
 
 ## 1.1 O que é o Classificador de Natureza de Receita
 
@@ -45,7 +49,7 @@ O classificador é utilizado por:
 
 ---
 
-# 2. Problemas Identificados
+## 2. Problemas Identificados
 
 ## 2.1 Problemas Operacionais
 
@@ -100,7 +104,7 @@ O classificador é utilizado por:
 - Risco de uso de informações desatualizadas ou incorretas.
 
 
-# 3. Escopo
+## 3. Escopo
 
 ## 3.1 Objetivo do Projeto
 
@@ -196,7 +200,7 @@ Implementar sistema de gestão do Classificador de Natureza de Receita do Estado
 
 ---
 
-# 5. Riscos e Dependências
+## 5. Riscos e Dependências
 
 ## 5.1 Dependências Críticas
 
@@ -245,7 +249,7 @@ Implementar sistema de gestão do Classificador de Natureza de Receita do Estado
 - **Responsável:** AID
 
 
-# 6. Plano de Trabalho
+## 6. Plano de Trabalho
 
 | Fase | Entrega Principal                         | Dependências | Validação                   |
 |------|-------------------------------------------|--------------|-----------------------------|
@@ -292,10 +296,11 @@ Implementar sistema de gestão do Classificador de Natureza de Receita do Estado
 - Configurar validação Frictionless para schemas (`frictionless validate schemas/*.yaml`).
 
 **Entregas:**
-- Diagrama Entidade-Relacionamento (DER).
-- Dicionário de dados estruturado em arquivo `datapackage.yaml`.
-- Schemas das entidades em `schemas/*.*`.
-- Pipeline de validação Frictionless funcional.
+- Diagrama Entidade-Relacionamento (DER) - [Ver diagrama ERD](erd/erd.png)
+- Dicionário de dados estruturado em arquivo `datapackage.yaml`
+- Schemas das entidades em `schemas/*.*`
+- Pipeline de validação Frictionless funcional
+
 
 **Critério de aceite:** DER validado pela DCAF; entidades cobrem 100% dos campos do Ementário Excel; schemas validam sem erros via Frictionless.
 

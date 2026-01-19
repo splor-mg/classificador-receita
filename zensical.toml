@@ -1,0 +1,13 @@
+[project]
+site_name = "Classificador de Natureza de Receita - MG"
+site_url = "https://splor-mg.github.io/classificador-receita"
+docs_dir = "docs"
+site_dir = "site"
+
+[project.theme]
+palette = [
+  { scheme = "default", primary = "blue", accent = "blue", toggle = { icon = "material/brightness-7", name = "Switch to dark mode" } },
+  { scheme = "slate", primary = "blue", accent = "blue", toggle = { icon = "material/brightness-4", name = "Switch to light mode" } }
+]
+font = { text = "Roboto", code = "Roboto Mono" }
+favicon = "material/book-open-variant"
