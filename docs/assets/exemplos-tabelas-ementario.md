@@ -64,19 +64,23 @@ O código segue o padrão: **C.O.E.D.DD.D.T.II.SSS**
 
 **Cenário:** Em 20/08/2024, o nível 2 teve seu nome alterado de "Origem" para "Origem Jurídica". Esta é uma mudança editorial que não altera fronteiras conceituais entre categorias, portanto é tratada como um **update** (conforme ADR-002), não como uma nova versão.
 
-#### Registro Original (mantido para histórico)
+**Tabela afetada:**
+- `nivel_hierarquico`: encerramento do registro com nome antigo e criação do registro com nome novo
+
+#### 1. Tabela `nivel_hierarquico` - Registro Original (encerrado)
 
 | nivel_id | classificacao_id | nivel_numero | nivel_nome | estrutura_codigo | tipo_codigo | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
 |----------|------------------|-------------|------------|------------------|-------------|---------------------|-------------------|---------------------|-------------------|
 | `NIVEL-2-ORIGEM` | CLASS-RECEITA-MG-2023 | 2 | Origem | C.O | numérico | 2023-01-01 | 9999-12-31 | 2023-01-01 10:00:00 | **2024-08-20 14:30:00** |
 
-#### Novo Registro (após update)
+#### 2. Tabela `nivel_hierarquico` - Novo Registro (após update)
 
 | nivel_id | classificacao_id | nivel_numero | nivel_nome | estrutura_codigo | tipo_codigo | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
 |----------|------------------|-------------|------------|------------------|-------------|---------------------|-------------------|---------------------|-------------------|
 | `NIVEL-2-ORIGEM` | CLASS-RECEITA-MG-2023 | 2 | **Origem Jurídica** | C.O | numérico | 2023-01-01 | 9999-12-31 | **2024-08-20 14:30:00** | 9999-12-31 23:59:59 |
 
-**Observação:** 
+**Resumo das alterações:**
+- **Tabela `nivel_hierarquico`**: 2 registros (1 encerrado e 1 novo)
 - `data_vigencia_inicio` permanece `2023-01-01` (a mudança não altera quando o nível passou a ser válido no mundo real; o nível existia desde 2023-01-01, apenas com nome diferente)
 - `data_registro_inicio` muda para `2024-08-20 14:30:00` (quando o sistema registrou a mudança do nome)
 - O registro anterior tem `data_registro_fim` atualizado para `2024-08-20 14:30:00` (quando o sistema deixou de considerar "Origem" como o nome correto)
@@ -217,19 +221,23 @@ O código segue o padrão: **C.O.E.D.DD.D.T.II.SSS**
 
 **Cenário:** Em 15/04/2023, o item `1112.51.0.1.01.000` teve seu nome alterado de "IPVA - Princ. - Cota Parte do Estado" para "IPVA - Principal - Cota Parte do Estado".
 
-#### Registro Original (mantido para histórico)
+**Tabela afetada:**
+- `item_classificacao`: encerramento do registro com nome antigo e criação do registro com nome novo
+
+#### 1. Tabela `item_classificacao` - Registro Original (encerrado)
 
 | item_id | codigo_completo | codigo_numerico | nivel_id | parent_item_id | nome_oficial | item_gerado | valido_atualmente | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
 |---------|----------------|-----------------|----------|----------------|--------------|-------------|-------------------|---------------------|-------------------|---------------------|-------------------|
 | `ITEM-1112-51-0-1-01-0-00-000` | 1112.51.0.1.01.0.00.000 | 1112510101000 | NIVEL-8-ITEM | `ITEM-1112-51-0-1-00-0-00-000` | IPVA - Princ. - Cota Parte do Estado | false | true | 2023-01-01 | 9999-12-31 | 2023-01-01 10:00:00 | **2023-04-15 09:00:00** |
 
-#### Novo Registro (após update)
+#### 2. Tabela `item_classificacao` - Novo Registro (após update)
 
 | item_id | codigo_completo | codigo_numerico | nivel_id | parent_item_id | nome_oficial | item_gerado | valido_atualmente | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
 |---------|----------------|-----------------|----------|----------------|--------------|-------------|-------------------|---------------------|-------------------|---------------------|-------------------|
 | `ITEM-1112-51-0-1-01-0-00-000` | 1112.51.0.1.01.0.00.000 | 1112510101000 | NIVEL-8-ITEM | `ITEM-1112-51-0-1-00-0-00-000` | **IPVA - Principal - Cota Parte do Estado** | false | true | 2023-01-01 | 9999-12-31 | **2023-04-15 09:00:00** | 9999-12-31 23:59:59 |
 
-**Observação:** 
+**Resumo das alterações:**
+- **Tabela `item_classificacao`**: 2 registros (1 encerrado e 1 novo)
 - `data_vigencia_inicio` permanece `2023-01-01` (a mudança não altera quando o item passou a ser válido no mundo real)
 - `data_registro_inicio` muda para `2023-04-15 09:00:00` (quando o sistema registrou a mudança)
 - O registro anterior tem `data_registro_fim` atualizado para `2023-04-15 09:00:00`
@@ -238,19 +246,23 @@ O código segue o padrão: **C.O.E.D.DD.D.T.II.SSS**
 
 **Cenário:** Em 19/11/2024, o item `7215.53.1.1.02.000` teve sua vigência alterada (foi criado um novo registro com nova data de vigência).
 
-#### Registro Original
+**Tabela afetada:**
+- `item_classificacao`: encerramento do registro com vigência antiga e criação do registro com vigência nova
+
+#### 1. Tabela `item_classificacao` - Registro Original (encerrado)
 
 | item_id | codigo_completo | codigo_numerico | nivel_id | parent_item_id | nome_oficial | item_gerado | valido_atualmente | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
 |---------|----------------|-----------------|----------|----------------|--------------|-------------|-------------------|---------------------|-------------------|---------------------|-------------------|
 | `ITEM-7215-53-1-1-02-0-00-000` | 7215.53.1.1.02.0.00.000 | 7215531102000 | NIVEL-8-ITEM | `ITEM-7215-53-1-1-00-0-00-000` | Rec. Intra. - Contrib. Patron. - Militar Ativo - Princ. - Pensão | false | true | 2023-01-01 | **2024-11-18** | 2023-01-01 10:00:00 | **2024-11-19 10:00:00** |
 
-#### Novo Registro (com nova vigência)
+#### 2. Tabela `item_classificacao` - Novo Registro (com nova vigência)
 
 | item_id | codigo_completo | codigo_numerico | nivel_id | parent_item_id | nome_oficial | item_gerado | valido_atualmente | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
 |---------|----------------|-----------------|----------|----------------|--------------|-------------|-------------------|---------------------|-------------------|---------------------|-------------------|
 | `ITEM-7215-53-1-1-02-0-00-000` | 7215.53.1.1.02.0.00.000 | 7215531102000 | NIVEL-8-ITEM | `ITEM-7215-53-1-1-00-0-00-000` | Rec. Intra. - Contrib. Patron. - Militar Ativo - Princ. - Pensão | false | true | **2024-11-19** | 9999-12-31 | **2024-11-19 10:00:00** | 9999-12-31 23:59:59 |
 
-**Observação:** 
+**Resumo das alterações:**
+- **Tabela `item_classificacao`**: 2 registros (1 encerrado e 1 novo)
 - O item teve sua `data_vigencia_inicio` alterada de `2023-01-01` para `2024-11-19`
 - O registro anterior tem `data_vigencia_fim` atualizado para `2024-11-18` e `data_registro_fim` para `2024-11-19 10:00:00`
 
@@ -258,19 +270,23 @@ O código segue o padrão: **C.O.E.D.DD.D.T.II.SSS**
 
 **Cenário:** Em 24/01/2025, o item `7121.04.0.1.04.000` foi inativado (não é mais válido).
 
-#### Registro Original
+**Tabela afetada:**
+- `item_classificacao`: encerramento do registro ativo e criação do registro inativado
+
+#### 1. Tabela `item_classificacao` - Registro Original (encerrado)
 
 | item_id | codigo_completo | codigo_numerico | nivel_id | parent_item_id | nome_oficial | item_gerado | valido_atualmente | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
 |---------|----------------|-----------------|----------|----------------|--------------|-------------|-------------------|---------------------|-------------------|---------------------|-------------------|
 | `ITEM-7121-04-0-1-04-0-00-000` | 7121.04.0.1.04.0.00.000 | 7121040104000 | NIVEL-8-ITEM | `ITEM-7121-04-0-1-00-0-00-000` | Rec. Intra. - Tx. Contr. Fisc. Ambient. - Princ. - Taxa de Regularização Ambiental | false | true | 2025-01-24 | 9999-12-31 | 2025-01-24 10:00:00 | **2025-01-25 10:00:00** |
 
-#### Novo Registro (inativado)
+#### 2. Tabela `item_classificacao` - Novo Registro (inativado)
 
 | item_id | codigo_completo | codigo_numerico | nivel_id | parent_item_id | nome_oficial | item_gerado | valido_atualmente | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
 |---------|----------------|-----------------|----------|----------------|--------------|-------------|-------------------|---------------------|-------------------|---------------------|-------------------|
 | `ITEM-7121-04-0-1-04-0-00-000` | 7121.04.0.1.04.0.00.000 | 7121040104000 | NIVEL-8-ITEM | `ITEM-7121-04-0-1-00-0-00-000` | Rec. Intra. - Tx. Contr. Fisc. Ambient. - Princ. - Taxa de Regularização Ambiental | false | **false** | 2025-01-24 | **2025-01-25** | **2025-01-25 10:00:00** | 9999-12-31 23:59:59 |
 
-**Observação:** 
+**Resumo das alterações:**
+- **Tabela `item_classificacao`**: 2 registros (1 encerrado e 1 novo)
 - `valido_atualmente` mudou para `false`
 - `data_vigencia_fim` mudou de `9999-12-31` para `2025-01-25` (data de inativação)
 - `data_registro_inicio` mudou para `2025-01-25 10:00:00` (quando o sistema registrou a inativação)
@@ -285,27 +301,45 @@ O código segue o padrão: **C.O.E.D.DD.D.T.II.SSS**
 - `1114.50.1.1.01.001` - ICMS - Princ. - Cota Parte Estado (mantido)
 - `1114.50.1.1.01.004` - ICMS - Princ. - Cota Parte Estado - Novo Item (criado)
 
-#### Versão 2023 - Item Original
+**Tabelas afetadas:**
+- `versao_classificacao`: registro da nova versão 2024
+- `item_classificacao`: encerramento do item original e criação dos novos itens
+
+#### 1. Tabela `versao_classificacao` - Nova Versão 2024
+
+| versao_id | classificacao_id | versao_numero | versao_nome | descricao | data_lancamento | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
+|-----------|------------------|---------------|-------------|-----------|----------------|---------------------|-------------------|---------------------|-------------------|
+| `VERSAO-2024` | CLASS-RECEITA-MG-2023 | 2024 | Versão 2024 | Classificação de Receita MG - Versão 2024. Divisão do item ICMS - Princ. - Cota Parte do Estado em múltiplos itens para melhor granularidade. | 2024-01-01 | 2024-01-01 | 9999-12-31 | 2024-01-01 10:00:00 | 9999-12-31 23:59:59 |
+
+#### 2. Tabela `versao_classificacao` - Encerramento da Versão 2023
+
+| versao_id | classificacao_id | versao_numero | versao_nome | descricao | data_lancamento | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
+|-----------|------------------|---------------|-------------|-----------|----------------|---------------------|-------------------|---------------------|-------------------|
+| `VERSAO-2023` | CLASS-RECEITA-MG-2023 | 2023 | Versão 2023 | Classificação de Receita MG - Versão 2023. Estrutura inicial com 9 níveis hierárquicos conforme ementário oficial | 2023-01-01 | 2023-01-01 | **2023-12-31** | 2023-01-01 10:00:00 | **2024-01-01 10:00:00** |
+
+#### 3. Tabela `item_classificacao` - Versão 2023 - Item Original (encerrado)
 
 | item_id | codigo_completo | codigo_numerico | nivel_id | parent_item_id | nome_oficial | item_gerado | valido_atualmente | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
 |---------|----------------|-----------------|----------|----------------|--------------|-------------|-------------------|---------------------|-------------------|---------------------|-------------------|
 | `ITEM-1114-50-1-1-01-0-00-000` | 1114.50.1.1.01.0.00.000 | 1114501101000 | NIVEL-8-ITEM | `ITEM-1114-50-1-1-00-0-00-000` | ICMS - Princ. - Cota Parte do Estado | false | true | 2023-01-01 | **2023-12-31** | 2023-01-01 10:00:00 | **2024-01-01 10:00:00** |
 
-#### Versão 2024 - Item Dividido (mantido)
+#### 4. Tabela `item_classificacao` - Versão 2024 - Item Dividido (mantido)
 
 | item_id | codigo_completo | codigo_numerico | nivel_id | parent_item_id | nome_oficial | item_gerado | valido_atualmente | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
 |---------|----------------|-----------------|----------|----------------|--------------|-------------|-------------------|---------------------|-------------------|---------------------|-------------------|
 | `ITEM-1114-50-1-1-01-0-01-001` | 1114.50.1.1.01.0.01.001 | 1114501101001 | NIVEL-9-SUBITEM | `ITEM-1114-50-1-1-01-0-00-000` | ICMS - Princ. - Cota Parte Estado | false | true | **2024-01-01** | 9999-12-31 | **2024-01-01 10:00:00** | 9999-12-31 23:59:59 |
 
-#### Versão 2024 - Novo Item (criado na divisão)
+#### 5. Tabela `item_classificacao` - Versão 2024 - Novo Item (criado na divisão)
 
 | item_id | codigo_completo | codigo_numerico | nivel_id | parent_item_id | nome_oficial | item_gerado | valido_atualmente | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
 |---------|----------------|-----------------|----------|----------------|--------------|-------------|-------------------|---------------------|-------------------|---------------------|-------------------|
 | `ITEM-1114-50-1-1-01-0-01-004` | 1114.50.1.1.01.0.01.004 | 1114501101004 | NIVEL-9-SUBITEM | `ITEM-1114-50-1-1-01-0-00-000` | ICMS - Princ. - Cota Parte Estado - Novo Item | false | true | **2024-01-01** | 9999-12-31 | **2024-01-01 10:00:00** | 9999-12-31 23:59:59 |
 
-**Observação:** 
-- A versão 2023 tem `data_vigencia_fim` = `2023-12-31`
-- A versão 2024 tem `data_vigencia_inicio` = `2024-01-01`
+**Resumo das alterações:**
+- **Tabela `versao_classificacao`**: 2 registros (encerramento da versão 2023 e criação da versão 2024)
+- **Tabela `item_classificacao`**: 3 registros (1 encerrado da versão 2023 e 2 novos da versão 2024)
+- A versão 2023 tem `data_vigencia_fim` = `2023-12-31` e `data_registro_fim` = `2024-01-01 10:00:00`
+- A versão 2024 tem `data_vigencia_inicio` = `2024-01-01` e `data_registro_inicio` = `2024-01-01 10:00:00`
 - O item original foi "encerrado" na versão 2023 e "dividido" em dois novos itens na versão 2024
 
 ### 8.2. Cenário: Fusão de Itens
@@ -314,22 +348,120 @@ O código segue o padrão: **C.O.E.D.DD.D.T.II.SSS**
 - `1112.51.0.4.01.000` - IPVA - DA - Cota Parte do Estado (mantido)
 - `1112.51.0.4.02.000` - IPVA - DA - Cota Parte dos Municípios (fundido no item acima)
 
-#### Versão 2023 - Itens Separados
+**Tabelas afetadas:**
+- `versao_classificacao`: registro da nova versão 2024 (se ainda não existir)
+- `item_classificacao`: encerramento dos dois itens separados e criação do item fundido
+
+#### 1. Tabela `item_classificacao` - Versão 2023 - Itens Separados (encerrados)
 
 | item_id | codigo_completo | codigo_numerico | nivel_id | parent_item_id | nome_oficial | item_gerado | valido_atualmente | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
 |---------|----------------|-----------------|----------|----------------|--------------|-------------|-------------------|---------------------|-------------------|---------------------|-------------------|
 | `ITEM-1112-51-0-4-01-0-00-000` | 1112.51.0.4.01.0.00.000 | 1112510401000 | NIVEL-8-ITEM | `ITEM-1112-51-0-4-00-0-00-000` | IPVA - DA - Cota Parte do Estado | false | true | 2023-01-01 | **2023-12-31** | 2023-01-01 10:00:00 | **2024-01-01 10:00:00** |
 | `ITEM-1112-51-0-4-02-0-00-000` | 1112.51.0.4.02.0.00.000 | 1112510402000 | NIVEL-8-ITEM | `ITEM-1112-51-0-4-00-0-00-000` | IPVA - DA - Cota Parte dos Municípios | false | true | 2023-01-01 | **2023-12-31** | 2023-01-01 10:00:00 | **2024-01-01 10:00:00** |
 
-#### Versão 2024 - Item Fundido
+#### 2. Tabela `item_classificacao` - Versão 2024 - Item Fundido
 
 | item_id | codigo_completo | codigo_numerico | nivel_id | parent_item_id | nome_oficial | item_gerado | valido_atualmente | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
 |---------|----------------|-----------------|----------|----------------|--------------|-------------|-------------------|---------------------|-------------------|---------------------|-------------------|
 | `ITEM-1112-51-0-4-01-0-00-000` | 1112.51.0.4.01.0.00.000 | 1112510401000 | NIVEL-8-ITEM | `ITEM-1112-51-0-4-00-0-00-000` | IPVA - DA - Cota Parte do Estado e Municípios | false | true | **2024-01-01** | 9999-12-31 | **2024-01-01 10:00:00** | 9999-12-31 23:59:59 |
 
-**Observação:** 
-- Os dois itens da versão 2023 foram "encerrados" com `data_vigencia_fim` = `2023-12-31`
-- Um novo item foi criado na versão 2024 com `data_vigencia_inicio` = `2024-01-01`, fundindo os dois anteriores
+**Resumo das alterações:**
+- **Tabela `item_classificacao`**: 3 registros (2 encerrados da versão 2023 e 1 novo da versão 2024)
+- Os dois itens da versão 2023 foram "encerrados" com `data_vigencia_fim` = `2023-12-31` e `data_registro_fim` = `2024-01-01 10:00:00`
+- Um novo item foi criado na versão 2024 com `data_vigencia_inicio` = `2024-01-01` e `data_registro_inicio` = `2024-01-01 10:00:00`, fundindo os dois anteriores
+
+### 8.3. Cenário: Inclusão de Novo Nível Hierárquico (Nível 10 - Especificação)
+
+**Cenário:** Em 2025, foi decidido incluir um novo nível hierárquico (nível 10 - Especificação) como subdivisão do nível 9 (Subitem). Esta mudança altera a estrutura hierárquica da classificação e as fronteiras entre categorias, justificando uma **nova versão** (conforme GSIM v1.1 e ADR-002).
+
+**Alterações na estrutura:**
+- **Nível 9 (Subitem)**: passa de 3 dígitos (SSS) para 2 dígitos (SS)
+- **Nível 10 (Especificação)**: novo nível com 1 dígito (E)
+- **Código completo**: muda de `C.O.E.D.DD.D.T.II.SSS` para `C.O.E.D.DD.D.T.II.SS.E`
+- **Número total de níveis**: passa de 9 para 10
+
+**Tabelas afetadas:**
+- `versao_classificacao`: registro da nova versão 2025
+- `classificacao_receita`: atualização do número de níveis de 9 para 10
+- `nivel_hierarquico`: encerramento do nível 9 antigo (3 dígitos), criação do nível 9 novo (2 dígitos) e criação do nível 10 (1 dígito)
+- `item_classificacao`: encerramento de todos os itens do nível 9 antigo e criação dos novos itens nos níveis 9 e 10
+
+#### 1. Tabela `versao_classificacao` - Nova Versão 2025
+
+| versao_id | classificacao_id | versao_numero | versao_nome | descricao | data_lancamento | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
+|-----------|------------------|---------------|-------------|-----------|----------------|---------------------|-------------------|---------------------|-------------------|
+| `VERSAO-2025` | CLASS-RECEITA-MG-2023 | 2025 | Versão 2025 | Classificação de Receita MG - Versão 2025. Inclusão do nível 10 (Especificação) como subdivisão do nível 9 (Subitem). O nível 9 passa de 3 dígitos para 2 dígitos, e o novo nível 10 possui 1 dígito. Esta alteração modifica a estrutura hierárquica e as fronteiras entre categorias. | 2025-01-01 | 2025-01-01 | 9999-12-31 | 2025-01-01 10:00:00 | 9999-12-31 23:59:59 |
+
+#### 2. Tabela `versao_classificacao` - Encerramento da Versão 2023
+
+| versao_id | classificacao_id | versao_numero | versao_nome | descricao | data_lancamento | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
+|-----------|------------------|---------------|-------------|-----------|----------------|---------------------|-------------------|---------------------|-------------------|
+| `VERSAO-2023` | CLASS-RECEITA-MG-2023 | 2023 | Versão 2023 | Classificação de Receita MG - Versão 2023. Estrutura inicial com 9 níveis hierárquicos conforme ementário oficial | 2023-01-01 | 2023-01-01 | **2024-12-31** | 2023-01-01 10:00:00 | **2025-01-01 10:00:00** |
+
+#### 3. Tabela `classificacao_receita` - Atualização do Número de Níveis
+
+**Registro Original (encerrado):**
+
+| classificacao_id | serie_id | classificacao_nome | tipo_classificacao | numero_niveis | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
+|------------------|----------|-------------------|-------------------|---------------|---------------------|-------------------|---------------------|-------------------|
+| `CLASS-RECEITA-MG-2023` | SERIE-RECEITA-MG | Classificação de Receita do Estado de Minas Gerais | hierárquica | 9 | 2023-01-01 | 9999-12-31 | 2023-01-01 10:00:00 | **2025-01-01 10:00:00** |
+
+**Novo Registro (após atualização):**
+
+| classificacao_id | serie_id | classificacao_nome | tipo_classificacao | numero_niveis | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
+|------------------|----------|-------------------|-------------------|---------------|---------------------|-------------------|---------------------|-------------------|
+| `CLASS-RECEITA-MG-2023` | SERIE-RECEITA-MG | Classificação de Receita do Estado de Minas Gerais | hierárquica | **10** | 2023-01-01 | 9999-12-31 | **2025-01-01 10:00:00** | 9999-12-31 23:59:59 |
+
+#### 4. Tabela `nivel_hierarquico` - Encerramento do Nível 9 Antigo (3 dígitos)
+
+| nivel_id | classificacao_id | nivel_numero | nivel_nome | estrutura_codigo | tipo_codigo | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
+|----------|------------------|-------------|------------|------------------|-------------|---------------------|-------------------|---------------------|-------------------|
+| `NIVEL-9-SUBITEM` | CLASS-RECEITA-MG-2023 | 9 | Subitem de Receita | C.O.E.D.DD.D.T.II.SSS | numérico | 2023-01-01 | 9999-12-31 | 2023-01-01 10:00:00 | **2025-01-01 10:00:00** |
+
+#### 5. Tabela `nivel_hierarquico` - Novo Nível 9 (2 dígitos)
+
+| nivel_id | classificacao_id | nivel_numero | nivel_nome | estrutura_codigo | tipo_codigo | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
+|----------|------------------|-------------|------------|------------------|-------------|---------------------|-------------------|---------------------|-------------------|
+| `NIVEL-9-SUBITEM` | CLASS-RECEITA-MG-2023 | 9 | Subitem de Receita | **C.O.E.D.DD.D.T.II.SS** | numérico | **2025-01-01** | 9999-12-31 | **2025-01-01 10:00:00** | 9999-12-31 23:59:59 |
+
+#### 6. Tabela `nivel_hierarquico` - Novo Nível 10 (1 dígito)
+
+| nivel_id | classificacao_id | nivel_numero | nivel_nome | estrutura_codigo | tipo_codigo | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
+|----------|------------------|-------------|------------|------------------|-------------|---------------------|-------------------|---------------------|-------------------|
+| `NIVEL-10-ESPECIFICACAO` | CLASS-RECEITA-MG-2023 | 10 | Especificação | **C.O.E.D.DD.D.T.II.SS.E** | numérico | **2025-01-01** | 9999-12-31 | **2025-01-01 10:00:00** | 9999-12-31 23:59:59 |
+
+#### 7. Tabela `item_classificacao` - Versão 2023 - Subitem Original (encerrado)
+
+**Exemplo:** Subitem `1114.50.1.1.01.0.01.001` (ICMS - Princ. - Cota Parte Estado)
+
+| item_id | codigo_completo | codigo_numerico | nivel_id | parent_item_id | nome_oficial | item_gerado | valido_atualmente | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
+|---------|----------------|-----------------|----------|----------------|--------------|-------------|-------------------|---------------------|-------------------|---------------------|-------------------|
+| `ITEM-1114-50-1-1-01-0-01-001` | 1114.50.1.1.01.0.01.001 | 1114501101001 | NIVEL-9-SUBITEM | `ITEM-1114-50-1-1-01-0-00-000` | ICMS - Princ. - Cota Parte Estado | false | true | 2023-01-01 | **2024-12-31** | 2023-01-01 10:00:00 | **2025-01-01 10:00:00** |
+
+#### 8. Tabela `item_classificacao` - Versão 2025 - Novo Subitem (nível 9, 2 dígitos)
+
+**Exemplo:** O subitem original `1114.50.1.1.01.0.01.001` é recodificado para `1114.50.1.1.01.0.01.0` no nível 9 (2 dígitos). O código numérico muda de `1114501101001` (12 dígitos) para `11145011010010` (13 dígitos).
+
+| item_id | codigo_completo | codigo_numerico | nivel_id | parent_item_id | nome_oficial | item_gerado | valido_atualmente | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
+|---------|----------------|-----------------|----------|----------------|--------------|-------------|-------------------|---------------------|-------------------|---------------------|-------------------|
+| `ITEM-1114-50-1-1-01-0-01-00` | **1114.50.1.1.01.0.01.0** | **11145011010010** | NIVEL-9-SUBITEM | `ITEM-1114-50-1-1-01-0-00-000` | ICMS - Princ. - Cota Parte Estado | false | true | **2025-01-01** | 9999-12-31 | **2025-01-01 10:00:00** | 9999-12-31 23:59:59 |
+
+#### 9. Tabela `item_classificacao` - Versão 2025 - Novo Item no Nível 10 (Especificação)
+
+**Exemplo:** Especificação `1114.50.1.1.01.0.01.1` (filho do subitem `1114.50.1.1.01.0.01.0`). O código numérico é `11145011010011` (13 dígitos).
+
+| item_id | codigo_completo | codigo_numerico | nivel_id | parent_item_id | nome_oficial | item_gerado | valido_atualmente | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
+|---------|----------------|-----------------|----------|----------------|--------------|-------------|-------------------|---------------------|-------------------|---------------------|-------------------|
+| `ITEM-1114-50-1-1-01-0-01-01` | **1114.50.1.1.01.0.01.1** | **11145011010011** | **NIVEL-10-ESPECIFICACAO** | `ITEM-1114-50-1-1-01-0-01-00` | ICMS - Princ. - Cota Parte Estado - Especificação Base | false | true | **2025-01-01** | 9999-12-31 | **2025-01-01 10:00:00** | 9999-12-31 23:59:59 |
+
+**Resumo das alterações:**
+- **Tabela `versao_classificacao`**: 2 registros (encerramento da versão 2023 e criação da versão 2025)
+- **Tabela `classificacao_receita`**: 2 registros (encerramento do registro com 9 níveis e criação do registro com 10 níveis)
+- **Tabela `nivel_hierarquico`**: 3 registros (encerramento do nível 9 antigo, criação do nível 9 novo e criação do nível 10)
+- **Tabela `item_classificacao`**: múltiplos registros (todos os itens do nível 9 antigo são encerrados e recriados nos níveis 9 e 10 novos)
+- A versão 2023 tem `data_vigencia_fim` = `2024-12-31` e `data_registro_fim` = `2025-01-01 10:00:00`
+- A versão 2025 tem `data_vigencia_inicio` = `2025-01-01` e `data_registro_inicio` = `2025-01-01 10:00:00`
+- Esta mudança **justifica uma nova versão** porque altera as fronteiras conceituais entre categorias (estrutura hierárquica modificada) e não pode ser tratada como update (conforme GSIM v1.1, seção 1.3.2: "Essential changes are changes that alter the borders between categories")
 
 ---
 
