@@ -60,6 +60,28 @@ O código segue o padrão: **C.O.E.D.DD.D.T.II.SSS**
 | `NIVEL-8-ITEM` | CLASS-RECEITA-MG-2023 | 8 | Item de Receita | C.O.E.D.DD.D.T.II | numérico | 2023-01-01 | 9999-12-31 | 2023-01-01 10:00:00 | 9999-12-31 23:59:59 |
 | `NIVEL-9-SUBITEM` | CLASS-RECEITA-MG-2023 | 9 | Subitem de Receita | C.O.E.D.DD.D.T.II.SSS | numérico | 2023-01-01 | 9999-12-31 | 2023-01-01 10:00:00 | 9999-12-31 23:59:59 |
 
+### 3.1. Update de Nível - Mudança de Nome
+
+**Cenário:** Em 20/08/2024, o nível 2 teve seu nome alterado de "Origem" para "Origem Jurídica". Esta é uma mudança editorial que não altera fronteiras conceituais entre categorias, portanto é tratada como um **update** (conforme ADR-002), não como uma nova versão.
+
+#### Registro Original (mantido para histórico)
+
+| nivel_id | classificacao_id | nivel_numero | nivel_nome | estrutura_codigo | tipo_codigo | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
+|----------|------------------|-------------|------------|------------------|-------------|---------------------|-------------------|---------------------|-------------------|
+| `NIVEL-2-ORIGEM` | CLASS-RECEITA-MG-2023 | 2 | Origem | C.O | numérico | 2023-01-01 | 9999-12-31 | 2023-01-01 10:00:00 | **2024-08-20 14:30:00** |
+
+#### Novo Registro (após update)
+
+| nivel_id | classificacao_id | nivel_numero | nivel_nome | estrutura_codigo | tipo_codigo | data_vigencia_inicio | data_vigencia_fim | data_registro_inicio | data_registro_fim |
+|----------|------------------|-------------|------------|------------------|-------------|---------------------|-------------------|---------------------|-------------------|
+| `NIVEL-2-ORIGEM` | CLASS-RECEITA-MG-2023 | 2 | **Origem Jurídica** | C.O | numérico | 2023-01-01 | 9999-12-31 | **2024-08-20 14:30:00** | 9999-12-31 23:59:59 |
+
+**Observação:** 
+- `data_vigencia_inicio` permanece `2023-01-01` (a mudança não altera quando o nível passou a ser válido no mundo real; o nível existia desde 2023-01-01, apenas com nome diferente)
+- `data_registro_inicio` muda para `2024-08-20 14:30:00` (quando o sistema registrou a mudança do nome)
+- O registro anterior tem `data_registro_fim` atualizado para `2024-08-20 14:30:00` (quando o sistema deixou de considerar "Origem" como o nome correto)
+- Esta mudança é um **update** (mudança editorial), não uma nova versão, pois não altera fronteiras conceituais entre categorias (conforme GSIM v1.1 e ADR-002)
+
 ---
 
 ## 4. Tabela `item_classificacao`
