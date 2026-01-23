@@ -119,6 +119,10 @@ media_root/
 # Django cache
 *.pot
 *.mo
+.django_cache/
+
+# Django sessions (file-based)
+django_session/
 
 # ============================================================================
 # PostgreSQL
