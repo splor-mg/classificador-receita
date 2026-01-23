@@ -282,11 +282,11 @@ temp/
 tmp/
 
 # Data files (CSV, Excel, etc.)
-data/
-*.csv
-*.xlsx
-*.xls
-*.xlsm
+#data/
+#*.csv
+#*.xlsx
+#*.xls
+#*.xlsm
 
 # ============================================================================
 # Other frameworks (não usados, mas mantidos para referência)
