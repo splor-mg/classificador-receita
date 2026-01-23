@@ -25,10 +25,16 @@ dev = [
 package-mode = false
 
 [tool.taskipy.tasks]
-validar-schemas = "python scripts/validate_schemas.py"
-gerar-erd = "python scripts/generate_erd.py"
-build-docs = "zensical build --clean" # Gera a documentação estática com Zensical removendo antes qualquer build antigo (--clean garante atualização e evita arquivos obsoletos)
-serve = "zensical serve" # Inicia o servidor de preview local para visualização da documentação em tempo real
+# Django
+dev-server = { cmd = "python manage.py runserver", help = "Liga servidor de desenvolvimento." }
+
+# Documentation
+build-docs = { cmd = "zensical build --clean", help = "Gera a documentação estática com Zensical removendo antes qualquer build antigo (--clean garante atualização e evita arquivos obsoletos)" }
+serve = { cmd = "zensical serve", help = "Inicia o servidor de preview local para visualização da documentação em tempo real" }
+
+# Utils
+validar-schemas = { cmd = "python scripts/validate_schemas.py", help = "Valida os schemas Frictionless e o datapackage.yaml principal." }
+gerar-erd = { cmd = "python scripts/generate_erd.py", help = "Gera o diagrama de entidade-relacionamento (ERD) do banco de dados." }
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
