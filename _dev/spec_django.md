@@ -33,10 +33,31 @@ classificador-receita/              # Repositório raiz
 │   └── core/                       # App principal
 ├── scripts/                        # Scripts utilitários (mantém)
 │   ├── validate_schemas.py
-│   ├── (...)
+│   └── (...)
 |   
 ├── schemas/                        # Schemas Frictionless (mantém)
 ├── docs/                           # Documentação (mantém)
 └── README.md
 
 ```
+
+### Observação: Organização de Apps em `apps/`
+
+Os apps Django foram organizados dentro da pasta `apps/` visando **escalabilidade** e **padronização**, seguindo recomendações para projetos Django. Esta estrutura permite adicionar múltiplos apps de forma organizada (ex: `apps/core/`, `apps/api/`, `apps/dashboard/`) sem poluir a raiz do repositório.
+
+No entanto, para criar novos apps nesta estrutura, o comando deve ser adaptado para especificar o caminho completo:
+
+```bash
+poetry run python manage.py startapp <nome_do_app> apps/<nome_do_app>
+```
+
+Além disso, o arquivo `classificador/settings.py` precisa ser configurado para que o Django encontre os apps dentro de `apps/`. Para isso, é necessário adicionar as seguintes linhas logo após a definição de `BASE_DIR`:
+
+```python
+import sys
+
+# Add apps directory to Python path
+sys.path.insert(0, str(BASE_DIR / "apps"))
+```
+
+Com essa configuração, os apps podem ser referenciados diretamente no `INSTALLED_APPS` (ex: `"core"`) sem necessidade de usar o prefixo `apps.` (ex: `"apps.core"`).
