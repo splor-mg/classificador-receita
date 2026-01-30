@@ -23,8 +23,8 @@ class Command(BaseCommand):
             orgao_responsavel="SPLOR/MG",
             data_vigencia_inicio=agora,
             data_vigencia_fim="9999-12-31",
-            data_registro_inicio=timezone.now(),
-            data_registro_fim="9999-12-31 23:59:59",
+            data_registro_inicio=agora,
+            data_registro_fim="9999-12-31",
         )
 
         self.stdout.write(self.style.SUCCESS(

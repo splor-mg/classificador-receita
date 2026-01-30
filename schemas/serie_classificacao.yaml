@@ -52,7 +52,7 @@ fields:
     type: datetime
     target: data_registro_fim
     title: Data/Hora de Registro Fim
-    description: Data e hora em que esta informação deixou de ser considerada verdadeira pelo sistema (transaction_time - fim). Valor sentinela 9999-12-31 23:59:59 indica registro ativo.
+    description: Data em que esta informação deixou de ser considerada verdadeira pelo sistema (transaction_time - fim). Valor sentinela 9999-12-31 indica registro ativo.
     constraints:
       required: true
 primaryKey: ["Identificador da Série", "Data Registro Início"]

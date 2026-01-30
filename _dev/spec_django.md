@@ -149,7 +149,7 @@ apps/core/
 
 2. **Valores Sentinelas**: 
    - `data_vigencia_fim = '9999-12-31'` → vigência ativa
-   - `data_registro_fim = '9999-12-31 23:59:59'` → registro ativo
+   - `data_registro_fim = '9999-12-31'` → registro ativo
    - Constantes definidas em `models.py` para facilitar uso
 
 3. **Gerenciamento de `data_registro_fim`**: Conforme ADR-001, a responsabilidade é híbrida. Por enquanto, a aplicação deve gerenciar o fechamento de `data_registro_fim` ao criar novos registros. Triggers no PostgreSQL podem ser adicionados futuramente.

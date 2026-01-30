@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 
 # Constantes para valores sentinelas (conforme ADR-001)
 VALID_TIME_SENTINEL = '9999-12-31'
-TRANSACTION_TIME_SENTINEL = '9999-12-31 23:59:59'
+TRANSACTION_TIME_SENTINEL = '9999-12-31'
 
 
 class BitemporalModel(models.Model):
@@ -25,13 +25,13 @@ class BitemporalModel(models.Model):
         verbose_name='Data de Fim da Vigência',
         help_text='Data de fim da vigência (valid_time - fim). Valor sentinela 9999-12-31 indica vigência ativa.'
     )
-    data_registro_inicio = models.DateTimeField(
-        verbose_name='Data/Hora de Registro Início',
-        help_text='Data e hora em que o sistema registrou esta informação (transaction_time - início)'
+    data_registro_inicio = models.DateField(
+        verbose_name='Data de Registro Início',
+        help_text='Data em que o sistema registrou esta informação (transaction_time - início)'
     )
-    data_registro_fim = models.DateTimeField(
-        verbose_name='Data/Hora de Registro Fim',
-        help_text='Data e hora em que esta informação deixou de ser considerada verdadeira pelo sistema (transaction_time - fim). Valor sentinela 9999-12-31 23:59:59 indica registro ativo.'
+    data_registro_fim = models.DateField(
+        verbose_name='Data de Registro Fim',
+        help_text='Data em que esta informação deixou de ser considerada verdadeira pelo sistema (transaction_time - fim). Valor sentinela 9999-12-31 indica registro ativo.'
     )
 
     class Meta:
