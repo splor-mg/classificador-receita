@@ -3,35 +3,45 @@ fields:
     type: string
     target: variante_id
     title: Identificador Único da Variante
-    description: Identificador único da variante de classificação (GSIM ClassificationVariant.identifier).
+    description: |
+      'Identificador único da variante de classificação.'
+    gsim: ClassificationVariant.identifier
     constraints:
       required: true
   - name: Classificação de Origem
     type: string
     target: classificacao_id
     title: Identificador da Classificação de Origem
-    description: Referência à classificação estatística na qual esta variante se baseia (GSIM ClassificationVariant.basedOnStatisticalClassification).
+    description: |
+      'Referência à classificação estatística na qual esta variante se baseia.'
+    gsim: ClassificationVariant.basedOnStatisticalClassification
     constraints:
       required: true
   - name: Versão de Origem
     type: string
     target: versao_id
     title: Identificador da Versão de Origem
-    description: Referência à versão da classificação na qual esta variante se baseia (GSIM ClassificationVariant.basedOnClassificationVersion).
+    description: |
+      'Referência à versão da classificação na qual esta variante se baseia.'
+    gsim: ClassificationVariant.basedOnClassificationVersion
     constraints:
       required: false
   - name: Nome da Variante
     type: string
     target: variante_nome
     title: Nome da Variante
-    description: Nome descritivo da variante (GSIM ClassificationVariant.name).
+    description: |
+      'Nome descritivo da variante.'
+    gsim: ClassificationVariant.name
     constraints:
       required: true
   - name: Tipo de Variante
     type: string
     target: tipo_variante
     title: Tipo de Variante
-    description: 'Tipo da variante (GSIM ClassificationVariant.variantType). Valores: "extensão", "agregação", "reagrupamento", "outro".'
+    description: |
+      'Tipo da variante. Valores: "extensão", "agregação", "reagrupamento", "outro".'
+    gsim: ClassificationVariant.variantType
     constraints:
       required: true
       enum: ["extensão", "agregação", "reagrupamento", "outro"]
@@ -39,42 +49,54 @@ fields:
     type: string
     target: descricao
     title: Descrição da Variante
-    description: Descrição detalhada da variante, seu propósito e diferenças em relação à classificação de origem. Variantes são usadas para extensões, agregações e reagrupamentos necessários a relatórios e normas específicas de MG.
+    description: |
+      'Descrição detalhada da variante, seu propósito e diferenças em relação à classificação de origem.'
+    gsim: ClassificationVariant.description
     constraints:
       required: false
   - name: Propósito
     type: string
     target: proposito
     title: Propósito da Variante
-    description: 'Propósito específico da variante (ex: "relatório específico", "norma estadual", "agregação para análise").'
+    description: |
+      'Propósito específico da variante (ex: "relatório específico", "norma estadual", "agregação para análise").'
+    gsim: ClassificationVariant.purpose
     constraints:
       required: false
   - name: Data Início Vigência
     type: date
     target: data_vigencia_inicio
     title: Data de Início da Vigência
-    description: Data de início da vigência da variante no domínio orçamentário (valid_time - início).
+    description: |
+      'Data de início da vigência da variante no domínio orçamentário.'
+    gsim: ClassificationVariant.validFrom
     constraints:
       required: true
   - name: Data Fim Vigência
     type: date
     target: data_vigencia_fim
     title: Data de Fim da Vigência
-    description: Data de fim da vigência da variante (valid_time - fim). Valor sentinela 9999-12-31 indica vigência ativa.
+    description: |
+      'Data de fim da vigência da variante. Valor sentinela 9999-12-31 indica vigência ativa no momento corrente e futuro.'
+    gsim: ClassificationVariant.validTo
     constraints:
       required: true
   - name: Data Registro Início
     type: datetime
     target: data_registro_inicio
     title: Data/Hora de Registro Início
-    description: Data e hora em que o sistema registrou esta informação (transaction_time - início).
+    description: |
+      'Data e hora em que o sistema registrou esta informação.'
+    gsim: ClassificationVariant.transactionTimeStart
     constraints:
       required: true
   - name: Data Registro Fim
     type: datetime
     target: data_registro_fim
     title: Data/Hora de Registro Fim
-    description: Data em que esta informação deixou de ser considerada verdadeira pelo sistema (transaction_time - fim). Valor sentinela 9999-12-31 indica registro ativo.
+    description: |
+      'Data em que esta informação deixou de ser considerada verdadeira pelo sistema. Valor sentinela 9999-12-31 indica registro ativo no momento corrente e futuro.'
+    gsim: ClassificationVariant.transactionTimeEnd
     constraints:
       required: true
 primaryKey: ["Identificador da Variante", "Data Registro Início"]
@@ -92,4 +114,3 @@ foreignKeys:
       fields:
         - Identificador da Versão
 missingValues: ["", "NA", "-"]
-
