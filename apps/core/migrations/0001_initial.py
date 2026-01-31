@@ -679,7 +679,7 @@ class Migration(migrations.Migration):
             model_name="nivelhierarquico",
             constraint=models.UniqueConstraint(
                 fields=("classificacao", "nivel_numero", "data_registro_inicio"),
-                name="unique_nivel_numero_classificacao",
+                name="unq_nivel_numero_classif",
             ),
         ),
         migrations.AddIndex(
@@ -727,7 +727,7 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name="classificacaoreceita",
             index=models.Index(
-                fields=["serie", "data_vigencia_inicio"], name="idx_classificacao_serie_vigencia"
+                fields=["serie", "data_vigencia_inicio"], name="idx_classif_serie_vig"
             ),
         ),
         migrations.AddConstraint(
@@ -747,7 +747,7 @@ class Migration(migrations.Migration):
             model_name="versaoclassificacao",
             index=models.Index(
                 fields=["classificacao", "data_vigencia_inicio"],
-                name="idx_versao_classificacao_vigencia",
+                name="idx_versao_classif_vig",
             ),
         ),
         migrations.AddConstraint(
@@ -766,7 +766,7 @@ class Migration(migrations.Migration):
             model_name="varianteclassificacao",
             index=models.Index(
                 fields=["classificacao", "data_vigencia_inicio"],
-                name="idx_variante_classificacao_vigencia",
+                name="idx_variante_classif_vig",
             ),
         ),
         migrations.AddConstraint(

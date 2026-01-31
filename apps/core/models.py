@@ -160,7 +160,7 @@ class ClassificacaoReceita(BitemporalModel):
         ]
         indexes = [
             models.Index(fields=['classificacao_id', 'data_registro_fim'], name='idx_classificacao_registro_fim'),
-            models.Index(fields=['serie', 'data_vigencia_inicio'], name='idx_classificacao_serie_vigencia'),
+            models.Index(fields=['serie', 'data_vigencia_inicio'], name='idx_classif_serie_vig'),
         ]
 
     def __str__(self):
@@ -235,7 +235,7 @@ class NivelHierarquico(BitemporalModel):
             ),
             models.UniqueConstraint(
                 fields=['classificacao', 'nivel_numero', 'data_registro_inicio'],
-                name='unique_nivel_numero_classificacao'
+                name='unq_nivel_numero_classif'
             )
         ]
         indexes = [
@@ -387,7 +387,7 @@ class VersaoClassificacao(BitemporalModel):
         ]
         indexes = [
             models.Index(fields=['versao_id', 'data_registro_fim'], name='idx_versao_registro_fim'),
-            models.Index(fields=['classificacao', 'data_vigencia_inicio'], name='idx_versao_classificacao_vigencia'),
+            models.Index(fields=['classificacao', 'data_vigencia_inicio'], name='idx_versao_classif_vig'),
         ]
 
     def __str__(self):
@@ -468,7 +468,7 @@ class VarianteClassificacao(BitemporalModel):
         ]
         indexes = [
             models.Index(fields=['variante_id', 'data_registro_fim'], name='idx_variante_registro_fim'),
-            models.Index(fields=['classificacao', 'data_vigencia_inicio'], name='idx_variante_classificacao_vigencia'),
+            models.Index(fields=['classificacao', 'data_vigencia_inicio'], name='idx_variante_classif_vig'),
         ]
 
     def __str__(self):
