@@ -2,7 +2,7 @@
 
 ## Entidades/tabelas
 
-Cada tabela abaixo corresponde a uma entidade descrita em `schemas` e discrimina o propósito e respectivo conteúdo de cada uma.
+A tabela abaixo discrimina o propósito e respectivo conteúdo de cada uma das entidades/tabelas da pasta `schemas`.
 
 | Tabela | Pergunta que responde | O que guarda | Campos/Colunas |
 |--------|------------------------------------------|-----------|----------------|
