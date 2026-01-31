@@ -1,0 +1,5 @@
+serie_id,serie_ref,serie_nome,descricao,orgao_responsavel,data_vigencia_inicio,data_vigencia_fim,data_registro_inicio,data_registro_fim
+SERIE-RECEITA-MG,1,Série de Classificações de Natureza de Receita - MG,Série contendo classificações de receita orçamentária do Estado de Minas Gerais.,SEF/MG,2023-01-01,2024-02-20,2023-01-01,2024-02-20
+SERIE-RECEITA-MG,1,Série de Classificações de Natureza de Receita - MG,Série contendo classificações de receita orçamentária do Estado de Minas Gerais.,SEPLAG/MG,2024-02-21,2024-03-02,2024-02-20,2024-03-02
+SERIE-RECEITA-UNIAO,2,Série de Classificações de Natureza de Receita - União,Série contendo classificações de natureza de receita orçamentária da União.,STN/BRA,2023-01-01,9999-12-31,2024-03-01,9999-12-31
+SERIE-RECEITA-MG,1,Série de Classificações de Natureza de Receita - MG,Série contendo classificações de natureza de receita orçamentária do Estado de Minas Gerais.,SEPLAG/MG,2024-03-03,9999-12-31,2024-03-02,9999-12-31
