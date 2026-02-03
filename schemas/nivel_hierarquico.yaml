@@ -1,112 +1,108 @@
 fields:
-  - name: Identificador do Nível
+  - name: nivel_id
     type: string
-    target: nivel_id
     title: Identificador Único do Nível Hierárquico
     description: |
-      'Identificador único do nível hierárquico.'
+      Identificador único do nível hierárquico.
     gsim: ClassificationLevel.identifier
     constraints:
       required: true
-  - name: Classificação
+  - name: classificacao_id
     type: string
-    target: classificacao_id
     title: Identificador da Classificação
     description: |
-      'Referência à classificação estatística à qual este nível pertence.'
+      Referência à classificação estatística à qual este nível pertence.
     gsim: ClassificationLevel.belongsToStatisticalClassification
     constraints:
       required: true
-  - name: Número do Nível
+  - name: nivel_numero
     type: integer
-    target: nivel_numero
     title: Número do Nível Hierárquico
     description: |
-      'Número sequencial do nível na hierarquia, começando em 1 para o nível mais agregado.'
+      Número sequencial do nível na hierarquia, começando em 1 para o nível mais agregado.
     gsim: ClassificationLevel.levelNumber
     constraints:
       required: true
       minimum: 1
       maximum: 9
-  - name: Nome do Nível
+  - name: nivel_nome
     type: string
-    target: nivel_nome
     title: Nome do Nível
     description: |
-      'Nome do nível hierárquico. Ex: "Categoria Econômica", "Origem", "Espécie", etc.'
+      Nome do nível hierárquico. Ex: "Categoria Econômica", "Origem", "Espécie", etc.
     gsim: ClassificationLevel.levelName
     constraints:
       required: true
-  - name: Descrição
+  - name: descricao
     type: string
-    target: descricao
     title: Descrição do Nível
     description: |
-      'Descrição detalhada do nível, seu propósito e conteúdo.'
+      Descrição detalhada do nível, seu propósito e conteúdo.
     gsim: ClassificationLevel.description
     constraints:
       required: false
-  - name: Estrutura do Código
+  - name: estrutura_codigo
     type: string
-    target: estrutura_codigo
     title: Estrutura do Código no Nível
     description: |
-      'Padrão de estrutura do código neste nível. Ex: "C", "C.O", "C.O.E", etc.'
+      Padrão de estrutura do código neste nível. Ex: "C", "C.O", "C.O.E", etc.
     gsim: ClassificationLevel.codeStructure
     constraints:
       required: false
-  - name: Tipo de Código
+  - name: tipo_codigo
     type: string
-    target: tipo_codigo
     title: Tipo de Código
     description: |
-      'Tipo do código no nível. Valores: "numérico", "alfabético", "alfanumérico".'
+      Tipo do código no nível. Valores: "numérico", "alfabético", "alfanumérico".
     gsim: ClassificationLevel.codeType
     constraints:
       required: true
       enum: ["numérico", "alfabético", "alfanumérico"]
-  - name: Data Início Vigência
+  - name: data_vigencia_inicio
     type: date
-    target: data_vigencia_inicio
     title: Data de Início da Vigência
     description: |
-      'Data de início da vigência do nível no domínio orçamentário.'
+      Data de início da vigência do nível no domínio orçamentário.
     gsim: ClassificationLevel.validFrom
     constraints:
       required: true
-  - name: Data Fim Vigência
+  - name: data_vigencia_fim
     type: date
-    target: data_vigencia_fim
     title: Data de Fim da Vigência
     description: |
-      'Data de fim da vigência do nível. Valor sentinela 9999-12-31 indica vigência ativa no momento corrente e futuro.'
+      Data de fim da vigência do nível. Valor sentinela 9999-12-31 indica vigência ativa no momento corrente e futuro.
     gsim: ClassificationLevel.validTo
     constraints:
       required: true
-  - name: Data Registro Início
+  - name: data_registro_inicio
     type: datetime
-    target: data_registro_inicio
     title: Data/Hora de Registro Início
     description: |
-      'Data e hora em que o sistema registrou esta informação.'
+      Data e hora em que o sistema registrou esta informação.
     gsim: ClassificationLevel.transactionTimeStart
     constraints:
       required: true
-  - name: Data Registro Fim
+  - name: data_registro_fim
     type: datetime
-    target: data_registro_fim
     title: Data/Hora de Registro Fim
     description: |
-      'Data em que esta informação deixou de ser considerada verdadeira pelo sistema. Valor sentinela 9999-12-31 indica registro ativo no momento corrente e futuro.'
+      Data em que esta informação deixou de ser considerada verdadeira pelo sistema. Valor sentinela 9999-12-31 indica registro ativo no momento corrente e futuro.
     gsim: ClassificationLevel.transactionTimeEnd
     constraints:
       required: true
-primaryKey: ["Identificador do Nível", "Data Registro Início"]
+primaryKey:
+  - nivel_id
+  - data_registro_inicio
 foreignKeys:
   - fields:
-      - Classificação
+      - classificacao_id
     reference:
       resource: classificacao_receita
       fields:
-        - Identificador da Classificação
+        - classificacao_id
 missingValues: ["", "NA", "-"]
+custom:
+  qualityDimensions:
+    rulesRef: quality/quality-rules.yaml
+    ruleSets:
+      - temporal_consistency_bitemporal

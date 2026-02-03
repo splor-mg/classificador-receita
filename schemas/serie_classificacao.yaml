@@ -1,88 +1,84 @@
 fields:
-  - name: Identificador da Série
+  - name: serie_id
     type: string
-    target: serie_id
     title: Identificador Único da Série de Classificações
     description: |
-      'Identificador único da entidade série de classificações (chave semântica).'
+      Identificador único da entidade série de classificações (chave semântica).
     gsim: ClassificationSeries.identifier
     constraints:
       required: true
-  - name: Referência da Série
+  - name: serie_ref
     type: integer
-    target: serie_ref
     title: Referência Numérica da Série
     description: |
-      'Identificador numérico estável da série de classificações, usado na chave primária da linha (bitemporal).'
-      'Mesmo valor para todas as linhas que pertencem à mesma entidade (mesmo serie_id).'
+      Identificador numérico estável da série de classificações, usado na chave primária da linha (bitemporal).
+      Mesmo valor para todas as linhas que pertencem à mesma entidade (mesmo serie_id).
     gsim: ClassificationSeries.reference
     constraints:
       required: true
-  - name: Nome da Série
+  - name: serie_nome
     type: string
-    target: serie_nome
     title: Nome da Série de Classificações
     description: |
-      'Nome oficial da série de classificações.'
+      Nome oficial da série de classificações.
     gsim: ClassificationSeries.name
     constraints:
       required: true
-  - name: Descrição
+  - name: descricao
     type: string
-    target: descricao
     title: Descrição da Série
     description: |
-      'Descrição detalhada da série de classificações e seu propósito.'
+      Descrição detalhada da série de classificações e seu propósito.
     gsim: ClassificationSeries.description
     constraints:
       required: false
-  - name: Órgão Responsável
+  - name: orgao_responsavel
     type: string
-    target: orgao_responsavel
     title: Órgão Responsável pela Série
     description: |
-      'Órgão ou entidade responsável pela manutenção e gerenciamento da série de classificações.'
+      Órgão ou entidade responsável pela manutenção e gerenciamento da série de classificações.
     gsim: ClassificationSeries.maintainingAgency
     constraints:
       required: false
-  - name: Data Início Vigência
+  - name: data_vigencia_inicio
     type: date
-    target: data_vigencia_inicio
     title: Data de Início da Vigência
     description: |
-      'Data de início da vigência da série de classificações no domínio orçamentário.'
+      Data de início da vigência da série de classificações no domínio orçamentário.
     gsim: ClassificationSeries.validFrom
     constraints:
       required: true
-  - name: Data Fim Vigência
+  - name: data_vigencia_fim
     type: date
-    target: data_vigencia_fim
     title: Data de Fim da Vigência
     description: |
-      'Data de fim da vigência da série de classificações. Valor sentinela 9999-12-31 indica vigência ativa no momento corrente e futuro.'
+      Data de fim da vigência da série de classificações. Valor sentinela 9999-12-31 indica vigência ativa no momento corrente e futuro.
     gsim: ClassificationSeries.validTo
     constraints:
       required: true
-  - name: Data Registro Início
+  - name: data_registro_inicio
     type: date
-    target: data_registro_inicio
     title: Data de Registro Início
     description: |
-      'Data em que o sistema registrou esta informação.'
+      Data em que o sistema registrou esta informação.
     gsim: ClassificationSeries.transactionTimeStart
     constraints:
       required: true
-  - name: Data Registro Fim
+  - name: data_registro_fim
     type: date
-    target: data_registro_fim
     title: Data de Registro Fim
     description: |
-      'Data em que esta informação deixou de ser considerada verdadeira pelo sistema. Valor sentinela 9999-12-31 indica registro ativo no momento corrente e futuro.'
+      Data em que esta informação deixou de ser considerada verdadeira pelo sistema. Valor sentinela 9999-12-31 indica registro ativo no momento corrente e futuro.
     gsim: ClassificationSeries.transactionTimeEnd
     constraints:
       required: true
 primaryKey:
-  - Referência da Série
-  - Data Início Vigência
-  - Data Registro Início
+  - serie_ref
+  - data_vigencia_inicio
+  - data_registro_inicio
 missingValues: ["", "NA", "-"]
+custom:
+  qualityDimensions:
+    rulesRef: quality/quality-rules.yaml
+    ruleSets:
+      - temporal_consistency_bitemporal

@@ -1,99 +1,97 @@
 fields:
-  - name: Identificador da Versão
+  - name: versao_id
     type: string
-    target: versao_id
     title: Identificador Único da Versão
     description: |
-      'Identificador único da versão da classificação.'
+      Identificador único da versão da classificação.
     gsim: ClassificationVersion.identifier
     constraints:
       required: true
-  - name: Classificação
+  - name: classificacao_id
     type: string
-    target: classificacao_id
     title: Identificador da Classificação
     description: |
-      'Referência à classificação estatística à qual esta versão pertence.'
+      Referência à classificação estatística à qual esta versão pertence.
     gsim: ClassificationVersion.belongsToStatisticalClassification
     constraints:
       required: true
-  - name: Número da Versão
+  - name: versao_numero
     type: string
-    target: versao_numero
     title: Número ou Identificador da Versão
     description: |
-      'Número ou identificador da versão. Ex: "2024", "v1.0", etc.'
+      Número ou identificador da versão. Ex: "2024", "v1.0", etc.
     gsim: ClassificationVersion.versionNumber
     constraints:
       required: true
-  - name: Nome da Versão
+  - name: versao_nome
     type: string
-    target: versao_nome
     title: Nome da Versão
     description: |
-      'Nome descritivo da versão.'
+      Nome descritivo da versão.
     gsim: ClassificationVersion.name
     constraints:
       required: false
-  - name: Descrição
+  - name: descricao
     type: string
-    target: descricao
     title: Descrição da Versão
     description: |
-      'Descrição das mudanças e características desta versão. Versões são reservadas para mudanças que alteram fronteiras conceituais entre categorias (divisões, fusões, realocações significativas).'
+      Descrição das mudanças e características desta versão. Versões são reservadas para mudanças que alteram fronteiras conceituais entre categorias (divisões, fusões, realocações significativas).
     gsim: ClassificationVersion.description
     constraints:
       required: false
-  - name: Data de Lançamento
+  - name: data_lancamento
     type: date
-    target: data_lancamento
     title: Data de Lançamento da Versão
     description: |
-      'Data oficial de lançamento/publicação da versão.'
+      Data oficial de lançamento/publicação da versão.
     gsim: ClassificationVersion.releaseDate
     constraints:
       required: false
-  - name: Data Início Vigência
+  - name: data_vigencia_inicio
     type: date
-    target: data_vigencia_inicio
     title: Data de Início da Vigência
-    description: 'Data de início da vigência da versão no domínio orçamentário.'
+    description: |
+      Data de início da vigência da versão no domínio orçamentário.
     gsim: ClassificationVersion.validFrom
     constraints:
       required: true
-  - name: Data Fim Vigência
+  - name: data_vigencia_fim
     type: date
-    target: data_vigencia_fim
     title: Data de Fim da Vigência
     description: |
-      'Data de fim da vigência da versão. Valor sentinela 9999-12-31 indica vigência ativa no momento corrente e futuro.'
+      Data de fim da vigência da versão. Valor sentinela 9999-12-31 indica vigência ativa no momento corrente e futuro.
     gsim: ClassificationVersion.validTo
     constraints:
       required: true
-  - name: Data Registro Início
+  - name: data_registro_inicio
     type: datetime
-    target: data_registro_inicio
     title: Data/Hora de Registro Início
     description: |
-      'Data e hora em que o sistema registrou esta informação.'
+      Data e hora em que o sistema registrou esta informação.
     gsim: ClassificationVersion.transactionTimeStart
     constraints:
       required: true
-  - name: Data Registro Fim
+  - name: data_registro_fim
     type: datetime
-    target: data_registro_fim
     title: Data/Hora de Registro Fim
     description: |
-      'Data em que esta informação deixou de ser considerada verdadeira pelo sistema. Valor sentinela 9999-12-31 indica registro ativo no momento corrente e futuro.'
+      Data em que esta informação deixou de ser considerada verdadeira pelo sistema. Valor sentinela 9999-12-31 indica registro ativo no momento corrente e futuro.
     gsim: ClassificationVersion.transactionTimeEnd
     constraints:
       required: true
-primaryKey: ["Identificador da Versão", "Data Registro Início"]
+primaryKey:
+  - versao_id
+  - data_registro_inicio
 foreignKeys:
   - fields:
-      - Classificação
+      - classificacao_id
     reference:
       resource: classificacao_receita
       fields:
-        - Identificador da Classificação
+        - classificacao_id
 missingValues: ["", "NA", "-"]
+custom:
+  qualityDimensions:
+    rulesRef: quality/quality-rules.yaml
+    ruleSets:
+      - temporal_consistency_bitemporal

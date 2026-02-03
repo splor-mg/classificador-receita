@@ -1,0 +1,34 @@
+# Regras de qualidade reutilizáveis para os Table Schemas do Data Package.
+#
+# Uso no schema (exemplo):
+#   custom:
+#     qualityDimensions:
+#       rulesRef: quality/quality-rules.yaml
+#       ruleSets: [temporal_consistency_bitemporal]
+#
+# Conjuntos disponíveis:
+#   - temporal_consistency_bitemporal: vigência + registro (recursos bitemporais)
+#   - temporal_consistency_vigencia_only: apenas vigência (ex.: base_legal)
+#
+ruleSets:
+  # Recursos com data_vigencia_inicio/fim e data_registro_inicio/fim
+  temporal_consistency_bitemporal:
+    description: Consistência temporal para modelos bitemporais (vigência e registro).
+    rules:
+      - name: vigencia_valida
+        expression: data_vigencia_fim >= data_vigencia_inicio
+        description: Data fim não pode ser anterior à data início.
+        severity: error
+      - name: registro_temporal_valido
+        expression: data_registro_fim >= data_registro_inicio
+        description: Registro fim não pode ser anterior ao registro início.
+        severity: error
+
+  # Recursos com apenas data_vigencia_inicio/fim (sem data_registro_*)
+  temporal_consistency_vigencia_only:
+    description: Apenas vigência; uso em schemas sem campos de registro (ex.: base_legal).
+    rules:
+      - name: vigencia_valida
+        expression: data_vigencia_fim >= data_vigencia_inicio
+        description: Data fim não pode ser anterior à data início.
+        severity: error

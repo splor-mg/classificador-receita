@@ -1,106 +1,101 @@
 fields:
-  - name: Identificador da Classificação
+  - name: classificacao_id
     type: string
-    target: classificacao_id
     title: Identificador Único da Classificação Estatística
     description: |
-      'Identificador único da classificação estatística.'
+      Identificador único da classificação estatística.
     gsim: StatisticalClassification.identifier
     constraints:
       required: true
-  - name: Série de Classificações
+  - name: serie_id
     type: string
-    target: serie_id
     title: Identificador da Série de Classificações
     description: |
-      'Referência à série de classificações à qual esta classificação pertence.'
+      Referência à série de classificações à qual a classificação estatística pertence.
     gsim: StatisticalClassification.belongsToClassificationSeries
     constraints:
       required: true
-  - name: Nome da Classificação
+  - name: classificacao_nome
     type: string
-    target: classificacao_nome
     title: Nome da Classificação Estatística
     description: |
-      'Nome oficial da classificação estatística.'
+      Nome oficial da classificação estatística.
     gsim: StatisticalClassification.name
     constraints:
       required: true
-  - name: Descrição
+  - name: descricao
     type: string
-    target: descricao
-    title: Descrição da Classificação
+    title: Descrição da Classificação Estatística
     description: |
-      'Descrição detalhada da classificação, seu propósito e escopo.'
+      Descrição detalhada da classificação, seu propósito e escopo.
     gsim: StatisticalClassification.description
     constraints:
       required: false
-  - name: Tipo de Classificação
+  - name: tipo_classificacao
     type: string
-    target: tipo_classificacao
-    title: Tipo de Classificação
+    title: Tipo de Classificação Estatística
     description: |
-      'Tipo da classificação (ex: "hierárquica", "linear"). Para o Classificador de Receita MG, o valor é "hierárquica".'
+      Tipo da classificação (ex: "hierárquica", "linear"). Para o Classificador de Receita MG, o valor é "hierárquica".
     gsim: StatisticalClassification.classificationType
     constraints:
       required: true
       enum: ["hierárquica", "linear"]
-  - name: Número de Níveis
+  - name: numero_niveis
     type: integer
-    target: numero_niveis
     title: Número de Níveis Hierárquicos
     description: |
-      'Número de níveis hierárquicos da classificação.'
+      Número de níveis hierárquicos da classificação.
     gsim: StatisticalClassification.numberOfLevels
     constraints:
       required: true
       minimum: 1
       maximum: 9
-  - name: Data Início Vigência
+  - name: data_vigencia_inicio
     type: date
-    target: data_vigencia_inicio
-    title: Data de Início da Vigência
+    title: Data de Início da Vigência da Classificação Estatística
     description: |
-      'Data de início da vigência da classificação no domínio orçamentário.'
+      Data de início da vigência da classificação no domínio orçamentário.
     gsim: StatisticalClassification.validFrom
     constraints:
       required: true
-  - name: Data Fim Vigência
+  - name: data_vigencia_fim
     type: date
-    target: data_vigencia_fim
-    title: Data de Fim da Vigência
+    title: Data de Fim da Vigência da Classificação Estatística
     description: |
-      'Data de fim da vigência da classificação. Valor sentinela 9999-12-31 indica vigência ativa no momento corrente e futuro.'
+      Data de fim da vigência da classificação. Valor sentinela 9999-12-31 indica vigência ativa no momento corrente e futuro.
     gsim: StatisticalClassification.validTo
     constraints:
       required: true
-  - name: Data Registro Início
+  - name: data_registro_inicio
     type: datetime
-    target: data_registro_inicio
     title: Data/Hora de Registro Início
     description: |
-      'Data e hora em que o sistema registrou esta informação.'
+      Data e hora em que o sistema registrou esta informação.
     gsim: StatisticalClassification.transactionTimeStart
     constraints:
       required: true
-  - name: Data Registro Fim
+  - name: data_registro_fim
     type: datetime
-    target: data_registro_fim
-    title: Data/Hora de Registro Fim
+    title: Data/Hora de Registro Fim da Classificação Estatística
     description: |
-      'Data em que esta informação deixou de ser considerada verdadeira pelo sistema. Valor sentinela 9999-12-31 indica registro ativo no momento corrente e futuro.'
+      Data em que esta informação deixou de ser considerada verdadeira pelo sistema. Valor sentinela 9999-12-31 indica registro ativo no momento corrente e futuro.
     gsim: StatisticalClassification.transactionTimeEnd
     constraints:
       required: true
-primaryKey: 
-  - Identificador da Classificação
-  - Data Vigência Início
-  - Data Registro Início
+primaryKey:
+  - classificacao_id
+  - data_vigencia_inicio
+  - data_registro_inicio
 foreignKeys:
   - fields:
-      - Série de Classificações
+      - serie_id
     reference:
       resource: serie_classificacao
       fields:
-        - Identificador da Série
+        - serie_id
 missingValues: ["", "NA", "-"]
+custom:
+  qualityDimensions:
+    rulesRef: quality/quality-rules.yaml
+    ruleSets:
+      - temporal_consistency_bitemporal
