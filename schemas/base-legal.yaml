@@ -136,35 +136,15 @@ fields:
       existente e válido dentro da administração, ainda que a publicação no diário oficial seja posterior.
     constraints:
       required: true
-  - name: casa_legislativa
+  - name: orgao_responsavel
     type: string
-    title: Casa Legislativa
+    title: Órgão ou Entidade Responsável
     description: |
-      Casa ou órgão legislativo de origem (quando aplicável). Sugestão de preenchimento (valor = nome):
-      União:
-      - planalto = Presidência da República / Planalto
-      - congresso = Congresso Nacional
-      - camara = Câmara dos Deputados
-      - senado = Senado Federal
-      - stn = Secretaria do Tesouro Nacional
-      - sof = Secretaria de Orçamento Federal
-      - cgu = Controladoria-Geral da União
-      - agu = Advocacia-Geral da União
-      - rfb = Receita Federal do Brasil
-      - bcen = Banco Central do Brasil
-      - ag = AG
-      - stf = Supremo Tribunal Federal
-      - stj = Superior Tribunal de Justiça
-      - trf = Tribunal Regional Federal
-      - tcu = Tribunal de Contas da União
-      Minas Gerais (MG):
-      - almg = Assembleia Legislativa de Minas Gerais
-      - tcemg = Tribunal de Contas do Estado de Minas Gerais
-      - tjmg = Tribunal de Justiça de Minas Gerais
-      - cgemg = Controladoria-Geral do Estado de Minas Gerais
-      - agemg = Advocacia-Geral do Estado de Minas Gerais
+      Órgão ou entidade responsável pela promulgação do ato normativo ou instrumento jurídico.
+      Conjunto de valores válidos: ver dominios/orgaos_entidades.yaml.
     constraints:
-      required: false
+      required: true
+      domainRef: dominios/orgaos_entidades.yaml
   - name: titulo_norma
     type: string
     title: Título da Norma

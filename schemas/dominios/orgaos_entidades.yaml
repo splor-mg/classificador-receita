@@ -1,0 +1,59 @@
+# Domínio compartilhado: órgãos e entidades (serie_classificacao, base_legal).
+# Um único conjunto de códigos para validação em ambos os recursos.
+# Uso nos schemas: constraints.domainRef = "dominios/orgaos_entidades.yaml"
+# O validador deve carregar este arquivo e aplicar "values" como enum.
+
+identifier: orgaos_entidades
+title: Órgãos e Entidades
+description: |
+  Códigos de órgãos e entidades. Usado em:
+  - serie_classificacao.orgao_responsavel
+  - base_legal.orgao_responsavel
+
+values:
+  # União
+  - planalto
+  - congresso
+  - camara
+  - senado
+  - stn
+  - sof
+  - cgu
+  - agu
+  - rfb
+  - bcen
+  - stf
+  - stj
+  - trf
+  - tcu
+  # Minas Gerais
+  - almg
+  - tcemg
+  - tjmg
+  - cgemg
+  - agemg
+  - seplag-mg
+  - sef-mg
+
+# Nomes por extenso (documentação / UI). Chave = valor do domínio.
+labels:
+  planalto: Presidência da República / Planalto
+  congresso: Congresso Nacional
+  camara: Câmara dos Deputados
+  senado: Senado Federal
+  stn: Secretaria do Tesouro Nacional
+  sof: Secretaria de Orçamento Federal
+  cgu: Controladoria-Geral da União
+  agu: Advocacia-Geral da União
+  rfb: Receita Federal do Brasil
+  bcen: Banco Central do Brasil
+  stf: Supremo Tribunal Federal
+  stj: Superior Tribunal de Justiça
+  trf: Tribunal Regional Federal
+  tcu: Tribunal de Contas da União
+  almg: Assembleia Legislativa de Minas Gerais
+  tcemg: Tribunal de Contas do Estado de Minas Gerais
+  tjmg: Tribunal de Justiça de Minas Gerais
+  cgemg: Controladoria-Geral do Estado de Minas Gerais
+  agemg: Advocacia-Geral do Estado de Minas Gerais
+  seplag-mg: Secretaria de Estado de Planejamento e Gestão de Minas Gerais

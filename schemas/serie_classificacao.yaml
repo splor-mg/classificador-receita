@@ -37,9 +37,11 @@ fields:
     title: Órgão Responsável pela Série
     description: |
       Órgão ou entidade responsável pela manutenção e gerenciamento da série de classificações.
+      Conjunto de valores válidos: ver dominios/orgaos_entidades.yaml.
     gsim: ClassificationSeries.maintainingAgency
     constraints:
       required: false
+      domainRef: dominios/orgaos_entidades.yaml
   - name: data_vigencia_inicio
     type: date
     title: Data de Início da Vigência
