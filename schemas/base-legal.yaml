@@ -70,12 +70,10 @@ fields:
       - inst-norm = instrução/orientação normativa
       - jrsp = jurisprudência
       - lc = lei complementar federal
-      - lce = lei complementar estadual
       - ldo = lei de diretrizes orçamentárias
-      - lo = lei ordinária federal
+      - lo = lei ordinária
       - loa = lei orçamentária anual
       - lom = lei orgânica municipal
-      - loe = lei ordinária estadual / lei estadual
       - man = manual / orientações técnicas
       - ntj = nota jurídica, promoção jurídica, parecer
       - ntt = nota técnica

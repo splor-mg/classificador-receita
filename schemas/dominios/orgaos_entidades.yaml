@@ -16,16 +16,16 @@ values:
   - congresso
   - camara
   - senado
-  - stn
-  - sof
-  - cgu
-  - agu
-  - rfb
-  - bcen
   - stf
   - stj
   - trf
   - tcu
+  - cgu
+  - agu
+  - stn
+  - sof
+  - rfb
+  - bacen
   # Minas Gerais
   - almg
   - tcemg
@@ -35,25 +35,26 @@ values:
   - seplag-mg
   - sef-mg
 
-# Nomes por extenso (documentação / UI). Chave = valor do domínio.
+# Nomes por extenso (documentação / UI). Chave = valor do domínio. Ordem = values.
 labels:
   planalto: Presidência da República / Planalto
   congresso: Congresso Nacional
   camara: Câmara dos Deputados
   senado: Senado Federal
-  stn: Secretaria do Tesouro Nacional
-  sof: Secretaria de Orçamento Federal
-  cgu: Controladoria-Geral da União
-  agu: Advocacia-Geral da União
-  rfb: Receita Federal do Brasil
-  bcen: Banco Central do Brasil
   stf: Supremo Tribunal Federal
   stj: Superior Tribunal de Justiça
   trf: Tribunal Regional Federal
   tcu: Tribunal de Contas da União
+  cgu: Controladoria-Geral da União
+  agu: Advocacia-Geral da União
+  stn: Secretaria do Tesouro Nacional
+  sof: Secretaria de Orçamento Federal
+  rfb: Receita Federal do Brasil
+  bacen: Banco Central do Brasil
   almg: Assembleia Legislativa de Minas Gerais
   tcemg: Tribunal de Contas do Estado de Minas Gerais
   tjmg: Tribunal de Justiça de Minas Gerais
   cgemg: Controladoria-Geral do Estado de Minas Gerais
   agemg: Advocacia-Geral do Estado de Minas Gerais
   seplag-mg: Secretaria de Estado de Planejamento e Gestão de Minas Gerais
+  sef-mg: Secretaria de Estado da Fazenda de Minas Gerais
