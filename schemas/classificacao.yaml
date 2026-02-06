@@ -50,6 +50,22 @@ fields:
       required: true
       minimum: 1
       maximum: 9
+  - name: numero_digitos
+    type: integer
+    title: Número de Dígitos do Código
+    description: |
+      Quantidade total de dígitos do código na classificação (ex.: 8 para a base União, 10 ou 13 para MG conforme a edição). Facilita validação e documentação da estrutura.
+    constraints:
+      required: false
+      minimum: 1
+      maximum: 20
+  - name: base_legal_id
+    type: string
+    title: Base Legal de Referência
+    description: |
+      Identificador da norma ou ato que institui ou altera esta classificação, quando aplicável. Referência à tabela base_legal. Opcional; pode ficar em branco quando a classificação decorre de múltiplas normas ou de convenção interna.
+    constraints:
+      required: false
   - name: data_vigencia_inicio
     type: date
     title: Data de Início da Vigência da Classificação Estatística
@@ -93,6 +109,12 @@ foreignKeys:
       resource: serie_classificacao
       fields:
         - serie_id
+  - fields:
+      - base_legal_id
+    reference:
+      resource: base_legal
+      fields:
+        - base_legal_id
 missingValues: ["", "NA", "-"]
 custom:
   qualityDimensions:

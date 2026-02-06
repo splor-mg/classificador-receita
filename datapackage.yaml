@@ -47,7 +47,7 @@ resources:
     format: csv
     mediatype: text/csv
     encoding: utf-8
-    schema: schemas/classificacao_receita.yaml
+    schema: schemas/classificacao.yaml
     description: Classificação estatística principal (GSIM StatisticalClassification). Representa o Classificador de Natureza de Receita do Estado de Minas Gerais.
 
   - name: nivel_hierarquico

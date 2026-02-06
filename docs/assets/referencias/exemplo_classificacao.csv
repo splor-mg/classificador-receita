@@ -1,0 +1,6 @@
+classificacao_id,classificacao_ref,serie_id,classificacao_nome,descricao,tipo_classificacao,numero_niveis,data_vigencia_inicio,data_vigencia_fim,data_registro_inicio,data_registro_fim
+CLASS-RECEITA-MG-2000,1,SERIE-RECEITA-MG,Classificação de Receita,Classificação de Receita MG - Estrutura inicial com 7 níveis hierárquicos,hierárquica,7,2023-01-01,2024-06-15,2023-01-01,2024-06-15
+CLASS-RECEITA-MG-2000,1,SERIE-RECEITA-MG,Classificação de Receita do Estado de Minas Gerais,Classificação de Receita MG - Estrutura inicial com 7 níveis hierárquicos,hierárquica,7,2024-06-16,2024-12-31,2024-06-15,9999-12-31
+CLASS-RECEITA-MG-2018,2,SERIE-RECEITA-MG,Classificação de Receita do Estado de Minas Gerais - Versão 2018,Classificação de Receita MG - Versão 2024. Reestruturação da Receita Intraorçamentária (categoria 7) com divisão de itens e novos códigos.,hierárquica,9,2024-01-01,9999-12-31,2024-01-01,9999-12-31
+,,,,,,,,,,
+,
