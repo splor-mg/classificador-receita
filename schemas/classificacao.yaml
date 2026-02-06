@@ -54,7 +54,7 @@ fields:
     type: integer
     title: Número de Dígitos do Código
     description: |
-      Quantidade total de dígitos do código na classificação (ex.: 8 para a base União, 10 ou 13 para MG conforme a edição). Facilita validação e documentação da estrutura.
+      Quantidade total de dígitos do código na classificação (ex.: 8 para a base União, 10 ou 13 para MG conforme a edição).
     constraints:
       required: false
       minimum: 1
