@@ -1,0 +1,30 @@
+nivel_id,nivel_ref,classificacao_id,nivel_numero,nivel_nome,descricao,estrutura_codigo,tipo_codigo,data_vigencia_inicio,data_vigencia_fim,data_registro_inicio,data_registro_fim
+NIVEL-1,1,CLASS-RECEITA-UNIAO-2001,1,Categoria Econômica,Primeiro dígito do código. Distingue receitas correntes (1) de capital (2). Conforme Lei 4.320/1964 e MCASP.,a,numérico,2002-01-01,9999-12-31,2002-01-01,9999-12-31
+NIVEL-2,2,CLASS-RECEITA-UNIAO-2001,2,Sub-Categoria,"Segundo dígito. Classifica a origem da receita, contendo o detalhamento das Categorias Econômicas “Receitas Correntes” e“Receitas de Capital”, com vistas a identificar a natureza da procedência das receitas no momento em que ingressam no Orçamento Público.",a.b,numérico,2002-01-01,2009-12-31,2002-01-01,2009-12-31
+NIVEL-3,3,CLASS-RECEITA-UNIAO-2001,3,Fonte Receita,"Terceiro dígito. Detalha a subcategoria, sendo o nível de classificação que permite qualificar com maior
+detalhe o fato gerador das receitas.",a.b.c,numérico,2002-01-01,2009-12-31,2002-01-01,2009-12-31
+NIVEL-4,4,CLASS-RECEITA-UNIAO-2001,4,Rubrica,"Quarto dígito. Rubrica da receita é responsável por agregar determinadas espécies de receitas cujas características próprias sejam
+semelhantes entre si; dessa forma, detalha a espécie, por meio da especificação dos
+recursos financeiros que lhe são correlatos.",a.b.c.d,numérico,2002-01-01,9999-12-31,2002-01-01,9999-12-31
+NIVEL-5,5,CLASS-RECEITA-UNIAO-2001,5,Alínea,"Quinto e sexto dígitos. A Alínea da receita é o detalhamento da Rubrica e exterioriza o “nome” da receita que receberá
+o registro pela entrada de recursos financeiros. Por exemplo, a alínea “Impostos
+sobre a Renda e Proventos de Qualquer Natureza” corresponde ao detalhamento da
+Rubrica “Impostos sobre o Patrimônio e a Renda”.",a.b.c.d.ee,numérico,2002-01-01,9999-12-31,2002-01-01,9999-12-31
+NIVEL-6,6,CLASS-RECEITA-UNIAO-2001,6,Subalinea,"Sétimo dígito. Subalinea da receita constitui o nível mais analítico da receita para a União, utilizado quando há
+necessidade de se detalhar a Alínea com maior especificidade. Por exemplo, a
+subalínea “Pessoas Físicas” é detalhamento da Alínea “Impostos sobre a Renda e
+Proventos de Qualquer Natureza”.
+",a.b.c.d.ee.ff,numérico,2002-01-01,9999-12-31,2002-01-01,9999-12-31
+NIVEL-7,7,CLASS-RECEITA-MG-2001,7,Item,Nono e décimo dígitos. Destinado a disciminar os detalhamentos para atender as peculiaridades de MG,a.b.c.d.ee.ff.gg,numérico,2002-01-01,9999-12-31,2002-01-01,9999-12-31
+NIVEL-2,2,CLASS-RECEITA-UNIAO-2001,2,Origem da Receita,"Segundo dígito. Classifica a origem da receita, contendo o detalhamento das Categorias Econômicas ""Receitas Correntes"" e""Receitas de Capital"", com vistas a identificar a natureza da procedência das receitas no momento em que ingressam no Orçamento Público.",a.b,numérico,2010-01-01,2009-12-31,2009-12-31,9999-12-31
+NIVEL-3,3,CLASS-RECEITA-UNIAO-2001,3,Espécie,"Terceiro dígito. Detalha a Origem da Receita, sendo o nível de classificação que permite qualificar com maior
+detalhe o fato gerador das receitas.",a.b.c,numérico,2010-01-01,2009-12-31,2009-12-31,9999-12-31
+NIVEL-1,1,CLASS-RECEITA-UNIAO-2018,1,Categoria Econômica,"Primeiro dígito do código. Distingue receitas correntes (1) de capital (2), receitas intraorçamentárias (7 e 8) e de dedudação (9).",a,numérico,2018-01-01,9999-12-31,2018-01-01,9999-12-31
+NIVEL-2,2,CLASS-RECEITA-UNIAO-2018,2,Origem da Receita,"Segundo dígito. Classifica a origem da receita, contendo o detalhamento das Categorias Econômicas ""Receitas Correntes"" e""Receitas de Capital"", com vistas a identificar a natureza da procedência das receitas no momento em que ingressam no Orçamento Público.",a.b,numérico,2018-01-01,9999-12-31,2018-01-01,9999-12-31
+NIVEL-3,3,CLASS-RECEITA-UNIAO-2018,3,Espécie,"Terceiro dígito. Detalha a Origem da Receita, sendo o nível de classificação que permite qualificar com maior detalhe o fato gerador das receitas.",a.b.c,numérico,2018-01-01,9999-12-31,2018-01-01,9999-12-31
+NIVEL-4,4,CLASS-RECEITA-UNIAO-2018,4,Desdobramento 1,Quarto dígito do código (posição “d” da estrutura a.b.c.d.dd.d.e). Corresponde ao primeiro dos desdobramentos destinados a identificar peculiaridades ou necessidades gerenciais de cada natureza de receita.,a.b.c.d,numérico,2018-01-01,9999-12-31,2018-01-01,9999-12-31
+NIVEL-5,5,CLASS-RECEITA-UNIAO-2018,5,Desdobramento 2,Quinto e sexto dígitos do código (posição “dd” da estrutura a.b.c.d.dd.d.e). Corresponde ao segundo desdobramento  destinado a identificar peculiaridades ou necessidades gerenciais de cada natureza de receita.,a.b.c.d.dd,numérico,2018-01-01,9999-12-31,2018-01-01,9999-12-31
+NIVEL-6,6,CLASS-RECEITA-UNIAO-2018,6,Desdobramento 3,Sétimo dígito do código (última posição “d” da estrutura a.b.c.d.dd.d.e). Corresponde ao terceiro e último desdobramento para peculiaridades ou necessidades gerenciais previstos na estrutura federal.,a.b.c.d.dd.d,numérico,2018-01-01,9999-12-31,2018-01-01,9999-12-31
+NIVEL-7,7,CLASS-RECEITA-UNIAO-2018,7,Tipo de Receita,"Oitavo dígito. O Tipo de Receita individualiza os créditos da Fazenda Pública conforme a espécie de obrigação exequenda e sua fase executiva, distinguindo o principal da dívida, seus acessórios legais e o estágio de cobrança, se em fase administrativa ou já inscrito em dívida ativa.",a.b.c.d.dd.d.t,numérico,2018-01-01,9999-12-31,2018-01-01,9999-12-31
+NIVEL-8,8,CLASS-RECEITA-MG-2018,8,Item,Nono e décimos dígitos. Primeiro grupo de códigos acoplados por MG para atender suas necessidades informacionais e de gerenciamento da receita.,a.b.c.d.dd.d.t.ii,numérico,2018-01-01,9999-12-31,2018-01-01,9999-12-31
+NIVEL-9,9,CLASS-RECEITA-MG-2018,9,Subitem,Décimo primeiro ao décimo terceiro dígitos do classificador. São subnível do campo Item e é o maior nível de capilaridade do classificador.,a.b.c.d.dd.d.t.ii.sss,numérico,2018-01-01,9999-12-31,2018-01-01,9999-12-31
