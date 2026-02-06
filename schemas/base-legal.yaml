@@ -6,10 +6,10 @@ fields:
     title: Identificador Único da Norma (Base Legal)
     description: |
       Identificador único da entidade norma/ato (chave semântica). Sugestão de construção:
-      [{tipo_legal}-{numero}-{esfera_federativa}], em que tipo_legal é a sigla (ex.: cr, lc),numero
-      é o número da norma e esfera_federativa é a sigla da UF (AC, AL, ..., TO). Exemplos: CR-88-BRA (Constituição da República Federativa do Brasil de 1988);
+      [{tipo_legal}-{numero}-{orgao_responsavel}], em que tipo_legal é a sigla (ex.: cr, lc),numero
+      é o número da norma e orgao_responsavel é o órgão ou entidade responsável pela promulgação do ato normativo ou instrumento jurídico. Exemplos: CR-88-PLANALTO (Constituição da República Federativa do Brasil de 1988);
       LC-101-BRA (Lei Complementar 101 de 2000).
-    example: "LC-101-BRA"
+    example: "LC-101-PLANALTO"
     constraints:
       required: true
   - name: base_legal_ref
@@ -118,11 +118,11 @@ fields:
         - reg # Regulamentação por resolução ou demais instrumentos infralegais
         - sum # Súmula
         - sum-vinc # Súmula vinculante
-  - name: numero
+  - name: numero_codigo
     type: string
-    title: Número da Norma, Ato Normativo ou Instrumento Jurídico
+    title: Número ou Código da Norma, Ato Normativo ou Instrumento Jurídico
     description: |
-      Número ou identificador numérico da norma (ex.: número da lei, do decreto, da portaria).
+      Número ou código identificador da norma (ex.: número da lei, do decreto, da portaria).
     constraints:
       required: true
   - name: data_edicao

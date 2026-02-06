@@ -1,3 +1,17 @@
+- base_legal_id: MAN-MCASP-BRA
+- base_legal_ref: 5
+- esfera_federativa: BRA
+- tipo_legal: man
+- numero_codigo: mcasp
+- data_edicao: 2024-12-23
+- orgao_responsavel: stn
+- titulo_norma: Manual de Contabilidade Aplicada ao Setor Público - 11ed
+- ementa: O Manual de Contabilidade Aplicada ao Setor Público (MCASP) visa colaborar com o processo de elaboração e execução do orçamento, além de contribuir para resgatar o objeto da contabilidade como ciência, que é o patrimônio. Com isso, a contabilidade poderá atender a demanda de informações requeridas por seus usuários, possibilitando a análise de demonstrações contábeis adequadas aos padrões internacionais, sob os enfoques orçamentário e patrimonial, com base em um Plano de Contas Nacional.
+- url_fonte: https://thot-arquivos.tesouro.gov.br/publicacao/51045
+- data_vigencia_inicio: 2025-01-01
+- data_vigencia_fim: 9999-12-31
+
+
 ##### Secretaria do Tesouro Nacional – Manual de Contabilidade Aplicada ao Setor Público – 11ª Edição 1
 MCASP
 2025

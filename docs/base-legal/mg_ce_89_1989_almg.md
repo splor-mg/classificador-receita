@@ -1,0 +1,12 @@
+- base_legal_id: CE-89-MG
+- base_legal_ref: 2
+- esfera_federativa: MG
+- tipo_legal: ce
+- numero_codigo: 89
+- data_edicao: 1989-09-21
+- orgao_responsavel: almg
+- titulo_norma: Constituição do Estado de Minas Gerais
+- ementa: Nós, representantes do povo do Estado de Minas Gerais, fiéis aos ideais de liberdade de sua tradição, reunidos em Assembleia Constituinte, com o propósito de instituir ordem jurídica autônoma, que, com base nas aspirações dos mineiros, consolide os princípios estabelecidos na Constituição da República, promova a descentralização do Poder e assegure o seu controle pelos cidadãos, garanta o direito de todos à cidadania plena, ao desenvolvimento e à vida, numa sociedade fraterna, pluralista e sem preconceito, fundada na justiça social, promulgamos, sob a proteção de Deus, a seguinte Constituição
+- url_fonte: https://www.almg.gov.br/atividade-parlamentar/leis/legislacao-mineira/lei/texto/?tipo=CON&num=1989&ano=1989&comp=&cons=1
+- data_vigencia_inicio: 1989-09-21
+- data_vigencia_fim: 9999-12-31
