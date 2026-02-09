@@ -3,34 +3,95 @@ fields:
     type: string
     title: Identificador Único do Item de Classificação
     description: |
-      Identificador único do item de classificação. Pode ser o código completo de 13 dígitos ou um ID substituto.
+      Identificador único do item, correspondente ao código na classificação (chave semântica).
     gsim: ClassificationItem.identifier
     constraints:
       required: true
-  - name: codigo_completo
-    type: string
-    title: Código Completo do Item
-    description: |
-      Código completo de 13 dígitos do item de classificação formatado. Formato: C.0.E.D.DD.D.T.II.SSS conforme estrutura do Classificador de Receita MG. Exemplo: "1.0.1.1.01.1.1.01.001".
-    gsim: ClassificationItem.code
-    constraints:
-      required: true
-      pattern: "^[0-9]\\.[0-9]\\.[0-9]\\.[0-9]\\.[0-9]{2}\\.[0-9]\\.[0-9]\\.[0-9]{2}\\.[0-9]{3}$"
-  - name: codigo_numerico
+  - name: item_ref
     type: integer
-    title: Código Numérico (13 dígitos)
+    title: Referência Numérica do Item
     description: |
-      Código numérico de 13 dígitos sem formatação (sem pontos). Equivalente ao campo "Classificação Receita - Código" do schema receita.yaml.
+      Identificador numérico estável do item, usado na chave primária da linha (bitemporal).
+      Mesmo valor para todas as linhas que pertencem à mesma entidade (mesmo item_id).
+    gsim: ClassificationItem.reference
+    constraints:
+      required: true
+  - name: classificacao_id
+    type: string
+    title: Identificador da Classificação
+    description: |
+      Referência à classificação estatística à qual este item pertence.
+    gsim: ClassificationItem.belongsToStatisticalClassification
+    constraints:
+      required: true
+  - name: receita_cod
+    type: string
+    title: Código da Classificação por Natureza de Receita (canônico)
+    description: |
+      Código da natureza de receita orçamentária. O § 1º do art. 8º da Lei nº 4.320/1964 estabelece que os itens da discriminação da receita (art. 11) serão identificados por números de código decimal, convencionando-se a denominação natureza de receita. A codificação é disciplinada por portaria de forma conjunta pela SOF e pela STN, e visa identificar a origem do recurso segundo o fato gerador (acontecimento que ocasionou o ingresso da receita nos cofres públicos). A classificação compõe-se de código numérico de oito dígitos na base União, sendo que Estados e Municípios podem acoplar dígitos.
+      A quantidade exata de dígitos do código não é validada neste schema, pois varia conforme a classificação e a vigência. Para validação específica, utilize regra definida em custom.codeValidation, considerando classificacao_id e data_vigencia_inicio.
     gsim: ClassificationItem.code
     constraints:
       required: true
-      minimum: 1000000000000
-      maximum: 9999999999999
+      # Apenas formato numérico e faixa; tamanho exato é validado por regra externa (ver custom.codeValidation)
+      pattern: "^[0-9]{8,13}$"
+  - name: matriz
+    type: boolean
+    title: Identificador de Matriz
+    description: |
+      Indica se o item é o mais analítico possível (Detalhe) ou se é apenas uma natureza agregadora (Matriz). Quando "true" indica item agregador, que serve apenas à estrutura e à agregação, sem registro de arrecadação; quando "false", por sua vez, é considerado "item folha", no maior nível de detalhe da hierarquia. A execução orçamentária da receita (lançamento e arrecadação) somente pode ocorrer em naturezas de receita a nível de detalhe (folha).
+    gsim: ClassificationItem.isLeafNode
+    constraints:
+      required: true
+  - name: receita_nome
+    type: string
+    title: Nome da Classificação por Natureza de Receita
+    description: |
+      Nome da natureza de receita orçamentária. Parte do fato gerador para rotular, denominar a origem e o tipo do recurso que ingressa nos cofres públicos, no contexto das receitas orçamentárias (Lei nº 4.320/1964, art. 11 e Portaria Conjunta STN/SOF e alterações).
+    gsim: ClassificationItem.name
+    constraints:
+      required: true
+  - name: receita_descricao
+    type: string
+    title: Descrição da Classificação por Natureza de Receita
+    description: |
+      Texto descritivo que complementa o nome (receita_nome), esclarecendo significado, escopo e finalidade da natureza de receita. Pode incluir detalhes do conceito, abrangência, conteúdo lógico, casos limítrofes (incluídos ou excluídos) e orientações para interpretação e registro da arrecadação, de forma a atender às orientações/determinações legais e técnicas.
+    gsim: ClassificationItem.description
+    constraints:
+      required: false
+  - name: base_legal_id
+    type: string
+    title: Identificador da Base Legal
+    description: |
+      Referência à norma, ato ou instrumento jurídico que institui ou fundamenta esta natureza de receita. Chave estrangeira para a tabela base_legal (schemas/base_legal.yaml, docs/assets/seed_base_legal.csv), onde estão identificadas as normas (Lei, Portaria, MCASP, etc.). Opcional; preenchido quando o item tem fundamento legal explícito.
+    constraints:
+      required: false
+  - name: base_legal_referencia
+    type: string
+    title: Referência ao Excerto da Base Legal
+    description: |
+      Quando a fundamentação do item não é a norma como um todo, mas um trecho específico (artigo, parágrafo, inciso, anexo, item), este campo discrimina esse excerto. Ex.: "Art. 8º, § 1º", "Anexo I, item 1.2.3.4.56.7". Opcional; usado em conjunto com base_legal_id. Boa prática: manter texto curto e padronizado para facilitar busca e citação.
+    constraints:
+      required: false
+  - name: destinacao_legal
+    type: string
+    title: Destinação Legal
+    description: |
+      Indicação da destinação ou vinculação legal aplicável à receita classificada neste item, quando a norma estabelece regras de aplicação (ex.: percentual para educação, saúde, fundos).
+    constraints:
+      required: false
+  - name: informacoes_gerenciais
+    type: string
+    title: Informações Gerenciais
+    description: |
+      Detalhes técnicos e operacionais sobre o contexto de criação ou aplicação desta natureza de receita no classificador: critérios de uso, integração com sistemas (ex.: SISOR), notas de implementação, decisões de governança. Destinado a suportar operação e manutenção, sem caráter normativo.
+    constraints:
+      required: false
   - name: nivel_id
     type: string
     title: Identificador do Nível Hierárquico
     description: |
-      Referência ao nível hierárquico ao qual este item pertence.
+      Nível ao qual este item pertence. Define a profundidade do nó na hierarquia.
     gsim: ClassificationItem.belongsToLevel
     constraints:
       required: true
@@ -38,40 +99,18 @@ fields:
     type: string
     title: Identificador do Item Pai
     description: |
-      Referência ao item de classificação do nível imediatamente superior na hierarquia. NULL para itens do nível 1 (raiz).
+      Referência ao item do nível imediatamente superior. NULL para itens do nível 1.
     gsim: ClassificationItem.parentItem
-    constraints:
-      required: false
-  - name: nome_oficial
-    type: string
-    title: Nome Oficial do Item
-    description: |
-      Nome oficial do item de classificação.
-    gsim: ClassificationItem.officialName
-    constraints:
-      required: true
-  - name: descricao
-    type: string
-    title: Descrição do Item
-    description: |
-      Descrição detalhada do item de classificação.
-    gsim: ClassificationItem.description
     constraints:
       required: false
   - name: item_gerado
     type: boolean
     title: Item Gerado Automaticamente
     description: |
-      Indica se o item foi gerado automaticamente para completar o nível. Valores: true (gerado) ou false (definido manualmente).
+      Indica se o item existe por regra (gerado pelo sistema) ou se consta explicitamente no ementário oficial.
+      - false: item definido no ementário (portarias STN/SOF). Ex.: a natureza agregadora "1.2.3.4.56.7.0 - Impostos sobre a Renda (agregadora)" aparece na lista oficial; item_gerado = false.
+      - true: item criado por regra a partir de uma agregadora, sem constar na lista oficial. Conforme Portaria Conjunta STN/SOF nº 5/2015 e MCASP, as portarias trazem apenas códigos terminados em "0" (agregadoras); os tipos valorizáveis terminados em 1, 2, 3, 4 (e eventualmente 5 a 8) são considerados criados automaticamente. Ex.: para a agregadora 1.2.3.4.56.7.0, o sistema gera 1.2.3.4.56.7.1 (Principal), 1.2.3.4.56.7.2 (Multas e Juros), 1.2.3.4.56.7.3 (Dívida Ativa), 1.2.3.4.56.7.4 (Multas e Juros da Dívida Ativa); esses itens têm item_gerado = true.
     gsim: ClassificationItem.generated
-    constraints:
-      required: true
-  - name: valido_atualmente
-    type: boolean
-    title: Item Válido Atualmente
-    description: |
-      Indica se o item está atualmente válido na classificação.
-    gsim: ClassificationItem.currentlyValid
     constraints:
       required: true
   - name: data_vigencia_inicio
@@ -86,30 +125,37 @@ fields:
     type: date
     title: Data de Fim da Vigência
     description: |
-      Data de fim da vigência do item. Valor sentinela 9999-12-31 indica vigência ativa no momento corrente e futuro.
+      Data de fim da vigência. Valor sentinela 9999-12-31 indica vigência ativa no momento corrente e futuro.
     gsim: ClassificationItem.validTo
     constraints:
       required: true
   - name: data_registro_inicio
-    type: datetime
-    title: Data/Hora de Registro Início
+    type: date
+    title: Data de Registro Início
     description: |
-      Data e hora em que o sistema registrou esta informação.
+      Data em que o sistema registrou esta informação.
     gsim: ClassificationItem.transactionTimeStart
     constraints:
       required: true
   - name: data_registro_fim
-    type: datetime
-    title: Data/Hora de Registro Fim
+    type: date
+    title: Data de Registro Fim
     description: |
-      Data em que esta informação deixou de ser considerada verdadeira pelo sistema. Valor sentinela 9999-12-31 indica registro ativo no momento corrente e futuro.
+      Data em que esta informação deixou de ser considerada verdadeira pelo sistema. Valor sentinela 9999-12-31 indica vigência ativa no momento corrente e futuro.
     gsim: ClassificationItem.transactionTimeEnd
     constraints:
       required: true
 primaryKey:
-  - item_id
+  - item_ref
+  - data_vigencia_inicio
   - data_registro_inicio
 foreignKeys:
+  - fields:
+      - classificacao_id
+    reference:
+      resource: classificacao_receita
+      fields:
+        - classificacao_id
   - fields:
       - nivel_id
     reference:
@@ -122,9 +168,26 @@ foreignKeys:
       resource: item_classificacao
       fields:
         - item_id
+  - fields:
+      - base_legal_id
+    reference:
+      resource: base_legal
+      fields:
+        - base_legal_id
 missingValues: ["", "NA", "-"]
 custom:
+  # Validação da quantidade de dígitos de receita_cod: executada pelo script validate_code.py.
+  codeValidation:
+    description: Validação do comprimento do código canônico (receita_cod) conforme a classificação vigente.
+    script: validate_code.py
+    inputs:
+      - Instância em item_classificacao: classificacao_id, data_vigencia_inicio, receita_cod
+      - Classificação (schema classificacao / docs/assets/seed_classificacao.csv): numero_digitos por classificacao_id e vigência
+    rule:
+      name: comprimento_total
+      description: len(receita_cod) deve igualar numero_digitos da classificação vigente para o item (classificacao_id + data_vigencia_inicio).
+    # Validação por nível (segmentos conforme nivel_hierarquico) não está no escopo atual.
   qualityDimensions:
-    rulesRef: quality/quality-rules.yaml
+    rulesRef: quality/quality_rules.yaml
     ruleSets:
       - temporal_consistency_bitemporal
