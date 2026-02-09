@@ -49,6 +49,16 @@ fields:
     gsim: ClassificationLevel.codeStructure
     constraints:
       required: false
+  - name: numero_digitos
+    type: integer
+    title: Número de Dígitos no Nível
+    description: |
+      Quantidade de dígitos do código neste nível.
+    gsim: ClassificationLevel.numberOfDigits
+    constraints:
+      required: true
+      minimum: 1
+      maximum: 9
   - name: tipo_codigo
     type: string
     title: Tipo de Código
