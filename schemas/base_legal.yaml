@@ -188,6 +188,6 @@ primaryKey:
 missingValues: ["", "NA", "-"]
 custom:
   qualityDimensions:
-    rulesRef: quality/quality-rules.yaml
+    rulesRef: quality/quality_rules.yaml
     ruleSets:
       - temporal_consistency_vigencia_only

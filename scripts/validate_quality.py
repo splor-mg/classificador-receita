@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Aplica as regras de qualityDimensions (quality-rules.yaml) aos dados dos recursos
+Aplica as regras de qualityDimensions (quality_rules.yaml) aos dados dos recursos
 cujos schemas declaram custom.qualityDimensions.
 
 Uso:
@@ -38,7 +38,7 @@ def get_schema_custom_quality(schema_path: Path) -> dict | None:
 
 
 def load_quality_rules(rules_path: Path) -> dict:
-    """Carrega quality-rules.yaml; retorna dict com ruleSets."""
+    """Carrega quality_rules.yaml; retorna dict com ruleSets."""
     if not rules_path.exists():
         return {}
     data = load_yaml(rules_path)
@@ -85,8 +85,8 @@ def main() -> int:
     parser.add_argument(
         "--quality-rules",
         type=Path,
-        default=root / "quality" / "quality-rules.yaml",
-        help="Caminho do quality-rules.yaml",
+        default=root / "quality" / "quality_rules.yaml",
+        help="Caminho do quality_rules.yaml",
     )
     args = parser.parse_args()
 
@@ -101,7 +101,7 @@ def main() -> int:
     resources = package.get("resources", [])
     rules_content = load_quality_rules(args.quality_rules)
     if not rules_content:
-        print("⚠️ Nenhum ruleSet em quality-rules.yaml.")
+        print("⚠️ Nenhum ruleSet em quality_rules.yaml.")
         return 0
 
     # Fallback: alguns recursos podem estar em docs/assets com nome seed_*
@@ -142,7 +142,7 @@ def main() -> int:
         for set_name in rule_sets:
             rule_set = rules_content.get(set_name)
             if not rule_set:
-                print(f"   ⚠️ RuleSet {set_name!r} não encontrado em quality-rules.yaml")
+                print(f"   ⚠️ RuleSet {set_name!r} não encontrado em quality_rules.yaml")
                 continue
             for rule in rule_set.get("rules", []):
                 rname = rule.get("name", "?")
