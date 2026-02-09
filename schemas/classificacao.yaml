@@ -3,8 +3,17 @@ fields:
     type: string
     title: Identificador Único da Classificação Estatística
     description: |
-      Identificador único da classificação estatística.
+      Identificador único da classificação estatística (chave semântica).
     gsim: StatisticalClassification.identifier
+    constraints:
+      required: true
+  - name: classificacao_ref
+    type: integer
+    title: Referência Numérica da Classificação
+    description: |
+      Identificador numérico estável da classificação estatística, usado na chave primária da linha (bitemporal).
+      Mesmo valor para todas as linhas que pertencem à mesma entidade (mesmo classificacao_id).
+    gsim: StatisticalClassification.reference
     constraints:
       required: true
   - name: serie_id
@@ -99,7 +108,7 @@ fields:
     constraints:
       required: true
 primaryKey:
-  - classificacao_id
+  - classificacao_ref
   - data_vigencia_inicio
   - data_registro_inicio
 foreignKeys:
