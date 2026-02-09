@@ -9,6 +9,7 @@ readme = "README.md"
 requires-python = ">=3.12,<4.0"
 dependencies = [
     "frictionless>=5.18.0,<6.0.0",
+    "pyyaml>=6.0,<7.0",
     "taskipy>=1.12.0,<2.0.0",
     "zensical (>=0.0.15,<0.0.16)",
     "django (>=6.0,<7.0)",
@@ -37,6 +38,9 @@ serve = { cmd = "zensical serve", help = "Inicia o servidor de preview local par
 
 # Utils
 validar-schemas = { cmd = "python scripts/validate_schemas.py", help = "Valida os schemas Frictionless e o datapackage.yaml principal." }
+validar-codigos = { cmd = "python scripts/validate_code.py", help = "Valida a quantidade de dígitos de receita_cod conforme a classificação (registro e vigência, SCD-2)." }
+validar-qualidade = { cmd = "python scripts/validate_quality.py", help = "Aplica as regras de qualityDimensions (quality-rules.yaml) aos dados dos recursos." }
+validar-tudo = { cmd = "python scripts/validate_schemas.py && python scripts/validate_code.py && python scripts/validate_quality.py", help = "Executa validar-schemas, validar-codigos e validar-qualidade em sequência." }
 gerar-erd = { cmd = "python scripts/generate_erd.py", help = "Gera o diagrama de entidade-relacionamento (ERD) do banco de dados." }
 
 [build-system]

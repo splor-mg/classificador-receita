@@ -3937,4 +3937,4 @@ pdf = ["marker-pdf"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "d50a177d344401cff0274fa2b359870297169a147dd5d139ae98779a79ba1a46"
+content-hash = "18099ba5ae9e3c12d5182018600d1e106504617884ee8b71d7b097d1d19da71a"
