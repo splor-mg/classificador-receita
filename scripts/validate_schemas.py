@@ -113,7 +113,6 @@ def validate_datapackage(log_lines: list[str], resource_name: str | None = None)
                     check=False,
                     # Sem capture: CLI escreve direto no terminal e usa cores (TTY)
                 )
-                _log("(Relatório detalhado exibido acima no terminal.)", log_lines)
             except Exception as e:
                 _log(f"   (Falha ao executar CLI 'frictionless validate': {e})", log_lines)
             return False
@@ -144,7 +143,6 @@ def validate_datapackage(log_lines: list[str], resource_name: str | None = None)
                 check=False,
                 # Sem capture: CLI escreve direto no terminal e usa cores (TTY)
             )
-            _log("(Relatório detalhado exibido acima no terminal.)", log_lines)
         except Exception as e:
             _log(f"   (Falha ao executar CLI 'frictionless validate': {e})", log_lines)
         return False
