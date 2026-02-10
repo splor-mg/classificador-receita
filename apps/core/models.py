@@ -149,7 +149,7 @@ class ClassificacaoReceita(BitemporalModel):
     )
 
     class Meta:
-        db_table = 'classificacao_receita'
+        db_table = 'classificacao'
         verbose_name = 'Classificação de Receita'
         verbose_name_plural = 'Classificações de Receita'
         constraints = [

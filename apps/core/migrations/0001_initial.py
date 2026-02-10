@@ -99,7 +99,7 @@ class Migration(migrations.Migration):
             options={
                 "verbose_name": "Classificação de Receita",
                 "verbose_name_plural": "Classificações de Receita",
-                "db_table": "classificacao_receita",
+                "db_table": "classificacao",
             },
         ),
         migrations.CreateModel(

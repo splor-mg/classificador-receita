@@ -106,7 +106,7 @@ def main() -> int:
 
     # Fallback: alguns recursos podem estar em docs/assets com nome seed_*
     fallback_names = {
-        "classificacao_receita": "seed_classificacao.csv",
+        "classificacao": "seed_classificacao.csv",
         "serie_classificacao": "seed_serie_classificacao.csv",
         "nivel_hierarquico": "seed_nivel_hierarquico.csv",
         "versao_classificacao": "seed_versao_classificacao.csv",

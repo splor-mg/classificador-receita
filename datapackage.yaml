@@ -32,7 +32,7 @@ keywords:
 resources:
   - name: serie_classificacao
     type: table
-    path: data/serie_classificacao.csv
+    path: docs/assets/seed_serie_classificacao.csv
     scheme: file
     format: csv
     mediatype: text/csv
@@ -40,9 +40,9 @@ resources:
     schema: schemas/serie_classificacao.yaml
     description: Série de classificações (GSIM ClassificationSeries). Representa uma coleção de classificações estatísticas relacionadas.
 
-  - name: classificacao_receita
+  - name: classificacao
     type: table
-    path: data/classificacao_receita.csv
+    path: docs/assets/seed_classificacao.csv
     scheme: file
     format: csv
     mediatype: text/csv
@@ -52,7 +52,7 @@ resources:
 
   - name: nivel_hierarquico
     type: table
-    path: data/nivel_hierarquico.csv
+    path: docs/assets/seed_nivel_hierarquico.csv
     scheme: file
     format: csv
     mediatype: text/csv
@@ -62,7 +62,7 @@ resources:
 
   - name: item_classificacao
     type: table
-    path: data/item_classificacao.csv
+    path: docs/assets/seed_item_classificacao.csv
     scheme: file
     format: csv
     mediatype: text/csv
@@ -72,7 +72,7 @@ resources:
 
   - name: versao_classificacao
     type: table
-    path: data/versao_classificacao.csv
+    path: docs/assets/seed_versao_classificacao.csv
     scheme: file
     format: csv
     mediatype: text/csv
@@ -82,7 +82,7 @@ resources:
 
   - name: variante_classificacao
     type: table
-    path: data/variante_classificacao.csv
+    path: docs/assets/seed_variante_classificacao.csv
     scheme: file
     format: csv
     mediatype: text/csv

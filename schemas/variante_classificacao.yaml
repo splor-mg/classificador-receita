@@ -95,7 +95,7 @@ foreignKeys:
   - fields:
       - classificacao_id
     reference:
-      resource: classificacao_receita
+      resource: classificacao
       fields:
         - classificacao_id
   - fields:

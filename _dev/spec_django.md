@@ -158,7 +158,7 @@ apps/core/
 
 5. **Auto-relacionamento**: `ItemClassificacao.parent_item` permite hierarquia de 9 níveis. NULL para itens do nível 1 (raiz).
 
-6. **Nomes de Tabelas**: Usando `db_table` para manter nomes em português conforme schemas (ex: `serie_classificacao`, `classificacao_receita`).
+6. **Nomes de Tabelas**: Usando `db_table` para manter nomes em português conforme schemas (ex: `serie_classificacao`, `classificacao`).
 
 7. **Próximos Passos**:
    - Criar managers customizados para queries bitemporais
