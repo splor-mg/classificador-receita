@@ -7,6 +7,15 @@ fields:
     gsim: ClassificationLevel.identifier
     constraints:
       required: true
+  - name: nivel_ref
+    type: integer
+    title: Referência Numérica do Nível Hierárquico
+    description: |
+      Identificador numérico estável do nível hierárquico, usado na chave primária da linha (bitemporal).
+      Mesmo valor para todas as linhas que pertencem ao mesmo nível conceitual (mesmo nivel_id).
+    gsim: ClassificationLevel.reference
+    constraints:
+      required: true
   - name: classificacao_id
     type: string
     title: Identificador da Classificação
