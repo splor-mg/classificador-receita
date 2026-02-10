@@ -1,5 +1,5 @@
-- base_legal_id: PORT-CONJ-163-BRA
-- base_legal_ref: 4
+- base_legal_tecnica_id: PORT-CONJ-163-BRA
+- base_legal_tecnica_ref: 4
 - esfera_federativa: BRA
 - tipo_legal: port-conj
 - numero_codigo: 163

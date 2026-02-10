@@ -39,7 +39,7 @@ fields:
     type: boolean
     title: Identificador de Matriz
     description: |
-      Indica se o item é o mais analítico possível (Detalhe) ou se é apenas uma natureza agregadora (Matriz). Quando "true" indica item agregador, que serve apenas à estrutura e à agregação, sem registro de arrecadação; quando "false", por sua vez, é considerado "item folha", no maior nível de detalhe da hierarquia. A execução orçamentária da receita (lançamento e arrecadação) somente pode ocorrer em naturezas de receita a nível de detalhe (folha).
+      Indica se o item é o mais analítico possível (Detalhe) ou se é apenas uma natureza agregadora (Matriz). Quando "true" indica item agregador, que serve apenas à estrutura e à agregação, sem registro de arrecadação; quando "false", por sua vez, é considerado "item folha" (Detalhe), no maior nível de detalhe da hierarquia. A execução orçamentária da receita (lançamento e arrecadação) somente pode ocorrer em naturezas de receita a nível de detalhe.
     gsim: ClassificationItem.isLeafNode
     constraints:
       required: true
@@ -59,18 +59,19 @@ fields:
     gsim: ClassificationItem.description
     constraints:
       required: false
-  - name: base_legal_id
+  - name: base_legal_tecnica_id
     type: string
-    title: Identificador da Base Legal
+    title: Identificador da Base Legal e de Referência Técnica
     description: |
-      Referência à norma, ato ou instrumento jurídico que institui ou fundamenta esta natureza de receita. Chave estrangeira para a tabela base_legal (schemas/base_legal.yaml, docs/assets/seed_base_legal.csv), onde estão identificadas as normas (Lei, Portaria, MCASP, etc.). Opcional; preenchido quando o item tem fundamento legal explícito.
+      Referência à norma, ato ou instrumento jurídico que institui ou fundamenta esta natureza de receita. Chave estrangeira para a tabela base_legal_tecnica (schemas/base_legal_tecnica.yaml, docs/assets/seed_base_legal_tecnica.csv), onde estão identificados os fundamentos legais e técnicos (Lei, Portaria, MCASP, NT, etc.). Opcional; preenchido quando o item tem fundamento explícito.
+    gsim: ClassificationItem.belongsToBaseLegalTechnique
     constraints:
       required: false
-  - name: base_legal_referencia
+  - name: base_legal_tecnica_referencia
     type: string
-    title: Referência ao Excerto da Base Legal
+    title: Referência ao Excerto da Base Legal Técnica
     description: |
-      Quando a fundamentação do item não é a norma como um todo, mas um trecho específico (artigo, parágrafo, inciso, anexo, item), este campo discrimina esse excerto. Ex.: "Art. 8º, § 1º", "Anexo I, item 1.2.3.4.56.7". Opcional; usado em conjunto com base_legal_id. Boa prática: manter texto curto e padronizado para facilitar busca e citação.
+      Quando a fundamentação do item não é a norma como um todo, mas um trecho específico (artigo, parágrafo, inciso, anexo, item), este campo discrimina esse excerto. Ex.: "Art. 8º, § 1º", "Anexo I, item 1.2.3.4.56.7". Opcional; usado em conjunto com base_legal_tecnica_id. Boa prática: manter texto curto e padronizado para facilitar busca e citação.
     constraints:
       required: false
   - name: destinacao_legal
@@ -169,11 +170,11 @@ foreignKeys:
       fields:
         - item_id
   - fields:
-      - base_legal_id
+      - base_legal_tecnica_id
     reference:
-      resource: base_legal
+      resource: base_legal_tecnica
       fields:
-        - base_legal_id
+        - base_legal_tecnica_id
 missingValues: ["", "NA", "-"]
 custom:
   # Validação da quantidade de dígitos de receita_cod: executada pelo script validate_code.py.

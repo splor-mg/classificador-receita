@@ -68,11 +68,11 @@ fields:
       required: false
       minimum: 1
       maximum: 20
-  - name: base_legal_id
+  - name: base_legal_tecnica_id
     type: string
     title: Base Legal de Referência
     description: |
-      Identificador da norma ou ato que institui ou altera esta classificação, quando aplicável. Referência à tabela base_legal. Opcional; pode ficar em branco quando a classificação decorre de múltiplas normas ou de convenção interna.
+      Identificador da norma ou ato que institui ou altera esta classificação, quando aplicável. Referência à tabela base_legal_tecnica. Opcional; pode ficar em branco quando a classificação decorre de múltiplas normas ou de convenção interna.
     constraints:
       required: false
   - name: data_vigencia_inicio
@@ -119,11 +119,11 @@ foreignKeys:
       fields:
         - serie_id
   - fields:
-      - base_legal_id
+      - base_legal_tecnica_id
     reference:
-      resource: base_legal
+      resource: base_legal_tecnica
       fields:
-        - base_legal_id
+        - base_legal_tecnica_id
 missingValues: ["", "NA", "-"]
 custom:
   qualityDimensions:

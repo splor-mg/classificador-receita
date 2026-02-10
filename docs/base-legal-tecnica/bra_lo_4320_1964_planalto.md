@@ -1,5 +1,5 @@
-- base_legal_id: LO-4320-BRA
-- base_legal_ref: 3
+- base_legal_tecnica_id: LO-4320-BRA
+- base_legal_tecnica_ref: 3
 - esfera_federativa: BRA
 - tipo_legal: lo
 - numero_codigo: 4320

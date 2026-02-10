@@ -1,5 +1,5 @@
-- base_legal_id: MAN-MCASP-STN
-- base_legal_ref: 5
+- base_legal_tecnica_id: MAN-MCASP-STN
+- base_legal_tecnica_ref: 5
 - esfera_federativa: BRA
 - tipo_legal: man
 - numero_codigo: mcasp

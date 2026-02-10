@@ -1,14 +1,16 @@
-# Domínio compartilhado: órgãos e entidades (serie_classificacao, base_legal).
-# Um único conjunto de códigos para validação em ambos os recursos.
-# Uso nos schemas: constraints.domainRef = "dominios/orgaos_entidades.yaml"
-# O validador deve carregar este arquivo e aplicar "values" como enum.
+# Domínio compartilhado: órgãos e entidades (serie_classificacao, base_legal_tecnica).
+#
+# Este arquivo é a TABELA-VERDADE de códigos de órgãos/entidades responsáveis.
+# É usado como catálogo de domínio (enum compartilhado) referenciado via custom.domainRef
+# nos schemas principais (ex.: base_legal_tecnica.yaml, serie_classificacao.yaml).
 
 identifier: orgaos_entidades
 title: Órgãos e Entidades
 description: |
-  Códigos de órgãos e entidades. Usado em:
+  Códigos de órgãos e entidades responsáveis.
+  Usado em:
   - serie_classificacao.orgao_responsavel
-  - base_legal.orgao_responsavel
+  - base_legal_tecnica.orgao_responsavel
 
 values:
   # União
@@ -35,7 +37,6 @@ values:
   - seplag-mg
   - sef-mg
 
-# Nomes por extenso (documentação / UI). Chave = valor do domínio. Ordem = values.
 labels:
   planalto: Presidência da República / Planalto
   congresso: Congresso Nacional
@@ -58,3 +59,4 @@ labels:
   agemg: Advocacia-Geral do Estado de Minas Gerais
   seplag-mg: Secretaria de Estado de Planejamento e Gestão de Minas Gerais
   sef-mg: Secretaria de Estado da Fazenda de Minas Gerais
+

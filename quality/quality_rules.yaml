@@ -8,7 +8,7 @@
 #
 # Conjuntos disponíveis:
 #   - temporal_consistency_bitemporal: vigência + registro (recursos bitemporais)
-#   - temporal_consistency_vigencia_only: apenas vigência (ex.: base_legal)
+#   - temporal_consistency_vigencia_only: apenas vigência (ex.: base_legal_tecnica)
 #
 ruleSets:
   # Recursos com data_vigencia_inicio/fim e data_registro_inicio/fim
@@ -26,7 +26,7 @@ ruleSets:
 
   # Recursos com apenas data_vigencia_inicio/fim (sem data_registro_*)
   temporal_consistency_vigencia_only:
-    description: "Apenas vigência; uso em schemas sem campos de registro (ex.: base_legal)."
+    description: "Apenas vigência; uso em schemas sem campos de registro (ex.: base_legal_tecnica)."
     rules:
       - name: vigencia_valida
         expression: "data_vigencia_fim >= data_vigencia_inicio"

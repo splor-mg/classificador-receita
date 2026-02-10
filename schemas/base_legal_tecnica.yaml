@@ -1,7 +1,7 @@
 # Arcabouço legal e técnico que pode afetar as tabelas de classificação.
 # Padrão: valor armazenado por sigla; descrição do campo traz o mapeamento para o nome por extenso.
 fields:
-  - name: base_legal_id
+  - name: base_legal_tecnica_id
     type: string
     title: Identificador Único da Norma (Base Legal)
     description: |
@@ -12,12 +12,12 @@ fields:
     example: "LC-101-PLANALTO"
     constraints:
       required: true
-  - name: base_legal_ref
+  - name: base_legal_tecnica_ref
     type: integer
     title: Referência Numérica da Base Legal
     description: |
       Identificador numérico estável da norma, usado na chave primária da linha.
-      Mesmo valor para todas as linhas que pertencem à mesma entidade (mesmo base_legal_id).
+      Mesmo valor para todas as linhas que pertencem à mesma entidade (mesmo base_legal_tecnica_id).
     constraints:
       required: true
   - name: esfera_federativa
@@ -139,10 +139,11 @@ fields:
     title: Órgão ou Entidade Responsável
     description: |
       Órgão ou entidade responsável pela promulgação do ato normativo ou instrumento jurídico.
-      Conjunto de valores válidos: ver dominios/orgaos_entidades.yaml.
+      Conjunto de valores válidos: ver dominios/orgaos_entidades.yaml (domínio compartilhado de órgãos/entidades).
     constraints:
       required: true
-      domainRef: dominios/orgaos_entidades.yaml
+    custom:
+      domainRef: "dominios/orgaos_entidades.yaml"
   - name: titulo_norma
     type: string
     title: Título da Norma
@@ -183,7 +184,7 @@ fields:
     constraints:
       required: true
 primaryKey:
-  - base_legal_ref
+  - base_legal_tecnica_ref
   - data_vigencia_inicio
 missingValues: ["", "NA", "-"]
 custom:
@@ -191,3 +192,4 @@ custom:
     rulesRef: quality/quality_rules.yaml
     ruleSets:
       - temporal_consistency_vigencia_only
+

@@ -41,7 +41,8 @@ fields:
     gsim: ClassificationSeries.maintainingAgency
     constraints:
       required: false
-      domainRef: dominios/orgaos_entidades.yaml
+    custom:
+      domainRef: "dominios/orgaos_entidades.yaml"
   - name: data_vigencia_inicio
     type: date
     title: Data de Início da Vigência

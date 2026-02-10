@@ -1,5 +1,5 @@
-- base_legal_id: CE-89-MG
-- base_legal_ref: 2
+- base_legal_tecnica_id: CE-89-MG
+- base_legal_tecnica_ref: 2
 - esfera_federativa: MG
 - tipo_legal: ce
 - numero_codigo: 89

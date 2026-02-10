@@ -1,5 +1,5 @@
-- base_legal_id: CR-88-BRA
-- base_legal_ref: 1
+- base_legal_tecnica_id: CR-88-BRA
+- base_legal_tecnica_ref: 1
 - esfera_federativa: BRA
 - tipo_legal: cr
 - numero_codigo: 88

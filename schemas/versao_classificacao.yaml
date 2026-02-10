@@ -7,6 +7,15 @@ fields:
     gsim: ClassificationVersion.identifier
     constraints:
       required: true
+  - name: versao_ref
+    type: integer
+    title: Referência Numérica da Versão
+    description: |
+      Identificador numérico estável da versão, usado na chave primária da linha (bitemporal).
+      Mesmo valor para todas as linhas que pertencem à mesma entidade (mesmo versao_id).
+    gsim: ClassificationVersion.reference
+    constraints:
+      required: true
   - name: classificacao_id
     type: string
     title: Identificador da Classificação
