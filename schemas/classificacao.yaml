@@ -70,7 +70,7 @@ fields:
       maximum: 20
   - name: base_legal_tecnica_id
     type: string
-    title: Base Legal de Referência
+    title: Identificador da Base Legal e Técnica de Referência
     description: |
       Identificador da norma ou ato que institui ou altera esta classificação, quando aplicável. Referência à tabela base_legal_tecnica. Opcional; pode ficar em branco quando a classificação decorre de múltiplas normas ou de convenção interna.
     constraints:
