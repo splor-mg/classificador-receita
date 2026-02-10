@@ -1,0 +1,2 @@
+item_id,item_ref,classificacao_id,receita_cod,matriz,receita_nome,receita_descricao,base_legal_tecnica_id,base_legal_tecnica_referencia,destinacao_legal,informacoes_gerenciais,nivel_id,parent_item_id,item_gerado,data_vigencia_inicio,data_vigencia_fim,data_registro_inicio,data_registro_fim
+1000000000000,1,CLASS-RECEITA-MG-2018,1000000000000,true,Receitas Correntes,-,PORT-CONJ-5-STN,-,-,-,"NIVEL-9",-,false,2023-01-01,9999-12-31,2023-01-01,9999-12-31
