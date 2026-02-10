@@ -13,6 +13,7 @@ Requisitos:
 
 import sys
 import subprocess
+import yaml
 from pathlib import Path
 from datetime import datetime
 from frictionless import validate, Package, Schema
@@ -97,7 +98,20 @@ def validate_datapackage(log_lines: list[str], resource_name: str | None = None)
                 _log(f"❌ Recurso '{resource_name}' não encontrado em datapackage.yaml.", log_lines)
                 return False
 
-            report = validate(resource)
+            # Valida pelo path do CSV + schema (evita "resource is not open" ao validar via Package)
+            base = datapackage_file.parent
+            data_path = base / resource.path
+            dp_descriptor = yaml.safe_load(datapackage_file.read_text(encoding="utf-8")) or {}
+            schema_ref = ""
+            for r in dp_descriptor.get("resources", []):
+                if r.get("name") == resource_name:
+                    schema_ref = r.get("schema") or ""
+                    break
+            report = (
+                validate(str(data_path), schema=str(base / schema_ref))
+                if schema_ref
+                else validate(str(data_path))
+            )
             if report.valid:
                 _log(f"✅ recurso '{resource_name}' em datapackage.yaml: válido", log_lines)
                 return True
@@ -120,23 +134,67 @@ def validate_datapackage(log_lines: list[str], resource_name: str | None = None)
             _log(f"❌ Erro ao validar recurso '{resource_name}' no datapackage: {str(e)}", log_lines)
             return False
 
-    # Modo padrão: validar o datapackage inteiro
-    _log(f"\n📦 Validando datapackage.yaml...\n", log_lines)
+    # Modo padrão: validar o datapackage inteiro, recurso por recurso (CSV+schema)
+    _log(f"\n📦 Validando datapackage.yaml (todos os recursos)...\n", log_lines)
 
     try:
-        # Usa validate no arquivo descriptor para saber se está válido
-        report = validate(str(datapackage_file))
-        if report.valid:
-            _log("✅ datapackage.yaml: válido", log_lines)
-            return True
+        dp_descriptor = yaml.safe_load(datapackage_file.read_text(encoding="utf-8")) or {}
+    except Exception as e:
+        _log(f"❌ datapackage.yaml: erro ao ler/parsear YAML - {str(e)}", log_lines)
+        return False
 
-        _log("❌ datapackage.yaml: inválido", log_lines)
+    resources = dp_descriptor.get("resources", [])
+    if not resources:
+        _log("❌ datapackage.yaml: nenhum recurso definido em 'resources'.", log_lines)
+        return False
 
-        # Quando o datapackage for inválido, executa o CLI do Frictionless
-        # com saída direta no terminal (stdout/stderr herdados) para que
-        # as cores (ex.: verde para VALID) e o layout sejam idênticos a:
-        #   poetry run frictionless validate datapackage.yaml
-        _log("\n===== Saída de 'frictionless validate datapackage.yaml' (no terminal) =====\n", log_lines)
+    base = datapackage_file.parent
+    all_valid = True
+
+    for res in resources:
+        name = res.get("name")
+        path = res.get("path")
+        schema_ref = res.get("schema")
+
+        if not name or not path:
+            _log(f"❌ Recurso sem 'name' ou 'path' definido no datapackage: {res}", log_lines)
+            all_valid = False
+            continue
+
+        data_path = base / path
+        if not data_path.is_file():
+            _log(f"❌ recurso '{name}': arquivo CSV não encontrado em '{data_path}'", log_lines)
+            all_valid = False
+            continue
+
+        # Validação recurso a recurso, como no modo filtrado
+        try:
+            if schema_ref:
+                schema_path = base / schema_ref
+                report = validate(str(data_path), schema=str(schema_path))
+            else:
+                report = validate(str(data_path))
+
+            if report.valid:
+                _log(f"✅ recurso '{name}' em datapackage.yaml: válido", log_lines)
+            else:
+                _log(f"❌ recurso '{name}' em datapackage.yaml: inválido", log_lines)
+                for error in report.errors:
+                    _log(f"   - {error.message}", log_lines)
+                all_valid = False
+        except Exception as e:
+            _log(f"❌ recurso '{name}' em datapackage.yaml: erro ao validar - {str(e)}", log_lines)
+            _log(f"   - {str(e)}", log_lines)
+            all_valid = False
+
+    # Em caso de qualquer recurso inválido, também delega ao CLI completo
+    # para exibir o mesmo relatório tabular do comando:
+    #   poetry run frictionless validate datapackage.yaml
+    if not all_valid:
+        _log(
+            "\n===== Saída de 'frictionless validate datapackage.yaml' (no terminal) =====\n",
+            log_lines,
+        )
         try:
             subprocess.run(
                 ["frictionless", "validate", str(datapackage_file)],
@@ -145,10 +203,8 @@ def validate_datapackage(log_lines: list[str], resource_name: str | None = None)
             )
         except Exception as e:
             _log(f"   (Falha ao executar CLI 'frictionless validate': {e})", log_lines)
-        return False
-    except Exception as e:
-        _log(f"❌ datapackage.yaml: erro ao validar - {str(e)}", log_lines)
-        return False
+
+    return all_valid
 
 
 def main():
