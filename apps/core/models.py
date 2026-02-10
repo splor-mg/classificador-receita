@@ -22,15 +22,15 @@ class BitemporalModel(models.Model):
         help_text='Data de início da vigência no domínio orçamentário (valid_time - início)'
     )
     data_vigencia_fim = models.DateField(
-        verbose_name='Data de Fim da Vigência',
+        verbose_name='Data do Fim da Vigência',
         help_text='Data de fim da vigência (valid_time - fim). Valor sentinela 9999-12-31 indica vigência ativa.'
     )
     data_registro_inicio = models.DateField(
-        verbose_name='Data de Registro Início',
+        verbose_name='Data de Início do Registro',
         help_text='Data em que o sistema registrou esta informação (transaction_time - início)'
     )
     data_registro_fim = models.DateField(
-        verbose_name='Data de Registro Fim',
+        verbose_name='Data do Fim do Registro',
         help_text='Data em que esta informação deixou de ser considerada verdadeira pelo sistema (transaction_time - fim). Valor sentinela 9999-12-31 indica registro ativo.'
     )
 

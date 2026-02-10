@@ -177,7 +177,7 @@ fields:
       required: true
   - name: data_vigencia_fim
     type: date
-    title: Data de Fim da Vigência
+    title: Data do Fim da Vigência
     description: |
       Data até a qual a norma permanece vigente (capaz de surtir efeitos e de ser exigível). Valor
       sentinela 9999-12-31 indica vigência ativa no momento corrente e futuro.

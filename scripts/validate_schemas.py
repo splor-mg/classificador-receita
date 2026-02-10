@@ -12,6 +12,7 @@ Requisitos:
 """
 
 import sys
+import subprocess
 from pathlib import Path
 from datetime import datetime
 from frictionless import validate, Package, Schema
@@ -66,34 +67,28 @@ def validate_datapackage(log_lines: list[str]) -> bool:
     _log(f"\n📦 Validando datapackage.yaml...\n", log_lines)
 
     try:
-        # Carrega o package para inspecionar metadados (paths, schemas)
-        package = Package(datapackage_file)
-        # Usa validate no arquivo descriptor, como a CLI faz
+        # Usa validate no arquivo descriptor para saber se está válido
         report = validate(str(datapackage_file))
         if report.valid:
             _log("✅ datapackage.yaml: válido", log_lines)
-            _log(f"   - {len(package.resources)} recursos definidos", log_lines)
             return True
         else:
             _log("❌ datapackage.yaml: inválido", log_lines)
-            # Tenta primeiro erros diretos (metadata); em seguida, flattens por recurso
-            if report.errors:
-                for error in report.errors:
-                    _log(f"   - {error.message}", log_lines)
-            else:
-                # Usamos flatten para obter mensagens por recurso/tabela, em formato enxuto
-                for resource_name, err_type, note in report.flatten(["resourceName", "type", "note"]):
-                    _log(f"   - {resource_name}: {err_type} - {note}", log_lines)
-                    # Quando houver um recurso associado, registra também schema e path declarados no datapackage
-                    if resource_name:
-                        try:
-                            resource = package.get_resource(resource_name)
-                        except Exception:
-                            resource = None
-                        if resource is not None:
-                            schema_ref = resource.descriptor.get("schema")
-                            path = resource.path
-                            _log(f"     schema={schema_ref} path={path}", log_lines)
+
+            # Quando o datapackage for inválido, executa o CLI do Frictionless
+            # com saída direta no terminal (stdout/stderr herdados) para que
+            # as cores (ex.: verde para VALID) e o layout sejam idênticos a:
+            #   poetry run frictionless validate datapackage.yaml
+            _log("\n===== Saída de 'frictionless validate datapackage.yaml' (no terminal) =====\n", log_lines)
+            try:
+                subprocess.run(
+                    ["frictionless", "validate", str(datapackage_file)],
+                    check=False,
+                    # Sem capture: CLI escreve direto no terminal e usa cores (TTY)
+                )
+                _log("(Relatório detalhado exibido acima no terminal.)", log_lines)
+            except Exception as e:
+                _log(f"   (Falha ao executar CLI 'frictionless validate': {e})", log_lines)
             return False
     except Exception as e:
         _log(f"❌ datapackage.yaml: erro ao validar - {str(e)}", log_lines)

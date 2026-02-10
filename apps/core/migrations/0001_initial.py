@@ -32,21 +32,21 @@ class Migration(migrations.Migration):
                     "data_vigencia_fim",
                     models.DateField(
                         help_text="Data de fim da vigência (valid_time - fim). Valor sentinela 9999-12-31 indica vigência ativa.",
-                        verbose_name="Data de Fim da Vigência",
+                        verbose_name="Data do Fim da Vigência",
                     ),
                 ),
                 (
                     "data_registro_inicio",
                     models.DateTimeField(
                         help_text="Data e hora em que o sistema registrou esta informação (transaction_time - início)",
-                        verbose_name="Data/Hora de Registro Início",
+                        verbose_name="Data de Início do Registro",
                     ),
                 ),
                 (
                     "data_registro_fim",
                     models.DateTimeField(
                         help_text="Data e hora em que esta informação deixou de ser considerada verdadeira pelo sistema (transaction_time - fim). Valor sentinela 9999-12-31 23:59:59 indica registro ativo.",
-                        verbose_name="Data/Hora de Registro Fim",
+                        verbose_name="Data do Fim do Registro",
                     ),
                 ),
                 (
@@ -122,21 +122,21 @@ class Migration(migrations.Migration):
                     "data_vigencia_fim",
                     models.DateField(
                         help_text="Data de fim da vigência (valid_time - fim). Valor sentinela 9999-12-31 indica vigência ativa.",
-                        verbose_name="Data de Fim da Vigência",
+                        verbose_name="Data do Fim da Vigência",
                     ),
                 ),
                 (
                     "data_registro_inicio",
                     models.DateTimeField(
                         help_text="Data e hora em que o sistema registrou esta informação (transaction_time - início)",
-                        verbose_name="Data/Hora de Registro Início",
+                        verbose_name="Data de Início do Registro",
                     ),
                 ),
                 (
                     "data_registro_fim",
                     models.DateTimeField(
                         help_text="Data e hora em que esta informação deixou de ser considerada verdadeira pelo sistema (transaction_time - fim). Valor sentinela 9999-12-31 23:59:59 indica registro ativo.",
-                        verbose_name="Data/Hora de Registro Fim",
+                        verbose_name="Data do Fim do Registro",
                     ),
                 ),
                 (
@@ -235,21 +235,21 @@ class Migration(migrations.Migration):
                     "data_vigencia_fim",
                     models.DateField(
                         help_text="Data de fim da vigência (valid_time - fim). Valor sentinela 9999-12-31 indica vigência ativa.",
-                        verbose_name="Data de Fim da Vigência",
+                        verbose_name="Data do Fim da Vigência",
                     ),
                 ),
                 (
                     "data_registro_inicio",
                     models.DateTimeField(
                         help_text="Data e hora em que o sistema registrou esta informação (transaction_time - início)",
-                        verbose_name="Data/Hora de Registro Início",
+                        verbose_name="Data de Início do Registro",
                     ),
                 ),
                 (
                     "data_registro_fim",
                     models.DateTimeField(
                         help_text="Data e hora em que esta informação deixou de ser considerada verdadeira pelo sistema (transaction_time - fim). Valor sentinela 9999-12-31 23:59:59 indica registro ativo.",
-                        verbose_name="Data/Hora de Registro Fim",
+                        verbose_name="Data do Fim do Registro",
                     ),
                 ),
                 (
@@ -363,21 +363,21 @@ class Migration(migrations.Migration):
                     "data_vigencia_fim",
                     models.DateField(
                         help_text="Data de fim da vigência (valid_time - fim). Valor sentinela 9999-12-31 indica vigência ativa.",
-                        verbose_name="Data de Fim da Vigência",
+                        verbose_name="Data do Fim da Vigência",
                     ),
                 ),
                 (
                     "data_registro_inicio",
                     models.DateTimeField(
                         help_text="Data e hora em que o sistema registrou esta informação (transaction_time - início)",
-                        verbose_name="Data/Hora de Registro Início",
+                        verbose_name="Data de Início do Registro",
                     ),
                 ),
                 (
                     "data_registro_fim",
                     models.DateTimeField(
                         help_text="Data e hora em que esta informação deixou de ser considerada verdadeira pelo sistema (transaction_time - fim). Valor sentinela 9999-12-31 23:59:59 indica registro ativo.",
-                        verbose_name="Data/Hora de Registro Fim",
+                        verbose_name="Data do Fim do Registro",
                     ),
                 ),
                 (
@@ -466,21 +466,21 @@ class Migration(migrations.Migration):
                     "data_vigencia_fim",
                     models.DateField(
                         help_text="Data de fim da vigência (valid_time - fim). Valor sentinela 9999-12-31 indica vigência ativa.",
-                        verbose_name="Data de Fim da Vigência",
+                        verbose_name="Data do Fim da Vigência",
                     ),
                 ),
                 (
                     "data_registro_inicio",
                     models.DateTimeField(
                         help_text="Data e hora em que o sistema registrou esta informação (transaction_time - início)",
-                        verbose_name="Data/Hora de Registro Início",
+                        verbose_name="Data de Início do Registro",
                     ),
                 ),
                 (
                     "data_registro_fim",
                     models.DateTimeField(
                         help_text="Data e hora em que esta informação deixou de ser considerada verdadeira pelo sistema (transaction_time - fim). Valor sentinela 9999-12-31 23:59:59 indica registro ativo.",
-                        verbose_name="Data/Hora de Registro Fim",
+                        verbose_name="Data do Fim do Registro",
                     ),
                 ),
                 (
@@ -563,21 +563,21 @@ class Migration(migrations.Migration):
                     "data_vigencia_fim",
                     models.DateField(
                         help_text="Data de fim da vigência (valid_time - fim). Valor sentinela 9999-12-31 indica vigência ativa.",
-                        verbose_name="Data de Fim da Vigência",
+                        verbose_name="Data do Fim da Vigência",
                     ),
                 ),
                 (
                     "data_registro_inicio",
                     models.DateTimeField(
                         help_text="Data e hora em que o sistema registrou esta informação (transaction_time - início)",
-                        verbose_name="Data/Hora de Registro Início",
+                        verbose_name="Data de Início do Registro",
                     ),
                 ),
                 (
                     "data_registro_fim",
                     models.DateTimeField(
                         help_text="Data e hora em que esta informação deixou de ser considerada verdadeira pelo sistema (transaction_time - fim). Valor sentinela 9999-12-31 23:59:59 indica registro ativo.",
-                        verbose_name="Data/Hora de Registro Fim",
+                        verbose_name="Data do Fim do Registro",
                     ),
                 ),
                 (

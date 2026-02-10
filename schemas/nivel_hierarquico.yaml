@@ -78,23 +78,23 @@ fields:
       required: true
   - name: data_vigencia_fim
     type: date
-    title: Data de Fim da Vigência
+    title: Data do Fim da Vigência
     description: |
       Data de fim da vigência do nível. Valor sentinela 9999-12-31 indica vigência ativa no momento corrente e futuro.
     gsim: ClassificationLevel.validTo
     constraints:
       required: true
   - name: data_registro_inicio
-    type: datetime
-    title: Data/Hora de Registro Início
+    type: date
+    title: Data de Início do Registro
     description: |
       Data e hora em que o sistema registrou esta informação.
     gsim: ClassificationLevel.transactionTimeStart
     constraints:
       required: true
   - name: data_registro_fim
-    type: datetime
-    title: Data/Hora de Registro Fim
+    type: date
+    title: Data do Fim do Registro
     description: |
       Data em que esta informação deixou de ser considerada verdadeira pelo sistema. Valor sentinela 9999-12-31 indica registro ativo no momento corrente e futuro.
     gsim: ClassificationLevel.transactionTimeEnd

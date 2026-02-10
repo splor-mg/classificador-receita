@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
             name="data_registro_fim",
             field=models.DateField(
                 help_text="Data em que esta informação deixou de ser considerada verdadeira pelo sistema (transaction_time - fim). Valor sentinela 9999-12-31 indica registro ativo.",
-                verbose_name="Data de Registro Fim",
+                verbose_name="Data do Fim do Registro",
             ),
         ),
         migrations.AlterField(
@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
             name="data_registro_inicio",
             field=models.DateField(
                 help_text="Data em que o sistema registrou esta informação (transaction_time - início)",
-                verbose_name="Data de Registro Início",
+                verbose_name="Data de Início do Registro",
             ),
         ),
         migrations.AlterField(
@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
             name="data_registro_fim",
             field=models.DateField(
                 help_text="Data em que esta informação deixou de ser considerada verdadeira pelo sistema (transaction_time - fim). Valor sentinela 9999-12-31 indica registro ativo.",
-                verbose_name="Data de Registro Fim",
+                verbose_name="Data do Fim do Registro",
             ),
         ),
         migrations.AlterField(
@@ -39,7 +39,7 @@ class Migration(migrations.Migration):
             name="data_registro_inicio",
             field=models.DateField(
                 help_text="Data em que o sistema registrou esta informação (transaction_time - início)",
-                verbose_name="Data de Registro Início",
+                verbose_name="Data de Início do Registro",
             ),
         ),
         migrations.AlterField(
@@ -47,7 +47,7 @@ class Migration(migrations.Migration):
             name="data_registro_fim",
             field=models.DateField(
                 help_text="Data em que esta informação deixou de ser considerada verdadeira pelo sistema (transaction_time - fim). Valor sentinela 9999-12-31 indica registro ativo.",
-                verbose_name="Data de Registro Fim",
+                verbose_name="Data do Fim do Registro",
             ),
         ),
         migrations.AlterField(
@@ -55,7 +55,7 @@ class Migration(migrations.Migration):
             name="data_registro_inicio",
             field=models.DateField(
                 help_text="Data em que o sistema registrou esta informação (transaction_time - início)",
-                verbose_name="Data de Registro Início",
+                verbose_name="Data de Início do Registro",
             ),
         ),
         migrations.AlterField(
@@ -63,7 +63,7 @@ class Migration(migrations.Migration):
             name="data_registro_fim",
             field=models.DateField(
                 help_text="Data em que esta informação deixou de ser considerada verdadeira pelo sistema (transaction_time - fim). Valor sentinela 9999-12-31 indica registro ativo.",
-                verbose_name="Data de Registro Fim",
+                verbose_name="Data do Fim do Registro",
             ),
         ),
         migrations.AlterField(
@@ -71,7 +71,7 @@ class Migration(migrations.Migration):
             name="data_registro_inicio",
             field=models.DateField(
                 help_text="Data em que o sistema registrou esta informação (transaction_time - início)",
-                verbose_name="Data de Registro Início",
+                verbose_name="Data de Início do Registro",
             ),
         ),
         migrations.AlterField(
@@ -79,7 +79,7 @@ class Migration(migrations.Migration):
             name="data_registro_fim",
             field=models.DateField(
                 help_text="Data em que esta informação deixou de ser considerada verdadeira pelo sistema (transaction_time - fim). Valor sentinela 9999-12-31 indica registro ativo.",
-                verbose_name="Data de Registro Fim",
+                verbose_name="Data do Fim do Registro",
             ),
         ),
         migrations.AlterField(
@@ -87,7 +87,7 @@ class Migration(migrations.Migration):
             name="data_registro_inicio",
             field=models.DateField(
                 help_text="Data em que o sistema registrou esta informação (transaction_time - início)",
-                verbose_name="Data de Registro Início",
+                verbose_name="Data de Início do Registro",
             ),
         ),
         migrations.AlterField(
@@ -95,7 +95,7 @@ class Migration(migrations.Migration):
             name="data_registro_fim",
             field=models.DateField(
                 help_text="Data em que esta informação deixou de ser considerada verdadeira pelo sistema (transaction_time - fim). Valor sentinela 9999-12-31 indica registro ativo.",
-                verbose_name="Data de Registro Fim",
+                verbose_name="Data do Fim do Registro",
             ),
         ),
         migrations.AlterField(
@@ -103,7 +103,7 @@ class Migration(migrations.Migration):
             name="data_registro_inicio",
             field=models.DateField(
                 help_text="Data em que o sistema registrou esta informação (transaction_time - início)",
-                verbose_name="Data de Registro Início",
+                verbose_name="Data de Início do Registro",
             ),
         ),
     ]
