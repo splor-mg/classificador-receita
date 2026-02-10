@@ -40,16 +40,6 @@ resources:
     schema: schemas/serie_classificacao.yaml
     description: Série de classificações (GSIM ClassificationSeries). Representa uma coleção de classificações estatísticas relacionadas.
 
-  - name: base_legal_tecnica
-    type: table
-    path: docs/assets/seed_base_legal_tecnica.csv
-    scheme: file
-    format: csv
-    mediatype: text/csv
-    encoding: utf-8
-    schema: schemas/base_legal_tecnica.yaml
-    description: Base legal e técnica (normas, manuais, decisões judiciais, portarias e congêneres) que podem afetar as tabelas de classificação.
-
   - name: classificacao
     type: table
     path: docs/assets/seed_classificacao.csv
@@ -99,4 +89,14 @@ resources:
     encoding: utf-8
     schema: schemas/variante_classificacao.yaml
     description: Variantes da classificação (GSIM ClassificationVariant). Variantes são extensões, agregações ou reagrupamentos para relatórios e normas específicas de MG.
+
+  - name: base_legal_tecnica
+    type: table
+    path: docs/assets/seed_base_legal_tecnica.csv
+    scheme: file
+    format: csv
+    mediatype: text/csv
+    encoding: utf-8
+    schema: schemas/base_legal_tecnica.yaml
+    description: Base legal e técnica (normas, manuais, decisões judiciais, portarias e congêneres) que podem afetar as tabelas de classificação.
 
