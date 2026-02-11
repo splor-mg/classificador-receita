@@ -31,6 +31,7 @@ keywords:
 
 resources:
   - name: serie_classificacao
+    gsim: ClassificationSeries
     type: table
     path: docs/assets/seed_serie_classificacao.csv
     scheme: file
@@ -41,6 +42,7 @@ resources:
     description: Série de classificações (GSIM ClassificationSeries). Representa uma coleção de classificações estatísticas relacionadas.
 
   - name: classificacao
+    gsim: StatisticalClassification
     type: table
     path: docs/assets/seed_classificacao.csv
     scheme: file
@@ -51,6 +53,7 @@ resources:
     description: Classificação estatística principal (GSIM StatisticalClassification). Representa o Classificador de Natureza de Receita do Estado de Minas Gerais.
 
   - name: nivel_hierarquico
+    gsim: ClassificationLevel
     type: table
     path: docs/assets/seed_nivel_hierarquico.csv
     scheme: file
@@ -61,6 +64,7 @@ resources:
     description: Níveis hierárquicos da classificação (GSIM ClassificationLevel). Define os 9 níveis do classificador de receita MG.
 
   - name: item_classificacao
+    gsim: ClassificationItem
     type: table
     path: docs/assets/seed_item_classificacao.csv
     scheme: file
@@ -71,6 +75,7 @@ resources:
     description: Itens de classificação (GSIM ClassificationItem). Representa cada código e sua descrição nos diferentes níveis hierárquicos.
 
   - name: versao_classificacao
+    gsim: ClassificationVersion
     type: table
     path: docs/assets/seed_versao_classificacao.csv
     scheme: file
@@ -81,6 +86,7 @@ resources:
     description: Versões da classificação (GSIM ClassificationVersion). Versões são reservadas para mudanças que alteram fronteiras conceituais entre categorias.
 
   - name: variante_classificacao
+    gsim: ClassificationVariant
     type: table
     path: docs/assets/seed_variante_classificacao.csv
     scheme: file
@@ -91,6 +97,7 @@ resources:
     description: Variantes da classificação (GSIM ClassificationVariant). Variantes são extensões, agregações ou reagrupamentos para relatórios e normas específicas de MG.
 
   - name: base_legal_tecnica
+    gsim: LegalFramework
     type: table
     path: docs/assets/seed_base_legal_tecnica.csv
     scheme: file
