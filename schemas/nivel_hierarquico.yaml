@@ -112,6 +112,12 @@ fields:
 primaryKey:
   - nivel_id
   - data_registro_inicio
+uniqueConstraints:
+  # Garante que, dentro de uma mesma classificação, não existam dois níveis com o mesmo
+  # nivel_numero abrindo na mesma data de registro (janela de transação). Ou seja: cada
+  # classificação tem no máximo um "nível 1", um "nível 2", etc., por data_registro_inicio.
+  # Refletido no model Django como UniqueConstraint unq_nivel_numero_classif.
+  - [classificacao_id, nivel_numero, data_registro_inicio]
 foreignKeys:
   - fields:
       - classificacao_id
