@@ -20,32 +20,32 @@ class SerieClassificacaoAdmin(admin.ModelAdmin):
 
 @admin.register(ClassificacaoReceita)
 class ClassificacaoReceitaAdmin(admin.ModelAdmin):
-    list_display = ['classificacao_id', 'classificacao_nome', 'serie', 'tipo_classificacao', 'numero_niveis', 'data_vigencia_inicio']
-    list_filter = ['tipo_classificacao', 'numero_niveis', 'serie', 'data_vigencia_inicio']
+    list_display = ['classificacao_id', 'classificacao_nome', 'serie_id', 'tipo_classificacao', 'numero_niveis', 'data_vigencia_inicio']
+    list_filter = ['tipo_classificacao', 'numero_niveis', 'serie_id', 'data_vigencia_inicio']
     search_fields = ['classificacao_id', 'classificacao_nome', 'descricao']
     readonly_fields = ['data_registro_inicio', 'data_registro_fim']
     date_hierarchy = 'data_vigencia_inicio'
-    raw_id_fields = ['serie']
+    raw_id_fields = ['serie_id']
 
 
 @admin.register(NivelHierarquico)
 class NivelHierarquicoAdmin(admin.ModelAdmin):
-    list_display = ['nivel_id', 'nivel_numero', 'nivel_nome', 'classificacao', 'tipo_codigo', 'data_vigencia_inicio']
-    list_filter = ['nivel_numero', 'tipo_codigo', 'classificacao', 'data_vigencia_inicio']
+    list_display = ['nivel_id', 'nivel_numero', 'nivel_nome', 'classificacao_id', 'tipo_codigo', 'data_vigencia_inicio']
+    list_filter = ['nivel_numero', 'tipo_codigo', 'classificacao_id', 'data_vigencia_inicio']
     search_fields = ['nivel_id', 'nivel_nome', 'descricao']
     readonly_fields = ['data_registro_inicio', 'data_registro_fim']
     date_hierarchy = 'data_vigencia_inicio'
-    raw_id_fields = ['classificacao']
+    raw_id_fields = ['classificacao_id']
 
 
 @admin.register(ItemClassificacao)
 class ItemClassificacaoAdmin(admin.ModelAdmin):
-    list_display = ['codigo_completo', 'codigo_numerico', 'nome_oficial', 'nivel', 'valido_atualmente', 'data_vigencia_inicio']
-    list_filter = ['valido_atualmente', 'item_gerado', 'nivel', 'data_vigencia_inicio']
-    search_fields = ['codigo_completo', 'codigo_numerico', 'nome_oficial', 'item_id']
+    list_display = ['receita_cod', 'item_id', 'receita_nome', 'nivel_id', 'matriz', 'item_gerado', 'data_vigencia_inicio']
+    list_filter = ['matriz', 'item_gerado', 'nivel_id', 'data_vigencia_inicio']
+    search_fields = ['receita_cod', 'receita_nome', 'item_id']
     readonly_fields = ['data_registro_inicio', 'data_registro_fim']
     date_hierarchy = 'data_vigencia_inicio'
-    raw_id_fields = ['nivel', 'parent_item']
+    raw_id_fields = ['classificacao_id', 'nivel_id', 'parent_item_id', 'base_legal_tecnica_id']
 
 
 @admin.register(VersaoClassificacao)
