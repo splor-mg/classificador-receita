@@ -24,7 +24,7 @@ Para resolver esse problema, este ADR propõe a adoção explícita de um **mode
 
 Adotar um **modelo bitemporal implementado diretamente no banco de dados PostgreSQL**, com as seguintes diretrizes:
 
-1 - **Camada de dados bitemporal (núcleo do modelo)**
+### 1 - **Camada de dados bitemporal (núcleo do modelo)**
 
 Cada entidade temporalmente sensível (ex.: itens de classificação, versões, variantes) terá, no mínimo:
   
@@ -33,16 +33,8 @@ Cada entidade temporalmente sensível (ex.: itens de classificação, versões, 
    
 Adotar convenção de intervalos "abertos à direita" (ex.: `data_vigencia_fim` e `data_registro_fim`), utilizando um **valor sentinela** (_sentinel value_) para representar intervalos que permanecem abertos no futuro. O valor sentinela escolhido é `9999-12-31`, que representa uma data suficientemente distante no futuro para ser tratada como "indefinida" ou "até o momento presente". Algumas implementações tratam intervalos abertos usando `NULL` em vez de um valor sentinela. Optamos por não adotar `NULL` porque: (1) simplifica consultas SQL ao evitar condições `IS NULL` em cláusulas `WHERE` e comparações de intervalo; (2) permite índices mais eficientes em colunas de data sem necessidade de lógica especial para `NULL`; (3) facilita operações de comparação temporal (ex.: `data_vigencia_fim >= CURRENT_DATE`) sem tratamento de casos especiais; (4) mantém consistência com a literatura de bancos temporais que recomenda valores sentinela para intervalos abertos.
 
-2 - **Registro de histórico como _append-only_ lógico**
 
-  - Alterações relevantes (inativação, reclassificação, correções) não sobrescrevem registros, mas **criam novas linhas** com novos intervalos de `valid_time` e `transaction_time`.
-  - Este padrão é compatível com o **Slowly Changing Dimensions (SCD) Type 2**, indo além ao incorporar também o tempo de transação (`transaction_time`) para suporte completo a auditoria.
-  - **Sobre SCD Type 2**: O padrão Slowly Changing Dimensions (SCD) Type 2, proposto por Kimball e Ross para data warehousing, trata de como gerenciar mudanças históricas em dimensões. No SCD Type 2, quando um atributo de uma dimensão muda, em vez de atualizar o registro existente, cria-se um novo registro com uma nova chave substituta e mantém-se o registro antigo para preservar o histórico. O modelo bitemporal adotado aqui segue essa lógica de "append-only" (criar novos registros em vez de sobrescrever), mas estende o SCD Type 2 ao incorporar dois eixos temporais. Isso permite não apenas rastrear "o que era válido em uma data" (como no SCD Type 2 tradicional), mas também "o que o sistema sabia em uma data", essencial para auditoria completa.
-  - O estado "corrente" é sempre o registro com:
-    - `data_registro_fim` igual ao valor sentinela, e
-    - intervalo de `valid_time` que contenha a data de referência (ou "hoje").
-
-2 - **Registro de histórico como _append-only_ lógico**
+### 2 - **Registro de histórico como _append-only_ lógico**
 
 O Slowly Changing Dimensions (SCD) é uma metodologia/abordagem amplamente utilizada em data warehousing para gerenciar mudanças em dados dimensionais ao longo do tempo, e identifica diferentes modelos de gestão, distinguindo-os em relação à forma de recuperação de um registro histórico vigente no tempo.
 
@@ -54,10 +46,20 @@ O **estado "corrente"** de uma classificação, em uma data de referência, é i
 - é a linha cujo `data_registro_fim` ainda está com o **valor sentinela** (ou seja, o sistema ainda considera aquela versão como verdadeira); e  
 - cujo intervalo de `valid_time` (`data_vigencia_inicio` e `data_vigencia_fim`) contém a data de referência. Por exemplo, a data de hoje está entre `data_vigencia_inicio` e `data_vigencia_fim`, considerando também o valor sentinela para vigência em aberto.
 
-Dessa forma, o modelo consegue ao mesmo tempo preservar todas as versões históricas e oferecer uma regra clara para saber **qual linha representa a situação vigente em determinada data**.
+Dessa forma, o modelo consegue ao mesmo tempo preservar todas as versões históricas e oferecer uma regra clara para saber **qual linha representa a situação vigente em determinada data**, de tal forma que:
 
+  - Alterações relevantes (inativação, reclassificação, correções) não sobrescrevem registros, mas **criam novas linhas** com novos intervalos de `valid_time` e `transaction_time`.
+  - Este padrão é compatível com o **Slowly Changing Dimensions (SCD) Type 2**, indo além ao incorporar também o tempo de transação (`transaction_time`) para suporte completo a auditoria.
+  - **Sobre SCD Type 2**: O padrão Slowly Changing Dimensions (SCD) Type 2, proposto por Kimball e Ross para data warehousing, trata de como gerenciar mudanças históricas em dimensões. No SCD Type 2, quando um atributo de uma dimensão muda, em vez de atualizar o registro existente, cria-se um novo registro com uma nova chave substituta e mantém-se o registro antigo para preservar o histórico. O modelo bitemporal adotado aqui segue essa lógica de "append-only" (criar novos registros em vez de sobrescrever), mas estende o SCD Type 2 ao incorporar dois eixos temporais. Isso permite não apenas rastrear "o que era válido em uma data" (como no SCD Type 2 tradicional), mas também "o que o sistema sabia em uma data", essencial para auditoria completa.
+  - O estado "corrente" é sempre o registro com:
+    - `data_registro_fim` igual ao valor sentinela, e
+    - intervalo de `valid_time` que contenha a data de referência (ou "hoje").
 
-3 - **Responsabilidade principal no banco, com apoio da aplicação (modelo híbrido simples)**
+### 3 - **Entidades que não serão tratadas pelo modelo bitemporal**
+
+  - Algumas entidades têm caráter preponderantemente de **dimensão de referência**, como a tabela de base legal e técnica. Para elas, a completa reconstituição do registro temporal (eixo de transação) não é de relevância para o projeto: interessa sobretudo a vigência no mundo real (`valid_time`), não o histórico de quando cada alteração foi registrada no sistema. Essa distinção é uma das razões pelas quais a modelagem desse recurso foi feita em arquivo separado, [`apps/core/models_base_legal.py`](../../apps/core/models_base_legal.py), com modelo apenas de vigência (sem bitemporalidade).
+
+### 4 - **Responsabilidade principal no banco, com apoio da aplicação (modelo híbrido simples)**
 
   - **Triggers em PostgreSQL** serão usados para:
     - Fechar `data_registro_fim` do registro anterior em uma alteração.
@@ -69,7 +71,7 @@ Dessa forma, o modelo consegue ao mesmo tempo preservar todas as versões histó
       - **Consultas "as-of"** (também chamadas de _point-in-time queries_): Permitem consultar o estado dos dados em uma data específica do passado, seja do ponto de vista de validade (`valid_time`) ou do conhecimento do sistema (`transaction_time`). Por exemplo: "qual era a classificação vigente em 2023-06-15?" ou "o que o sistema sabia sobre essa classificação em 2023-06-15?". Essas consultas são essenciais para auditoria, reprodução de análises históricas e conformidade legal.
   - Ou seja, a lógica de integridade temporal básica fica no banco; a semântica de negócio (quando considerar mudança relevante) fica na aplicação / regras de negócio da DCAF.
 
-### Por que `data_registro_fim` é diferente de `data_vigencia_fim`?
+## Por que `data_registro_fim` é diferente de `data_vigencia_fim`?
 
 **Importante**: `data_registro_fim` e `data_vigencia_fim` servem a propósitos completamente diferentes e **não são coincidentes**. A confusão entre esses dois eixos temporais é comum, mas entender a diferença é fundamental para o modelo bitemporal.
 
