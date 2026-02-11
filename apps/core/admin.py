@@ -7,6 +7,7 @@ from .models import (
     VersaoClassificacao,
     VarianteClassificacao,
 )
+from .models_base_legal import BaseLegalTecnica
 
 
 @admin.register(SerieClassificacao)
@@ -25,7 +26,7 @@ class ClassificacaoReceitaAdmin(admin.ModelAdmin):
     search_fields = ['classificacao_id', 'classificacao_nome', 'descricao']
     readonly_fields = ['data_registro_inicio', 'data_registro_fim']
     date_hierarchy = 'data_vigencia_inicio'
-    raw_id_fields = ['serie_id']
+    raw_id_fields = ['serie_id', 'base_legal_tecnica_id']
 
 
 @admin.register(NivelHierarquico)
@@ -66,3 +67,11 @@ class VarianteClassificacaoAdmin(admin.ModelAdmin):
     readonly_fields = ['data_registro_inicio', 'data_registro_fim']
     date_hierarchy = 'data_vigencia_inicio'
     raw_id_fields = ['classificacao', 'versao']
+
+
+@admin.register(BaseLegalTecnica)
+class BaseLegalTecnicaAdmin(admin.ModelAdmin):
+    list_display = ['base_legal_tecnica_id', 'titulo_norma', 'tipo_legal', 'esfera_federativa', 'data_edicao']
+    list_filter = ['tipo_legal', 'esfera_federativa', 'data_edicao']
+    search_fields = ['base_legal_tecnica_id', 'titulo_norma', 'ementa']
+    date_hierarchy = 'data_edicao'

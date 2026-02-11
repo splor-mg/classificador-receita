@@ -529,12 +529,14 @@ class ItemClassificacao(BitemporalModel):
         indexes = [
             models.Index(fields=['item_id', 'data_registro_fim'], name='idx_item_registro_fim'),
             models.Index(fields=['receita_cod', 'data_registro_fim'], name='idx_item_codigo_registro_fim'),
-            models.Index(fields=['nivel', 'data_vigencia_inicio'], name='idx_item_nivel_vigencia'),
-            models.Index(fields=['parent_item'], name='idx_item_parent'),
+            models.Index(fields=['nivel_id', 'data_vigencia_inicio'], name='idx_item_nivel_vigencia'),
+            models.Index(fields=['parent_item_id'], name='idx_item_parent'),
         ]
 
     def __str__(self):
-        return f"{self.codigo_completo} - {self.nome_oficial}"
+        codigo = self.receita_cod or self.item_id or ''
+        nome = self.receita_nome or self.item_id or ''
+        return f"{codigo} - {nome}"
 
 
 class VersaoClassificacao(BitemporalModel):
