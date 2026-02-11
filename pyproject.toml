@@ -36,7 +36,11 @@ package-mode = false
 
 [tool.taskipy.tasks]
 # Django
+makemigrations = { cmd = "python manage.py makemigrations", help = "Gera migrações para banco de dados." }
 migrate = { cmd = "python manage.py migrate", help = "Migra mudanças para banco de dados." }
+carregar = { cmd = "python manage.py carregar_classificador", help = "Carrega dados iniciais a partir do datapackage.yaml (docs/assets/seed_*.csv). Opções: --datapackage=<caminho>, --resource=<nome>, --dry-run, --clear (limpa tabelas antes de recarregar). Exemplo: `poetry run task carregar -- --clear`, mantendo -- após a task para repassar argumentos ao script." }
+# Django Development
+initial-migration = { cmd = "python manage.py makemigrations --name initial", help = "Gera migrações com nome 'initial' para todos os apps que tiverem alterações. Para aplicar ao banco, rode em seguida: poetry run task migrate." }
 dev-server = { cmd = "python manage.py runserver", help = "Liga servidor de desenvolvimento." }
 
 # Documentation
@@ -44,7 +48,7 @@ build-docs = { cmd = "zensical build --clean", help = "Gera a documentação est
 serve = { cmd = "zensical serve -a localhost:8001", help = "Inicia o servidor de preview da documentação em http://localhost:8001 (porta 8001 para não conflitar com o Django em 8000)." }
 
 # Utils
-validar-tudo = { cmd = "python scripts/validate_datapackage.py && python scripts/validate_code.py && python scripts/validate_quality.py", help = "Executa validar-datapackage, validar-codigos e validar-qualidade em sequência." }
+validar-tudo = { cmd = "python scripts/validate_datapackage.py && python scripts/validate_code.py && python scripts/validate_domains.py && python scripts/validate_quality.py", help = "Executa validar-datapackage, validar-codigos, validar-dominios e validar-qualidade em sequência." }
 validar-datapackage = { cmd = "python scripts/validate_datapackage.py", help = "Valida os schemas Frictionless e o datapackage.yaml principal. Rode com --resource-name=<nome_do_recurso> para validar apenas um recurso específico." }
 validar-codigos = { cmd = "python scripts/validate_code.py", help = "Valida a quantidade de dígitos de receita_cod conforme a classificação (registro e vigência, SCD-2)." }
 validar-dominios = { cmd = "python scripts/validate_domains.py", help = "Valida domínios compartilhados (custom.domainRef) e a presença de 'values' nos arquivos de domínio em schemas/dominios/." }

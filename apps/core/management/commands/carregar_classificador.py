@@ -1,32 +1,378 @@
-from django.core.management.base import BaseCommand
-from core.models import SerieClassificacao  # ajuste para os models que quer popular
-from django.utils import timezone
+from pathlib import Path
+from typing import Iterable, Mapping, Any
+
+from django.core.management.base import BaseCommand, CommandParser
+from django.db import transaction
+
+from frictionless import Package, Resource
+
+from core.models import (
+    SerieClassificacao,
+    BaseLegalTecnica,
+    ClassificacaoReceita,
+    NivelHierarquico,
+    ItemClassificacao,
+    VersaoClassificacao,
+    VarianteClassificacao,
+)
 
 
 class Command(BaseCommand):
-    help = "Carrega dados iniciais do classificador de receita no banco"
+    help = (
+        "Carrega dados iniciais do classificador de receita a partir do datapackage.yaml "
+        "e dos arquivos seed_* declarados nos recursos."
+    )
 
-    def handle(self, *args, **options):
-        # Exemplo simples para mostrar a estrutura
-        if SerieClassificacao.objects.exists():
-            self.stdout.write(self.style.WARNING(
-                "Já existem registros em SerieClassificacao. Nada foi feito."
-            ))
-            return
-
-        agora = timezone.now().date()
-        # Aqui você colocaria os dados reais, vindos de CSV/YAML/etc.
-        SerieClassificacao.objects.create(
-            serie_id="CLASS_REC_MG",
-            serie_nome="Classificador de Natureza de Receita - MG",
-            descricao="Série principal do classificador de natureza de receita do Estado de Minas Gerais.",
-            orgao_responsavel="SPLOR/MG",
-            data_vigencia_inicio=agora,
-            data_vigencia_fim="9999-12-31",
-            data_registro_inicio=agora,
-            data_registro_fim="9999-12-31",
+    def add_arguments(self, parser: CommandParser) -> None:
+        parser.add_argument(
+            "--datapackage",
+            default="datapackage.yaml",
+            help="Caminho para o datapackage.yaml (padrão: %(default)s).",
+        )
+        parser.add_argument(
+            "--resource",
+            help=(
+                "Nome de um recurso específico do Data Package a ser carregado "
+                "(ex.: serie_classificacao, classificacao, nivel_hierarquico...). "
+                "Se omitido, carrega todos os recursos na ordem recomendada."
+            ),
+        )
+        parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="Executa apenas leitura/contagem das linhas dos recursos, sem escrever no banco.",
+        )
+        parser.add_argument(
+            "--clear",
+            action="store_true",
+            help=(
+                "Antes de carregar, limpa as tabelas correspondentes (ordem inversa das dependências). "
+                "Use com cuidado em ambientes com dados."
+            ),
         )
 
-        self.stdout.write(self.style.SUCCESS(
-            "Dados iniciais do classificador carregados com sucesso."
-        ))
+    def handle(self, *args, **options) -> None:
+        datapackage_path = Path(options["datapackage"])
+        resource_filter = options.get("resource")
+        dry_run: bool = options["dry_run"]
+        clear: bool = options["clear"]
+
+        if not datapackage_path.exists():
+            self.stderr.write(self.style.ERROR(f"datapackage.yaml não encontrado em {datapackage_path}"))
+            return
+
+        package = Package(str(datapackage_path))
+
+        # Ordem de carregamento previamente alinhada
+        load_order = [
+            "serie_classificacao",
+            "base_legal_tecnica",
+            "classificacao",
+            "nivel_hierarquico",
+            "versao_classificacao",
+            "variante_classificacao",
+            "item_classificacao",
+        ]
+
+        if resource_filter:
+            if resource_filter not in load_order:
+                self.stderr.write(
+                    self.style.ERROR(
+                        f"Recurso '{resource_filter}' não é conhecido. "
+                        f"Recursos válidos: {', '.join(load_order)}"
+                    )
+                )
+                return
+            resources_to_load = [resource_filter]
+        else:
+            resources_to_load = load_order
+
+        # Mapeamento recurso -> model Django
+        resource_model_map = {
+            "serie_classificacao": SerieClassificacao,
+            "base_legal_tecnica": BaseLegalTecnica,
+            "classificacao": ClassificacaoReceita,
+            "nivel_hierarquico": NivelHierarquico,
+            "item_classificacao": ItemClassificacao,
+            "versao_classificacao": VersaoClassificacao,
+            "variante_classificacao": VarianteClassificacao,
+        }
+
+        if clear and not dry_run:
+            # Limpa tabelas na ordem inversa das dependências, apenas para os recursos selecionados
+            self.stdout.write(self.style.WARNING("Limpando tabelas antes do carregamento (--clear)..."))
+            for name in reversed(load_order):
+                if name in resources_to_load:
+                    model = resource_model_map[name]
+                    deleted, _ = model.objects.all().delete()
+                    self.stdout.write(f"  - {name}: {deleted} registros apagados.")
+
+        if dry_run:
+            self.stdout.write(self.style.NOTICE("Executando em modo dry-run (sem gravação no banco)."))
+
+        # Envolve o carregamento em transação quando não for dry-run
+        ctx = transaction.atomic() if not dry_run else _nullcontext()
+
+        with ctx:
+            for name in resources_to_load:
+                resource = package.get_resource(name)
+                self._load_resource(name, resource, dry_run)
+
+        self.stdout.write(self.style.SUCCESS("Carregamento concluído."))
+
+    # ---- helpers de carregamento por recurso ---------------------------------
+
+    def _load_resource(self, name: str, resource: Resource, dry_run: bool) -> None:
+        if dry_run:
+            # Para dry-run, usamos inferência/estatísticas para obter número de linhas
+            try:
+                resource.infer()
+                total = resource.stats.get("rows")  # type: ignore[assignment]
+            except Exception:
+                total = None
+
+            if total is not None:
+                self.stdout.write(f"[dry-run] {name}: {total} linhas encontradas em {resource.path}.")
+            else:
+                self.stdout.write(f"[dry-run] {name}: não foi possível inferir número de linhas em {resource.path}.")
+            return
+
+        rows: Iterable[Mapping[str, Any]] = list(resource.read_rows())
+
+        if name == "serie_classificacao":
+            self._load_serie_classificacao(rows)
+        elif name == "base_legal_tecnica":
+            self._load_base_legal_tecnica(rows)
+        elif name == "classificacao":
+            self._load_classificacao(rows)
+        elif name == "nivel_hierarquico":
+            self._load_nivel_hierarquico(rows)
+        elif name == "versao_classificacao":
+            self._load_versao_classificacao(rows)
+        elif name == "variante_classificacao":
+            self._load_variante_classificacao(rows)
+        elif name == "item_classificacao":
+            self._load_item_classificacao(rows)
+        else:
+            self.stdout.write(self.style.WARNING(f"Recurso '{name}' não possui loader específico. Ignorando."))
+
+    def _load_serie_classificacao(self, rows: Iterable[Mapping[str, Any]]) -> None:
+        if SerieClassificacao.objects.exists():
+            self.stdout.write(
+                self.style.WARNING(
+                    "Tabela 'serie_classificacao' já possui registros. Pule este recurso ou use --clear."
+                )
+            )
+            return
+
+        created = 0
+        for row in rows:
+            SerieClassificacao.objects.create(**row)
+            created += 1
+        self.stdout.write(self.style.SUCCESS(f"serie_classificacao: {created} linhas carregadas."))
+
+    def _load_base_legal_tecnica(self, rows: Iterable[Mapping[str, Any]]) -> None:
+        if BaseLegalTecnica.objects.exists():
+            self.stdout.write(
+                self.style.WARNING(
+                    "Tabela 'base_legal_tecnica' já possui registros. Pule este recurso ou use --clear."
+                )
+            )
+            return
+
+        created = 0
+        for row in rows:
+            BaseLegalTecnica.objects.create(**row)
+            created += 1
+        self.stdout.write(self.style.SUCCESS(f"base_legal_tecnica: {created} linhas carregadas."))
+
+    def _load_classificacao(self, rows: Iterable[Mapping[str, Any]]) -> None:
+        if ClassificacaoReceita.objects.exists():
+            self.stdout.write(
+                self.style.WARNING(
+                    "Tabela 'classificacao' já possui registros. Pule este recurso ou use --clear."
+                )
+            )
+            return
+
+        created = 0
+        for row in rows:
+            serie = SerieClassificacao.objects.get(serie_id=row["serie_id"])
+
+            base_legal = None
+            base_id = row.get("base_legal_tecnica_id") or None
+            if base_id:
+                base_legal = BaseLegalTecnica.objects.get(base_legal_tecnica_id=base_id)
+
+            ClassificacaoReceita.objects.create(
+                classificacao_id=row["classificacao_id"],
+                classificacao_ref=row["classificacao_ref"],
+                serie_id=serie,
+                classificacao_nome=row["classificacao_nome"],
+                descricao=row.get("descricao") or "",
+                tipo_classificacao=row["tipo_classificacao"],
+                numero_niveis=row["numero_niveis"],
+                numero_digitos=row.get("numero_digitos"),
+                base_legal_tecnica_id=base_legal,
+                data_vigencia_inicio=row["data_vigencia_inicio"],
+                data_vigencia_fim=row["data_vigencia_fim"],
+                data_registro_inicio=row["data_registro_inicio"],
+                data_registro_fim=row["data_registro_fim"],
+            )
+            created += 1
+
+        self.stdout.write(self.style.SUCCESS(f"classificacao: {created} linhas carregadas."))
+
+    def _load_nivel_hierarquico(self, rows: Iterable[Mapping[str, Any]]) -> None:
+        if NivelHierarquico.objects.exists():
+            self.stdout.write(
+                self.style.WARNING(
+                    "Tabela 'nivel_hierarquico' já possui registros. Pule este recurso ou use --clear."
+                )
+            )
+            return
+
+        created = 0
+        for row in rows:
+            classificacao = ClassificacaoReceita.objects.get(classificacao_id=row["classificacao_id"])
+            NivelHierarquico.objects.create(
+                nivel_id=row["nivel_id"],
+                nivel_ref=row["nivel_ref"],
+                classificacao_id=classificacao,
+                nivel_numero=row["nivel_numero"],
+                nivel_nome=row["nivel_nome"],
+                descricao=row.get("descricao") or "",
+                estrutura_codigo=row.get("estrutura_codigo") or "",
+                numero_digitos=row.get("numero_digitos"),
+                tipo_codigo=row["tipo_codigo"],
+                data_vigencia_inicio=row["data_vigencia_inicio"],
+                data_vigencia_fim=row["data_vigencia_fim"],
+                data_registro_inicio=row["data_registro_inicio"],
+                data_registro_fim=row["data_registro_fim"],
+            )
+            created += 1
+
+        self.stdout.write(self.style.SUCCESS(f"nivel_hierarquico: {created} linhas carregadas."))
+
+    def _load_versao_classificacao(self, rows: Iterable[Mapping[str, Any]]) -> None:
+        if VersaoClassificacao.objects.exists():
+            self.stdout.write(
+                self.style.WARNING(
+                    "Tabela 'versao_classificacao' já possui registros. Pule este recurso ou use --clear."
+                )
+            )
+            return
+
+        created = 0
+        for row in rows:
+            classificacao = ClassificacaoReceita.objects.get(classificacao_id=row["classificacao_id"])
+            VersaoClassificacao.objects.create(
+                versao_id=row["versao_id"],
+                versao_ref=row["versao_ref"],
+                classificacao=classificacao,
+                versao_numero=row["versao_numero"],
+                versao_nome=row.get("versao_nome") or "",
+                descricao=row.get("descricao") or "",
+                data_lancamento=row.get("data_lancamento"),
+                data_vigencia_inicio=row["data_vigencia_inicio"],
+                data_vigencia_fim=row["data_vigencia_fim"],
+                data_registro_inicio=row["data_registro_inicio"],
+                data_registro_fim=row["data_registro_fim"],
+            )
+            created += 1
+
+        self.stdout.write(self.style.SUCCESS(f"versao_classificacao: {created} linhas carregadas."))
+
+    def _load_variante_classificacao(self, rows: Iterable[Mapping[str, Any]]) -> None:
+        if VarianteClassificacao.objects.exists():
+            self.stdout.write(
+                self.style.WARNING(
+                    "Tabela 'variante_classificacao' já possui registros. Pule este recurso ou use --clear."
+                )
+            )
+            return
+
+        created = 0
+        for row in rows:
+            classificacao = ClassificacaoReceita.objects.get(classificacao_id=row["classificacao_id"])
+            # No seed atual, versao_id pode vir vazio/-; mantemos FK opcional.
+            versao = None
+            versao_id = row.get("versao_id") or None
+            if versao_id and versao_id != "-":
+                versao = VersaoClassificacao.objects.get(versao_id=versao_id)
+
+            VarianteClassificacao.objects.create(
+                variante_id=row["variante_id"],
+                classificacao=classificacao,
+                versao=versao,
+                variante_nome=row["variante_nome"],
+                tipo_variante=row["tipo_variante"],
+                descricao=row.get("descricao") or "",
+                proposito=row.get("proposito") or "",
+                data_vigencia_inicio=row["data_vigencia_inicio"],
+                data_vigencia_fim=row["data_vigencia_fim"],
+                data_registro_inicio=row["data_registro_inicio"],
+                data_registro_fim=row["data_registro_fim"],
+            )
+            created += 1
+
+        self.stdout.write(self.style.SUCCESS(f"variante_classificacao: {created} linhas carregadas."))
+
+    def _load_item_classificacao(self, rows: Iterable[Mapping[str, Any]]) -> None:
+        if ItemClassificacao.objects.exists():
+            self.stdout.write(
+                self.style.WARNING(
+                    "Tabela 'item_classificacao' já possui registros. Pule este recurso ou use --clear."
+                )
+            )
+            return
+
+        created = 0
+        # Opcional: confiar na ordem do CSV (pais antes dos filhos).
+        for row in rows:
+            classificacao = ClassificacaoReceita.objects.get(classificacao_id=row["classificacao_id"])
+            nivel = NivelHierarquico.objects.get(nivel_id=row["nivel_id"])
+
+            base_legal = None
+            base_id = row.get("base_legal_tecnica_id") or None
+            if base_id and base_id != "-":
+                base_legal = BaseLegalTecnica.objects.get(base_legal_tecnica_id=base_id)
+
+            parent = None
+            parent_code = row.get("parent_item_id") or None
+            if parent_code and parent_code != "-":
+                parent = ItemClassificacao.objects.get(item_id=parent_code)
+
+            ItemClassificacao.objects.create(
+                item_id=row["item_id"],
+                item_ref=row["item_ref"],
+                classificacao_id=classificacao,
+                receita_cod=row.get("receita_cod") or None,
+                matriz=row["matriz"],
+                receita_nome=row.get("receita_nome") or None,
+                receita_descricao=row.get("receita_descricao") or None,
+                base_legal_tecnica_id=base_legal,
+                base_legal_tecnica_referencia=row.get("base_legal_tecnica_referencia") or None,
+                destinacao_legal=row.get("destinacao_legal") or None,
+                informacoes_gerenciais=row.get("informacoes_gerenciais") or None,
+                nivel_id=nivel,
+                parent_item_id=parent,
+                item_gerado=row["item_gerado"],
+                data_vigencia_inicio=row["data_vigencia_inicio"],
+                data_vigencia_fim=row["data_vigencia_fim"],
+                data_registro_inicio=row["data_registro_inicio"],
+                data_registro_fim=row["data_registro_fim"],
+            )
+            created += 1
+
+        self.stdout.write(self.style.SUCCESS(f"item_classificacao: {created} linhas carregadas."))
+
+
+class _nullcontext:
+    """Context manager que não faz nada (usado para dry-run)."""
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
