@@ -41,7 +41,7 @@ dev-server = { cmd = "python manage.py runserver", help = "Liga servidor de dese
 
 # Documentation
 build-docs = { cmd = "zensical build --clean", help = "Gera a documentação estática com Zensical removendo antes qualquer build antigo (--clean garante atualização e evita arquivos obsoletos)" }
-serve = { cmd = "zensical serve", help = "Inicia o servidor de preview local para visualização da documentação em tempo real" }
+serve = { cmd = "zensical serve -a localhost:8001", help = "Inicia o servidor de preview da documentação em http://localhost:8001 (porta 8001 para não conflitar com o Django em 8000)." }
 
 # Utils
 validar-tudo = { cmd = "python scripts/validate_schemas.py && python scripts/validate_code.py && python scripts/validate_quality.py", help = "Executa validar-schemas, validar-codigos e validar-qualidade em sequência." }

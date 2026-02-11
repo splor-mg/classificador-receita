@@ -37,6 +37,21 @@ poetry shell
 
 Documentação completa disponível em [`docs/projeto.md`](docs/projeto.md).
 
+- **Aplicação Django (sistema):** `poetry run task dev-server` → [http://localhost:8000](http://localhost:8000) — página inicial do classificador e admin.
+- **Site da documentação (Zensical):** `poetry run task serve` → [http://localhost:8001](http://localhost:8001) — apresentação, projeto, ERD, ADRs e referências com navegação lateral.
+
+### Modelo de Dados
+
+O **modelo conceitual de dados** do classificador é definido primariamente pelos **Table Schemas Frictionless**, registrados na pasta `schemas`, e pelo **Data Package**, em `datapackage.yaml`:
+
+
+Os **models Django** (`apps/core/models.py`) e as migrations são a implementação dessa especificação no banco PostgreSQL, e devem ser mantidos alinhados a esses schemas. Sempre que o modelo de dados evoluir, a ordem esperada é:
+
+1. Atualizar o(s) `schemas/*.yaml` e o `datapackage.yaml` correspondentes.
+2. Ajustar os models Django e gerar novas migrations para refletir essas mudanças.
+3. Rodar os scripts de validação ( antes de aplicar as migrations em ambientes compartilhados.
+
+
 ## Scripts de Validação e Geração
 
 O projeto inclui scripts utilitários para validação de schemas Frictionless e geração de diagramas ERD.
@@ -74,13 +89,5 @@ poetry run task gerar-erd
 - `docs/erd/erd.dot` - Diagrama em formato Graphviz DOT.
 - `docs/erd/erd.png` - Diagrama em formato PNG (se graphviz estiver instalado).
 
-### Integração com CI/CD
-
-Estes scripts podem ser integrados em pipelines CI/CD (ex: GitHub Actions) para validação automática dos schemas.
-
-**Exemplo de uso no CI:**
-```yaml
-- name: Validar schemas
-  run: poetry run task validar-schemas
 ```
 

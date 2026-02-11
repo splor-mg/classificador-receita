@@ -3,6 +3,19 @@ site_name = "Classificador de Natureza de Receita - MG"
 site_url = "https://splor-mg.github.io/classificador-receita"
 docs_dir = "docs"
 site_dir = "site"
+# Navegação explícita: sidebar com Apresentação, Projeto, ERD, ADRs e Referências
+nav = [
+  "index.md",
+  "projeto.md",
+  { "Diagrama ERD" = "erd/index.md" },
+  { "ADRs" = [
+    "adr/index.md",
+    "adr/adr-001_bitemporalidade.md",
+    "adr/adr-002_gsim.md",
+    "adr/adr-003_chave-semantica.md"
+  ] },
+  { "Referências" = "referencias/index.md" }
+]
 
 [project.theme]
 palette = [
