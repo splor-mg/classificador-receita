@@ -3,7 +3,7 @@
 Script para validar schemas Frictionless do Classificador de Receita.
 
 Uso:
-    poetry run validar-schemas
+    poetry run validar-datapackage
 
 Este script valida todos os schemas YAML no diretório schemas/ e o datapackage.yaml principal.
 

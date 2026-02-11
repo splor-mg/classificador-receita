@@ -61,7 +61,7 @@ O projeto inclui scripts utilitários para validação de schemas Frictionless e
 Valida todos os schemas Frictionless e o datapackage.yaml principal.
 
 ```bash
-poetry run task validar-schemas
+poetry run task validar-datapackage
 ```
 
 **O que faz:**

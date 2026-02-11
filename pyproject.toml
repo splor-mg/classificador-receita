@@ -44,8 +44,8 @@ build-docs = { cmd = "zensical build --clean", help = "Gera a documentação est
 serve = { cmd = "zensical serve -a localhost:8001", help = "Inicia o servidor de preview da documentação em http://localhost:8001 (porta 8001 para não conflitar com o Django em 8000)." }
 
 # Utils
-validar-tudo = { cmd = "python scripts/validate_schemas.py && python scripts/validate_code.py && python scripts/validate_quality.py", help = "Executa validar-schemas, validar-codigos e validar-qualidade em sequência." }
-validar-schemas = { cmd = "python scripts/validate_schemas.py", help = "Valida os schemas Frictionless e o datapackage.yaml principal. Rode com --resource-name=<nome_do_recurso> para validar apenas um recurso específico." }
+validar-tudo = { cmd = "python scripts/validate_datapackage.py && python scripts/validate_code.py && python scripts/validate_quality.py", help = "Executa validar-datapackage, validar-codigos e validar-qualidade em sequência." }
+validar-datapackage = { cmd = "python scripts/validate_datapackage.py", help = "Valida os schemas Frictionless e o datapackage.yaml principal. Rode com --resource-name=<nome_do_recurso> para validar apenas um recurso específico." }
 validar-codigos = { cmd = "python scripts/validate_code.py", help = "Valida a quantidade de dígitos de receita_cod conforme a classificação (registro e vigência, SCD-2)." }
 validar-dominios = { cmd = "python scripts/validate_domains.py", help = "Valida domínios compartilhados (custom.domainRef) e a presença de 'values' nos arquivos de domínio em schemas/dominios/." }
 validar-qualidade = { cmd = "python scripts/validate_quality.py", help = "Aplica as regras de qualityDimensions (quality_rules.yaml) aos dados dos recursos." }

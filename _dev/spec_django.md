@@ -32,7 +32,7 @@ classificador-receita/              # Repositório raiz
 ├── apps/                           # Apps Django (criar quando necessário)
 │   └── core/                       # App principal
 ├── scripts/                        # Scripts utilitários (mantém)
-│   ├── validate_schemas.py
+│   ├── validate_datapackage.py
 │   └── (...)
 |   
 ├── schemas/                        # Schemas Frictionless (mantém)

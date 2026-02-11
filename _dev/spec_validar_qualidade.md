@@ -6,7 +6,7 @@ Aplicar as regras de **quality dimensions** definidas em `quality/quality_rules.
 
 ## Alinhamento
 
-- **Independência de validate_schemas.py:** O script `validate_schemas.py` valida apenas a **estrutura** dos schemas (descriptors) e do datapackage, sem depender de dados. O `validate_quality.py` **depende de dados** (CSVs dos recursos) e não é acionado pelo `validate_schemas.py`; é um comando independente.
+- **Independência de validate_datapackage.py:** O script `validate_datapackage.py` valida apenas a **estrutura** dos schemas (descriptors) e do datapackage, sem depender de dados. O `validate_quality.py` **depende de dados** (CSVs dos recursos) e não é acionado pelo `validate_datapackage.py`; é um comando independente.
 - **Regras auto-contidas:** As regras em `quality_rules.yaml` são expressões que usam apenas campos da **própria linha** (ex.: `data_vigencia_fim >= data_vigencia_inicio`). O script avalia cada linha do recurso no contexto daquela linha.
 
 ## Comportamento
