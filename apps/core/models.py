@@ -538,6 +538,33 @@ class ItemClassificacao(BitemporalModel):
         nome = self.receita_nome or self.item_id or ''
         return f"{codigo} - {nome}"
 
+    def clean(self):
+        """
+        Garante integridade hierárquica:
+
+        - Itens de nível 1 (raiz) DEVEM ter parent_item_id nulo.
+        - Itens de nível 2+ DEVEM ter parent_item_id preenchido.
+        """
+        super().clean()
+
+        # Se não houver nível associado, deixamos a validação para outros pontos (schema já exige nivel_id).
+        if not self.nivel_id:
+            return
+
+        nivel = self.nivel_id
+
+        # Nível 1: não pode ter pai
+        if nivel.nivel_numero == 1 and self.parent_item_id is not None:
+            raise ValidationError(
+                {'parent_item_id': 'Itens de nível 1 (raiz) não devem possuir item pai.'}
+            )
+
+        # Níveis acima de 1: precisam ter pai
+        if nivel.nivel_numero > 1 and self.parent_item_id is None:
+            raise ValidationError(
+                {'parent_item_id': 'Itens de nível superior a 1 devem possuir um item pai.'}
+            )
+
 
 class VersaoClassificacao(BitemporalModel):
     """
