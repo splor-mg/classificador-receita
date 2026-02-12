@@ -62,6 +62,7 @@ Os arquivos ADR seguem o padrão de nomenclatura: `adr-[número]_[nome-resumido-
 | [ADR-001](adr-001_bitemporalidade.md) | Estratégia de Bitemporalidade no Banco de Dados do Classificador | Proposta | - |
 | [ADR-002](adr-002_gsim.md) | Adoção do Modelo GSIM para o Classificador de Receita | Proposta | - |
 | [ADR-003](adr-003_chave-semantica.md) | Chave semântica e referência numérica | Proposta | - |
+| [ADR-004](adr-004_governanca-banco.md) | Governança do banco | Proposta | - |
 
 ---
 
