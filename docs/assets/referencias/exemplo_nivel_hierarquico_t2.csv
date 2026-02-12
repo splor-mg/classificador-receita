@@ -1,0 +1,10 @@
+nivel_id,nivel_ref,classificacao_id,nivel_numero,nivel_nome,descricao,estrutura_codigo,numero_digitos,tipo_codigo,data_vigencia_inicio,data_vigencia_fim,data_registro_inicio,data_registro_fim
+NIVEL-1,1,CLASS-RECEITA-UNIAO-2001,1,Categoria Econômica,Primeiro dígito do código. Distingue receitas correntes (1) de capital (2). Conforme Lei 4.320/1964 e MCASP.,a,1,numérico,2002-01-01,2017-12-31,2005-01-13,2005-03-30
+NIVEL-2,2,CLASS-RECEITA-UNIAO-2001,2,Sub-Categoria,"Segundo dígito. Classifica a origem da receita, contendo o detalhamento das Categorias Econômicas “Receitas Correntes” e“Receitas de Capital”, com vistas a identificar a natureza da procedência das receitas no momento em que ingressam no Orçamento Público.",a.b,1,numérico,2002-01-01,9999-12-31,2005-01-13,2005-03-30
+NIVEL-3,3,CLASS-RECEITA-UNIAO-2001,3,Fonte Receita,"Terceiro dígito. Detalha a subcategoria, sendo o nível de classificação que permite qualificar com maior
+detalhe o fato gerador das receitas.",a.b.c,1,numérico,2002-01-01,9999-12-31,2005-01-13,2005-03-30
+,,,,,,,,,,,,
+NIVEL-1,1,CLASS-RECEITA-UNIAO-2001,1,Categoria Econômica,Primeiro dígito do código. Distingue receitas correntes (1) de capital (2). Conforme Lei 4.320/1964 e MCASP.,a,1,numérico,2003-01-01,2016-12-31,2005-03-30,9999-12-31
+NIVEL-2,2,CLASS-RECEITA-UNIAO-2001,2,Sub-Categoria,"Segundo dígito. Classifica a origem da receita, contendo o detalhamento das Categorias Econômicas “Receitas Correntes” e“Receitas de Capital”, com vistas a identificar a natureza da procedência das receitas no momento em que ingressam no Orçamento Público.",a.b,1,numérico,2002-01-01,2018-12-31,2005-03-30,9999-12-31
+NIVEL-3,3,CLASS-RECEITA-UNIAO-2001,3,Fonte Receita,"Terceiro dígito. Detalha a subcategoria, sendo o nível de classificação que permite qualificar com maior
+detalhe o fato gerador das receitas.",a.b.c,1,numérico,2004-03-30,9999-12-31,2005-03-30,9999-12-31
