@@ -12,7 +12,8 @@ nav = [
     "adr/index.md",
     "adr/adr-001_bitemporalidade.md",
     "adr/adr-002_gsim.md",
-    "adr/adr-003_chave-semantica.md"
+    "adr/adr-003_chave-semantica.md",
+    "adr/adr-004_governanca-banco.md"
   ] },
   { "Referências" = "referencias/index.md" }
 ]
