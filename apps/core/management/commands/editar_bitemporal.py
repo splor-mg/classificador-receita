@@ -1,8 +1,10 @@
 """
-Edição genérica de recursos bitemporais (ADR-004).
+Edição genérica de recursos bitemporais (ADR-004, Regras 2 a 7).
 
 Tipos: sobrescrever (corrigir mesma vigência) ou nova_vigencia (encerrar vigência anterior + nova).
 Identificação da linha: chave da entidade (em --data) + --data-registro-inicio.
+data_registro_inicio e data_registro_fim das novas linhas são sempre definidos pelo comando (MUST).
+Aplica-se apenas a recursos bitemporais (datapackage exceto base_legal_tecnica).
 """
 import json
 from datetime import date, timedelta
@@ -23,9 +25,10 @@ from core.models import VALID_TIME_SENTINEL
 
 class Command(BaseCommand):
     help = (
-        "Edita um registro ativo (data_registro_fim = sentinela) em um recurso bitemporal. "
+        "Edita um registro ativo (data_registro_fim = sentinela) em um recurso bitemporal (ADR-004). "
         "Use --recurso, --data (JSON com chave da entidade e opcionalmente overrides) e "
-        "--data-registro-inicio para identificar a linha. --tipo-edicao: sobrescrever | nova_vigencia."
+        "--data-registro-inicio para identificar a linha. --tipo-edicao: sobrescrever | nova_vigencia. "
+        "Para nova_vigencia, --nova-data-vigencia-inicio tem default 01/01/ano da operação (Regra 6)."
     )
 
     def add_arguments(self, parser):
@@ -54,12 +57,12 @@ class Command(BaseCommand):
         parser.add_argument(
             "--nova-data-vigencia-inicio",
             default=None,
-            help="Obrigatório para nova_vigencia: início da nova vigência (AAAA-MM-DD).",
+            help="Início da nova vigência para nova_vigencia (AAAA-MM-DD). Se omitido, usa 01/01/ano da operação (ADR-004 Regra 6).",
         )
         parser.add_argument(
             "--nova-data-vigencia-fim",
             default=VALID_TIME_SENTINEL,
-            help="Fim da nova vigência para nova_vigencia (padrão: sentinela).",
+            help="Fim da nova vigência para nova_vigencia (MUST: padrão sentinela; pode ser outra data para vigência encerrada).",
         )
         parser.add_argument(
             "--dry-run",
@@ -111,10 +114,12 @@ class Command(BaseCommand):
         tipo = options["tipo_edicao"]
         data_op = date.today()
         if tipo == "nova_vigencia":
+            # ADR-004 Regra 6: default para data_vigencia_inicio = 01/01/AAAA (ano da operação)
             nova_ini = options.get("nova_data_vigencia_inicio") or data.get("nova_data_vigencia_inicio")
             if not nova_ini:
-                raise CommandError("Para nova_vigencia informe --nova-data-vigencia-inicio ou em --data.")
-            nova_ini = date.fromisoformat(nova_ini) if isinstance(nova_ini, str) else nova_ini
+                nova_ini = date(data_op.year, 1, 1)
+            else:
+                nova_ini = date.fromisoformat(nova_ini) if isinstance(nova_ini, str) else nova_ini
             nova_fim = options.get("nova_data_vigencia_fim") or data.get("nova_data_vigencia_fim", VALID_TIME_SENTINEL)
             nova_fim = date.fromisoformat(nova_fim) if isinstance(nova_fim, str) else nova_fim
             if nova_ini >= nova_fim:
@@ -202,8 +207,10 @@ class Command(BaseCommand):
             return
 
         with transaction.atomic():
+            # Regra 4: única alteração in place é data_registro_fim
             linha.data_registro_fim = data_op
             linha.save(update_fields=["data_registro_fim"])
+            # Nova linha: data_registro_* definidos pelo sistema (MUST)
             create_kw = {**attrs, "data_registro_inicio": data_op, "data_registro_fim": get_sentinela_date()}
             model.objects.create(**create_kw)
         self.stdout.write(self.style.SUCCESS("Edição (sobrescrever) aplicada."))
@@ -222,10 +229,13 @@ class Command(BaseCommand):
             return
 
         with transaction.atomic():
+            # Regra 4: fechar apenas data_registro_fim da linha editada
             linha.data_registro_fim = data_op
             linha.save(update_fields=["data_registro_fim"])
-            create_enc = {**attrs_encerramento, "data_registro_inicio": data_op, "data_registro_fim": get_sentinela_date()}
+            # Novas linhas: data_registro_* definidos pelo sistema (MUST)
+            sentinela = get_sentinela_date()
+            create_enc = {**attrs_encerramento, "data_registro_inicio": data_op, "data_registro_fim": sentinela}
             model.objects.create(**create_enc)
-            create_nova = {**attrs_nova, "data_registro_inicio": data_op, "data_registro_fim": get_sentinela_date()}
+            create_nova = {**attrs_nova, "data_registro_inicio": data_op, "data_registro_fim": sentinela}
             model.objects.create(**create_nova)
         self.stdout.write(self.style.SUCCESS("Edição (nova vigência) aplicada."))

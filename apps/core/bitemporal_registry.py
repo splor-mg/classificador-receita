@@ -1,15 +1,20 @@
 """
 Registro de metadados dos recursos bitemporais (ADR-001, ADR-004).
 
+RESOURCES contém apenas recursos bitemporais (SCD-2, append-only), aos quais se
+aplicam as Regras 1 a 7 da ADR-004. O recurso base_legal_tecnica é modelo temporal
+simples (SCD-1, alteração in-place) e não entra neste registry; as Regras 1 a 7
+não se aplicam a ele (ADR-004 Regra 8).
+
 Cada recurso define: model, chave de entidade, campos (cadastro/edição/export),
 resolução de FKs, colunas de export e list_display. Usado pelos comandos genéricos
 cadastrar_bitemporal, editar_bitemporal e exportar_bitemporal.
 
-Para incluir um novo recurso: adicione um entry em RESOURCES com model_name,
-entity_key (lista de {arg, lookup}), fields (name, type, required, default; type fk
-aceita fk_resource, fk_semantic_attr, fk_current), export_columns, list_display,
-select_related e order_by. FK para tabelas não-bitemporais (ex.: base_legal_tecnica)
-é tratada em resolve_fk().
+Para incluir um novo recurso bitemporal: adicione um entry em RESOURCES com
+model_name, entity_key (lista de {arg, lookup}), fields (name, type, required,
+default; type fk aceita fk_resource, fk_semantic_attr, fk_current), export_columns,
+list_display, select_related e order_by. FK para base_legal_tecnica é tratada em
+resolve_fk() (modelo SCD-1).
 """
 from datetime import date
 from typing import Any, Dict, List, Optional

@@ -1,3 +1,14 @@
+"""
+Carrega dados iniciais a partir do datapackage.yaml (ADR-004 Regra 8).
+
+Recursos bitemporais (serie_classificacao, classificacao, nivel_hierarquico,
+versao_classificacao, variante_classificacao, item_classificacao): os seeds devem
+estar em conformidade com o modelo bitemporal (data_registro_*, data_vigencia_*);
+o carregamento apenas insere as linhas dos CSVs.
+
+base_legal_tecnica é modelo temporal simples (SCD-1, alteração in-place); as
+Regras 1 a 7 da ADR-004 não se aplicam ao seu carregamento nem à sua governança.
+"""
 from pathlib import Path
 from typing import Iterable, Mapping, Any
 
@@ -20,7 +31,8 @@ from core.models import (
 class Command(BaseCommand):
     help = (
         "Carrega dados iniciais do classificador de receita a partir do datapackage.yaml "
-        "e dos arquivos seed_* declarados nos recursos."
+        "e dos arquivos seed_* declarados nos recursos. Recursos bitemporais seguem ADR-004; "
+        "base_legal_tecnica é SCD-1 (temporal simples)."
     )
 
     def add_arguments(self, parser: CommandParser) -> None:

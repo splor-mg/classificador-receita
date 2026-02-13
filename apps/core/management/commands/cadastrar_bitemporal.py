@@ -1,8 +1,12 @@
 """
 Cadastro genérico para recursos bitemporais (ADR-004).
 
-Novo registro: data_registro_inicio = data da operação, data_registro_fim = sentinela.
-Campos e FKs definidos em core.bitemporal_registry.
+Conformidade obrigatória:
+- data_registro_inicio = data da operação (MUST); data_registro_fim = valor sentinela (MUST).
+- Regra 1: não pode haver períodos de vigência sobrepostos para a mesma entidade-objeto;
+  o comando valida antes de inserir.
+Campos e FKs definidos em core.bitemporal_registry. Aplica-se apenas a recursos bitemporais
+(datapackage exceto base_legal_tecnica).
 """
 import json
 from datetime import date
@@ -12,6 +16,7 @@ from django.db import transaction
 
 from core.bitemporal_registry import (
     RESOURCES,
+    build_entity_filter,
     get_resource,
     get_model_for_resource,
     get_sentinela_date,
@@ -20,12 +25,17 @@ from core.bitemporal_registry import (
 from core.models import VALID_TIME_SENTINEL
 
 
+def _vigencia_overlaps(a_ini: date, a_fim: date, b_ini: date, b_fim: date) -> bool:
+    """True se os intervalos [a_ini, a_fim] e [b_ini, b_fim] se sobrepõem (Regra 1)."""
+    return a_ini <= b_fim and b_ini <= a_fim
+
+
 class Command(BaseCommand):
     help = (
         "Cadastra um novo registro em um recurso bitemporal. "
         "Use --recurso e --data (JSON com os campos do recurso). "
-        "data_vigencia_inicio e data_vigencia_fim podem vir em --data; "
-        "data_registro_* são preenchidos automaticamente."
+        "data_vigencia_inicio e data_vigencia_fim podem vir em --data ou nos argumentos; "
+        "data_registro_inicio e data_registro_fim são sempre definidos pelo comando (data da operação e sentinela)."
     )
 
     def add_arguments(self, parser):
@@ -48,7 +58,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--data-vigencia-fim",
             default=VALID_TIME_SENTINEL,
-            help=f"Data de fim da vigência (padrão: {VALID_TIME_SENTINEL}).",
+            help=f"Data de fim da vigência (padrão: sentinela {VALID_TIME_SENTINEL}; pode ser outra data para vigência encerrada).",
         )
         parser.add_argument(
             "--dry-run",
@@ -107,8 +117,30 @@ class Command(BaseCommand):
 
         payload["data_vigencia_inicio"] = data_vig_ini
         payload["data_vigencia_fim"] = data_vig_fim
+        # ADR-004: data_registro_* são definidos pelo sistema (MUST), não pelo usuário
         payload["data_registro_inicio"] = data_op
         payload["data_registro_fim"] = sentinela
+
+        # Regra 1: não pode haver períodos de vigência sobrepostos para a mesma entidade-objeto
+        try:
+            entity_filt = build_entity_filter(resource_name, data)
+        except ValueError as e:
+            raise CommandError(str(e)) from e
+        existing_active = model.objects.filter(
+            **entity_filt, data_registro_fim=sentinela
+        )
+        for row in existing_active:
+            if _vigencia_overlaps(
+                row.data_vigencia_inicio,
+                row.data_vigencia_fim,
+                data_vig_ini,
+                data_vig_fim,
+            ):
+                raise CommandError(
+                    f"Regra 1 (ADR-004): já existe linha ativa para esta entidade com vigência sobreposta "
+                    f"({row.data_vigencia_inicio} a {row.data_vigencia_fim}). "
+                    "Não pode haver dois períodos de vigência concorrentes para a mesma entidade-objeto."
+                )
 
         if options["dry_run"]:
             self.stdout.write(self.style.WARNING("Dry-run: nenhuma alteração no banco."))

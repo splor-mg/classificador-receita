@@ -1,6 +1,8 @@
 """
-Exporta recurso bitemporal para CSV no formato do seed.
+Exporta recurso bitemporal para CSV no formato do seed (ADR-004).
 
+Aplica-se apenas aos recursos do bitemporal_registry (Regras 1 a 7);
+base_legal_tecnica (SCD-1) não está no registry e não é exportada por este comando.
 Colunas e ordem definidas em core.bitemporal_registry (export_columns).
 """
 import csv
