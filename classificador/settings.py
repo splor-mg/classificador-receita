@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import os
 import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -76,17 +77,38 @@ WSGI_APPLICATION = "classificador.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+#
+# Para usar SQLite (desenvolvimento local sem PostgreSQL), defina USE_SQLITE=1:
+#   - No terminal, na mesma linha:  USE_SQLITE=1 ptt migrate
+#   - Ou na sessão:                export USE_SQLITE=1   e depois  ptt migrate
+#   - Ou crie um arquivo .env na raiz do projeto com a linha:  USE_SQLITE=1
+#
+_env_file = BASE_DIR / ".env"
+if _env_file.exists():
+    for _line in _env_file.read_text(encoding="utf-8").splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith("#") and "=" in _line:
+            _k, _, _v = _line.partition("=")
+            os.environ.setdefault(_k.strip(), _v.strip())
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "classificador_receita",
-        "USER": "postgres",
-        "PASSWORD": "postgres",
-        "HOST": "localhost",
-        "PORT": "5432",
+if os.environ.get("USE_SQLITE", "").lower() in ("1", "true", "yes"):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": "classificador_receita",
+            "USER": "postgres",
+            "PASSWORD": "postgres",
+            "HOST": "localhost",
+            "PORT": "5432",
+        }
+    }
 
 
 # Password validation

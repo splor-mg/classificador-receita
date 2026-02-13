@@ -16,22 +16,29 @@ Sistema de gestão voltado para organização, classificação e versionamento h
 
 ## Instalação
 
-Este projeto usa [Poetry](https://python-poetry.org/) para gerenciamento de dependências.
+Pré-requisitos: Python 3.12+ e [Poetry](https://python-poetry.org/docs/#installation). O sistema foi construído para operar com **PostgreSQL**; em versão Beta, sem servidor de banco definido, é possível usar **SQLite3** (vem com o Django): crie um `.env` com `USE_SQLITE=1` (veja `.env.example`) ou defina `USE_SQLITE=1` no terminal. Para instalar e configurar o PostgreSQL, ver [docs/instalacao/configurar-postgresql.md](docs/instalacao/configurar-postgresql.md).
 
-### Pré-requisitos
-
-- Python 3.11 ou superior.
-- Poetry instalado ([instruções de instalação](https://python-poetry.org/docs/#installation)).
-
-### Configuração
-
+1. **Instale as dependências:**
 ```bash
-# Instalar dependências
 poetry install
-
-# Ativar ambiente virtual
-poetry shell
 ```
+
+2. **Execute as migrações:**
+```bash
+poetry run task migrate
+```
+
+3. **Carregue os dados iniciais (seeds):**
+```bash
+poetry run task carregar
+```
+(Opcional: `poetry run task carregar -- --dry-run` para apenas conferir; `-- --clear` para limpar as tabelas antes de recarregar.)
+
+4. **Inicie o servidor de desenvolvimento:**
+```bash
+poetry run task dev-server
+```
+Aplicação em [http://localhost:8000](http://localhost:8000).
 
 ## Documentação
 

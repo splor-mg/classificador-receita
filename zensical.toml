@@ -7,6 +7,9 @@ site_dir = "site"
 nav = [
   "index.md",
   "projeto.md",
+  { "Instalação" = [
+    "instalacao/configurar-postgresql.md"
+  ] },
   { "Diagrama ERD" = "erd/index.md" },
   { "ADRs" = [
     "adr/index.md",
