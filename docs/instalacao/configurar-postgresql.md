@@ -1,6 +1,6 @@
-# Configurar PostgreSQL (passo a passo)
+# Configurar PostgreSQL
 
-Este guia descreve como instalar e configurar o PostgreSQL para usar com o projeto **sem** a variável `USE_SQLITE=1`. O Django continuará usando PostgreSQL conforme `classificador/settings.py` (bloco `else`).
+Este guia descreve como instalar e configurar o PostgreSQL para usar no projeto **sem** a variável `USE_SQLITE=1`. O Django continuará usando PostgreSQL conforme `classificador/settings.py` (bloco `else`).
 
 Ambiente considerado: **WSL2** ou **Linux** (Ubuntu/Debian). Em outros sistemas, os comandos de instalação mudam (ex.: Windows com instalador oficial, macOS com Homebrew).
 

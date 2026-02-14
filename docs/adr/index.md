@@ -26,6 +26,7 @@ Para mais informações sobre o formato e boas práticas de ADRs, consulte:
 ## Quando criar uma ADR
 
 Crie uma ADR quando a decisão arquitetural:
+
 - **Impacta a estrutura de dados ou modelagem do banco de dados** (esquemas, normalização, estratégias temporais, índices)
 - **Envolve escolhas de tecnologia de persistência** (SGBD, extensões, ferramentas)
 - **Afeta múltiplos componentes ou sistemas** e tem impacto de longo prazo
@@ -50,6 +51,7 @@ Os arquivos ADR seguem o padrão de nomenclatura: `adr-[número]_[nome-resumido-
 
 
 **Diretrizes:**
+
 - Use números sequenciais para manter ordem cronológica
 - O nome deve ser curto, descritivo e em português
 - Evite caracteres especiais além de hífens e underscore's no nome
@@ -61,8 +63,8 @@ Os arquivos ADR seguem o padrão de nomenclatura: `adr-[número]_[nome-resumido-
 |----|--------|--------|------|
 | [ADR-001](adr-001_bitemporalidade.md) | Estratégia de Bitemporalidade no Banco de Dados do Classificador | Proposta | - |
 | [ADR-002](adr-002_gsim.md) | Adoção do Modelo GSIM para o Classificador de Receita | Proposta | - |
-| [ADR-003](adr-003_chave-semantica.md) | Chave semântica e referência numérica | Proposta | - |
-| [ADR-004](adr-004_governanca-banco.md) | Governança do banco | Proposta | - |
+| [ADR-003](adr-003_chave-semantica.md) | Chave Semântica e Referência Numérica | Proposta | - |
+| [ADR-004](adr-004_governanca-banco.md) | Governança do Banco | Proposta | - |
 
 ---
 
