@@ -42,7 +42,7 @@ A aplicação (painel de governança, APIs, comandos de carga) deve garantir con
 > Nesse contexto, aquilo que está sendo registrado ou classificado é identificado de duas formas complementares:
 
 > - pela **chave artificial** do recurso (coluna `[nome-da-tabela]_ref`), utilizada para operações internas no banco de dados;
-> - pela **chave natural (semântica)** (coluna `[nome-da-tabela]_id`), empregada para interação com o usuário e para estabelecer relações entre diferentes entidades (por meio de `foreignKeys`).
+> - pela **chave natural (semântica)** (coluna `[nome-da-tabela]_id`), empregada para interação com o usuário e para estabelecer relações entre diferentes entidades (por meio de chaves estrangeiras).
 
 ??? info "Exemplo:"
     No banco de dados de Classificação (*Statistical Classification*, `schemas/classificacao.yaml`), que representa as diferentes versões da estrutura geral do classificador, a primeira versão registrada foi a da União.
@@ -133,6 +133,22 @@ Assim, caso haja alteração no período de vigência inicial, após a operaçã
 Caso os períodos de vigência da nova versão e da versão anterior seja idênticos, o comportamento deve ser tal como prescrito na Regra 05, com acréscimo de apenas uma nova linha com a nova vigência.
 
 
+??? info "Exemplo prático (registrar nova vigência):"
+    Suponha uma classificação com vigência atual 2002-01-01 — 9999-12-31 (linha ativa). O usuário registra uma nova vigência que começará em 2018-01-01. Sucessão de eventos:
+
+    1. Data da operação = 2026-02-10 (exemplo).
+    2. Fecha-se a linha ativa original: define-se `data_registro_fim = 2026-02-10` nessa linha.
+    3. Insere-se uma linha de encerramento da vigência anterior com:
+       - `data_vigencia_inicio = 2002-01-01` (mesmo que antes);
+       - `data_vigencia_fim = 2017-12-31` (dia anterior ao novo início);
+       - `data_registro_inicio = 2026-02-10`, `data_registro_fim = 9999-12-31`.
+    4. Insere-se a linha da nova vigência:
+       - `data_vigencia_inicio = 2018-01-01`;
+       - `data_vigencia_fim = 9999-12-31` (ou outro valor indicado);
+       - `data_registro_inicio = 2026-02-10`, `data_registro_fim = 9999-12-31`.
+
+    Esse fluxo preserva o histórico e torna explícito o fim da vigência anterior e o início da nova.
+
 ---
 
 ### Regra 6 — Atualização para "sobrescrever/corrigir vigência anterior (B)"
@@ -167,6 +183,18 @@ Procedimentos e validações:
 
 ---
 
+??? Info "Exemplo prático (bloquear vigência):"
+    Considere uma classificação atualmente ativa com vigência `2002-01-01` — `9999-12-31`. O usuário deseja encerrar a vigência em `2017-12-31`. Procedimento:
+ 
+    1. Data da operação = 2026-02-10.
+    2. Fecha-se a linha ativa original: `data_registro_fim = 2026-02-10`.
+    3. Insere-se uma linha de encerramento com `data_vigencia_fim = 2017-12-31`, `data_registro_inicio = 2026-02-10`, `data_registro_fim = 9999-12-31`.
+    4. Não se insere nova vigência posterior.
+ 
+    O resultado deixa explícito que a classificação vigorou até 2017-12-31 e não tem vigência ativa subsequente.
+
+---
+
 ### Regra 8 - Atualização para "excluir (D)"
 
 A operação **excluir** tem semântica de anulação de efeito: a instância passa a ser considerada como não tendo surtido efeitos no domínio orçamentário. Trata‑se de uma alteração do *transaction time* que preserva o histórico para fins de auditoria.
@@ -183,6 +211,15 @@ Efeitos:
 - A instância deixa de aparecer em consultas de estado corrente; o histórico permanece com `data_registro_fim` fechado.  
 - Exclusão não remove dados históricos; preserva‑se rastreabilidade e prova de decisão.
 
+??? Info "Exemplo prático (excluir / anular efeito):"
+    Suponha que uma classificação foi cadastrada por engano e nunca deveria ter produzido efeitos. Data da operação = 2026-02-10.
+ 
+    1. Fecha-se a linha ativa: `data_registro_fim = 2026-02-10`.
+    2. Opcionalmente, grava-se metadado de auditoria: `motivo_exclusao = "cadastrado por engano"`, `usuario_exclusao = "analistaX"`.
+    3. Registros dependentes devem ser verificados; se existirem, bloquear a exclusão até resolução.
+ 
+    Após a operação, a instância não aparece em consultas correntes; o histórico permanece para auditoria.
+
 ---
 
 ### Regra 9 — Validações de integridade temporal
@@ -198,6 +235,21 @@ Efeitos:
 **Tabelas bitemporais** (ex.: `nivel_hierarquico`, `classificacao`, `versao_classificacao`, `item_classificacao`): em todas elas vale a metodologia **append-only** (SCD-2). A entidade-objeto é identificada pela **chave artificial** da própria tabela, ou seja, pela coluna `[nome-da-tabela]_ref`. Todas devem respeitar a regra central de que **não pode haver períodos de vigência sobrepostos para uma mesma entidade-objeto**, bem como as Regras 1 a 7 desta ADR. 
 
 **Tabelas com modelo temporal simples** (apenas vigência, sem colunas de registro de transação): seguem o modelo **SCD-1**, com **alteração _in-place_**. Ou seja, atualizações modificam a linha existente, sem append-only nem múltiplas linhas por entidade para um mesmo período. Exemplo: recurso  `base_legal_tecnica` (colunas `data_vigencia_inicio` e `data_vigencia_fim`, sem `data_registro_*`). As Regras 1 a 7 desta ADR **não se aplicam** a esses recursos; a governança e a interface de edição devem tratar explicitamente o modelo SCD-1 quando houver esse tipo de tabela.
+
+---
+
+### Recomendações de UX (para a interface de edição)
+
+As recomendações abaixo são essenciais para reduzir erros do usuário e preservar a integridade temporal no banco:
+
+- Exigir seleção explícita do **tipo de edição** (A | B | C | D) antes de permitir alterações; apresentar breve descrição dos impactos e link para esta ADR.
+- Exibir, antes da confirmação, a **pré-visualização (dry-run)** das alterações propostas: linhas que serão fechadas e novas linhas que serão criadas, com todas as datas e campos alterados visíveis.
+- Mostrar claramente a **lista de linhas ativas** para a entidade selecionada (com `data_registro_inicio`, `data_vigencia_inicio`, `data_vigencia_fim`) para que o usuário confirme a instância correta.
+- Detectar e **bloquear automaticamente** alterações que gerariam sobreposição de vigência; quando houver conflito, apresentar as instâncias conflitantes e orientação para resolução.
+- Ao escolher **excluir (D)**, exigir confirmação explícita, preenchimento de motivo para auditoria e exibição dos impactos (dependências e consequências).
+- Para operações de **bloquear (C)** e **nova vigência (A)**, mostrar impacto em registros dependentes (itens, variantes, versões) e exigir resolução prévia ou confirmação explícita do usuário.
+- Registrar logs de auditoria estruturados (quem, quando, tipo de operação, motivo) e disponibilizá‑los em painel de auditoria ou exportação.
+- Fornecer mensagens contextuais e tooltips que expliquem diferença entre `data_vigencia` e `data_registro`.
 
 ---
 
