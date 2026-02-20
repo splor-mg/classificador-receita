@@ -111,6 +111,7 @@ fields:
       required: true
 primaryKey:
   - nivel_id
+  - data_vigencia_inicio
   - data_registro_inicio
 uniqueConstraints:
   # Garante que, dentro de uma mesma classificação, não existam dois níveis com o mesmo

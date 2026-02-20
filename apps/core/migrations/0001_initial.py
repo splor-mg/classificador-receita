@@ -1135,7 +1135,8 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="versaoclassificacao",
             constraint=models.UniqueConstraint(
-                fields=("versao_id", "data_registro_inicio"), name="unique_versao_registro"
+                fields=("versao_id", "data_vigencia_inicio", "data_registro_inicio"),
+                name="unique_versao_registro"
             ),
         ),
         migrations.AddConstraint(
@@ -1159,7 +1160,8 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="varianteclassificacao",
             constraint=models.UniqueConstraint(
-                fields=("variante_id", "data_registro_inicio"), name="unique_variante_registro"
+                fields=("variante_id", "data_vigencia_inicio", "data_registro_inicio"),
+                name="unique_variante_registro"
             ),
         ),
     ]

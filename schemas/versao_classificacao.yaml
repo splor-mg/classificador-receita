@@ -90,6 +90,7 @@ fields:
       required: true
 primaryKey:
   - versao_id
+  - data_vigencia_inicio
   - data_registro_inicio
 foreignKeys:
   - fields:

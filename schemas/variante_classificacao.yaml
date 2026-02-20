@@ -90,6 +90,7 @@ fields:
       required: true
 primaryKey:
   - variante_id
+  - data_vigencia_inicio
   - data_registro_inicio
 foreignKeys:
   - fields:
