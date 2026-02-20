@@ -141,7 +141,7 @@ Caso opte por (B), desconsideradas as datas de transação, o sistema deve recup
 
 Concluídas as atualizações, caso o usuário clique em "Salvar", os protocolos devem ser:
 
-1. Verificar se o novo período de vigência dessa entidade-objeto vai **conflitar/sobrepor a outro período de vigência ativo** para essa mesma entidade-objeto que não o registro/instância que está sendo editada e, em caso afirmativo de conflito, impedir o registro no banco, informando qual instância tem período de vigência conflitante com a nova edição.
+1. Verificar se o novo período de vigência dessa entidade-objeto vai **conflitar/sobrepor a outro período de vigência ativo** para essa mesma entidade-objeto que não o registro/instância que está sendo editada e, em caso afirmativo de conflito, impedir o registro no banco, informando qual(is) instância(s) tem(têm) período de vigência conflitante com a nova edição.
 2. Verificar **se de fato houve alteração** de pelo menos um dos atributos da entidade-objeto em relação à edição anterior e, em caso negativo, impedir o registro e informar que não foi identificada nenhuma alteração na classificação.
 3. Ultrapassadas a primeira e segunda etapas, **fechar** o `data_registro_fim` da linha escolhida para atualização com a data da operação (Regra 04).
 4. **Inserir uma única** nova linha/instância no banco com os parâmetros corrigidos informados pelo usuário, com `data_registro_inicio` = data da operação e `data_registro_fim` = valor sentinela.
