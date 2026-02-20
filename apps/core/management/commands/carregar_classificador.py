@@ -26,6 +26,7 @@ from core.models import (
     VersaoClassificacao,
     VarianteClassificacao,
 )
+from core.bitemporal_registry import get_sentinela_date
 
 
 class Command(BaseCommand):
@@ -149,8 +150,31 @@ class Command(BaseCommand):
                 self.stdout.write(f"[dry-run] {name}: não foi possível inferir número de linhas em {resource.path}.")
             return
 
-        rows: Iterable[Mapping[str, Any]] = list(resource.read_rows())
+        try:
+            rows: Iterable[Mapping[str, Any]] = list(resource.read_rows())
+        except Exception as e:
+            # Log diagnostic info to help debug resource opening issues (encoding / path / format)
+            self.stderr.write(self.style.ERROR(f"Falha ao abrir recurso '{name}' - path={getattr(resource, 'path', None)}"))
+            try:
+                self.stderr.write(self.style.ERROR(f"Resource descriptor: {resource.descriptor}"))
+            except Exception:
+                pass
+            # Fallback: tentar ler o CSV diretamente com csv.DictReader (mais tolerante)
+            csv_path = getattr(resource, "path", None)
+            if csv_path:
+                import csv as _csv
 
+                try:
+                    with open(csv_path, newline="", encoding="utf-8") as _f:
+                        dict_reader = _csv.DictReader(_f)
+                        rows = list(dict_reader)
+                        self.stdout.write(self.style.NOTICE(f"[fallback] lidas {len(rows)} linhas em {csv_path} via csv.DictReader"))
+                except Exception as e2:
+                    self.stderr.write(self.style.ERROR(f"[fallback] falha ao ler {csv_path} diretamente: {e2}"))
+                    raise
+            else:
+                raise
+        # Dispatch to resource-specific loaders (outside of exception handling).
         if name == "serie_classificacao":
             self._load_serie_classificacao(rows)
         elif name == "base_legal_tecnica":
@@ -167,6 +191,24 @@ class Command(BaseCommand):
             self._load_item_classificacao(rows)
         else:
             self.stdout.write(self.style.WARNING(f"Recurso '{name}' não possui loader específico. Ignorando."))
+    def _get_bitemporal_instance(self, model, semantic_field: str, row: Mapping[str, Any]):
+        """
+        Retorna a instância bitemporal correta do model dado o identificador semântico
+        presente em row. Se row contém `data_registro_inicio` tenta corresponder por
+        essa data; caso contrário, busca a instância atual (data_registro_fim = sentinela).
+        """
+        semantic_val = row.get(semantic_field)
+        if semantic_val is None or semantic_val == "":
+            return None
+        # Preferir correspondência por data_registro_inicio quando disponível
+        dr_ini = row.get("data_registro_inicio")
+        try:
+            if dr_ini:
+                return model.objects.get(**{semantic_field: semantic_val, "data_registro_inicio": dr_ini})
+            return model.objects.get(**{semantic_field: semantic_val, "data_registro_fim": get_sentinela_date()})
+        except model.DoesNotExist:
+            # fallback: try to return any matching semantic (may raise MultipleObjectsReturned)
+            return model.objects.filter(**{semantic_field: semantic_val}).first()
 
     def _load_serie_classificacao(self, rows: Iterable[Mapping[str, Any]]) -> None:
         if SerieClassificacao.objects.exists():
@@ -246,7 +288,7 @@ class Command(BaseCommand):
 
         created = 0
         for row in rows:
-            classificacao = ClassificacaoReceita.objects.get(classificacao_id=row["classificacao_id"])
+            classificacao = self._get_bitemporal_instance(ClassificacaoReceita, "classificacao_id", row)
             NivelHierarquico.objects.create(
                 nivel_id=row["nivel_id"],
                 nivel_ref=row["nivel_ref"],
@@ -277,7 +319,7 @@ class Command(BaseCommand):
 
         created = 0
         for row in rows:
-            classificacao = ClassificacaoReceita.objects.get(classificacao_id=row["classificacao_id"])
+            classificacao = self._get_bitemporal_instance(ClassificacaoReceita, "classificacao_id", row)
             VersaoClassificacao.objects.create(
                 versao_id=row["versao_id"],
                 versao_ref=row["versao_ref"],
@@ -306,12 +348,20 @@ class Command(BaseCommand):
 
         created = 0
         for row in rows:
-            classificacao = ClassificacaoReceita.objects.get(classificacao_id=row["classificacao_id"])
+            classificacao = self._get_bitemporal_instance(ClassificacaoReceita, "classificacao_id", row)
             # No seed atual, versao_id pode vir vazio/-; mantemos FK opcional.
             versao = None
             versao_id = row.get("versao_id") or None
             if versao_id and versao_id != "-":
-                versao = VersaoClassificacao.objects.get(versao_id=versao_id)
+                # tentar encontrar versão correspondente por versao_id e data_registro, se fornecida
+                dr_ini = row.get("data_registro_inicio")
+                try:
+                    if dr_ini:
+                        versao = VersaoClassificacao.objects.get(versao_id=versao_id, data_registro_inicio=dr_ini)
+                    else:
+                        versao = VersaoClassificacao.objects.get(versao_id=versao_id, data_registro_fim=get_sentinela_date())
+                except VersaoClassificacao.DoesNotExist:
+                    versao = VersaoClassificacao.objects.filter(versao_id=versao_id).first()
 
             VarianteClassificacao.objects.create(
                 variante_id=row["variante_id"],
@@ -342,8 +392,8 @@ class Command(BaseCommand):
         created = 0
         # Opcional: confiar na ordem do CSV (pais antes dos filhos).
         for row in rows:
-            classificacao = ClassificacaoReceita.objects.get(classificacao_id=row["classificacao_id"])
-            nivel = NivelHierarquico.objects.get(nivel_id=row["nivel_id"])
+            classificacao = self._get_bitemporal_instance(ClassificacaoReceita, "classificacao_id", row)
+            nivel = self._get_bitemporal_instance(NivelHierarquico, "nivel_id", row)
 
             base_legal = None
             base_id = row.get("base_legal_tecnica_id") or None
@@ -353,7 +403,7 @@ class Command(BaseCommand):
             parent = None
             parent_code = row.get("parent_item_id") or None
             if parent_code and parent_code != "-":
-                parent = ItemClassificacao.objects.get(item_id=parent_code)
+                parent = ItemClassificacao.objects.filter(item_id=parent_code, data_registro_fim=get_sentinela_date()).first()
 
             ItemClassificacao.objects.create(
                 item_id=row["item_id"],
