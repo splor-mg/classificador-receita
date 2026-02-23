@@ -20,7 +20,7 @@ from frictionless import Package, Resource
 from core.models import (
     SerieClassificacao,
     BaseLegalTecnica,
-    ClassificacaoReceita,
+    Classificacao,
     NivelHierarquico,
     ItemClassificacao,
     VersaoClassificacao,
@@ -104,7 +104,7 @@ class Command(BaseCommand):
         resource_model_map = {
             "serie_classificacao": SerieClassificacao,
             "base_legal_tecnica": BaseLegalTecnica,
-            "classificacao": ClassificacaoReceita,
+            "classificacao": Classificacao,
             "nivel_hierarquico": NivelHierarquico,
             "item_classificacao": ItemClassificacao,
             "versao_classificacao": VersaoClassificacao,
@@ -241,7 +241,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"base_legal_tecnica: {created} linhas carregadas."))
 
     def _load_classificacao(self, rows: Iterable[Mapping[str, Any]]) -> None:
-        if ClassificacaoReceita.objects.exists():
+        if Classificacao.objects.exists():
             self.stdout.write(
                 self.style.WARNING(
                     "Tabela 'classificacao' já possui registros. Pule este recurso ou use --clear."
@@ -258,7 +258,7 @@ class Command(BaseCommand):
             if base_id:
                 base_legal = BaseLegalTecnica.objects.get(base_legal_tecnica_id=base_id)
 
-            ClassificacaoReceita.objects.create(
+            Classificacao.objects.create(
                 classificacao_id=row["classificacao_id"],
                 classificacao_ref=row["classificacao_ref"],
                 serie_id=serie,
@@ -288,7 +288,7 @@ class Command(BaseCommand):
 
         created = 0
         for row in rows:
-            classificacao = self._get_bitemporal_instance(ClassificacaoReceita, "classificacao_id", row)
+            classificacao = self._get_bitemporal_instance(Classificacao, "classificacao_id", row)
             NivelHierarquico.objects.create(
                 nivel_id=row["nivel_id"],
                 nivel_ref=row["nivel_ref"],
@@ -319,7 +319,7 @@ class Command(BaseCommand):
 
         created = 0
         for row in rows:
-            classificacao = self._get_bitemporal_instance(ClassificacaoReceita, "classificacao_id", row)
+            classificacao = self._get_bitemporal_instance(Classificacao, "classificacao_id", row)
             VersaoClassificacao.objects.create(
                 versao_id=row["versao_id"],
                 versao_ref=row["versao_ref"],
@@ -348,7 +348,7 @@ class Command(BaseCommand):
 
         created = 0
         for row in rows:
-            classificacao = self._get_bitemporal_instance(ClassificacaoReceita, "classificacao_id", row)
+            classificacao = self._get_bitemporal_instance(Classificacao, "classificacao_id", row)
             # No seed atual, versao_id pode vir vazio/-; mantemos FK opcional.
             versao = None
             versao_id = row.get("versao_id") or None
@@ -392,7 +392,7 @@ class Command(BaseCommand):
         created = 0
         # Opcional: confiar na ordem do CSV (pais antes dos filhos).
         for row in rows:
-            classificacao = self._get_bitemporal_instance(ClassificacaoReceita, "classificacao_id", row)
+            classificacao = self._get_bitemporal_instance(Classificacao, "classificacao_id", row)
             nivel = self._get_bitemporal_instance(NivelHierarquico, "nivel_id", row)
 
             base_legal = None

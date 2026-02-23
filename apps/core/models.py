@@ -130,7 +130,7 @@ class SerieClassificacao(BitemporalModel):
         return f"{self.serie_nome} ({self.serie_id})"
 
 
-class ClassificacaoReceita(BitemporalModel):
+class Classificacao(BitemporalModel):
     """
     Classificação Estatística (GSIM StatisticalClassification).
 
@@ -286,7 +286,7 @@ class NivelHierarquico(BitemporalModel):
     # para alinhar com o Table Schema. O `db_column` garante que a coluna física se chame
     # exatamente `classificacao_id`, mantendo compatibilidade com o recurso Frictionless.
     classificacao_id = models.ForeignKey(
-        ClassificacaoReceita,
+        Classificacao,
         on_delete=models.PROTECT,
         related_name='niveis',
         db_column='classificacao_id',
@@ -390,7 +390,7 @@ class ItemClassificacao(BitemporalModel):
     # para alinhar com o Table Schema. O `db_column` garante que a coluna física se chame
     # exatamente `classificacao_id`, mantendo compatibilidade com o recurso Frictionless.
     classificacao_id = models.ForeignKey(
-        ClassificacaoReceita,
+        Classificacao,
         on_delete=models.PROTECT,
         related_name='itens',
         db_column='classificacao_id',
@@ -588,7 +588,7 @@ class VersaoClassificacao(BitemporalModel):
         db_index=True
     )
     classificacao = models.ForeignKey(
-        ClassificacaoReceita,
+        Classificacao,
         on_delete=models.PROTECT,
         related_name='versoes',
         verbose_name='Classificação',
@@ -664,7 +664,7 @@ class VarianteClassificacao(BitemporalModel):
         db_index=True
     )
     classificacao = models.ForeignKey(
-        ClassificacaoReceita,
+        Classificacao,
         on_delete=models.PROTECT,
         related_name='variantes',
         verbose_name='Classificação de Origem',

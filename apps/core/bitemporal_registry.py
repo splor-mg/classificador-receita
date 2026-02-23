@@ -23,7 +23,7 @@ from typing import Any, Dict, List, Optional
 def _get_models():
     from core.models import (
         SerieClassificacao,
-        ClassificacaoReceita,
+        Classificacao,
         NivelHierarquico,
         VersaoClassificacao,
         VarianteClassificacao,
@@ -33,7 +33,7 @@ def _get_models():
     )
     return {
         "SerieClassificacao": SerieClassificacao,
-        "ClassificacaoReceita": ClassificacaoReceita,
+        "Classificacao": Classificacao,
         "NivelHierarquico": NivelHierarquico,
         "VersaoClassificacao": VersaoClassificacao,
         "VarianteClassificacao": VarianteClassificacao,
@@ -64,7 +64,7 @@ RESOURCES: Dict[str, Dict[str, Any]] = {
         "order_by": ["serie_id", "data_registro_inicio"],
     },
     "classificacao": {
-        "model_name": "ClassificacaoReceita",
+        "model_name": "Classificacao",
         "entity_key": [
             {"arg": "classificacao_id", "lookup": "classificacao_id"},
         ],

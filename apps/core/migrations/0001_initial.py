@@ -214,7 +214,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name="ClassificacaoReceita",
+            name="Classificacao",
             fields=[
                 (
                     "id",
@@ -463,7 +463,7 @@ class Migration(migrations.Migration):
                         help_text="Referência à classificação estatística à qual este nível pertence",
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="niveis",
-                        to="core.classificacaoreceita",
+                        to="core.Classificacao",
                         verbose_name="Classificação",
                     ),
                 ),
@@ -626,7 +626,7 @@ class Migration(migrations.Migration):
                         null=True,
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="itens",
-                        to="core.classificacaoreceita",
+                        to="core.Classificacao",
                         verbose_name="Classificação",
                     ),
                 ),
@@ -791,7 +791,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.AddField(
-            model_name="classificacaoreceita",
+            model_name="Classificacao",
             name="serie_id",
             field=models.ForeignKey(
                 db_column="serie_id",
@@ -897,7 +897,7 @@ class Migration(migrations.Migration):
                         help_text="Referência à classificação estatística à qual esta versão pertence",
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="versoes",
-                        to="core.classificacaoreceita",
+                        to="core.Classificacao",
                         verbose_name="Classificação",
                     ),
                 ),
@@ -999,7 +999,7 @@ class Migration(migrations.Migration):
                         help_text="Referência à classificação estatística na qual esta variante se baseia",
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="variantes",
-                        to="core.classificacaoreceita",
+                        to="core.Classificacao",
                         verbose_name="Classificação de Origem",
                     ),
                 ),
@@ -1094,27 +1094,27 @@ class Migration(migrations.Migration):
             ),
         ),
         migrations.AddIndex(
-            model_name="classificacaoreceita",
+            model_name="Classificacao",
             index=models.Index(
                 fields=["classificacao_id", "data_registro_fim"],
                 name="idx_classificacao_registro_fim",
             ),
         ),
         migrations.AddIndex(
-            model_name="classificacaoreceita",
+            model_name="Classificacao",
             index=models.Index(
                 fields=["serie_id", "data_vigencia_inicio"], name="idx_classif_serie_vig"
             ),
         ),
         migrations.AddConstraint(
-            model_name="classificacaoreceita",
+            model_name="Classificacao",
             constraint=models.UniqueConstraint(
                 fields=("classificacao_id", "data_registro_inicio"),
                 name="unique_classificacao_registro",
             ),
         ),
         migrations.AddConstraint(
-            model_name="classificacaoreceita",
+            model_name="Classificacao",
             constraint=models.UniqueConstraint(
                 fields=("classificacao_ref", "data_registro_inicio"),
                 name="unique_classificacao_ref_registro",

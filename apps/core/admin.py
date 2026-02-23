@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     SerieClassificacao,
-    ClassificacaoReceita,
+    Classificacao,
     NivelHierarquico,
     ItemClassificacao,
     VersaoClassificacao,
@@ -19,8 +19,8 @@ class SerieClassificacaoAdmin(admin.ModelAdmin):
     date_hierarchy = 'data_vigencia_inicio'
 
 
-@admin.register(ClassificacaoReceita)
-class ClassificacaoReceitaAdmin(admin.ModelAdmin):
+@admin.register(Classificacao)
+class ClassificacaoAdmin(admin.ModelAdmin):
     list_display = ['classificacao_id', 'classificacao_nome', 'serie_id', 'tipo_classificacao', 'numero_niveis', 'data_vigencia_inicio']
     list_filter = ['tipo_classificacao', 'numero_niveis', 'serie_id', 'data_vigencia_inicio']
     search_fields = ['classificacao_id', 'classificacao_nome', 'descricao']

@@ -85,13 +85,13 @@ Foi implementada a estrutura básica do app `core` para gerenciamento das estrut
    - Campos: `serie_id`, `serie_nome`, `descricao`, `orgao_responsavel`
    - Sem dependências (entidade raiz)
 
-2. **`ClassificacaoReceita`** (GSIM StatisticalClassification)
+2. **`Classificacao`** (GSIM StatisticalClassification)
    - Campos: `classificacao_id`, `serie` (FK), `classificacao_nome`, `descricao`, `tipo_classificacao`, `numero_niveis`
    - FK: `serie` → `SerieClassificacao`
 
 3. **`NivelHierarquico`** (GSIM ClassificationLevel)
    - Campos: `nivel_id`, `classificacao` (FK), `nivel_numero`, `nivel_nome`, `descricao`, `estrutura_codigo`, `tipo_codigo`
-   - FK: `classificacao` → `ClassificacaoReceita`
+   - FK: `classificacao` → `Classificacao`
    - Constraint: `unique_nivel_numero_classificacao` (garante unicidade do número do nível por classificação)
 
 4. **`ItemClassificacao`** (GSIM ClassificationItem)
@@ -101,11 +101,11 @@ Foi implementada a estrutura básica do app `core` para gerenciamento das estrut
 
 5. **`VersaoClassificacao`** (GSIM ClassificationVersion)
    - Campos: `versao_id`, `classificacao` (FK), `versao_numero`, `versao_nome`, `descricao`, `data_lancamento`
-   - FK: `classificacao` → `ClassificacaoReceita`
+   - FK: `classificacao` → `Classificacao`
 
 6. **`VarianteClassificacao`** (GSIM ClassificationVariant)
    - Campos: `variante_id`, `classificacao` (FK), `versao` (FK opcional), `variante_nome`, `tipo_variante`, `descricao`, `proposito`
-   - FKs: `classificacao` → `ClassificacaoReceita`, `versao` → `VersaoClassificacao` (opcional)
+   - FKs: `classificacao` → `Classificacao`, `versao` → `VersaoClassificacao` (opcional)
 
 ### Características Implementadas
 
