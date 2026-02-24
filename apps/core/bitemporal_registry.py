@@ -181,6 +181,43 @@ RESOURCES: Dict[str, Dict[str, Any]] = {
         "select_related": ["classificacao_id", "nivel_id", "parent_item_id"],
         "order_by": ["item_id", "classificacao_id__classificacao_id", "data_registro_inicio"],
     },
+    "base_legal_tecnica": {
+        "model_name": "BaseLegalTecnica",
+        "entity_key": [
+            {"arg": "base_legal_tecnica_id", "lookup": "base_legal_tecnica_id"},
+        ],
+        "fields": [
+            {"name": "base_legal_tecnica_id", "type": "string", "required": True},
+            {"name": "base_legal_tecnica_ref", "type": "integer", "required": True},
+            {"name": "esfera_federativa", "type": "string", "required": True},
+            {"name": "tipo_legal", "type": "string", "required": True},
+            {"name": "numero_codigo", "type": "string", "required": True},
+            {"name": "data_edicao", "type": "date", "required": True},
+            {"name": "orgao_responsavel", "type": "string", "required": True},
+            {"name": "titulo_norma", "type": "string", "required": False, "default": ""},
+            {"name": "ementa", "type": "string", "required": False, "default": ""},
+            {"name": "url_fonte", "type": "string", "required": False, "default": ""},
+            {"name": "data_vigencia_inicio", "type": "date", "required": True},
+            {"name": "data_vigencia_fim", "type": "date", "required": True},
+        ],
+        "export_columns": [
+            "base_legal_tecnica_id",
+            "base_legal_tecnica_ref",
+            "esfera_federativa",
+            "tipo_legal",
+            "numero_codigo",
+            "data_edicao",
+            "orgao_responsavel",
+            "titulo_norma",
+            "ementa",
+            "url_fonte",
+            "data_vigencia_inicio",
+            "data_vigencia_fim",
+        ],
+        "list_display": ["base_legal_tecnica_id", "titulo_norma", "data_edicao"],
+        "select_related": [],
+        "order_by": ["base_legal_tecnica_id"],
+    },
 }
 
 
@@ -200,6 +237,29 @@ def get_model_for_resource(name: str):
     if model_name not in models_map:
         raise KeyError(f"Model '{model_name}' não encontrado em core.models")
     return models_map[model_name]
+
+
+def get_resource_for_model(model_cls) -> Optional[str]:
+    """Retorna o nome do recurso no registry dado a classe do model (ou None)."""
+    models_map, _, _ = _get_models()
+    # iterate resources and compare model classes
+    for rname, meta in RESOURCES.items():
+        model_name = meta.get("model_name")
+        try:
+            cls = models_map.get(model_name)
+        except Exception:
+            cls = None
+        if cls is None:
+            # try to resolve dynamically
+            try:
+                from django.apps import apps
+
+                cls = apps.get_model("core", model_name)
+            except Exception:
+                cls = None
+        if cls is model_cls:
+            return rname
+    return None
 
 
 def get_sentinela_date() -> date:
