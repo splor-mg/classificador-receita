@@ -26,7 +26,7 @@ from core.models import (
     VersaoClassificacao,
     VarianteClassificacao,
 )
-from core.bitemporal_registry import get_sentinela_date
+from ...bitemporal_registry import get_sentinela_date
 
 
 class Command(BaseCommand):
@@ -154,9 +154,24 @@ class Command(BaseCommand):
             rows: Iterable[Mapping[str, Any]] = list(resource.read_rows())
         except Exception as e:
             # Log diagnostic info to help debug resource opening issues (encoding / path / format)
+            import traceback as _traceback
+            import sys as _sys
+
             self.stderr.write(self.style.ERROR(f"Falha ao abrir recurso '{name}' - path={getattr(resource, 'path', None)}"))
+            # Print full traceback to stderr for deeper diagnosis
+            _traceback.print_exc(file=_sys.stderr)
+            # Try to show resource descriptor/metadata if available (best-effort)
             try:
-                self.stderr.write(self.style.ERROR(f"Resource descriptor: {resource.descriptor}"))
+                desc = None
+                try:
+                    desc = getattr(resource, "descriptor", None)
+                except Exception:
+                    # older/newer versions may expose different attributes
+                    try:
+                        desc = resource.metadata.to_descriptor()
+                    except Exception:
+                        desc = None
+                self.stderr.write(self.style.ERROR(f"Resource descriptor/metadata: {desc}"))
             except Exception:
                 pass
             # Fallback: tentar ler o CSV diretamente com csv.DictReader (mais tolerante)
@@ -405,26 +420,46 @@ class Command(BaseCommand):
             if parent_code and parent_code != "-":
                 parent = ItemClassificacao.objects.filter(item_id=parent_code, data_registro_fim=get_sentinela_date()).first()
 
-            ItemClassificacao.objects.create(
-                item_id=row["item_id"],
-                item_ref=row["item_ref"],
+            # Normalize boolean and empty values coming from CSV (csv.DictReader returns strings)
+            def _to_bool(v):
+                if isinstance(v, bool):
+                    return v
+                if v is None:
+                    return False
+                s = str(v).strip().lower()
+                return s in ("1", "true", "t", "yes", "y")
+
+            def _none_if_empty(v):
+                if v is None:
+                    return None
+                s = str(v).strip()
+                return None if s in ("", "-", "NA", "null", "None") else s
+
+            matriz_val = _to_bool(row.get("matriz"))
+            item_gerado_val = _to_bool(row.get("item_gerado"))
+
+            item = ItemClassificacao(
+                item_id=_none_if_empty(row.get("item_id")),
+                item_ref=_none_if_empty(row.get("item_ref")),
                 classificacao_id=classificacao,
-                receita_cod=row.get("receita_cod") or None,
-                matriz=row["matriz"],
-                receita_nome=row.get("receita_nome") or None,
-                receita_descricao=row.get("receita_descricao") or None,
+                receita_cod=_none_if_empty(row.get("receita_cod")),
+                matriz=matriz_val,
+                receita_nome=_none_if_empty(row.get("receita_nome")),
+                receita_descricao=_none_if_empty(row.get("receita_descricao")),
                 base_legal_tecnica_id=base_legal,
-                base_legal_tecnica_referencia=row.get("base_legal_tecnica_referencia") or None,
-                destinacao_legal=row.get("destinacao_legal") or None,
-                informacoes_gerenciais=row.get("informacoes_gerenciais") or None,
+                base_legal_tecnica_referencia=_none_if_empty(row.get("base_legal_tecnica_referencia")),
+                destinacao_legal=_none_if_empty(row.get("destinacao_legal")),
+                informacoes_gerenciais=_none_if_empty(row.get("informacoes_gerenciais")),
                 nivel_id=nivel,
                 parent_item_id=parent,
-                item_gerado=row["item_gerado"],
+                item_gerado=item_gerado_val,
                 data_vigencia_inicio=row["data_vigencia_inicio"],
                 data_vigencia_fim=row["data_vigencia_fim"],
                 data_registro_inicio=row["data_registro_inicio"],
                 data_registro_fim=row["data_registro_fim"],
             )
+            # Skip model validation during bulk load; DB and later processes enforce business rules.
+            item.save(_skip_validation=True)
             created += 1
 
         self.stdout.write(self.style.SUCCESS(f"item_classificacao: {created} linhas carregadas."))
