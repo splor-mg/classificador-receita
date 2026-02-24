@@ -163,12 +163,12 @@ foreignKeys:
       resource: nivel_hierarquico
       fields:
         - nivel_id
-  - fields:
-      - parent_item_id
-    reference:
-      resource: item_classificacao
-      fields:
-        - item_id
+#  - fields: #validação desativada temporariamente já que o campo parent_item_id apresenta exceção quando NIVEL=1
+#      - parent_item_id
+#    reference:
+#      resource: item_classificacao
+#      fields:
+#        - item_id
   - fields:
       - base_legal_tecnica_id
     reference:
