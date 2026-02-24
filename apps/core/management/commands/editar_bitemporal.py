@@ -12,7 +12,7 @@ from datetime import date, timedelta
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from core.bitemporal_registry import (
+from apps.core.bitemporal_registry import (
     RESOURCES,
     get_resource,
     get_model_for_resource,
@@ -20,7 +20,7 @@ from core.bitemporal_registry import (
     build_entity_filter,
     resolve_fk,
 )
-from core.models import VALID_TIME_SENTINEL
+from apps.core.models import VALID_TIME_SENTINEL
 
 
 class Command(BaseCommand):

@@ -1,6 +1,6 @@
 from django.db import models
 
-from .domain_choices import ORGAOS_ENTIDADES_CHOICES
+from apps.core.domain_choices import ORGAOS_ENTIDADES_CHOICES
 
 
 class BaseLegalTecnica(models.Model):

@@ -21,7 +21,7 @@ from typing import Any, Dict, List, Optional
 
 # Import apenas quando necessário para evitar circular import no boot do Django
 def _get_models():
-    from core.models import (
+    from apps.core.models import (
         SerieClassificacao,
         Classificacao,
         NivelHierarquico,

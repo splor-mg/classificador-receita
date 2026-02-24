@@ -14,7 +14,7 @@ from datetime import date
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from core.bitemporal_registry import (
+from apps.core.bitemporal_registry import (
     RESOURCES,
     build_entity_filter,
     get_resource,
@@ -22,7 +22,7 @@ from core.bitemporal_registry import (
     get_sentinela_date,
     resolve_fk,
 )
-from core.models import VALID_TIME_SENTINEL
+from apps.core.models import VALID_TIME_SENTINEL
 
 
 def _vigencia_overlaps(a_ini: date, a_fim: date, b_ini: date, b_fim: date) -> bool:

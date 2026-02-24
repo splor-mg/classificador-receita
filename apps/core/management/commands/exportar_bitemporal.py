@@ -11,7 +11,7 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 
-from core.bitemporal_registry import (
+from apps.core.bitemporal_registry import (
     RESOURCES,
     get_resource,
     get_model_for_resource,

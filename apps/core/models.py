@@ -2,8 +2,8 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from django.core.exceptions import ValidationError
 
-from .models_base_legal import BaseLegalTecnica
-from .domain_choices import ORGAOS_ENTIDADES_CHOICES
+from apps.core.models_base_legal import BaseLegalTecnica
+from apps.core.domain_choices import ORGAOS_ENTIDADES_CHOICES
 
 
 # Constantes para valores sentinelas (conforme ADR-001)

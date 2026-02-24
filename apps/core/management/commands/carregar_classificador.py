@@ -17,7 +17,7 @@ from django.db import transaction
 
 from frictionless import Package, Resource
 
-from core.models import (
+from apps.core.models import (
     SerieClassificacao,
     BaseLegalTecnica,
     Classificacao,
@@ -26,7 +26,7 @@ from core.models import (
     VersaoClassificacao,
     VarianteClassificacao,
 )
-from ...bitemporal_registry import get_sentinela_date
+from apps.core.bitemporal_registry import get_sentinela_date
 
 
 class Command(BaseCommand):
