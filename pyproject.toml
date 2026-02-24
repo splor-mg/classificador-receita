@@ -40,9 +40,11 @@ makemigrations = { cmd = "python manage.py makemigrations", help = "Gera migraç
 migrate = { cmd = "python manage.py migrate", help = "Migra mudanças para banco de dados." }
 carregar = { cmd = "python manage.py carregar_classificador", help = "Carrega dados iniciais a partir do datapackage.yaml (docs/assets/seed_*.csv). Opções: --datapackage=<caminho>, --resource=<nome>, --dry-run, --clear (limpa tabelas antes de recarregar). Exemplo: `poetry run task carregar -- --clear`, mantendo -- após a task para repassar argumentos ao script." }
 # Django Development
-create-superuser = { cmd = "python manage.py createsuperuser", help = "Cria um superusuário." }
+superuser-create = { cmd = "python manage.py createsuperuser", help = "Cria um superusuário." }
+superuser-list = { cmd = "python manage.py superuser_list", help = "Lista superusers (username, email). Restrito a DEBUG, no setting.py, ou ALLOW_ADMIN_LIST=1 no .env." }
 initial-migration = { cmd = "python manage.py makemigrations --name initial", help = "Gera migrações com nome 'initial' para todos os apps que tiverem alterações. Para aplicar ao banco, rode em seguida: poetry run task migrate." }
 dev-server = { cmd = "python manage.py runserver", help = "Liga servidor de desenvolvimento." }
+showmigrations = { cmd = "python manage.py showmigrations", help = "Mostra todas as migrações de todos os apps." }
 
 # Documentation
 build-docs = { cmd = "zensical build --clean", help = "Gera a documentação estática com Zensical removendo antes qualquer build antigo (--clean garante atualização e evita arquivos obsoletos)" }

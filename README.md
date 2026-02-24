@@ -25,17 +25,17 @@ poetry install
 
 2. **Execute as migrações:**
 ```bash
-task migrate
+poetry run task migrate
 ```
 
 3. **Crie um superusuário:**
 ```bash
-task create-superuser
+poetry run task superuser-create
 ```
 
 3. **Carregue os dados iniciais (seeds):**
 ```bash
-task carregar
+poetry run task carregar
 ```
 (Opcional: `poetry run task carregar -- --dry-run` para apenas conferir; `-- --clear` para limpar as tabelas antes de recarregar.)
 
