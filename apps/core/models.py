@@ -1,5 +1,5 @@
 from django.db import models
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from django.core.exceptions import ValidationError
 
 from .models_base_legal import BaseLegalTecnica
@@ -71,8 +71,8 @@ class SerieClassificacao(BitemporalModel):
         db_index=True
     )
     serie_ref = models.IntegerField(
-        null=True,
-        blank=True,
+        null=False,
+        blank=False,
         verbose_name='Referência Numérica da Série',
         help_text=(
             'Identificador numérico estável da série de classificações, usado na chave primária '
@@ -107,11 +107,11 @@ class SerieClassificacao(BitemporalModel):
         verbose_name_plural = 'Séries de Classificações'
         constraints = [
             models.UniqueConstraint(
-                fields=['serie_id', 'data_registro_inicio'],
+                fields=['serie_id', 'data_vigencia_inicio', 'data_registro_inicio'],
                 name='unique_serie_registro'
             ),
             models.UniqueConstraint(
-                fields=['serie_ref', 'data_registro_inicio'],
+                fields=['serie_ref', 'data_vigencia_inicio', 'data_registro_inicio'],
                 name='unique_serie_ref_registro',
             ),
         ]
@@ -152,8 +152,8 @@ class Classificacao(BitemporalModel):
         db_index=True
     )
     classificacao_ref = models.IntegerField(
-        null=True,
-        blank=True,
+        null=False,
+        blank=False,
         verbose_name='Referência Numérica da Classificação',
         help_text=(
             'Identificador numérico estável da classificação estatística, usado na chave primária '
@@ -226,11 +226,11 @@ class Classificacao(BitemporalModel):
         verbose_name_plural = 'Classificações de Receita'
         constraints = [
             models.UniqueConstraint(
-                fields=['classificacao_id', 'data_registro_inicio'],
+                fields=['classificacao_id', 'data_vigencia_inicio', 'data_registro_inicio'],
                 name='unique_classificacao_registro'
             ),
             models.UniqueConstraint(
-                fields=['classificacao_ref', 'data_registro_inicio'],
+                fields=['classificacao_ref', 'data_vigencia_inicio', 'data_registro_inicio'],
                 name='unique_classificacao_ref_registro',
             ),
         ]
@@ -335,15 +335,15 @@ class NivelHierarquico(BitemporalModel):
         verbose_name_plural = 'Níveis Hierárquicos'
         constraints = [
             models.UniqueConstraint(
-                fields=['nivel_id', 'data_registro_inicio'],
+                fields=['nivel_id', 'data_vigencia_inicio', 'data_registro_inicio'],
                 name='unique_nivel_registro',
             ),
             models.UniqueConstraint(
-                fields=['classificacao_id', 'nivel_numero', 'data_registro_inicio'],
+                fields=['classificacao_id', 'nivel_numero', 'data_vigencia_inicio', 'data_registro_inicio'],
                 name='unq_nivel_numero_classif',
             ),
             models.UniqueConstraint(
-                fields=['nivel_ref', 'data_registro_inicio'],
+                fields=['nivel_ref', 'data_vigencia_inicio', 'data_registro_inicio'],
                 name='unique_nivel_ref_registro',
             ),
         ]
@@ -394,20 +394,21 @@ class ItemClassificacao(BitemporalModel):
         on_delete=models.PROTECT,
         related_name='itens',
         db_column='classificacao_id',
-        null=True,
-        blank=True,
+        null=False,
+        blank=False,
         verbose_name='Classificação',
         help_text='Referência à classificação estatística à qual este item pertence',
     )
     receita_cod = models.CharField(
         max_length=13,
-        null=True,
-        blank=True,
+        null=False,
+        blank=False,
         verbose_name='Código Canônico da Natureza de Receita',
         help_text=(
             'Código numérico canônico da natureza de receita orçamentária'
         ),
         db_index=True,
+        validators=[RegexValidator(regex=r'^[0-9]{8,13}$', message='receita_cod must be 8-13 digits')],
     )
     matriz = models.BooleanField(
         default=False,
@@ -498,7 +499,11 @@ class ItemClassificacao(BitemporalModel):
         db_column='parent_item_id',
         verbose_name='Item Pai',
         help_text='Referência ao item do nível imediatamente superior na hierarquia. NULL para itens do nível 1.',
+        null=True,
+        blank=True,
     )
+    # Allow NULL in DB for root items; business rules enforced in `clean()`.
+    # Note: migrations must be created to apply this change to the database.
     item_gerado = models.BooleanField(
         default=False,
         verbose_name='Item Gerado Automaticamente',
@@ -514,15 +519,15 @@ class ItemClassificacao(BitemporalModel):
         verbose_name_plural = 'Itens de Classificação'
         constraints = [
             models.UniqueConstraint(
-                fields=['item_id', 'data_registro_inicio'],
+                fields=['item_id', 'data_vigencia_inicio', 'data_registro_inicio'],
                 name='unique_item_registro'
             ),
             models.UniqueConstraint(
-                fields=['item_ref', 'data_registro_inicio'],
+                fields=['item_ref', 'data_vigencia_inicio', 'data_registro_inicio'],
                 name='unique_item_ref_registro'
             ),
             models.UniqueConstraint(
-                fields=['receita_cod', 'data_registro_inicio'],
+                fields=['receita_cod', 'data_vigencia_inicio', 'data_registro_inicio'],
                 name='unique_receita_cod_registro'
             ),
         ]
@@ -565,6 +570,16 @@ class ItemClassificacao(BitemporalModel):
                 {'parent_item_id': 'Itens de nível superior a 1 devem possuir um item pai.'}
             )
 
+    def save(self, *args, _skip_validation: bool = False, **kwargs):
+        """
+        Override save to run model validation by default. Pass `_skip_validation=True`
+        from trusted importers/loaders when inserting seed data to avoid DB-level
+        validation during bulk loads. Business rules remain enforced for normal app flows.
+        """
+        if not _skip_validation:
+            self.full_clean()
+        super().save(*args, **kwargs)
+
 
 class VersaoClassificacao(BitemporalModel):
     """
@@ -573,8 +588,8 @@ class VersaoClassificacao(BitemporalModel):
     Versão da classificação para mudanças que alteram fronteiras conceituais entre categorias.
     """
     versao_ref = models.IntegerField(
-        null=True,
-        blank=True,
+        null=False,
+        blank=False,
         verbose_name='Referência Numérica da Versão',
         help_text=(
             'Identificador numérico estável da versão, usado na chave primária lógica (bitemporal). '
@@ -623,11 +638,11 @@ class VersaoClassificacao(BitemporalModel):
         verbose_name_plural = 'Versões da Classificação'
         constraints = [
             models.UniqueConstraint(
-                fields=['versao_id', 'data_registro_inicio'],
+                fields=['versao_id', 'data_vigencia_inicio', 'data_registro_inicio'],
                 name='unique_versao_registro'
             ),
             models.UniqueConstraint(
-                fields=['versao_ref', 'data_registro_inicio'],
+                fields=['versao_ref', 'data_vigencia_inicio', 'data_registro_inicio'],
                 name='unique_versao_ref_registro',
             ),
         ]
@@ -708,7 +723,7 @@ class VarianteClassificacao(BitemporalModel):
         verbose_name_plural = 'Variantes de Classificação'
         constraints = [
             models.UniqueConstraint(
-                fields=['variante_id', 'data_registro_inicio'],
+                fields=['variante_id', 'data_vigencia_inicio', 'data_registro_inicio'],
                 name='unique_variante_registro'
             )
         ]
