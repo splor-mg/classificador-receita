@@ -82,29 +82,61 @@ def export_resource(recurso: str, output: str | None = None, scope: str = "all",
     if where_clauses:
         select_sql += " WHERE " + " AND ".join(where_clauses)
 
+    # Enforce deterministic ordering: prefer <*_ref> asc, data_vigencia_inicio desc, data_registro_inicio desc
     order_sql_parts = []
-    for ob in res.get("order_by", []):
-        if "__" in ob:
-            left, right = ob.split("__", 1)
-            if left in alias_map:
-                alias, ref_model, fk_semantic_attr = alias_map[left]
-                try:
-                    right_col = ref_model._meta.get_field(right).column
-                except Exception:
-                    right_col = right
-                order_sql_parts.append(f"{alias}.{right_col}")
+
+    # find first field ending with _ref in resource fields
+    ref_field_name = None
+    for f in res.get("fields", []):
+        if f.get("name", "").endswith("_ref"):
+            ref_field_name = f["name"]
+            break
+
+    if ref_field_name:
+        try:
+            ref_col = model._meta.get_field(ref_field_name).column
+        except Exception:
+            ref_col = ref_field_name
+        order_sql_parts.append(f"{main_alias}.{ref_col} ASC")
+
+    # add data_vigencia_inicio desc if present
+    try:
+        vig_col = model._meta.get_field("data_vigencia_inicio").column
+        order_sql_parts.append(f"{main_alias}.{vig_col} DESC")
+    except Exception:
+        pass
+
+    # add data_registro_inicio desc if present
+    try:
+        reg_col = model._meta.get_field("data_registro_inicio").column
+        order_sql_parts.append(f"{main_alias}.{reg_col} DESC")
+    except Exception:
+        pass
+
+    # fallback: if no ref field found, use resource order_by if provided
+    if not order_sql_parts:
+        for ob in res.get("order_by", []):
+            if "__" in ob:
+                left, right = ob.split("__", 1)
+                if left in alias_map:
+                    alias, ref_model, fk_semantic_attr = alias_map[left]
+                    try:
+                        right_col = ref_model._meta.get_field(right).column
+                    except Exception:
+                        right_col = right
+                    order_sql_parts.append(f"{alias}.{right_col}")
+                else:
+                    try:
+                        col_db = model._meta.get_field(ob).column
+                    except Exception:
+                        col_db = ob.replace("__", ".")
+                    order_sql_parts.append(f"{main_alias}.{col_db}")
             else:
                 try:
                     col_db = model._meta.get_field(ob).column
                 except Exception:
-                    col_db = ob.replace("__", ".")
+                    col_db = ob
                 order_sql_parts.append(f"{main_alias}.{col_db}")
-        else:
-            try:
-                col_db = model._meta.get_field(ob).column
-            except Exception:
-                col_db = ob
-            order_sql_parts.append(f"{main_alias}.{col_db}")
 
     if order_sql_parts:
         select_sql += " ORDER BY " + ", ".join(order_sql_parts)

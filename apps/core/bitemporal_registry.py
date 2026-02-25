@@ -2,9 +2,8 @@
 Registro de metadados dos recursos bitemporais (ADR-001, ADR-004).
 
 RESOURCES contém apenas recursos bitemporais (SCD-2, append-only), aos quais se
-aplicam as Regras 1 a 7 da ADR-004. O recurso base_legal_tecnica é modelo temporal
-simples (SCD-1, alteração in-place) e não entra neste registry; as Regras 1 a 7
-não se aplicam a ele (ADR-004 Regra 8).
+aplicam a ADR-004. O recurso base_legal_tecnica é modelo temporal
+simples (SCD-1, alteração in-place) e não entra neste registry.
 
 Cada recurso define: model, chave de entidade, campos (cadastro/edição/export),
 resolução de FKs, colunas de export e list_display. Usado pelos comandos genéricos
