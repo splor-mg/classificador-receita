@@ -13,6 +13,7 @@ import threading
 import logging
 from apps.core.bitemporal_registry import get_resource_for_model
 from pathlib import Path
+from apps.core.forms import SerieClassificacaoForm
 
 
 class AutoExportAdminMixin:
@@ -60,11 +61,47 @@ class AutoExportAdminMixin:
 
 @admin.register(SerieClassificacao)
 class SerieClassificacaoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
-    list_display = ['serie_id', 'serie_nome', 'orgao_responsavel_both', 'data_vigencia_inicio', 'data_vigencia_fim', 'data_registro_inicio']
-    list_filter = ['data_vigencia_inicio', 'data_registro_inicio']
-    search_fields = ['serie_id', 'serie_nome', 'descricao']
-    readonly_fields = ['data_registro_inicio', 'data_registro_fim']
+    list_display = [
+        'serie_id',
+        'serie_nome',
+        'orgao_responsavel_both',
+        'data_vigencia_inicio',
+        'data_vigencia_fim',
+        'data_registro_inicio',
+    ]
+    ordering = [
+        '-data_registro_inicio',
+        'serie_ref',
+    ]
+    list_filter = [
+        'data_vigencia_inicio',
+        'data_registro_inicio',
+    ]
+    search_fields = [
+        'serie_id',
+        'serie_nome',
+        'descricao',
+    ]
+    readonly_fields = [
+        'serie_ref',
+        'data_registro_inicio',
+        'data_registro_fim',
+    ]
     date_hierarchy = 'data_vigencia_inicio'
+    # Ordem dos campos exibidos na página de edição (change form)
+    fields = [
+        ('serie_id', 'serie_ref'),
+        'serie_nome',
+        'descricao',
+        'orgao_responsavel',
+        'data_vigencia_inicio',
+        'data_vigencia_fim',
+        'data_registro_inicio',
+        'data_registro_fim',
+    ]
+    
+    form = SerieClassificacaoForm
+
     def orgao_responsavel_both(self, obj):
         """
         Mostrar código armazenado (value) e rótulo (label) das choices, ex: "STN-BRA — Secretaria do Tesouro Nacional".
