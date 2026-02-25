@@ -1,0 +1,39 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+  <p>Foram detectadas as seguintes alterações. Escolha a estratégia para aplicar:</p>
+  <table class="adminlist" style="width:100%; table-layout:fixed;">
+    <thead>
+      <tr>
+        <th style="width:15%;">Campo</th>
+        <th style="width:42.5%;">Atual</th>
+        <th style="width:42.5%;">Novo</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in diffs %}
+        <tr>
+          <td>{{ d.field }}</td>
+          <td>{{ d.old }}</td>
+          <td>{{ d.new }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <form method="post" action="">
+    {% csrf_token %}
+    {# Re-post original form data as hidden inputs #}
+    {% for k, v in post_items %}
+      <input type="hidden" name="{{ k }}" value="{{ v|escape }}">
+    {% endfor %}
+
+    <div style="margin-top:1em;">
+      <button type="submit" name="edit_strategy" value="sobrescrever" class="default">Sobrescrever vigência anterior</button>
+      <button type="submit" name="edit_strategy" value="nova_vigencia">Registrar nova vigência</button>
+      <a href="../" class="button">Cancelar</a>
+    </div>
+  </form>
+{% endblock %}
+
