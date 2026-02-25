@@ -14,49 +14,49 @@ description: |
 
 values:
   # União
-  - planalto
-  - congresso
-  - camara
-  - senado
-  - stf
-  - stj
-  - trf
-  - tcu
-  - cgu
-  - agu
-  - stn
-  - sof
-  - rfb
-  - bacen
+  - Planalto-BRA
+  - Congresso-BRA
+  - Camara-BRA
+  - Senado-BRA
+  - STF-BRA
+  - STJ-BRA
+  - TRF-BRA
+  - TCU-BRA
+  - CGU-BRA
+  - AGU-BRA
+  - STN-BRA
+  - SOF-BRA
+  - RFB-BRA
+  - BACEN-BRA
   # Minas Gerais
-  - almg
-  - tcemg
-  - tjmg
-  - cgemg
-  - agemg
-  - seplag-mg
-  - sef-mg
+  - AL-MG
+  - TCE-MG
+  - TJ-MG
+  - CGE-MG
+  - AGE-MG
+  - SEPLAG-MG
+  - SEF-MG
 
 labels:
-  planalto: Presidência da República / Planalto
-  congresso: Congresso Nacional
-  camara: Câmara dos Deputados
-  senado: Senado Federal
-  stf: Supremo Tribunal Federal
-  stj: Superior Tribunal de Justiça
-  trf: Tribunal Regional Federal
-  tcu: Tribunal de Contas da União
-  cgu: Controladoria-Geral da União
-  agu: Advocacia-Geral da União
-  stn: Secretaria do Tesouro Nacional
-  sof: Secretaria de Orçamento Federal
-  rfb: Receita Federal do Brasil
-  bacen: Banco Central do Brasil
-  almg: Assembleia Legislativa de Minas Gerais
-  tcemg: Tribunal de Contas do Estado de Minas Gerais
-  tjmg: Tribunal de Justiça de Minas Gerais
-  cgemg: Controladoria-Geral do Estado de Minas Gerais
-  agemg: Advocacia-Geral do Estado de Minas Gerais
-  seplag-mg: Secretaria de Estado de Planejamento e Gestão de Minas Gerais
-  sef-mg: Secretaria de Estado da Fazenda de Minas Gerais
+  Planalto-BRA: Presidência da República / Planalto
+  Congresso-BRA: Congresso Nacional
+  Camara-BRA: Câmara dos Deputados
+  Senado-BRA: Senado Federal
+  STF-BRA: Supremo Tribunal Federal
+  STJ-BRA: Superior Tribunal de Justiça
+  TRF-BRA: Tribunal Regional Federal
+  TCU-BRA: Tribunal de Contas da União
+  CGU-BRA: Controladoria-Geral da União
+  AGU-BRA: Advocacia-Geral da União
+  STN-BRA: Secretaria do Tesouro Nacional
+  SOF-BRA: Secretaria de Orçamento Federal
+  RFB-BRA: Receita Federal do Brasil
+  BACEN-BRA: Banco Central do Brasil
+  AL-MG: Assembleia Legislativa de Minas Gerais
+  TCE-MG: Tribunal de Contas do Estado de Minas Gerais
+  TJ-MG: Tribunal de Justiça de Minas Gerais
+  CGE-MG: Controladoria-Geral do Estado de Minas Gerais
+  AGE-MG: Advocacia-Geral do Estado de Minas Gerais
+  SEPLAG-MG: Secretaria de Estado de Planejamento e Gestão de Minas Gerais
+  SEF-MG: Secretaria de Estado da Fazenda de Minas Gerais
 

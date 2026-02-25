@@ -60,11 +60,23 @@ class AutoExportAdminMixin:
 
 @admin.register(SerieClassificacao)
 class SerieClassificacaoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
-    list_display = ['serie_id', 'serie_nome', 'orgao_responsavel', 'data_vigencia_inicio', 'data_vigencia_fim', 'data_registro_inicio']
+    list_display = ['serie_id', 'serie_nome', 'orgao_responsavel_both', 'data_vigencia_inicio', 'data_vigencia_fim', 'data_registro_inicio']
     list_filter = ['data_vigencia_inicio', 'data_registro_inicio']
     search_fields = ['serie_id', 'serie_nome', 'descricao']
     readonly_fields = ['data_registro_inicio', 'data_registro_fim']
     date_hierarchy = 'data_vigencia_inicio'
+    def orgao_responsavel_both(self, obj):
+        """
+        Mostrar código armazenado (value) e rótulo (label) das choices, ex: "STN-BRA — Secretaria do Tesouro Nacional".
+        """
+        try:
+            label = obj.get_orgao_responsavel_display()
+        except Exception:
+            label = ''
+        if label:
+            return f"{obj.orgao_responsavel} — {label}"
+        return obj.orgao_responsavel
+    orgao_responsavel_both.short_description = 'Órgão Responsável'
 
 
 @admin.register(Classificacao)
