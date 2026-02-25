@@ -1,4 +1,5 @@
 from django.contrib import admin
+
 from apps.core.models import (
     SerieClassificacao,
     Classificacao,
@@ -8,59 +9,19 @@ from apps.core.models import (
     VarianteClassificacao,
 )
 from apps.core.models_base_legal import BaseLegalTecnica
-from apps.core.exporter import export_resource
-import threading
-import logging
-from apps.core.bitemporal_registry import get_resource_for_model
-from pathlib import Path
 from apps.core.forms import SerieClassificacaoForm
-
-
-class AutoExportAdminMixin:
-    """Mixin para disparar exportação do seed correspondente após save no Admin.
-    Dispara export_resource(resource, output=docs/assets/seed_<resource>.csv) em background.
-    """
-    export_backup_default = False
-    export_backup_dir = None
-    def save_model(self, request, obj, form, change):
-        """
-        Save and schedule export of the corresponding seed in background.
-        """
-        super().save_model(request, obj, form, change)
-        recurso = get_resource_for_model(obj.__class__)
-        if not recurso:
-            return
-        out = str(Path("docs/assets") / f"seed_{recurso}.csv")
-        # log start of export (do not notify 'scheduled' message)
-        logging.getLogger(__name__).info("Starting export for %s", out)
-
-        def _bg():
-            try:
-                export_resource(recurso, output=out, scope="all", do_backup=self.export_backup_default, backup_dir=self.export_backup_dir)
-                logging.getLogger(__name__).info("Export completed for %s -> %s", recurso, out)
-            except Exception:
-                logging.getLogger(__name__).exception("Export failed for %s", recurso)
-
-        t = threading.Thread(target=_bg, daemon=True)
-        # Execute synchronously in the request thread (blocking). Intended by explicit request.
-        try:
-            result = export_resource(recurso, output=out, scope="all", do_backup=self.export_backup_default, backup_dir=self.export_backup_dir)
-            # Inform the admin user of completion
-            backup_msg = f" Backup: {result['backup']}" if result.get("backup") else ""
-            try:
-                self.message_user(request, f"Export completed for {out}.{backup_msg}")
-            except Exception:
-                logging.getLogger(__name__).info("Export completed for %s -> %s", recurso, out)
-        except Exception:
-            logging.getLogger(__name__).exception("Export failed for %s", recurso)
-            try:
-                self.message_user(request, f"Export failed for {out} (see logs).")
-            except Exception:
-                pass
+from apps.core.admin_mixins import (
+    AutoExportAdminMixin,
+    BitemporalAdminMixin,
+)
 
 
 @admin.register(SerieClassificacao)
-class SerieClassificacaoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
+class SerieClassificacaoAdmin(
+    BitemporalAdminMixin,
+    AutoExportAdminMixin,
+    admin.ModelAdmin,
+):
     list_display = [
         'serie_id',
         'serie_nome',
@@ -70,8 +31,9 @@ class SerieClassificacaoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
         'data_registro_inicio',
     ]
     ordering = [
-        '-data_registro_inicio',
         'serie_ref',
+        'data_vigencia_inicio',
+        '-data_registro_inicio',
     ]
     list_filter = [
         'data_vigencia_inicio',
@@ -88,7 +50,6 @@ class SerieClassificacaoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
         'data_registro_fim',
     ]
     date_hierarchy = 'data_vigencia_inicio'
-    # Ordem dos campos exibidos na página de edição (change form)
     fields = [
         ('serie_id', 'serie_ref'),
         'serie_nome',
@@ -99,12 +60,11 @@ class SerieClassificacaoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
         'data_registro_inicio',
         'data_registro_fim',
     ]
-    
     form = SerieClassificacaoForm
 
     def orgao_responsavel_both(self, obj):
         """
-        Mostrar código armazenado (value) e rótulo (label) das choices, ex: "STN-BRA — Secretaria do Tesouro Nacional".
+        Mostrar código armazenado (value) e rótulo (label) das choices.
         """
         try:
             label = obj.get_orgao_responsavel_display()
