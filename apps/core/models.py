@@ -82,17 +82,18 @@ class SerieClassificacao(BitemporalModel):
     )
     serie_nome = models.CharField(
         max_length=255,
+        blank=False,
         verbose_name='Nome da Série',
         help_text='Nome oficial da série de classificações'
     )
     descricao = models.TextField(
-        blank=True,
+        blank=False,
         verbose_name='Descrição',
         help_text='Descrição detalhada da série de classificações e seu propósito'
     )
     orgao_responsavel = models.CharField(
         max_length=255,
-        blank=True,
+        blank=False,
         verbose_name='Órgão Responsável',
         help_text=(
             'Órgão ou entidade responsável pela manutenção da série de classificações. '
@@ -103,7 +104,7 @@ class SerieClassificacao(BitemporalModel):
 
     class Meta:
         db_table = 'serie_classificacao'
-        verbose_name = 'Série de Classificações'
+        verbose_name = 'Série de Classificação'
         verbose_name_plural = 'Séries de Classificações'
         constraints = [
             models.UniqueConstraint(
