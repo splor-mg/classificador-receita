@@ -20,13 +20,14 @@ from apps.core.admin_mixins import (
 
 
 class RegistroAtivoFilter(admin.SimpleListFilter):
-    """Filtro para registros ativos/inativos considerando vigência."""
+    """Filtro para registros ativos (correntes, históricos e futuros) e inativos em termos de registro/vigência."""
     title = 'Status do Registro'
     parameter_name = 'registro_ativo'
 
     def lookups(self, request, model_admin):
         return (
             ('ativo_corrente', 'Ativos (Ano Corrente)'),
+            ('ativo_futuro', 'Ativos (Futuro)'),
             ('ativo_historico', 'Ativos (Histórico)'),
             ('inativo', 'Inativos'),
         )
@@ -35,10 +36,18 @@ class RegistroAtivoFilter(admin.SimpleListFilter):
         ano_corrente = date.today().year
         primeiro_dia_ano = date(ano_corrente, 1, 1)
 
+        ultimo_dia_ano = date(ano_corrente, 12, 31)
+
         if self.value() == 'ativo_corrente':
             return queryset.filter(
                 data_registro_fim=TRANSACTION_TIME_SENTINEL,
+                data_vigencia_inicio__lte=ultimo_dia_ano,
                 data_vigencia_fim__gte=primeiro_dia_ano,
+            )
+        if self.value() == 'ativo_futuro':
+            return queryset.filter(
+                data_registro_fim=TRANSACTION_TIME_SENTINEL,
+                data_vigencia_fim__gt=primeiro_dia_ano,
             )
         if self.value() == 'ativo_historico':
             return queryset.filter(
