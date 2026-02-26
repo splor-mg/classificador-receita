@@ -5,7 +5,7 @@ Este módulo implementa as OPERAÇÕES de escrita sobre modelos bitemporais,
 aplicando as regras de governança definidas na ADR-004. É o "executor"
 que modifica o banco de dados segundo a política bitemporal.
 
-DIFERENÇA ENTRE bitemporal_service.py e bitemporal_registry.py:
+DIFERENÇA ENTRE bitemporal_update.py e bitemporal_registry.py:
 
     bitemporal_registry.py (METADADOS / CONFIGURAÇÃO)
     --------------------------------------------------
@@ -15,8 +15,8 @@ DIFERENÇA ENTRE bitemporal_service.py e bitemporal_registry.py:
     - NÃO altera dados; apenas descreve a estrutura dos recursos
     - Usado por: comandos CLI, exporter, admin handlers
 
-    bitemporal_service.py (LÓGICA DE NEGÓCIO / EXECUÇÃO)
-    ----------------------------------------------------
+    bitemporal_update.py (LÓGICA DE NEGÓCIO / EXECUÇÃO)
+    ---------------------------------------------------
     - Implementa a AÇÃO de atualização bitemporal (apply_bitemporal_update)
     - Aplica as regras: fechar registro anterior, criar novo registro
     - Gerencia transaction time (data_registro_*) e valid time (data_vigencia_*)

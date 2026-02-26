@@ -16,7 +16,7 @@ class BitemporalChangeHandler:
     Responsabilidades:
     - Detectar se houve alteração no form.
     - Renderizar página de confirmação com diffs.
-    - Chamar bitemporal_service para aplicar a atualização.
+    - Chamar bitemporal_update para aplicar a atualização.
     - Não realiza export — isso é responsabilidade do AutoExportAdminMixin.
     """
 
@@ -81,7 +81,7 @@ class BitemporalChangeHandler:
         # Strategy presente: aplicar atualização bitemporal
         new_values = {field: form.cleaned_data[field] for field in form.changed_data}
 
-        from apps.core.bitemporal_service import apply_bitemporal_update
+        from apps.core.bitemporal_update import apply_bitemporal_update
 
         apply_bitemporal_update(
             model=self.model,
