@@ -1,39 +1,174 @@
 {% extends "admin/base_site.html" %}
 {% load i18n %}
 
+{% block extrahead %}
+{{ block.super }}
+<style>
+  .diff-section { margin-bottom: 1.5em; }
+  .diff-section h3 { margin-bottom: 0.5em; font-size: 1.1em; color: #333; }
+  .diff-table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+  .diff-table th, .diff-table td { padding: 8px; border: 1px solid #ddd; text-align: left; }
+  .diff-table th { background-color: #f5f5f5; }
+  .strategy-section { margin: 1.5em 0; padding: 1em; background: #f9f9f9; border-radius: 4px; }
+  .strategy-options { display: flex; gap: 2em; margin-bottom: 1em; }
+  .strategy-option { display: flex; align-items: center; gap: 0.5em; cursor: pointer; }
+  .strategy-option input[type="radio"] { cursor: pointer; }
+  .strategy-option label { cursor: pointer; font-weight: 500; }
+  .preview-table { width: 100%; border-collapse: collapse; margin-top: 1em; }
+  .preview-table th, .preview-table td { padding: 8px; border: 1px solid #ddd; text-align: left; }
+  .preview-table th { background-color: #e8e8e8; }
+  .strikethrough { text-decoration: line-through; color: #999; }
+  .actions { margin-top: 1.5em; }
+  .actions button, .actions a.button { margin-right: 0.5em; }
+</style>
+{% endblock %}
+
 {% block content %}
-  <p>Foram detectadas as seguintes alterações. Escolha a estratégia para aplicar:</p>
-  <table class="adminlist" style="width:100%; table-layout:fixed;">
+<p>Foram detectadas as seguintes alterações. Escolha a estratégia para aplicar:</p>
+
+{% if general_diffs %}
+<div class="diff-section">
+  <h3>Atributos Gerais</h3>
+  <table class="diff-table">
     <thead>
       <tr>
-        <th style="width:15%;">Campo</th>
-        <th style="width:42.5%;">Atual</th>
-        <th style="width:42.5%;">Novo</th>
+        <th style="width:20%;">Campo</th>
+        <th style="width:40%;">Atual</th>
+        <th style="width:40%;">Novo</th>
       </tr>
     </thead>
     <tbody>
-      {% for d in diffs %}
-        <tr>
-          <td>{{ d.field }}</td>
-          <td>{{ d.old }}</td>
-          <td>{{ d.new }}</td>
-        </tr>
+      {% for d in general_diffs %}
+      <tr>
+        <td>{{ d.field }}</td>
+        <td>{{ d.old }}</td>
+        <td>{{ d.new }}</td>
+      </tr>
       {% endfor %}
     </tbody>
   </table>
+</div>
+{% endif %}
 
-  <form method="post" action="">
-    {% csrf_token %}
-    {# Re-post original form data as hidden inputs #}
-    {% for k, v in post_items %}
-      <input type="hidden" name="{{ k }}" value="{{ v|escape }}">
-    {% endfor %}
+{% if vigencia_diffs %}
+<div class="diff-section">
+  <h3>Vigência</h3>
+  <table class="diff-table">
+    <thead>
+      <tr>
+        <th style="width:20%;">Campo</th>
+        <th style="width:40%;">Atual</th>
+        <th style="width:40%;">Novo</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in vigencia_diffs %}
+      <tr>
+        <td>{{ d.field }}</td>
+        <td>{{ d.old }}</td>
+        <td>{{ d.new }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
 
-    <div style="margin-top:1em;">
-      <button type="submit" name="edit_strategy" value="sobrescrever" class="default">Sobrescrever vigência anterior</button>
-      <button type="submit" name="edit_strategy" value="nova_vigencia">Registrar nova vigência</button>
-      <a href="../" class="button">Cancelar</a>
+<form method="post" action="" id="bitemporal-form">
+  {% csrf_token %}
+  {% for k, v in post_items %}
+  <input type="hidden" name="{{ k }}" value="{{ v|escape }}">
+  {% endfor %}
+
+  <div class="strategy-section">
+    <div class="strategy-options">
+      <div class="strategy-option">
+        <input type="radio" id="strategy-nova" name="edit_strategy" value="nova_vigencia" checked>
+        <label for="strategy-nova">Registrar nova vigência</label>
+      </div>
+      <div class="strategy-option">
+        <input type="radio" id="strategy-sobrescrever" name="edit_strategy" value="sobrescrever">
+        <label for="strategy-sobrescrever">Sobrescrever/ajustar vigência anterior</label>
+      </div>
     </div>
-  </form>
+
+    <div id="preview-container">
+      <table class="preview-table">
+        <thead>
+          <tr>
+            <th style="width:20%;">Registros</th>
+            <th style="width:40%;">Data de início de vigência</th>
+            <th style="width:40%;">Data de fim de vigência</th>
+          </tr>
+        </thead>
+        <tbody id="preview-body">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button type="submit" class="default">Save</button>
+    <a href="../" class="button">Cancel</a>
+  </div>
+</form>
+
+<script type="text/javascript">
+(function() {
+  var novaVigenciaPreview = JSON.parse('{{ nova_vigencia_preview_json|escapejs }}');
+  var sobrescreverPreview = JSON.parse('{{ sobrescrever_preview_json|escapejs }}');
+
+  function formatDate(isoDate) {
+    if (!isoDate) return '-';
+    const d = new Date(isoDate + 'T00:00:00');
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return d.toLocaleDateString('en-US', options);
+  }
+
+  function renderPreview(records) {
+    const tbody = document.getElementById('preview-body');
+    tbody.innerHTML = '';
+
+    records.forEach(function(rec) {
+      const tr = document.createElement('tr');
+
+      const tdVersion = document.createElement('td');
+      tdVersion.textContent = rec.version;
+
+      const tdInicio = document.createElement('td');
+      tdInicio.textContent = formatDate(rec.vig_inicio);
+
+      const tdFim = document.createElement('td');
+      tdFim.textContent = formatDate(rec.vig_fim);
+
+      if (rec.strikethrough) {
+        tdVersion.classList.add('strikethrough');
+        tdInicio.classList.add('strikethrough');
+        tdFim.classList.add('strikethrough');
+      }
+
+      tr.appendChild(tdVersion);
+      tr.appendChild(tdInicio);
+      tr.appendChild(tdFim);
+      tbody.appendChild(tr);
+    });
+  }
+
+  function updatePreview() {
+    const selected = document.querySelector('input[name="edit_strategy"]:checked');
+    if (selected && selected.value === 'nova_vigencia') {
+      renderPreview(novaVigenciaPreview);
+    } else {
+      renderPreview(sobrescreverPreview);
+    }
+  }
+
+  document.querySelectorAll('input[name="edit_strategy"]').forEach(function(radio) {
+    radio.addEventListener('change', updatePreview);
+  });
+
+  updatePreview();
+})();
+</script>
 {% endblock %}
 
