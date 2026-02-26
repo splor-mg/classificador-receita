@@ -263,7 +263,7 @@ def get_resource_for_model(model_cls) -> Optional[str]:
 
 def get_sentinela_date() -> date:
     _, _, sentinel = _get_models()
-    return date.fromisoformat(sentinel)
+    return sentinel
 
 
 def resolve_fk(resource_name: str, field_meta: Dict[str, Any], value: Any):

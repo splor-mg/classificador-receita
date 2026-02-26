@@ -1,3 +1,5 @@
+import datetime
+
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from django.core.exceptions import ValidationError
@@ -7,8 +9,8 @@ from apps.core.domain_choices import ORGAOS_ENTIDADES_CHOICES
 
 
 # Constantes para valores sentinelas (conforme ADR-001)
-VALID_TIME_SENTINEL = '9999-12-31'
-TRANSACTION_TIME_SENTINEL = '9999-12-31'
+VALID_TIME_SENTINEL = datetime.date(9999, 12, 31)
+TRANSACTION_TIME_SENTINEL = datetime.date(9999, 12, 31)
 
 
 class BitemporalModel(models.Model):

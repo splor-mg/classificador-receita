@@ -57,8 +57,8 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--data-vigencia-fim",
-            default=VALID_TIME_SENTINEL,
-            help=f"Data de fim da vigência (padrão: sentinela {VALID_TIME_SENTINEL}; pode ser outra data para vigência encerrada).",
+            default=VALID_TIME_SENTINEL.isoformat(),
+            help=f"Data de fim da vigência (padrão: sentinela {VALID_TIME_SENTINEL.isoformat()}; pode ser outra data para vigência encerrada).",
         )
         parser.add_argument(
             "--dry-run",
