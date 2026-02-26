@@ -266,7 +266,7 @@ class Command(BaseCommand):
 
         created = 0
         for row in rows:
-            serie = SerieClassificacao.objects.get(serie_id=row["serie_id"])
+            serie = self._get_bitemporal_instance(SerieClassificacao, "serie_id", row)
 
             base_legal = None
             base_id = row.get("base_legal_tecnica_id") or None
