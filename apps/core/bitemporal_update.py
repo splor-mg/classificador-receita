@@ -42,54 +42,71 @@ from apps.core.bitemporal_registry import get_sentinela_date
 def apply_bitemporal_update(model, prev_obj, new_values: Dict[str, Any], strategy: str = "sobrescrever") -> Any:
     """
     Aplica a atualização segundo política bitemporal:
-    - Não altera dados históricos da linha anterior, apenas atualiza data_registro_fim para encerrar o registro anterior.
-    - Cria nova linha com os novos valores, data_registro_inicio = hoje, data_registro_fim = sentinela.
-    - Se strategy == "nova_vigencia" e 'data_vigencia_inicio' em new_values, registra fechamento da vigência anterior (ajusta data_vigencia_fim).
 
-    Retorna a nova instância criada.
+    SOBRESCREVER:
+    - Encerra registro anterior (data_registro_fim = hoje)
+    - Cria 1 nova linha com os novos valores
+
+    NOVA VIGÊNCIA:
+    - Encerra registro anterior (data_registro_fim = hoje)
+    - Cria 2 novas linhas:
+      1. Versão 1: cópia dos atributos anteriores, mas com data_vigencia_fim fechada
+      2. Versão 2: novos atributos com nova vigência
+
+    Se não houver data_vigencia_inicio em new_values para nova_vigencia,
+    assume 1º de janeiro do ano atual.
+
+    Retorna a nova instância criada (ou a Versão 2 no caso de nova_vigencia).
     """
     sentinela = get_sentinela_date()
     today = date.today()
+    first_jan_current_year = date(today.year, 1, 1)
 
     Model = model
 
     with transaction.atomic():
-        # Reload previous object with FOR UPDATE to avoid races
         prev = Model.objects.select_for_update().get(pk=prev_obj.pk)
 
-        # Determine new registro inicio (transaction time)
         new_registro_inicio = today
 
-        # Close previous transaction-time
         prev.data_registro_fim = new_registro_inicio
         prev.save(update_fields=["data_registro_fim"])
 
-        # Prepare data for new object: start from prev values, update with new_values
-        create_data: Dict[str, Any] = {}
+        base_data: Dict[str, Any] = {}
         for f in Model._meta.concrete_fields:
             name = f.name
             if name == Model._meta.pk.name:
                 continue
-            # take current value from prev
-            create_data[name] = getattr(prev, name)
+            base_data[name] = getattr(prev, name)
 
-        # Override with provided new values from the form (they are already Python objects/instances)
-        for k, v in new_values.items():
-            create_data[k] = v
+        if strategy == "nova_vigencia":
+            new_vig_inicio = new_values.get("data_vigencia_inicio", first_jan_current_year)
+            prev_vig_fim_closed = new_vig_inicio - timedelta(days=1)
 
-        # Set transaction-time for the new row
-        create_data["data_registro_inicio"] = new_registro_inicio
-        create_data["data_registro_fim"] = sentinela
+            version1_data = dict(base_data)
+            version1_data["data_registro_inicio"] = new_registro_inicio
+            version1_data["data_registro_fim"] = sentinela
+            version1_data["data_vigencia_fim"] = prev_vig_fim_closed
+            Model.objects.create(**version1_data)
 
-        # Handle nova vigencia: if requested and data_vigencia_inicio provided, close previous valid_time
-        if strategy == "nova_vigencia" and "data_vigencia_inicio" in new_values:
-            new_vig_ini = new_values["data_vigencia_inicio"]
-            # set previous valid_time end to day before new_vig_ini
-            prev.data_vigencia_fim = new_vig_ini - timedelta(days=1)
-            prev.save(update_fields=["data_vigencia_fim"])
+            version2_data = dict(base_data)
+            for k, v in new_values.items():
+                version2_data[k] = v
+            version2_data["data_registro_inicio"] = new_registro_inicio
+            version2_data["data_registro_fim"] = sentinela
+            if "data_vigencia_inicio" not in new_values:
+                version2_data["data_vigencia_inicio"] = new_vig_inicio
+            version2_data["data_vigencia_fim"] = sentinela
 
-        # Create the new row
-        new_obj = Model.objects.create(**create_data)
+            new_obj = Model.objects.create(**version2_data)
+        else:
+            create_data = dict(base_data)
+            for k, v in new_values.items():
+                create_data[k] = v
+            create_data["data_registro_inicio"] = new_registro_inicio
+            create_data["data_registro_fim"] = sentinela
+
+            new_obj = Model.objects.create(**create_data)
 
     return new_obj
 
