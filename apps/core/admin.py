@@ -7,6 +7,7 @@ from apps.core.models import (
     ItemClassificacao,
     VersaoClassificacao,
     VarianteClassificacao,
+    TRANSACTION_TIME_SENTINEL,
 )
 from apps.core.models_base_legal import BaseLegalTecnica
 from apps.core.forms import SerieClassificacaoForm
@@ -14,6 +15,25 @@ from apps.core.admin_mixins import (
     AutoExportAdminMixin,
     BitemporalAdminMixin,
 )
+
+
+class RegistroAtivoFilter(admin.SimpleListFilter):
+    """Filtro para mostrar apenas registros ativos (data_registro_fim = 9999-12-31)."""
+    title = 'Registro Ativo'
+    parameter_name = 'registro_ativo'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('sim', 'Ativos'),
+            ('nao', 'Inativos'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'sim':
+            return queryset.filter(data_registro_fim=TRANSACTION_TIME_SENTINEL)
+        if self.value() == 'nao':
+            return queryset.exclude(data_registro_fim=TRANSACTION_TIME_SENTINEL)
+        return queryset
 
 
 @admin.register(SerieClassificacao)
@@ -29,6 +49,7 @@ class SerieClassificacaoAdmin(
         'data_vigencia_inicio',
         'data_vigencia_fim',
         'data_registro_inicio',
+        'data_registro_fim',
     ]
     ordering = [
         'serie_ref',
@@ -36,6 +57,7 @@ class SerieClassificacaoAdmin(
         '-data_registro_inicio',
     ]
     list_filter = [
+        RegistroAtivoFilter,
         'data_vigencia_inicio',
         'data_registro_inicio',
     ]
