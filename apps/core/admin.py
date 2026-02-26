@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.contrib import admin
 
 from apps.core.models import (
@@ -18,20 +20,31 @@ from apps.core.admin_mixins import (
 
 
 class RegistroAtivoFilter(admin.SimpleListFilter):
-    """Filtro para mostrar apenas registros ativos (data_registro_fim = 9999-12-31)."""
-    title = 'Registro Ativo'
+    """Filtro para registros ativos/inativos considerando vigência."""
+    title = 'Status do Registro'
     parameter_name = 'registro_ativo'
 
     def lookups(self, request, model_admin):
         return (
-            ('sim', 'Ativos'),
-            ('nao', 'Inativos'),
+            ('ativo_corrente', 'Ativos (Ano Corrente)'),
+            ('ativo_historico', 'Ativos (Histórico)'),
+            ('inativo', 'Inativos'),
         )
 
     def queryset(self, request, queryset):
-        if self.value() == 'sim':
-            return queryset.filter(data_registro_fim=TRANSACTION_TIME_SENTINEL)
-        if self.value() == 'nao':
+        ano_corrente = date.today().year
+        primeiro_dia_ano = date(ano_corrente, 1, 1)
+
+        if self.value() == 'ativo_corrente':
+            return queryset.filter(
+                data_registro_fim=TRANSACTION_TIME_SENTINEL,
+                data_vigencia_fim__gte=primeiro_dia_ano,
+            )
+        if self.value() == 'ativo_historico':
+            return queryset.filter(
+                data_registro_fim=TRANSACTION_TIME_SENTINEL,
+            )
+        if self.value() == 'inativo':
             return queryset.exclude(data_registro_fim=TRANSACTION_TIME_SENTINEL)
         return queryset
 
@@ -53,7 +66,7 @@ class SerieClassificacaoAdmin(
     ]
     ordering = [
         'serie_ref',
-        'data_vigencia_inicio',
+        '-data_vigencia_inicio',
         '-data_registro_inicio',
     ]
     list_filter = [
