@@ -19,41 +19,19 @@ class AutoExportAdminMixin:
     export_backup_default = False
     export_backup_dir = None
 
-    def save_model(self, request, obj, form, change):
+    def trigger_export(self, request, model_class):
         """
-        Save and schedule export of the corresponding seed in background.
+        Dispara exportação do seed para o model especificado.
+        Pode ser chamado externamente (ex: após atualização bitemporal).
         """
-        super().save_model(request, obj, form, change)
-        # If this was an edit and no fields changed, skip export.
-        try:
-            if change and hasattr(form, "has_changed") and not form.has_changed():
-                try:
-                    self.message_user(request, "Nenhuma alteração detectada — export pulado.")
-                except Exception:
-                    pass
-                return
-        except Exception:
-            # if any issue determining change state, continue with export to be safe
-            pass
-        recurso = get_resource_for_model(obj.__class__)
+        recurso = get_resource_for_model(model_class)
         if not recurso:
             return
         out = str(Path("docs/assets") / f"seed_{recurso}.csv")
-        # log start of export (do not notify 'scheduled' message)
         logging.getLogger(__name__).info("Starting export for %s", out)
 
-        def _bg():
-            try:
-                export_resource(recurso, output=out, scope="all", do_backup=self.export_backup_default, backup_dir=self.export_backup_dir)
-                logging.getLogger(__name__).info("Export completed for %s -> %s", recurso, out)
-            except Exception:
-                logging.getLogger(__name__).exception("Export failed for %s", recurso)
-
-        t = threading.Thread(target=_bg, daemon=True)
-        # Execute synchronously in the request thread (blocking). Intended by explicit request.
         try:
             result = export_resource(recurso, output=out, scope="all", do_backup=self.export_backup_default, backup_dir=self.export_backup_dir)
-            # Inform the admin user of completion
             backup_msg = f" Backup: {result['backup']}" if result.get("backup") else ""
             try:
                 self.message_user(request, f"Export completed for {out}.{backup_msg}")
@@ -65,6 +43,22 @@ class AutoExportAdminMixin:
                 self.message_user(request, f"Export failed for {out} (see logs).")
             except Exception:
                 pass
+
+    def save_model(self, request, obj, form, change):
+        """
+        Save and schedule export of the corresponding seed in background.
+        """
+        super().save_model(request, obj, form, change)
+        try:
+            if change and hasattr(form, "has_changed") and not form.has_changed():
+                try:
+                    self.message_user(request, "Nenhuma alteração detectada — export pulado.")
+                except Exception:
+                    pass
+                return
+        except Exception:
+            pass
+        self.trigger_export(request, obj.__class__)
 
 
 class BitemporalAdminMixin:
