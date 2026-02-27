@@ -10,7 +10,7 @@ from apps.core.domain_choices import ORGAOS_ENTIDADES_CHOICES
 
 # Constantes para valores sentinelas (conforme ADR-001)
 VALID_TIME_SENTINEL = datetime.date(9999, 12, 31)
-TRANSACTION_TIME_SENTINEL = datetime.date(9999, 12, 31)
+TRANSACTION_TIME_SENTINEL = datetime.datetime(9999, 12, 31, 00, 00, 00)
 
 
 class BitemporalModel(models.Model):
@@ -30,13 +30,13 @@ class BitemporalModel(models.Model):
         verbose_name='Data do Fim da Vigência',
         help_text='Data de fim da vigência (valid_time - fim). Valor sentinela 9999-12-31 indica vigência ativa no momento corrente e futuro.'
     )
-    data_registro_inicio = models.DateField(
+    data_registro_inicio = models.DateTimeField(
         verbose_name='Data de Início do Registro',
-        help_text='Data em que o sistema registrou esta informação (transaction_time - início)'
+        help_text='Data e hora em que o sistema registrou esta informação (transaction_time - início)'
     )
-    data_registro_fim = models.DateField(
+    data_registro_fim = models.DateTimeField(
         verbose_name='Data do Fim do Registro',
-        help_text='Data em que esta informação deixou de ser considerada verdadeira pelo sistema (transaction_time - fim). Valor sentinela 9999-12-31 indica registro ativo no momento corrente e futuro.'
+        help_text='Data e hora em que esta informação deixou de ser considerada verdadeira pelo sistema (transaction_time - fim). Valor sentinela 9999-12-31 00:00:00 indica registro ativo no momento corrente e futuro.'
     )
 
     class Meta:

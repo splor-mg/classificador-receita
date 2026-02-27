@@ -15,7 +15,7 @@ default; type fk aceita fk_resource, fk_semantic_attr, fk_current), export_colum
 list_display, select_related e order_by. FK para base_legal_tecnica é tratada em
 resolve_fk() (modelo SCD-1).
 """
-from datetime import date
+from datetime import date, datetime
 from typing import Any, Dict, List, Optional
 
 # Import apenas quando necessário para evitar circular import no boot do Django
@@ -262,8 +262,15 @@ def get_resource_for_model(model_cls) -> Optional[str]:
 
 
 def get_sentinela_date() -> date:
-    _, _, sentinel = _get_models()
-    return sentinel
+    """Retorna o valor sentinela para data de vigência (DateField)."""
+    _, valid_sentinel, _ = _get_models()
+    return valid_sentinel
+
+
+def get_sentinela_datetime() -> datetime:
+    """Retorna o valor sentinela para data de registro (DateTimeField)."""
+    _, _, transaction_sentinel = _get_models()
+    return transaction_sentinel
 
 
 def resolve_fk(resource_name: str, field_meta: Dict[str, Any], value: Any):
@@ -283,7 +290,7 @@ def resolve_fk(resource_name: str, field_meta: Dict[str, Any], value: Any):
         model = get_model_for_resource(fk_resource)
         filter_kw = {fk_semantic_attr: value}
         if fk_current and hasattr(model, "data_registro_fim"):
-            filter_kw["data_registro_fim"] = get_sentinela_date()
+            filter_kw["data_registro_fim"] = get_sentinela_datetime()
         qs = model.objects.filter(**filter_kw)
     obj = qs.first()
     if not obj and value:

@@ -13,13 +13,14 @@ from datetime import date
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.utils import timezone
 
 from apps.core.bitemporal_registry import (
     RESOURCES,
     build_entity_filter,
     get_resource,
     get_model_for_resource,
-    get_sentinela_date,
+    get_sentinela_datetime,
     resolve_fk,
 )
 from apps.core.models import VALID_TIME_SENTINEL
@@ -78,8 +79,8 @@ class Command(BaseCommand):
 
         res = get_resource(resource_name)
         model = get_model_for_resource(resource_name)
-        data_op = date.today()
-        sentinela = get_sentinela_date()
+        data_op = timezone.now()
+        sentinela = get_sentinela_datetime()
 
         # Vigência: argumentos ou --data
         data_vig_ini = options.get("data_vigencia_inicio") or data.get("data_vigencia_inicio")

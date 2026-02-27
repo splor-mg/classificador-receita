@@ -8,7 +8,7 @@ import threading
 
 from django.db import connection
 
-from apps.core.bitemporal_registry import get_resource, get_model_for_resource, get_sentinela_date, RESOURCES
+from apps.core.bitemporal_registry import get_resource, get_model_for_resource, get_sentinela_datetime, RESOURCES
 # process-local locks to serialize exports per resource
 _resource_locks = {}
 
@@ -77,8 +77,8 @@ def export_resource(recurso: str, output: str | None = None, scope: str = "all",
     is_bitemporal = hasattr(model, "data_registro_inicio")
     where_clauses = []
     if is_bitemporal and scope == "current":
-        sent = get_sentinela_date().isoformat()
-        where_clauses.append(f"{main_alias}.data_registro_fim = DATE '{sent}'")
+        sent = get_sentinela_datetime().isoformat()
+        where_clauses.append(f"{main_alias}.data_registro_fim = TIMESTAMP '{sent}'")
     if where_clauses:
         select_sql += " WHERE " + " AND ".join(where_clauses)
 

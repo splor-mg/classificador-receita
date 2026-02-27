@@ -15,7 +15,7 @@ from django.core.management.base import BaseCommand, CommandError
 from apps.core.bitemporal_registry import (
     get_resource,
     get_model_for_resource,
-    get_sentinela_date,
+    get_sentinela_datetime,
     get_export_value,
     RESOURCES,
 )
@@ -43,7 +43,7 @@ class Command(BaseCommand):
         res = get_resource(recurso)
         model = get_model_for_resource(recurso)
         columns = res["export_columns"]
-        sentinela = get_sentinela_date()
+        sentinela = get_sentinela_datetime()
 
         qs = model.objects.all()
         # If bitemporal resource (has data_registro_inicio in model), handle scope

@@ -9,13 +9,26 @@ o carregamento apenas insere as linhas dos CSVs.
 base_legal_tecnica é modelo temporal simples (SCD-1, alteração in-place); as
 Regras 1 a 7 da ADR-004 não se aplicam ao seu carregamento nem à sua governança.
 """
+from datetime import datetime
 from pathlib import Path
 from typing import Iterable, Mapping, Any
 
 from django.core.management.base import BaseCommand, CommandParser
 from django.db import transaction
+from django.utils import timezone
 
 from frictionless import Package, Resource
+
+
+def make_datetime_aware(value):
+    """Converte datetime naive para aware (UTC) se necessário."""
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        if timezone.is_naive(value):
+            return timezone.make_aware(value, timezone.UTC)
+        return value
+    return value
 
 from apps.core.models import (
     SerieClassificacao,
@@ -26,7 +39,7 @@ from apps.core.models import (
     VersaoClassificacao,
     VarianteClassificacao,
 )
-from apps.core.bitemporal_registry import get_sentinela_date
+from apps.core.bitemporal_registry import get_sentinela_datetime
 
 
 class Command(BaseCommand):
@@ -206,6 +219,16 @@ class Command(BaseCommand):
             self._load_item_classificacao(rows)
         else:
             self.stdout.write(self.style.WARNING(f"Recurso '{name}' não possui loader específico. Ignorando."))
+
+    def _prepare_registro_dates(self, row: Mapping[str, Any]) -> dict:
+        """Converte datas de registro naive para aware e retorna dict com as datas."""
+        result = dict(row)
+        if "data_registro_inicio" in result:
+            result["data_registro_inicio"] = make_datetime_aware(result["data_registro_inicio"])
+        if "data_registro_fim" in result:
+            result["data_registro_fim"] = make_datetime_aware(result["data_registro_fim"])
+        return result
+
     def _get_bitemporal_instance(self, model, semantic_field: str, row: Mapping[str, Any]):
         """
         Retorna a instância bitemporal correta do model dado o identificador semântico
@@ -219,8 +242,9 @@ class Command(BaseCommand):
         dr_ini = row.get("data_registro_inicio")
         try:
             if dr_ini:
-                return model.objects.get(**{semantic_field: semantic_val, "data_registro_inicio": dr_ini})
-            return model.objects.get(**{semantic_field: semantic_val, "data_registro_fim": get_sentinela_date()})
+                dr_ini_aware = make_datetime_aware(dr_ini)
+                return model.objects.get(**{semantic_field: semantic_val, "data_registro_inicio": dr_ini_aware})
+            return model.objects.get(**{semantic_field: semantic_val, "data_registro_fim": get_sentinela_datetime()})
         except model.DoesNotExist:
             # fallback: try to return any matching semantic (may raise MultipleObjectsReturned)
             return model.objects.filter(**{semantic_field: semantic_val}).first()
@@ -236,7 +260,8 @@ class Command(BaseCommand):
 
         created = 0
         for row in rows:
-            SerieClassificacao.objects.create(**row)
+            prepared = self._prepare_registro_dates(row)
+            SerieClassificacao.objects.create(**prepared)
             created += 1
         self.stdout.write(self.style.SUCCESS(f"serie_classificacao: {created} linhas carregadas."))
 
@@ -273,20 +298,21 @@ class Command(BaseCommand):
             if base_id:
                 base_legal = BaseLegalTecnica.objects.get(base_legal_tecnica_id=base_id)
 
+            prepared = self._prepare_registro_dates(row)
             Classificacao.objects.create(
-                classificacao_id=row["classificacao_id"],
-                classificacao_ref=row["classificacao_ref"],
+                classificacao_id=prepared["classificacao_id"],
+                classificacao_ref=prepared["classificacao_ref"],
                 serie_id=serie,
-                classificacao_nome=row["classificacao_nome"],
-                descricao=row.get("descricao") or "",
-                tipo_classificacao=row["tipo_classificacao"],
-                numero_niveis=row["numero_niveis"],
-                numero_digitos=row.get("numero_digitos"),
+                classificacao_nome=prepared["classificacao_nome"],
+                descricao=prepared.get("descricao") or "",
+                tipo_classificacao=prepared["tipo_classificacao"],
+                numero_niveis=prepared["numero_niveis"],
+                numero_digitos=prepared.get("numero_digitos"),
                 base_legal_tecnica_id=base_legal,
-                data_vigencia_inicio=row["data_vigencia_inicio"],
-                data_vigencia_fim=row["data_vigencia_fim"],
-                data_registro_inicio=row["data_registro_inicio"],
-                data_registro_fim=row["data_registro_fim"],
+                data_vigencia_inicio=prepared["data_vigencia_inicio"],
+                data_vigencia_fim=prepared["data_vigencia_fim"],
+                data_registro_inicio=prepared["data_registro_inicio"],
+                data_registro_fim=prepared["data_registro_fim"],
             )
             created += 1
 
@@ -303,21 +329,22 @@ class Command(BaseCommand):
 
         created = 0
         for row in rows:
-            classificacao = self._get_bitemporal_instance(Classificacao, "classificacao_id", row)
+            prepared = self._prepare_registro_dates(row)
+            classificacao = self._get_bitemporal_instance(Classificacao, "classificacao_id", prepared)
             NivelHierarquico.objects.create(
-                nivel_id=row["nivel_id"],
-                nivel_ref=row["nivel_ref"],
+                nivel_id=prepared["nivel_id"],
+                nivel_ref=prepared["nivel_ref"],
                 classificacao_id=classificacao,
-                nivel_numero=row["nivel_numero"],
-                nivel_nome=row["nivel_nome"],
-                descricao=row.get("descricao") or "",
-                estrutura_codigo=row.get("estrutura_codigo") or "",
-                numero_digitos=row.get("numero_digitos"),
-                tipo_codigo=row["tipo_codigo"],
-                data_vigencia_inicio=row["data_vigencia_inicio"],
-                data_vigencia_fim=row["data_vigencia_fim"],
-                data_registro_inicio=row["data_registro_inicio"],
-                data_registro_fim=row["data_registro_fim"],
+                nivel_numero=prepared["nivel_numero"],
+                nivel_nome=prepared["nivel_nome"],
+                descricao=prepared.get("descricao") or "",
+                estrutura_codigo=prepared.get("estrutura_codigo") or "",
+                numero_digitos=prepared.get("numero_digitos"),
+                tipo_codigo=prepared["tipo_codigo"],
+                data_vigencia_inicio=prepared["data_vigencia_inicio"],
+                data_vigencia_fim=prepared["data_vigencia_fim"],
+                data_registro_inicio=prepared["data_registro_inicio"],
+                data_registro_fim=prepared["data_registro_fim"],
             )
             created += 1
 
@@ -334,19 +361,20 @@ class Command(BaseCommand):
 
         created = 0
         for row in rows:
-            classificacao = self._get_bitemporal_instance(Classificacao, "classificacao_id", row)
+            prepared = self._prepare_registro_dates(row)
+            classificacao = self._get_bitemporal_instance(Classificacao, "classificacao_id", prepared)
             VersaoClassificacao.objects.create(
-                versao_id=row["versao_id"],
-                versao_ref=row["versao_ref"],
+                versao_id=prepared["versao_id"],
+                versao_ref=prepared["versao_ref"],
                 classificacao=classificacao,
-                versao_numero=row["versao_numero"],
-                versao_nome=row.get("versao_nome") or "",
-                descricao=row.get("descricao") or "",
-                data_lancamento=row.get("data_lancamento"),
-                data_vigencia_inicio=row["data_vigencia_inicio"],
-                data_vigencia_fim=row["data_vigencia_fim"],
-                data_registro_inicio=row["data_registro_inicio"],
-                data_registro_fim=row["data_registro_fim"],
+                versao_numero=prepared["versao_numero"],
+                versao_nome=prepared.get("versao_nome") or "",
+                descricao=prepared.get("descricao") or "",
+                data_lancamento=prepared.get("data_lancamento"),
+                data_vigencia_inicio=prepared["data_vigencia_inicio"],
+                data_vigencia_fim=prepared["data_vigencia_fim"],
+                data_registro_inicio=prepared["data_registro_inicio"],
+                data_registro_fim=prepared["data_registro_fim"],
             )
             created += 1
 
@@ -363,33 +391,34 @@ class Command(BaseCommand):
 
         created = 0
         for row in rows:
-            classificacao = self._get_bitemporal_instance(Classificacao, "classificacao_id", row)
+            prepared = self._prepare_registro_dates(row)
+            classificacao = self._get_bitemporal_instance(Classificacao, "classificacao_id", prepared)
             # No seed atual, versao_id pode vir vazio/-; mantemos FK opcional.
             versao = None
-            versao_id = row.get("versao_id") or None
+            versao_id = prepared.get("versao_id") or None
             if versao_id and versao_id != "-":
                 # tentar encontrar versão correspondente por versao_id e data_registro, se fornecida
-                dr_ini = row.get("data_registro_inicio")
+                dr_ini = prepared.get("data_registro_inicio")
                 try:
                     if dr_ini:
                         versao = VersaoClassificacao.objects.get(versao_id=versao_id, data_registro_inicio=dr_ini)
                     else:
-                        versao = VersaoClassificacao.objects.get(versao_id=versao_id, data_registro_fim=get_sentinela_date())
+                        versao = VersaoClassificacao.objects.get(versao_id=versao_id, data_registro_fim=get_sentinela_datetime())
                 except VersaoClassificacao.DoesNotExist:
                     versao = VersaoClassificacao.objects.filter(versao_id=versao_id).first()
 
             VarianteClassificacao.objects.create(
-                variante_id=row["variante_id"],
+                variante_id=prepared["variante_id"],
                 classificacao=classificacao,
                 versao=versao,
-                variante_nome=row["variante_nome"],
-                tipo_variante=row["tipo_variante"],
-                descricao=row.get("descricao") or "",
-                proposito=row.get("proposito") or "",
-                data_vigencia_inicio=row["data_vigencia_inicio"],
-                data_vigencia_fim=row["data_vigencia_fim"],
-                data_registro_inicio=row["data_registro_inicio"],
-                data_registro_fim=row["data_registro_fim"],
+                variante_nome=prepared["variante_nome"],
+                tipo_variante=prepared["tipo_variante"],
+                descricao=prepared.get("descricao") or "",
+                proposito=prepared.get("proposito") or "",
+                data_vigencia_inicio=prepared["data_vigencia_inicio"],
+                data_vigencia_fim=prepared["data_vigencia_fim"],
+                data_registro_inicio=prepared["data_registro_inicio"],
+                data_registro_fim=prepared["data_registro_fim"],
             )
             created += 1
 
@@ -407,18 +436,19 @@ class Command(BaseCommand):
         created = 0
         # Opcional: confiar na ordem do CSV (pais antes dos filhos).
         for row in rows:
-            classificacao = self._get_bitemporal_instance(Classificacao, "classificacao_id", row)
-            nivel = self._get_bitemporal_instance(NivelHierarquico, "nivel_id", row)
+            prepared = self._prepare_registro_dates(row)
+            classificacao = self._get_bitemporal_instance(Classificacao, "classificacao_id", prepared)
+            nivel = self._get_bitemporal_instance(NivelHierarquico, "nivel_id", prepared)
 
             base_legal = None
-            base_id = row.get("base_legal_tecnica_id") or None
+            base_id = prepared.get("base_legal_tecnica_id") or None
             if base_id and base_id != "-":
                 base_legal = BaseLegalTecnica.objects.get(base_legal_tecnica_id=base_id)
 
             parent = None
-            parent_code = row.get("parent_item_id") or None
+            parent_code = prepared.get("parent_item_id") or None
             if parent_code and parent_code != "-":
-                parent = ItemClassificacao.objects.filter(item_id=parent_code, data_registro_fim=get_sentinela_date()).first()
+                parent = ItemClassificacao.objects.filter(item_id=parent_code, data_registro_fim=get_sentinela_datetime()).first()
 
             # Normalize boolean and empty values coming from CSV (csv.DictReader returns strings)
             def _to_bool(v):
@@ -435,28 +465,28 @@ class Command(BaseCommand):
                 s = str(v).strip()
                 return None if s in ("", "-", "NA", "null", "None") else s
 
-            matriz_val = _to_bool(row.get("matriz"))
-            item_gerado_val = _to_bool(row.get("item_gerado"))
+            matriz_val = _to_bool(prepared.get("matriz"))
+            item_gerado_val = _to_bool(prepared.get("item_gerado"))
 
             item = ItemClassificacao(
-                item_id=_none_if_empty(row.get("item_id")),
-                item_ref=_none_if_empty(row.get("item_ref")),
+                item_id=_none_if_empty(prepared.get("item_id")),
+                item_ref=_none_if_empty(prepared.get("item_ref")),
                 classificacao_id=classificacao,
-                receita_cod=_none_if_empty(row.get("receita_cod")),
+                receita_cod=_none_if_empty(prepared.get("receita_cod")),
                 matriz=matriz_val,
-                receita_nome=_none_if_empty(row.get("receita_nome")),
-                receita_descricao=_none_if_empty(row.get("receita_descricao")),
+                receita_nome=_none_if_empty(prepared.get("receita_nome")),
+                receita_descricao=_none_if_empty(prepared.get("receita_descricao")),
                 base_legal_tecnica_id=base_legal,
-                base_legal_tecnica_referencia=_none_if_empty(row.get("base_legal_tecnica_referencia")),
-                destinacao_legal=_none_if_empty(row.get("destinacao_legal")),
-                informacoes_gerenciais=_none_if_empty(row.get("informacoes_gerenciais")),
+                base_legal_tecnica_referencia=_none_if_empty(prepared.get("base_legal_tecnica_referencia")),
+                destinacao_legal=_none_if_empty(prepared.get("destinacao_legal")),
+                informacoes_gerenciais=_none_if_empty(prepared.get("informacoes_gerenciais")),
                 nivel_id=nivel,
                 parent_item_id=parent,
                 item_gerado=item_gerado_val,
-                data_vigencia_inicio=row["data_vigencia_inicio"],
-                data_vigencia_fim=row["data_vigencia_fim"],
-                data_registro_inicio=row["data_registro_inicio"],
-                data_registro_fim=row["data_registro_fim"],
+                data_vigencia_inicio=prepared["data_vigencia_inicio"],
+                data_vigencia_fim=prepared["data_vigencia_fim"],
+                data_registro_inicio=prepared["data_registro_inicio"],
+                data_registro_fim=prepared["data_registro_fim"],
             )
             # Skip model validation during bulk load; DB and later processes enforce business rules.
             item.save(_skip_validation=True)

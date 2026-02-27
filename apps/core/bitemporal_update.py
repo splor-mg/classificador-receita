@@ -31,12 +31,13 @@ FLUXO DE UMA EDIÇÃO BITEMPORAL:
     5. Serviço fecha registro anterior e cria novo registro
     6. AutoExportAdminMixin exporta CSV se houve mudança
 """
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any, Dict, Optional
 
 from django.db import transaction
+from django.utils import timezone
 
-from apps.core.bitemporal_registry import get_sentinela_date
+from apps.core.bitemporal_registry import get_sentinela_datetime
 
 
 def apply_bitemporal_update(model, prev_obj, new_values: Dict[str, Any], strategy: str = "sobrescrever") -> Any:
@@ -44,11 +45,11 @@ def apply_bitemporal_update(model, prev_obj, new_values: Dict[str, Any], strateg
     Aplica a atualização segundo política bitemporal:
 
     SOBRESCREVER:
-    - Encerra registro anterior (data_registro_fim = hoje)
+    - Encerra registro anterior (data_registro_fim = agora)
     - Cria 1 nova linha com os novos valores
 
     NOVA VIGÊNCIA:
-    - Encerra registro anterior (data_registro_fim = hoje)
+    - Encerra registro anterior (data_registro_fim = agora)
     - Cria 2 novas linhas:
       1. Versão 1: cópia dos atributos anteriores, mas com data_vigencia_fim fechada
       2. Versão 2: novos atributos com nova vigência
@@ -58,7 +59,8 @@ def apply_bitemporal_update(model, prev_obj, new_values: Dict[str, Any], strateg
 
     Retorna a nova instância criada (ou a Versão 2 no caso de nova_vigencia).
     """
-    sentinela = get_sentinela_date()
+    sentinela = get_sentinela_datetime()
+    now = timezone.now()
     today = date.today()
     first_jan_current_year = date(today.year, 1, 1)
 
@@ -67,7 +69,7 @@ def apply_bitemporal_update(model, prev_obj, new_values: Dict[str, Any], strateg
     with transaction.atomic():
         prev = Model.objects.select_for_update().get(pk=prev_obj.pk)
 
-        new_registro_inicio = today
+        new_registro_inicio = now
 
         prev.data_registro_fim = new_registro_inicio
         prev.save(update_fields=["data_registro_fim"])

@@ -94,7 +94,7 @@ fields:
     constraints:
       required: true
   - name: data_registro_inicio
-    type: date
+    type: datetime
     title: Data de Início do Registro
     description: |
       Data e hora em que o sistema registrou esta informação.
@@ -102,10 +102,10 @@ fields:
     constraints:
       required: true
   - name: data_registro_fim
-    type: date
+    type: datetime
     title: Data do Fim do Registro
     description: |
-      Data em que esta informação deixou de ser considerada verdadeira pelo sistema. Valor sentinela 9999-12-31 indica registro ativo no momento corrente e futuro.
+      Data e hora em que esta informação deixou de ser considerada verdadeira pelo sistema. Valor sentinela 9999-12-31 00:00:00 indica registro ativo no momento corrente e futuro.
     gsim: ClassificationLevel.transactionTimeEnd
     constraints:
       required: true

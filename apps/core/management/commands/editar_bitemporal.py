@@ -7,16 +7,17 @@ data_registro_inicio e data_registro_fim das novas linhas são sempre definidos 
 Aplica-se apenas a recursos bitemporais (datapackage exceto base_legal_tecnica).
 """
 import json
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.utils import timezone
 
 from apps.core.bitemporal_registry import (
     RESOURCES,
     get_resource,
     get_model_for_resource,
-    get_sentinela_date,
+    get_sentinela_datetime,
     build_entity_filter,
     resolve_fk,
 )
@@ -79,7 +80,7 @@ class Command(BaseCommand):
         resource_name = options["recurso"]
         res = get_resource(resource_name)
         model = get_model_for_resource(resource_name)
-        sentinela = get_sentinela_date()
+        sentinela = get_sentinela_datetime()
 
         if options.get("listar"):
             self._listar(resource_name, res, model, sentinela)
@@ -94,7 +95,7 @@ class Command(BaseCommand):
 
         data_reg_ini_str = options["data_registro_inicio"]
         try:
-            data_reg_ini = date.fromisoformat(data_reg_ini_str)
+            data_reg_ini = datetime.fromisoformat(data_reg_ini_str)
         except (ValueError, TypeError) as e:
             raise CommandError(f"data_registro_inicio inválido: {e}") from e
 
@@ -112,7 +113,7 @@ class Command(BaseCommand):
             )
 
         tipo = options["tipo_edicao"]
-        data_op = date.today()
+        data_op = timezone.now()
         if tipo == "nova_vigencia":
             # ADR-004 Regra 6: default para data_vigencia_inicio = 01/01/AAAA (ano da operação)
             nova_ini = options.get("nova_data_vigencia_inicio") or data.get("nova_data_vigencia_inicio")
@@ -211,7 +212,7 @@ class Command(BaseCommand):
             linha.data_registro_fim = data_op
             linha.save(update_fields=["data_registro_fim"])
             # Nova linha: data_registro_* definidos pelo sistema (MUST)
-            create_kw = {**attrs, "data_registro_inicio": data_op, "data_registro_fim": get_sentinela_date()}
+            create_kw = {**attrs, "data_registro_inicio": data_op, "data_registro_fim": get_sentinela_datetime()}
             model.objects.create(**create_kw)
         self.stdout.write(self.style.SUCCESS("Edição (sobrescrever) aplicada."))
 
@@ -233,7 +234,7 @@ class Command(BaseCommand):
             linha.data_registro_fim = data_op
             linha.save(update_fields=["data_registro_fim"])
             # Novas linhas: data_registro_* definidos pelo sistema (MUST)
-            sentinela = get_sentinela_date()
+            sentinela = get_sentinela_datetime()
             create_enc = {**attrs_encerramento, "data_registro_inicio": data_op, "data_registro_fim": sentinela}
             model.objects.create(**create_enc)
             create_nova = {**attrs_nova, "data_registro_inicio": data_op, "data_registro_fim": sentinela}
