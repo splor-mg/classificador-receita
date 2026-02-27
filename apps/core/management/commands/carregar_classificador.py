@@ -21,12 +21,12 @@ from frictionless import Package, Resource
 
 
 def make_datetime_aware(value):
-    """Converte datetime naive para aware (UTC) se necessário."""
+    """Converte datetime naive para aware no timezone local (settings.TIME_ZONE)."""
     if value is None:
         return None
     if isinstance(value, datetime):
         if timezone.is_naive(value):
-            return timezone.make_aware(value, timezone.UTC)
+            return timezone.make_aware(value)
         return value
     return value
 
