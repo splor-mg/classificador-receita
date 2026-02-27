@@ -31,8 +31,10 @@
   .preview-table th { background-color: #e8e8e8; }
   .preview-table th.col-registros { width: 120px; }
   .preview-table th.col-data { width: 180px; }
-  .preview-table input[type="date"] { padding: 4px 6px; border: 1px solid #ccc; border-radius: 3px; }
-  .preview-table input[type="date"]:focus { border-color: #417690; outline: none; }
+  .preview-table input[type="text"].date-input { padding: 4px 6px; border: 1px solid #ccc; border-radius: 3px; width: 100px; text-align: center; }
+  .preview-table input[type="text"].date-input:focus { border-color: #417690; outline: none; }
+  .preview-table input[type="text"].date-input.invalid { border-color: #c00; background-color: #fff0f0; }
+  .date-hint { font-size: 0.8em; color: #666; font-weight: normal; margin-left: 0.5em; }
   .strikethrough { text-decoration: line-through; color: #999; }
   .strikethrough input { text-decoration: line-through; color: #999; }
   .actions { margin-top: 1.5em; }
@@ -129,8 +131,8 @@
         <thead>
           <tr>
             <th class="col-registros">Registros</th>
-            <th class="col-data">Data de início de vigência</th>
-            <th class="col-data">Data de fim de vigência</th>
+            <th class="col-data">Data de início de vigência <span class="date-hint">(dd/mm/aaaa)</span></th>
+            <th class="col-data">Data de fim de vigência <span class="date-hint">(dd/mm/aaaa)</span></th>
           </tr>
         </thead>
         <tbody id="preview-body">
@@ -155,6 +157,43 @@
     'Versão 2': 'Nova versão'
   };
 
+  function formatDateToDMY(isoDate) {
+    if (!isoDate) return '';
+    var parts = isoDate.split('-');
+    if (parts.length !== 3) return isoDate;
+    return parts[2] + '/' + parts[1] + '/' + parts[0];
+  }
+
+  function parseDMYtoISO(dmyDate) {
+    if (!dmyDate) return '';
+    var parts = dmyDate.split('/');
+    if (parts.length !== 3) return dmyDate;
+    return parts[2] + '-' + parts[1] + '-' + parts[0];
+  }
+
+  function isValidDateDMY(value) {
+    if (!value) return true;
+    var regex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+    var match = value.match(regex);
+    if (!match) return false;
+    var day = parseInt(match[1], 10);
+    var month = parseInt(match[2], 10);
+    var year = parseInt(match[3], 10);
+    if (month < 1 || month > 12) return false;
+    if (day < 1 || day > 31) return false;
+    var date = new Date(year, month - 1, day);
+    return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+  }
+
+  function validateDateInput(e) {
+    var input = e.target;
+    if (isValidDateDMY(input.value)) {
+      input.classList.remove('invalid');
+    } else {
+      input.classList.add('invalid');
+    }
+  }
+
   function renderPreview(records) {
     const tbody = document.getElementById('preview-body');
     tbody.innerHTML = '';
@@ -171,23 +210,29 @@
       const tdInicio = document.createElement('td');
       if (isEditable) {
         const inputInicio = document.createElement('input');
-        inputInicio.type = 'date';
+        inputInicio.type = 'text';
+        inputInicio.className = 'date-input';
         inputInicio.name = 'edit_vig_inicio_' + index;
-        inputInicio.value = rec.vig_inicio || '';
+        inputInicio.value = formatDateToDMY(rec.vig_inicio);
+        inputInicio.placeholder = 'dd/mm/aaaa';
+        inputInicio.addEventListener('blur', validateDateInput);
         tdInicio.appendChild(inputInicio);
       } else {
-        tdInicio.textContent = rec.vig_inicio || '-';
+        tdInicio.textContent = formatDateToDMY(rec.vig_inicio) || '-';
       }
 
       const tdFim = document.createElement('td');
       if (isEditable) {
         const inputFim = document.createElement('input');
-        inputFim.type = 'date';
+        inputFim.type = 'text';
+        inputFim.className = 'date-input';
         inputFim.name = 'edit_vig_fim_' + index;
-        inputFim.value = rec.vig_fim || '';
+        inputFim.value = formatDateToDMY(rec.vig_fim);
+        inputFim.placeholder = 'dd/mm/aaaa';
+        inputFim.addEventListener('blur', validateDateInput);
         tdFim.appendChild(inputFim);
       } else {
-        tdFim.textContent = rec.vig_fim || '-';
+        tdFim.textContent = formatDateToDMY(rec.vig_fim) || '-';
       }
 
       if (rec.strikethrough) {
@@ -214,6 +259,33 @@
 
   document.querySelectorAll('input[name="edit_strategy"]').forEach(function(radio) {
     radio.addEventListener('change', updatePreview);
+  });
+
+  document.getElementById('bitemporal-form').addEventListener('submit', function(e) {
+    var dateInputs = document.querySelectorAll('input.date-input');
+    var hasInvalid = false;
+    
+    // Primeiro: validar todas
+    dateInputs.forEach(function(input) {
+      if (!isValidDateDMY(input.value)) {
+        input.classList.add('invalid');
+        hasInvalid = true;
+      } else {
+        input.classList.remove('invalid');
+      }
+    });
+    
+    // Se houver inválidas, bloquear e não converter nada
+    if (hasInvalid) {
+      e.preventDefault();
+      alert('Por favor, corrija as datas inválidas. Use o formato dd/mm/aaaa.');
+      return;
+    }
+    
+    // Só converter se todas forem válidas
+    dateInputs.forEach(function(input) {
+      input.value = parseDMYtoISO(input.value);
+    });
   });
 
   updatePreview();
