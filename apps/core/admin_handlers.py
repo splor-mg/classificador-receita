@@ -41,7 +41,18 @@ class BitemporalChangeHandler:
             label = field_meta.verbose_name.capitalize()
             old = form.initial.get(field)
             new = form.cleaned_data.get(field)
-            diff_entry = {"field": label, "field_name": field, "old": old, "new": new}
+            
+            choices = None
+            if hasattr(field_meta, 'choices') and field_meta.choices:
+                choices = list(field_meta.choices)
+            
+            diff_entry = {
+                "field": label,
+                "field_name": field,
+                "old": old,
+                "new": new,
+                "choices": choices,
+            }
 
             if field in VIGENCIA_FIELDS:
                 vigencia_diffs.append(diff_entry)
@@ -49,6 +60,58 @@ class BitemporalChangeHandler:
                 general_diffs.append(diff_entry)
 
         return general_diffs, vigencia_diffs
+
+    def _apply_user_edits(self, request, form) -> Dict[str, Any]:
+        """
+        Captura valores editados pelo usuário na tela de confirmação.
+        
+        Prioriza valores editados (edit_field_*, edit_vig_*) sobre os valores
+        originais do form.cleaned_data.
+        """
+        from datetime import datetime
+        
+        new_values = {}
+        
+        for field in form.changed_data:
+            edit_key = f"edit_field_{field}"
+            if edit_key in request.POST:
+                edited_value = request.POST.get(edit_key)
+                field_obj = self.model._meta.get_field(field)
+                if hasattr(field_obj, 'to_python'):
+                    try:
+                        new_values[field] = field_obj.to_python(edited_value)
+                    except Exception:
+                        new_values[field] = edited_value
+                else:
+                    new_values[field] = edited_value
+            else:
+                new_values[field] = form.cleaned_data[field]
+        
+        for i in range(10):
+            inicio_key = f"edit_vig_inicio_{i}"
+            fim_key = f"edit_vig_fim_{i}"
+            
+            if inicio_key in request.POST:
+                inicio_str = request.POST.get(inicio_key)
+                if inicio_str:
+                    try:
+                        new_values["data_vigencia_inicio"] = datetime.strptime(
+                            inicio_str, "%Y-%m-%d"
+                        ).date()
+                    except ValueError:
+                        pass
+            
+            if fim_key in request.POST:
+                fim_str = request.POST.get(fim_key)
+                if fim_str:
+                    try:
+                        new_values["data_vigencia_fim"] = datetime.strptime(
+                            fim_str, "%Y-%m-%d"
+                        ).date()
+                    except ValueError:
+                        pass
+        
+        return new_values
 
     def _compute_vigencia_preview(
         self, obj: Any, form, changed_data: List[str]
@@ -159,6 +222,9 @@ class BitemporalChangeHandler:
 
         strategy = request.POST.get("edit_strategy")
 
+        if strategy:
+            new_values = self._apply_user_edits(request, form)
+        
         if not strategy:
             general_diffs, vigencia_diffs = self._build_diffs(form, form.changed_data)
             vigencia_preview = self._compute_vigencia_preview(obj, form, form.changed_data)
@@ -208,8 +274,6 @@ class BitemporalChangeHandler:
                 "form": form,
             }
             return TemplateResponse(request, "admin/bitemporal_confirm.html", context)
-
-        new_values = {field: form.cleaned_data[field] for field in form.changed_data}
 
         from apps.core.bitemporal_update import apply_bitemporal_update
 

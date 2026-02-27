@@ -6,18 +6,35 @@
 <style>
   .diff-section { margin-bottom: 1.5em; }
   .diff-section h3 { margin-bottom: 0.5em; font-size: 1.1em; color: #333; }
-  .diff-table { width: 100%; table-layout: fixed; border-collapse: collapse; }
-  .diff-table th, .diff-table td { padding: 8px; border: 1px solid #ddd; text-align: left; }
+  .diff-table { width: 100%; border-collapse: collapse; }
+  .diff-table th, .diff-table td { padding: 8px; border: 1px solid #ddd; text-align: left; vertical-align: top; }
   .diff-table th { background-color: #f5f5f5; }
+  .diff-table th.col-campo { width: 180px; }
+  .diff-value { margin-bottom: 0.5em; display: flex; align-items: flex-start; gap: 0.5em; }
+  .diff-value:last-child { margin-bottom: 0; }
+  .diff-label { font-weight: 600; color: #666; font-size: 0.85em; min-width: 40px; }
+  .diff-label-atual { color: #888; }
+  .diff-label-novo { color: #417690; }
+  .diff-input { flex: 1; padding: 4px 6px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.95em; }
+  .diff-input:focus { border-color: #417690; outline: none; }
+  .diff-textarea { flex: 1; padding: 4px 6px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.95em; min-height: 60px; resize: vertical; }
+  .diff-textarea:focus { border-color: #417690; outline: none; }
+  .diff-select { flex: 1; padding: 4px 6px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.95em; }
+  .diff-select:focus { border-color: #417690; outline: none; }
   .strategy-section { margin: 1.5em 0; padding: 1em; background: #f9f9f9; border-radius: 4px; }
   .strategy-options { display: flex; gap: 2em; margin-bottom: 1em; }
   .strategy-option { display: flex; align-items: center; gap: 0.5em; cursor: pointer; }
   .strategy-option input[type="radio"] { cursor: pointer; }
   .strategy-option label { cursor: pointer; font-weight: 500; }
-  .preview-table { width: 100%; border-collapse: collapse; margin-top: 1em; }
+  .preview-table { border-collapse: collapse; margin-top: 1em; }
   .preview-table th, .preview-table td { padding: 8px; border: 1px solid #ddd; text-align: left; }
   .preview-table th { background-color: #e8e8e8; }
+  .preview-table th.col-registros { width: 120px; }
+  .preview-table th.col-data { width: 180px; }
+  .preview-table input[type="date"] { padding: 4px 6px; border: 1px solid #ccc; border-radius: 3px; }
+  .preview-table input[type="date"]:focus { border-color: #417690; outline: none; }
   .strikethrough { text-decoration: line-through; color: #999; }
+  .strikethrough input { text-decoration: line-through; color: #999; }
   .actions { margin-top: 1.5em; }
   .actions button, .actions a.button { margin-right: 0.5em; }
 </style>
@@ -32,17 +49,31 @@
   <table class="diff-table">
     <thead>
       <tr>
-        <th style="width:20%;">Campo</th>
-        <th style="width:40%;">Atual</th>
-        <th style="width:40%;">Novo</th>
+        <th class="col-campo">Campo</th>
+        <th>Conteúdo</th>
       </tr>
     </thead>
     <tbody>
       {% for d in general_diffs %}
       <tr>
         <td>{{ d.field }}</td>
-        <td>{{ d.old }}</td>
-        <td>{{ d.new }}</td>
+        <td>
+          <div class="diff-value"><span class="diff-label diff-label-atual">Atual</span> <span>{{ d.old }}</span></div>
+          <div class="diff-value">
+            <span class="diff-label diff-label-novo">Novo</span>
+            {% if d.choices %}
+            <select class="diff-select" name="edit_field_{{ d.field_name }}">
+              {% for choice_val, choice_label in d.choices %}
+              <option value="{{ choice_val }}" {% if choice_val == d.new %}selected{% endif %}>{{ choice_val }} - {{ choice_label }}</option>
+              {% endfor %}
+            </select>
+            {% elif d.new|length > 80 %}
+            <textarea class="diff-textarea" name="edit_field_{{ d.field_name }}">{{ d.new }}</textarea>
+            {% else %}
+            <input type="text" class="diff-input" name="edit_field_{{ d.field_name }}" value="{{ d.new }}">
+            {% endif %}
+          </div>
+        </td>
       </tr>
       {% endfor %}
     </tbody>
@@ -56,17 +87,18 @@
   <table class="diff-table">
     <thead>
       <tr>
-        <th style="width:20%;">Campo</th>
-        <th style="width:40%;">Atual</th>
-        <th style="width:40%;">Novo</th>
+        <th class="col-campo">Campo</th>
+        <th>Conteúdo</th>
       </tr>
     </thead>
     <tbody>
       {% for d in vigencia_diffs %}
       <tr>
         <td>{{ d.field }}</td>
-        <td>{{ d.old }}</td>
-        <td>{{ d.new }}</td>
+        <td>
+          <div class="diff-value"><span class="diff-label diff-label-atual">Atual</span> {{ d.old }}</div>
+          <div class="diff-value"><span class="diff-label diff-label-novo">Novo</span> {{ d.new }}</div>
+        </td>
       </tr>
       {% endfor %}
     </tbody>
@@ -96,9 +128,9 @@
       <table class="preview-table">
         <thead>
           <tr>
-            <th style="width:20%;">Registros</th>
-            <th style="width:40%;">Data de início de vigência</th>
-            <th style="width:40%;">Data de fim de vigência</th>
+            <th class="col-registros">Registros</th>
+            <th class="col-data">Data de início de vigência</th>
+            <th class="col-data">Data de fim de vigência</th>
           </tr>
         </thead>
         <tbody id="preview-body">
@@ -108,7 +140,7 @@
   </div>
 
   <div class="actions">
-    <button type="submit" class="default">Save</button>
+    <button type="submit" class="default">Confirm</button>
     <a href="../" class="button">Cancel</a>
   </div>
 </form>
@@ -118,28 +150,45 @@
   var novaVigenciaPreview = JSON.parse('{{ nova_vigencia_preview_json|escapejs }}');
   var sobrescreverPreview = JSON.parse('{{ sobrescrever_preview_json|escapejs }}');
 
-  function formatDate(isoDate) {
-    if (!isoDate) return '-';
-    const d = new Date(isoDate + 'T00:00:00');
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    return d.toLocaleDateString('en-US', options);
-  }
+  var versionLabels = {
+    'Versão 1': 'Versão atual',
+    'Versão 2': 'Nova versão'
+  };
 
   function renderPreview(records) {
     const tbody = document.getElementById('preview-body');
     tbody.innerHTML = '';
 
-    records.forEach(function(rec) {
+    records.forEach(function(rec, index) {
       const tr = document.createElement('tr');
+      const isEditable = !rec.strikethrough;
+      const rowId = 'row_' + index;
 
       const tdVersion = document.createElement('td');
-      tdVersion.textContent = rec.version;
+      const displayVersion = versionLabels[rec.version] || rec.version;
+      tdVersion.textContent = displayVersion;
 
       const tdInicio = document.createElement('td');
-      tdInicio.textContent = formatDate(rec.vig_inicio);
+      if (isEditable) {
+        const inputInicio = document.createElement('input');
+        inputInicio.type = 'date';
+        inputInicio.name = 'edit_vig_inicio_' + index;
+        inputInicio.value = rec.vig_inicio || '';
+        tdInicio.appendChild(inputInicio);
+      } else {
+        tdInicio.textContent = rec.vig_inicio || '-';
+      }
 
       const tdFim = document.createElement('td');
-      tdFim.textContent = formatDate(rec.vig_fim);
+      if (isEditable) {
+        const inputFim = document.createElement('input');
+        inputFim.type = 'date';
+        inputFim.name = 'edit_vig_fim_' + index;
+        inputFim.value = rec.vig_fim || '';
+        tdFim.appendChild(inputFim);
+      } else {
+        tdFim.textContent = rec.vig_fim || '-';
+      }
 
       if (rec.strikethrough) {
         tdVersion.classList.add('strikethrough');
