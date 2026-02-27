@@ -24,11 +24,11 @@ class BitemporalModel(models.Model):
     """
     data_vigencia_inicio = models.DateField(
         verbose_name='Data de Início da Vigência',
-        help_text='Data de início da vigência no domínio orçamentário (valid_time - início)'
+        help_text='Data de início da vigência no domínio orçamentário (dd/mm/aaaa).'
     )
     data_vigencia_fim = models.DateField(
         verbose_name='Data do Fim da Vigência',
-        help_text='Data de fim da vigência (valid_time - fim). Valor sentinela 9999-12-31 indica vigência ativa no momento corrente e futuro.'
+        help_text='Data de fim da vigência (dd/mm/aaaa). Valor sentinela 31/12/9999 (ou 9999-12-31) indica vigência ativa no momento corrente e futuro.'
     )
     data_registro_inicio = models.DateTimeField(
         verbose_name='Data de Início do Registro',
