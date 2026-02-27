@@ -3,13 +3,57 @@ Mixins reutilizáveis para Django Admin.
 
 AutoExportAdminMixin — dispara export do seed após save.
 BitemporalAdminMixin — fluxo de confirmação bitemporal (sobrescrever / nova vigência).
+BitemporalDateFormatMixin — formatação de datas bitemporais (dd/mm/yyyy).
 """
 import logging
 import threading
 from pathlib import Path
 
+from django.utils import timezone
+
 from apps.core.exporter import export_resource
 from apps.core.bitemporal_registry import get_resource_for_model
+
+
+class BitemporalDateFormatMixin:
+    """Mixin que fornece métodos formatados para campos de data bitemporal.
+    
+    Formata datas de vigência (DateField) como yyyy-mm-dd (ISO 8601)
+    e datas de registro (DateTimeField) como yyyy-mm-dd hh:mm:ss no timezone local.
+    
+    Para usar, inclua os métodos desejados em list_display e readonly_fields:
+        list_display = [..., 'data_vigencia_inicio_fmt', 'data_registro_inicio_fmt', ...]
+    """
+
+    def data_vigencia_inicio_fmt(self, obj):
+        if obj.data_vigencia_inicio:
+            return obj.data_vigencia_inicio.strftime('%Y-%m-%d')
+        return '-'
+    data_vigencia_inicio_fmt.short_description = 'Data de Início da Vigência'
+    data_vigencia_inicio_fmt.admin_order_field = 'data_vigencia_inicio'
+
+    def data_vigencia_fim_fmt(self, obj):
+        if obj.data_vigencia_fim:
+            return obj.data_vigencia_fim.strftime('%Y-%m-%d')
+        return '-'
+    data_vigencia_fim_fmt.short_description = 'Data de Fim da Vigência'
+    data_vigencia_fim_fmt.admin_order_field = 'data_vigencia_fim'
+
+    def data_registro_inicio_fmt(self, obj):
+        if obj.data_registro_inicio:
+            local_dt = timezone.localtime(obj.data_registro_inicio)
+            return local_dt.strftime('%Y-%m-%d %H:%M:%S')
+        return '-'
+    data_registro_inicio_fmt.short_description = 'Data do Início do Registro'
+    data_registro_inicio_fmt.admin_order_field = 'data_registro_inicio'
+
+    def data_registro_fim_fmt(self, obj):
+        if obj.data_registro_fim:
+            local_dt = timezone.localtime(obj.data_registro_fim)
+            return local_dt.strftime('%Y-%m-%d %H:%M:%S')
+        return '-'
+    data_registro_fim_fmt.short_description = 'Data do Fim do Registro'
+    data_registro_fim_fmt.admin_order_field = 'data_registro_fim'
 
 
 class AutoExportAdminMixin:

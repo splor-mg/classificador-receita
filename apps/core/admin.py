@@ -16,6 +16,7 @@ from apps.core.forms import SerieClassificacaoForm
 from apps.core.admin_mixins import (
     AutoExportAdminMixin,
     BitemporalAdminMixin,
+    BitemporalDateFormatMixin,
 )
 
 
@@ -61,6 +62,7 @@ class RegistroAtivoFilter(admin.SimpleListFilter):
 @admin.register(SerieClassificacao)
 class SerieClassificacaoAdmin(
     BitemporalAdminMixin,
+    BitemporalDateFormatMixin,
     AutoExportAdminMixin,
     admin.ModelAdmin,
 ):
@@ -68,27 +70,15 @@ class SerieClassificacaoAdmin(
         'serie_id',
         'serie_nome',
         'orgao_responsavel_both',
-        'data_vigencia_inicio',
-        'data_vigencia_fim',
+        'data_vigencia_inicio_fmt',
+        'data_vigencia_fim_fmt',
         'data_registro_inicio_fmt',
         'data_registro_fim_fmt',
     ]
-
-    def data_registro_inicio_fmt(self, obj):
-        if obj.data_registro_inicio:
-            return obj.data_registro_inicio.strftime('%b. %d, %Y, %H:%M')
-        return '-'
-    data_registro_inicio_fmt.short_description = 'Data do Início do Registro'
-
-    def data_registro_fim_fmt(self, obj):
-        if obj.data_registro_fim:
-            return obj.data_registro_fim.strftime('%b. %d, %Y, %H:%M')
-        return '-'
-    data_registro_fim_fmt.short_description = 'Data do Fim do Registro'
     ordering = [
         'serie_ref',
-        '-data_vigencia_inicio',
-        '-data_registro_inicio',
+        'data_vigencia_inicio',
+        'data_registro_inicio',
     ]
     list_filter = [
         RegistroAtivoFilter,
