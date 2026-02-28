@@ -198,6 +198,74 @@ class BitemporalChangeHandler:
             "sobrescrever_preview": sobrescrever_preview,
         }
 
+    def _render_change_form_with_data(self, request, obj, form, object_id):
+        """
+        Renderiza o formulário de edição com os dados do POST preservados,
+        sem salvar no banco. Usado quando usuário clica em Cancel na confirmação.
+        """
+        from django.contrib.admin.options import IS_POPUP_VAR
+        
+        opts = self.model._meta
+        
+        adminform = self.admin.get_changeform_initial_data(request) if hasattr(self.admin, 'get_changeform_initial_data') else {}
+        
+        fieldsets = self.admin.get_fieldsets(request, obj)
+        readonly_fields = self.admin.get_readonly_fields(request, obj)
+        
+        from django.contrib.admin.helpers import AdminForm
+        adminform = AdminForm(
+            form,
+            list(fieldsets),
+            self.admin.get_prepopulated_fields(request, obj) if hasattr(self.admin, 'get_prepopulated_fields') else {},
+            readonly_fields,
+            model_admin=self.admin,
+        )
+        
+        media = self.admin.media + adminform.media
+        
+        inline_formsets = []
+        
+        context = {
+            **self.admin.admin_site.each_context(request),
+            'title': f'Alterar {opts.verbose_name}',
+            'subtitle': str(obj),
+            'adminform': adminform,
+            'object_id': object_id,
+            'original': obj,
+            'is_popup': IS_POPUP_VAR in request.POST or IS_POPUP_VAR in request.GET,
+            'media': media,
+            'inline_admin_formsets': inline_formsets,
+            'errors': form.errors,
+            'preserved_filters': self.admin.get_preserved_filters(request),
+            'add': False,
+            'change': True,
+            'has_view_permission': self.admin.has_view_permission(request, obj),
+            'has_add_permission': self.admin.has_add_permission(request),
+            'has_change_permission': self.admin.has_change_permission(request, obj),
+            'has_delete_permission': self.admin.has_delete_permission(request, obj),
+            'has_editable_inline_admin_formsets': False,
+            'has_file_field': True,
+            'has_absolute_url': hasattr(obj, 'get_absolute_url'),
+            'form_url': '',
+            'opts': opts,
+            'content_type_id': None,
+            'save_as': self.admin.save_as,
+            'save_on_top': self.admin.save_on_top,
+            'to_field_var': None,
+            'is_popup_var': IS_POPUP_VAR,
+            'app_label': opts.app_label,
+        }
+        
+        return TemplateResponse(
+            request,
+            self.admin.change_form_template or [
+                f'admin/{opts.app_label}/{opts.model_name}/change_form.html',
+                f'admin/{opts.app_label}/change_form.html',
+                'admin/change_form.html',
+            ],
+            context,
+        )
+
     def handle(self, request, object_id, form_url, extra_context):
         """
         Processa o fluxo de confirmação bitemporal.
@@ -219,6 +287,10 @@ class BitemporalChangeHandler:
 
         if not form.has_changed():
             return None
+
+        # Se usuário clicou em Cancel na tela de confirmação, volta para edição
+        if request.POST.get("_cancel_confirm"):
+            return self._render_change_form_with_data(request, obj, form, object_id)
 
         strategy = request.POST.get("edit_strategy")
 
@@ -258,6 +330,11 @@ class BitemporalChangeHandler:
                 ]
             )
 
+            change_url = reverse(
+                f'admin:{self.model._meta.app_label}_{self.model._meta.model_name}_change',
+                args=[object_id]
+            )
+
             context = {
                 **self.admin.admin_site.each_context(request),
                 "title": "Confirmar atualização",
@@ -272,6 +349,7 @@ class BitemporalChangeHandler:
                 "post_items": post_items,
                 "changed_data": form.changed_data,
                 "form": form,
+                "change_url": change_url,
             }
             return TemplateResponse(request, "admin/bitemporal_confirm.html", context)
 
