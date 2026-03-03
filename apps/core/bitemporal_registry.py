@@ -60,7 +60,11 @@ RESOURCES: Dict[str, Dict[str, Any]] = {
         ],
         "list_display": ["serie_id", "serie_nome", "data_vigencia_inicio", "data_vigencia_fim"],
         "select_related": [],
-        "order_by": ["serie_id", "data_registro_inicio"],
+        # Ordem padrão para listagens/exports bitemporais deve refletir
+        # a ordenação usada no Admin: primeiro pela referência estável
+        # da série, depois pela vigência (mais antiga primeiro) e,
+        # dentro disso, pela data de início do registro.
+        "order_by": ["serie_ref", "data_vigencia_inicio", "data_registro_inicio"],
     },
     "classificacao": {
         "model_name": "Classificacao",
@@ -85,7 +89,7 @@ RESOURCES: Dict[str, Dict[str, Any]] = {
         ],
         "list_display": ["classificacao_id", "classificacao_nome", "data_vigencia_inicio", "data_vigencia_fim"],
         "select_related": ["serie_id", "base_legal_tecnica_id"],
-        "order_by": ["classificacao_id", "data_registro_inicio"],
+        "order_by": ["classificacao_ref", "data_vigencia_inicio", "data_registro_inicio"],
     },
     "nivel_hierarquico": {
         "model_name": "NivelHierarquico",
@@ -111,7 +115,7 @@ RESOURCES: Dict[str, Dict[str, Any]] = {
         ],
         "list_display": ["nivel_id", "classificacao_id", "data_registro_inicio", "data_vigencia_inicio", "data_vigencia_fim", "nivel_nome"],
         "select_related": ["classificacao_id"],
-        "order_by": ["nivel_id", "classificacao_id__classificacao_id", "data_registro_inicio"],
+        "order_by": ["nivel_ref", "data_vigencia_inicio", "data_registro_inicio"],
     },
     "versao_classificacao": {
         "model_name": "VersaoClassificacao",
@@ -131,7 +135,7 @@ RESOURCES: Dict[str, Dict[str, Any]] = {
         ],
         "list_display": ["versao_id", "versao_numero", "data_vigencia_inicio", "data_vigencia_fim"],
         "select_related": ["classificacao"],
-        "order_by": ["versao_id", "data_registro_inicio"],
+        "order_by": ["versao_ref", "data_vigencia_inicio", "data_registro_inicio"],
     },
     "variante_classificacao": {
         "model_name": "VarianteClassificacao",
@@ -151,7 +155,8 @@ RESOURCES: Dict[str, Dict[str, Any]] = {
         ],
         "list_display": ["variante_id", "variante_nome", "data_vigencia_inicio", "data_vigencia_fim"],
         "select_related": ["classificacao", "versao"],
-        "order_by": ["variante_id", "data_registro_inicio"],
+        # Não há variante_ref; usamos o identificador semântico variante_id.
+        "order_by": ["variante_id", "data_vigencia_inicio", "data_registro_inicio"],
     },
     "item_classificacao": {
         "model_name": "ItemClassificacao",
@@ -178,7 +183,7 @@ RESOURCES: Dict[str, Dict[str, Any]] = {
         ],
         "list_display": ["item_id", "receita_cod", "data_registro_inicio", "data_vigencia_inicio", "data_vigencia_fim"],
         "select_related": ["classificacao_id", "nivel_id", "parent_item_id"],
-        "order_by": ["item_id", "classificacao_id__classificacao_id", "data_registro_inicio"],
+        "order_by": ["item_ref", "data_vigencia_inicio", "data_registro_inicio"],
     },
     "base_legal_tecnica": {
         "model_name": "BaseLegalTecnica",
