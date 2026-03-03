@@ -22,6 +22,6 @@ class SerieClassificacaoForm(forms.ModelForm):
         fields = "__all__"
         widgets = {
             "serie_nome": TextInput(attrs={"style": "width:60ch;"}),
-            "descricao": Textarea(attrs={"style": "width:60ch; height:8em;"}),
+            "serie_descricao": Textarea(attrs={"style": "width:60ch; height:8em;"}),
         }
 
