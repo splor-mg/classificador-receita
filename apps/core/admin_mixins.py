@@ -9,7 +9,10 @@ import logging
 import threading
 from pathlib import Path
 
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 from django.utils import timezone
+from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
 
 from apps.core.exporter import export_resource
 from apps.core.bitemporal_registry import get_resource_for_model
@@ -96,6 +99,7 @@ class AutoExportAdminMixin:
         try:
             if change and hasattr(form, "has_changed") and not form.has_changed():
                 try:
+                    setattr(request, "_autoexport_no_changes", True)
                     self.message_user(request, "Nenhuma alteração detectada — export pulado.")
                 except Exception:
                     pass
@@ -103,6 +107,48 @@ class AutoExportAdminMixin:
         except Exception:
             pass
         self.trigger_export(request, obj.__class__)
+
+    def response_change(self, request, obj):
+        """
+        Customize Django's default change response to avoid showing a
+        contradictory "was changed successfully" message when no changes
+        were actually detected.
+        """
+        if getattr(request, "_autoexport_no_changes", False):
+            opts = self.opts
+            preserved_filters = self.get_preserved_filters(request)
+            preserved_qsl = self._get_preserved_qsl(request, preserved_filters)
+
+            if "_continue" in request.POST:
+                redirect_url = request.path
+                redirect_url = add_preserved_filters(
+                    {
+                        "preserved_filters": preserved_filters,
+                        "preserved_qsl": preserved_qsl,
+                        "opts": opts,
+                    },
+                    redirect_url,
+                )
+                return HttpResponseRedirect(redirect_url)
+
+            if "_addanother" in request.POST:
+                redirect_url = reverse(
+                    "admin:%s_%s_add" % (opts.app_label, opts.model_name),
+                    current_app=self.admin_site.name,
+                )
+                redirect_url = add_preserved_filters(
+                    {
+                        "preserved_filters": preserved_filters,
+                        "preserved_qsl": preserved_qsl,
+                        "opts": opts,
+                    },
+                    redirect_url,
+                )
+                return HttpResponseRedirect(redirect_url)
+
+            return self.response_post_save_change(request, obj)
+
+        return super().response_change(request, obj)
 
 
 class BitemporalAdminMixin:
