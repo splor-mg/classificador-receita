@@ -24,7 +24,7 @@ fields:
     gsim: ClassificationSeries.name
     constraints:
       required: true
-  - name: descricao
+  - name: serie_descricao
     type: string
     title: Descrição da Série
     description: |

@@ -32,7 +32,7 @@ fields:
     gsim: StatisticalClassification.name
     constraints:
       required: true
-  - name: descricao
+  - name: classificacao_descricao
     type: string
     title: Descrição da Classificação Estatística
     description: |

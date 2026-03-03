@@ -40,7 +40,7 @@ fields:
     constraints:
       required: true
       enum: ["extensão", "agregação", "reagrupamento", "outro"]
-  - name: descricao
+  - name: variante_descricao
     type: string
     title: Descrição da Variante
     description: |

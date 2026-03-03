@@ -40,7 +40,7 @@ fields:
     gsim: ClassificationVersion.name
     constraints:
       required: false
-  - name: descricao
+  - name: versao_descricao
     type: string
     title: Descrição da Versão
     description: |

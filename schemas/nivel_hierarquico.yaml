@@ -42,7 +42,7 @@ fields:
     gsim: ClassificationLevel.levelName
     constraints:
       required: true
-  - name: descricao
+  - name: nivel_descricao
     type: string
     title: Descrição do Nível
     description: |

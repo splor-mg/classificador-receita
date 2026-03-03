@@ -18,7 +18,7 @@ Exemplos de registros para descrever a série de classificação, conforme demon
     - serie_id: `SERIE-RECEITA-MG`
     - serie_ref: 1
     - serie_nome: `Série de Classificações de Natureza de Receita - MG`
-    - descricao: `Série contendo classificações de receita orçamentária do Estado de Minas Gerais.`
+    - serie_descricao: `Série contendo classificações de receita orçamentária do Estado de Minas Gerais.`
     - orgao_responsavel: `SEF/MG`
     - data_vigencia_inicio: `2023-01-01`
     - data_vigencia_fim: `9999-12-31`
@@ -38,7 +38,7 @@ Exemplos de registros para descrever a série de classificação, conforme demon
       - serie_id: `SERIE-RECEITA-MG`
       - serie_ref: 1
       - serie_nome: `Série de Classificações de Natureza de Receita - MG`
-      - descricao: `Série contendo classificações de receita orçamentária do Estado de Minas Gerais.`
+      - serie_descricao: `Série contendo classificações de receita orçamentária do Estado de Minas Gerais.`
       - orgao_responsavel: `SEPLAG/MG`
       - data_vigencia_inicio: `2024-02-21`
       - data_vigencia_fim: `9999-12-31`
@@ -53,7 +53,7 @@ Exemplos de registros para descrever a série de classificação, conforme demon
       - serie_id: `SERIE-RECEITA-UNIAO`
       - serie_ref: 2
       - serie_nome: `Série de Classificações de Natureza de Receita - União`
-      - descricao: `Série contendo classificações de natureza de receita orçamentária da União.`
+      - serie_descricao: `Série contendo classificações de natureza de receita orçamentária da União.`
       - orgao_responsavel: `STN/BRA`
       - data_vigencia_inicio: `2023-01-01`
       - data_vigencia_fim: `9999-12-31`
@@ -73,7 +73,7 @@ Exemplos de registros para descrever a série de classificação, conforme demon
       - serie_id: `SERIE-RECEITA-MG`
       - serie_ref: 1
       - serie_nome: `Série de Classificações de Natureza de Receita - MG`
-      - descricao: `Série contendo classificações de natureza de receita orçamentária do Estado de Minas Gerais.`
+      - serie_descricao: `Série contendo classificações de natureza de receita orçamentária do Estado de Minas Gerais.`
       - orgao_responsavel: `SEPLAG/MG`
       - data_vigencia_inicio: `2024-03-03`
       - data_vigencia_fim: `9999-12-31`

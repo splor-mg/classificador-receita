@@ -69,7 +69,7 @@ class SerieClassificacao(BitemporalModel):
     serie_id = models.CharField(
         max_length=100,
         verbose_name='Identificador da Série',
-        help_text='Identificador único da série de classificações',
+        help_text='Identificador único da série de classificações (serie_id).',
         db_index=True
     )
     serie_ref = models.IntegerField(
@@ -77,21 +77,21 @@ class SerieClassificacao(BitemporalModel):
         blank=False,
         verbose_name='Referência Numérica da Série',
         help_text=(
-            'Identificador numérico estável da série de classificações, usado na chave primária '
-            'lógica (bitemporal). Mesmo valor para todas as linhas que pertencem à mesma entidade '
-            '(mesmo serie_id).'
+            'Identificador numérico estável da série de classificações, usado na chave primária. '
+            'Mesmo valor para todas as linhas que pertencem à mesma entidade '
+            '(mesmo serie_id), (serie_ref).'
         ),
     )
     serie_nome = models.CharField(
         max_length=255,
         blank=False,
         verbose_name='Nome da Série',
-        help_text='Nome oficial da série de classificações'
+        help_text='Nome oficial da série de classificações (serie_nome).'
     )
-    descricao = models.TextField(
+    serie_descricao = models.TextField(
         blank=False,
-        verbose_name='Descrição',
-        help_text='Descrição detalhada da série de classificações e seu propósito'
+        verbose_name='Descrição da Série',
+        help_text='Descrição detalhada da série de classificações e seu propósito (serie_descricao).'
     )
     orgao_responsavel = models.CharField(
         max_length=255,
@@ -151,7 +151,7 @@ class Classificacao(BitemporalModel):
     classificacao_id = models.CharField(
         max_length=100,
         verbose_name='Identificador da Classificação',
-        help_text='Identificador único da classificação estatística (chave semântica).',
+        help_text='Identificador único da classificação estatística (chave semântica) (classificacao_id).',
         db_index=True
     )
     classificacao_ref = models.IntegerField(
@@ -159,9 +159,9 @@ class Classificacao(BitemporalModel):
         blank=False,
         verbose_name='Referência Numérica da Classificação',
         help_text=(
-            'Identificador numérico estável da classificação estatística, usado na chave primária '
-            'lógica (bitemporal). Mesmo valor para todas as linhas que pertencem à mesma entidade '
-            '(mesmo classificacao_id).'
+            'Identificador numérico estável da classificação estatística, usado na chave primária. '
+            'Mesmo valor para todas as linhas que pertencem à mesma entidade '
+            '(mesmo classificacao_id), (classificacao_ref).'
         ),
     )
     # Importante: o schema Frictionless expõe o campo como `serie_id`.
@@ -174,17 +174,17 @@ class Classificacao(BitemporalModel):
         related_name='classificacoes',
         db_column='serie_id',
         verbose_name='Série de Classificações',
-        help_text='Referência à série de classificações à qual esta classificação pertence',
+        help_text='Referência à série de classificações à qual esta classificação pertence (serie_id).',
     )
     classificacao_nome = models.CharField(
         max_length=255,
         verbose_name='Nome da Classificação',
-        help_text='Nome oficial da classificação estatística.'
+        help_text='Nome oficial da classificação estatística (classificacao_nome).'
     )
-    descricao = models.TextField(
+    classificacao_descricao = models.TextField(
         blank=True,
-        verbose_name='Descrição',
-        help_text='Descrição detalhada da classificação, seu propósito e escopo'
+        verbose_name='Descrição da Classificação',
+        help_text='Descrição detalhada da classificação, seu propósito e escopo (descricao).'
     )
     tipo_classificacao = models.CharField(
         max_length=20,
@@ -196,7 +196,7 @@ class Classificacao(BitemporalModel):
     numero_niveis = models.IntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(9)],
         verbose_name='Número de Níveis',
-        help_text='Número de níveis hierárquicos da classificação. Para o Classificador de Receita MG, o valor é 9.'
+        help_text='Número de níveis hierárquicos da classificação. Para o Classificador de Receita MG, o valor é 9 (numero_niveis).'
     )
     numero_digitos = models.IntegerField(
         null=True,
@@ -306,9 +306,9 @@ class NivelHierarquico(BitemporalModel):
         verbose_name='Nome do Nível',
         help_text='Nome do nível hierárquico (ex: "Categoria Econômica", "Origem", "Espécie")'
     )
-    descricao = models.TextField(
+    nivel_descricao = models.TextField(
         blank=True,
-        verbose_name='Descrição',
+        verbose_name='Descrição do Nível',
         help_text='Descrição detalhada do nível, seu propósito e conteúdo'
     )
     estrutura_codigo = models.CharField(
@@ -623,9 +623,9 @@ class VersaoClassificacao(BitemporalModel):
         verbose_name='Nome da Versão',
         help_text='Nome descritivo da versão'
     )
-    descricao = models.TextField(
+    versao_descricao = models.TextField(
         blank=True,
-        verbose_name='Descrição',
+        verbose_name='Descrição da Versão',
         help_text='Descrição das mudanças e características desta versão. Versões são reservadas para mudanças que alteram fronteiras conceituais entre categorias.'
     )
     data_lancamento = models.DateField(
@@ -708,9 +708,9 @@ class VarianteClassificacao(BitemporalModel):
         verbose_name='Tipo de Variante',
         help_text='Tipo da variante (extensão, agregação, reagrupamento, outro)'
     )
-    descricao = models.TextField(
+    variante_descricao = models.TextField(
         blank=True,
-        verbose_name='Descrição',
+        verbose_name='Descrição da Variante',
         help_text='Descrição detalhada da variante, seu propósito e diferenças em relação à classificação de origem'
     )
     proposito = models.CharField(
