@@ -21,7 +21,6 @@ def export_resource(recurso: str, output: str | None = None, scope: str = "all",
     res = get_resource(recurso)
     model = get_model_for_resource(recurso)
     columns = res["export_columns"]
-    sentinela = get_sentinela_date()
 
     # Build joins and select parts similar to command implementation
     main_table = model._meta.db_table
