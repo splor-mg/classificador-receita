@@ -5,6 +5,7 @@ BitemporalChangeHandler — coordena fluxo de confirmação bitemporal (sobrescr
 """
 from datetime import date, timedelta
 from typing import Any, Dict, List, Tuple
+import logging
 
 from django.template.response import TemplateResponse
 from django.http import HttpResponseRedirect
@@ -30,6 +31,7 @@ class BitemporalChangeHandler:
     def __init__(self, admin_instance):
         self.admin = admin_instance
         self.model = admin_instance.model
+        self.logger = logging.getLogger(__name__)
 
     def _build_diffs(self, form, changed_data: List[str]) -> Tuple[List[Dict], List[Dict]]:
         """Separa diffs em atributos gerais e vigência."""
@@ -41,15 +43,25 @@ class BitemporalChangeHandler:
             label = field_meta.verbose_name.capitalize()
             old = form.initial.get(field)
             new = form.cleaned_data.get(field)
-            
+
             choices = None
             if hasattr(field_meta, 'choices') and field_meta.choices:
                 choices = list(field_meta.choices)
-            
+            if choices:
+                choices_dict = dict(choices)
+                label_display = choices_dict.get(old, old)
+                if old is not None and label_display is not None and old != label_display:
+                    old_display = f"{old} - {label_display}"
+                else:
+                    old_display = label_display
+            else:
+                old_display = old
+
             diff_entry = {
                 "field": label,
                 "field_name": field,
                 "old": old,
+                "old_display": old_display,
                 "new": new,
                 "choices": choices,
             }
@@ -69,23 +81,43 @@ class BitemporalChangeHandler:
         originais do form.cleaned_data.
         """
         from datetime import datetime
-        
-        new_values = {}
-        
-        for field in form.changed_data:
+
+        new_values: Dict[str, Any] = {}
+
+        # Percorre TODOS os campos do form; para aqueles que não têm
+        # override edit_field_* usamos o cleaned_data original.
+        for field in form.fields.keys():
+            if field not in form.cleaned_data:
+                continue
             edit_key = f"edit_field_{field}"
+            cleaned_val = form.cleaned_data[field]
             if edit_key in request.POST:
-                edited_value = request.POST.get(edit_key)
-                field_obj = self.model._meta.get_field(field)
-                if hasattr(field_obj, 'to_python'):
-                    try:
-                        new_values[field] = field_obj.to_python(edited_value)
-                    except Exception:
-                        new_values[field] = edited_value
+                raw_val = request.POST.get(edit_key)
+                try:
+                    field_obj = self.model._meta.get_field(field)
+                except Exception:
+                    new_val = raw_val
                 else:
-                    new_values[field] = edited_value
+                    if hasattr(field_obj, "to_python"):
+                        try:
+                            new_val = field_obj.to_python(raw_val)
+                        except Exception:
+                            new_val = raw_val
+                    else:
+                        new_val = raw_val
+                new_values[field] = new_val
+                try:
+                    self.logger.debug(
+                        "BitemporalChangeHandler-apply_user_edits field=%s cleaned=%r raw_post=%r final=%r",
+                        field,
+                        cleaned_val,
+                        raw_val,
+                        new_val,
+                    )
+                except Exception:
+                    pass
             else:
-                new_values[field] = form.cleaned_data[field]
+                new_values[field] = cleaned_val
         
         for i in range(10):
             inicio_key = f"edit_vig_inicio_{i}"
@@ -110,7 +142,7 @@ class BitemporalChangeHandler:
                         ).date()
                     except ValueError:
                         pass
-        
+
         return new_values
 
     def _compute_vigencia_preview(
@@ -294,9 +326,6 @@ class BitemporalChangeHandler:
 
         strategy = request.POST.get("edit_strategy")
 
-        if strategy:
-            new_values = self._apply_user_edits(request, form)
-        
         if not strategy:
             general_diffs, vigencia_diffs = self._build_diffs(form, form.changed_data)
             vigencia_preview = self._compute_vigencia_preview(obj, form, form.changed_data)
@@ -305,6 +334,19 @@ class BitemporalChangeHandler:
             for k in request.POST.keys():
                 for v in request.POST.getlist(k):
                     post_items.append((k, v))
+
+            # Persistir snapshot dos valores originais (antes da edição)
+            # para comparação na etapa de confirmação. Usamos o prefixo
+            # "orig_field_" para não conflitar com outros campos.
+            for d in general_diffs + vigencia_diffs:
+                field_name = d.get("field_name")
+                if not field_name:
+                    continue
+                orig_key = f"orig_field_{field_name}"
+                orig_val = d.get("old")
+                # Garantir que o snapshot esteja presente mesmo que já
+                # exista alguma chave homônima no POST original.
+                post_items.append((orig_key, "" if orig_val is None else str(orig_val)))
 
             import json
             nova_vigencia_preview_json = json.dumps(
@@ -353,12 +395,106 @@ class BitemporalChangeHandler:
             }
             return TemplateResponse(request, "admin/bitemporal_confirm.html", context)
 
+        # Segunda etapa: usuário escolheu estratégia e confirmou.
+        # Reaplicamos os edits feitos na tela de confirmação e
+        # comparamos os valores finais com o snapshot ORIGINAL dos
+        # campos (antes de iniciar a edição), não apenas com o estado
+        # atual do banco. Isso garante que:
+        # - Se o usuário desfizer manualmente as alterações na tela de
+        #   confirmação, nenhum registro bitemporal novo será criado;
+        # - Se mantiver qualquer alteração em relação ao estado
+        #   original, a atualização bitemporal será aplicada.
+
+        # Reconstruir snapshot de valores originais a partir dos
+        # campos ocultos "orig_field_*" enviados pela tela de
+        # confirmação.
+        original_values: Dict[str, Any] = {}
+        prefix = "orig_field_"
+        for key, value in request.POST.items():
+            if not key.startswith(prefix):
+                continue
+            field_name = key[len(prefix) :]
+            try:
+                field_obj = self.model._meta.get_field(field_name)
+            except Exception:
+                original_values[field_name] = value
+                continue
+            if hasattr(field_obj, "to_python"):
+                try:
+                    original_values[field_name] = field_obj.to_python(value)
+                except Exception:
+                    original_values[field_name] = value
+            else:
+                original_values[field_name] = value
+
+        new_values = self._apply_user_edits(request, form)
+
+        attr_changes: Dict[str, Any] = {}
+        debug_snapshot: Dict[str, Any] = {
+            "model": self.model.__name__,
+            "pk": getattr(obj, "pk", None),
+            "strategy": strategy,
+            "old_values": {},
+            "new_values": new_values,
+            "attr_changes": {},
+            "vigencia_in_new_values": {k: v for k, v in new_values.items() if k in VIGENCIA_FIELDS},
+            "post_keys": list(request.POST.keys()),
+        }
+
+        for field_name, new_val in new_values.items():
+            if field_name in VIGENCIA_FIELDS:
+                continue
+            # Preferir snapshot original; se ausente, cair para valor
+            # atual do objeto (situações legadas/edge cases).
+            if field_name in original_values:
+                old_val = original_values[field_name]
+            else:
+                old_val = getattr(obj, field_name, None)
+            old_comp = getattr(old_val, "pk", old_val)
+            new_comp = getattr(new_val, "pk", new_val)
+            debug_snapshot["old_values"][field_name] = old_val
+            if old_comp != new_comp:
+                attr_changes[field_name] = new_val
+
+        debug_snapshot["attr_changes"] = attr_changes
+
+        try:
+            self.logger.warning("BitemporalChangeHandler-debug %s", debug_snapshot)
+        except Exception:
+            pass
+
+        if not attr_changes:
+            self.admin.message_user(
+                request,
+                "Nenhuma alteração detectada — atualização bitemporal não aplicada.",
+            )
+            changelist_url = reverse(
+                f'admin:{self.model._meta.app_label}_{self.model._meta.model_name}_changelist'
+            )
+            return HttpResponseRedirect(changelist_url)
+
+        effective_new_values: Dict[str, Any] = dict(attr_changes)
+        for field_name in VIGENCIA_FIELDS:
+            if field_name in new_values:
+                effective_new_values[field_name] = new_values[field_name]
+
+        try:
+            self.logger.warning(
+                "BitemporalChangeHandler-apply | model=%s pk=%s strategy=%s effective_new_values=%s",
+                self.model.__name__,
+                getattr(obj, "pk", None),
+                strategy,
+                effective_new_values,
+            )
+        except Exception:
+            pass
+
         from apps.core.bitemporal_update import apply_bitemporal_update
 
         apply_bitemporal_update(
             model=self.model,
             prev_obj=obj,
-            new_values=new_values,
+            new_values=effective_new_values,
             strategy=strategy,
         )
 
