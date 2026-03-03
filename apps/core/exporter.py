@@ -7,8 +7,14 @@ from datetime import datetime
 import threading
 
 from django.db import connection
+from django.conf import settings
 
-from apps.core.bitemporal_registry import get_resource, get_model_for_resource, get_sentinela_datetime, RESOURCES
+from apps.core.bitemporal_registry import (
+    get_resource,
+    get_model_for_resource,
+    get_sentinela_datetime,
+    RESOURCES,
+)
 # process-local locks to serialize exports per resource
 _resource_locks = {}
 
@@ -50,24 +56,41 @@ def export_resource(recurso: str, output: str | None = None, scope: str = "all",
         joins.append(f"LEFT JOIN {ref_model._meta.db_table} AS {alias} ON {main_alias}.{main_fk_col} = {alias}.{ref_pk_col}")
 
     select_parts = []
+    app_tz = getattr(settings, "TIME_ZONE", "UTC")
     fields_by_name = {f["name"]: f for f in res["fields"]}
     for col in columns:
         fmeta = fields_by_name.get(col)
         if fmeta and fmeta.get("type") == "fk":
-            alias, ref_model, fk_semantic_attr = alias_map.get(fmeta["name"], (None, None, None))
+            alias, ref_model, fk_semantic_attr = alias_map.get(
+                fmeta["name"], (None, None, None)
+            )
             if alias is None:
                 raise ValueError(f"FK field {fmeta['name']} has no join alias")
             try:
                 sem_col = ref_model._meta.get_field(fk_semantic_attr).column
             except Exception:
                 sem_col = fk_semantic_attr
-            select_parts.append(f"{alias}.{sem_col} AS \"{col}\"")
+            select_parts.append(f'{alias}.{sem_col} AS "{col}"')
         else:
-            try:
-                col_db = model._meta.get_field(col).column
-            except Exception:
-                col_db = col
-            select_parts.append(f"{main_alias}.{col_db} AS \"{col}\"")
+            # Formatar campos datetime de registro no padrão
+            # "YYYY-MM-DD HH:MM:SS" no timezone da aplicação, para
+            # alinhar com o que é exibido no Admin (sem microsegundos
+            # nem offset explícito).
+            if col in ("data_registro_inicio", "data_registro_fim"):
+                try:
+                    col_db = model._meta.get_field(col).column
+                except Exception:
+                    col_db = col
+                select_parts.append(
+                    f"to_char({main_alias}.{col_db} AT TIME ZONE '{app_tz}', "
+                    f"'YYYY-MM-DD HH24:MI:SS') AS \"{col}\""
+                )
+            else:
+                try:
+                    col_db = model._meta.get_field(col).column
+                except Exception:
+                    col_db = col
+                select_parts.append(f'{main_alias}.{col_db} AS "{col}"')
 
     select_sql = f"SELECT {', '.join(select_parts)} FROM {main_table} AS {main_alias} "
     if joins:
