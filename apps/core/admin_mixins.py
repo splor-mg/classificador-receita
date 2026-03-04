@@ -6,9 +6,9 @@ BitemporalAdminMixin — fluxo de confirmação bitemporal (sobrescrever / nova 
 BitemporalDateFormatMixin — formatação de datas bitemporais (dd/mm/yyyy).
 """
 import logging
-import threading
 from pathlib import Path
 
+from django.contrib import admin
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils import timezone
@@ -164,3 +164,39 @@ class BitemporalAdminMixin:
             return response
 
         return super().changeform_view(request, object_id, form_url, extra_context)
+
+
+def make_id_filter(field_name, *, title=None, parameter_name=None):
+    """
+    Fábrica de filtros genéricos para campos de ID de negócio.
+
+    Exemplo de uso em um ModelAdmin:
+        SerieIdFilter = make_id_filter('serie_id', title='Identificador da Série')
+        list_filter = [SerieIdFilter, ...]
+    """
+
+    # Resolvidos aqui para evitar NameError dentro do corpo da classe
+    resolved_title = title or field_name.replace('_', ' ').title()
+    resolved_parameter_name = parameter_name or field_name
+
+    class IdFilter(admin.SimpleListFilter):
+        _field_name = field_name
+        title = resolved_title
+        parameter_name = resolved_parameter_name
+
+        def lookups(self, request, model_admin):
+            Model = model_admin.model
+            values = (
+                Model._default_manager.values_list(self._field_name, flat=True)
+                .distinct()
+                .order_by(self._field_name)
+            )
+            return [(value, value) for value in values if value not in (None, "")]
+
+        def queryset(self, request, queryset):
+            value = self.value()
+            if value:
+                return queryset.filter(**{self._field_name: value})
+            return queryset
+
+    return IdFilter

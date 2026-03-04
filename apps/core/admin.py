@@ -17,6 +17,7 @@ from apps.core.admin_mixins import (
     AutoExportAdminMixin,
     BitemporalAdminMixin,
     BitemporalDateFormatMixin,
+    make_id_filter,
 )
 
 
@@ -58,6 +59,15 @@ class RegistroAtivoFilter(admin.SimpleListFilter):
             return queryset.exclude(data_registro_fim=TRANSACTION_TIME_SENTINEL)
         return queryset
 
+# Filtros para campos de ID de negócio.
+SerieIdFilter = make_id_filter('serie_id', title='Identificador da Série')
+ClassificacaoIdFilter = make_id_filter('classificacao_id', title='Identificador da Classificação')
+NivelIdFilter = make_id_filter('nivel_id', title='Identificador do Nível')
+ItemIdFilter = make_id_filter('item_id', title='Identificador do Item')
+VersaoIdFilter = make_id_filter('versao_id', title='Identificador da Versão')
+VarianteIdFilter = make_id_filter('variante_id', title='Identificador da Variante')
+BaseLegalTecnicaIdFilter = make_id_filter('base_legal_tecnica_id', title='Identificador da Base Legal/Técnica')
+
 
 @admin.register(SerieClassificacao)
 class SerieClassificacaoAdmin(
@@ -82,6 +92,7 @@ class SerieClassificacaoAdmin(
     ]
     list_filter = [
         RegistroAtivoFilter,
+        SerieIdFilter,
         'data_vigencia_inicio',
         'data_registro_inicio',
     ]
@@ -125,7 +136,7 @@ class SerieClassificacaoAdmin(
 @admin.register(Classificacao)
 class ClassificacaoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
     list_display = ['classificacao_id', 'classificacao_nome', 'serie_id', 'tipo_classificacao', 'numero_niveis', 'data_vigencia_inicio']
-    list_filter = ['tipo_classificacao', 'numero_niveis', 'serie_id', 'data_vigencia_inicio']
+    list_filter = [ClassificacaoIdFilter, 'tipo_classificacao', 'numero_niveis', 'serie_id', 'data_vigencia_inicio']
     search_fields = ['classificacao_id', 'classificacao_nome', 'classificacao_descricao']
     readonly_fields = ['data_registro_inicio', 'data_registro_fim']
     date_hierarchy = 'data_vigencia_inicio'
@@ -135,7 +146,7 @@ class ClassificacaoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
 @admin.register(NivelHierarquico)
 class NivelHierarquicoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
     list_display = ['nivel_id', 'nivel_numero', 'nivel_nome', 'classificacao_id', 'tipo_codigo', 'data_vigencia_inicio']
-    list_filter = ['nivel_numero', 'tipo_codigo', 'classificacao_id', 'data_vigencia_inicio']
+    list_filter = [NivelIdFilter, 'nivel_numero', 'tipo_codigo', 'classificacao_id', 'data_vigencia_inicio']
     search_fields = ['nivel_id', 'nivel_nome', 'nivel_descricao']
     readonly_fields = ['data_registro_inicio', 'data_registro_fim']
     date_hierarchy = 'data_vigencia_inicio'
@@ -145,7 +156,7 @@ class NivelHierarquicoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
 @admin.register(ItemClassificacao)
 class ItemClassificacaoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
     list_display = ['receita_cod', 'item_id', 'receita_nome', 'nivel_id', 'matriz', 'item_gerado', 'data_vigencia_inicio']
-    list_filter = ['matriz', 'item_gerado', 'nivel_id', 'data_vigencia_inicio']
+    list_filter = [ItemIdFilter, 'matriz', 'item_gerado', 'nivel_id', 'data_vigencia_inicio']
     search_fields = ['receita_cod', 'receita_nome', 'item_id']
     readonly_fields = ['data_registro_inicio', 'data_registro_fim']
     date_hierarchy = 'data_vigencia_inicio'
@@ -155,7 +166,7 @@ class ItemClassificacaoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
 @admin.register(VersaoClassificacao)
 class VersaoClassificacaoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
     list_display = ['versao_id', 'versao_numero', 'versao_nome', 'classificacao', 'data_lancamento', 'data_vigencia_inicio']
-    list_filter = ['classificacao', 'data_lancamento', 'data_vigencia_inicio']
+    list_filter = [VersaoIdFilter, 'classificacao', 'data_lancamento', 'data_vigencia_inicio']
     search_fields = ['versao_id', 'versao_numero', 'versao_nome', 'versao_descricao']
     readonly_fields = ['data_registro_inicio', 'data_registro_fim']
     date_hierarchy = 'data_vigencia_inicio'
@@ -165,7 +176,7 @@ class VersaoClassificacaoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
 @admin.register(VarianteClassificacao)
 class VarianteClassificacaoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
     list_display = ['variante_id', 'variante_nome', 'tipo_variante', 'classificacao', 'versao', 'data_vigencia_inicio']
-    list_filter = ['tipo_variante', 'classificacao', 'versao', 'data_vigencia_inicio']
+    list_filter = [VarianteIdFilter, 'tipo_variante', 'classificacao', 'versao', 'data_vigencia_inicio']
     search_fields = ['variante_id', 'variante_nome', 'variante_descricao', 'proposito']
     readonly_fields = ['data_registro_inicio', 'data_registro_fim']
     date_hierarchy = 'data_vigencia_inicio'
@@ -175,6 +186,6 @@ class VarianteClassificacaoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
 @admin.register(BaseLegalTecnica)
 class BaseLegalTecnicaAdmin(AutoExportAdminMixin, admin.ModelAdmin):
     list_display = ['base_legal_tecnica_id', 'titulo_norma', 'tipo_legal', 'esfera_federativa', 'data_edicao']
-    list_filter = ['tipo_legal', 'esfera_federativa', 'data_edicao']
+    list_filter = [BaseLegalTecnicaIdFilter, 'tipo_legal', 'esfera_federativa', 'data_edicao']
     search_fields = ['base_legal_tecnica_id', 'titulo_norma', 'ementa']
     date_hierarchy = 'data_edicao'
