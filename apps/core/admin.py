@@ -14,59 +14,18 @@ from apps.core.models import (
 from apps.core.models_base_legal import BaseLegalTecnica
 from apps.core.forms import SerieClassificacaoForm
 from apps.core.admin_mixins import (
-    AutoExportAdminMixin,
+    RegistroAtivoFilter,
+    SerieIdFilter,
+    ClassificacaoIdFilter,
+    NivelIdFilter,
+    ItemIdFilter,
+    VersaoIdFilter,
+    VarianteIdFilter,
+    BaseLegalTecnicaIdFilter,
     BitemporalAdminMixin,
     BitemporalDateFormatMixin,
-    make_id_filter,
+    AutoExportAdminMixin,
 )
-
-
-class RegistroAtivoFilter(admin.SimpleListFilter):
-    """Filtro para registros ativos (correntes, históricos e futuros) e inativos em termos de registro/vigência."""
-    title = 'Status do Registro'
-    parameter_name = 'registro_ativo'
-
-    def lookups(self, request, model_admin):
-        return (
-            ('ativo_corrente', 'Ativos (Ano Corrente)'),
-            ('ativo_futuro', 'Ativos (Futuro)'),
-            ('ativo_historico', 'Ativos (Histórico)'),
-            ('inativo', 'Inativos'),
-        )
-
-    def queryset(self, request, queryset):
-        ano_corrente = date.today().year
-        primeiro_dia_ano = date(ano_corrente, 1, 1)
-
-        ultimo_dia_ano = date(ano_corrente, 12, 31)
-
-        if self.value() == 'ativo_corrente':
-            return queryset.filter(
-                data_registro_fim=TRANSACTION_TIME_SENTINEL,
-                data_vigencia_inicio__lte=ultimo_dia_ano,
-                data_vigencia_fim__gte=primeiro_dia_ano,
-            )
-        if self.value() == 'ativo_futuro':
-            return queryset.filter(
-                data_registro_fim=TRANSACTION_TIME_SENTINEL,
-                data_vigencia_fim__gt=primeiro_dia_ano,
-            )
-        if self.value() == 'ativo_historico':
-            return queryset.filter(
-                data_registro_fim=TRANSACTION_TIME_SENTINEL,
-            )
-        if self.value() == 'inativo':
-            return queryset.exclude(data_registro_fim=TRANSACTION_TIME_SENTINEL)
-        return queryset
-
-# Filtros para campos de ID de negócio.
-SerieIdFilter = make_id_filter('serie_id', title='Identificador da Série')
-ClassificacaoIdFilter = make_id_filter('classificacao_id', title='Identificador da Classificação')
-NivelIdFilter = make_id_filter('nivel_id', title='Identificador do Nível')
-ItemIdFilter = make_id_filter('item_id', title='Identificador do Item')
-VersaoIdFilter = make_id_filter('versao_id', title='Identificador da Versão')
-VarianteIdFilter = make_id_filter('variante_id', title='Identificador da Variante')
-BaseLegalTecnicaIdFilter = make_id_filter('base_legal_tecnica_id', title='Identificador da Base Legal/Técnica')
 
 
 @admin.register(SerieClassificacao)
@@ -136,7 +95,7 @@ class SerieClassificacaoAdmin(
 @admin.register(Classificacao)
 class ClassificacaoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
     list_display = ['classificacao_id', 'classificacao_nome', 'serie_id', 'tipo_classificacao', 'numero_niveis', 'data_vigencia_inicio']
-    list_filter = [ClassificacaoIdFilter, 'tipo_classificacao', 'numero_niveis', 'serie_id', 'data_vigencia_inicio']
+    list_filter = [RegistroAtivoFilter, ClassificacaoIdFilter, 'tipo_classificacao', 'numero_niveis', 'serie_id', 'data_vigencia_inicio']
     search_fields = ['classificacao_id', 'classificacao_nome', 'classificacao_descricao']
     readonly_fields = ['data_registro_inicio', 'data_registro_fim']
     date_hierarchy = 'data_vigencia_inicio'
@@ -146,7 +105,7 @@ class ClassificacaoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
 @admin.register(NivelHierarquico)
 class NivelHierarquicoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
     list_display = ['nivel_id', 'nivel_numero', 'nivel_nome', 'classificacao_id', 'tipo_codigo', 'data_vigencia_inicio']
-    list_filter = [NivelIdFilter, 'nivel_numero', 'tipo_codigo', 'classificacao_id', 'data_vigencia_inicio']
+    list_filter = [RegistroAtivoFilter, NivelIdFilter, 'nivel_numero', 'tipo_codigo', 'classificacao_id', 'data_vigencia_inicio']
     search_fields = ['nivel_id', 'nivel_nome', 'nivel_descricao']
     readonly_fields = ['data_registro_inicio', 'data_registro_fim']
     date_hierarchy = 'data_vigencia_inicio'
@@ -156,7 +115,7 @@ class NivelHierarquicoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
 @admin.register(ItemClassificacao)
 class ItemClassificacaoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
     list_display = ['receita_cod', 'item_id', 'receita_nome', 'nivel_id', 'matriz', 'item_gerado', 'data_vigencia_inicio']
-    list_filter = [ItemIdFilter, 'matriz', 'item_gerado', 'nivel_id', 'data_vigencia_inicio']
+    list_filter = [RegistroAtivoFilter, ItemIdFilter, 'matriz', 'item_gerado', 'nivel_id', 'data_vigencia_inicio']
     search_fields = ['receita_cod', 'receita_nome', 'item_id']
     readonly_fields = ['data_registro_inicio', 'data_registro_fim']
     date_hierarchy = 'data_vigencia_inicio'
@@ -166,7 +125,7 @@ class ItemClassificacaoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
 @admin.register(VersaoClassificacao)
 class VersaoClassificacaoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
     list_display = ['versao_id', 'versao_numero', 'versao_nome', 'classificacao', 'data_lancamento', 'data_vigencia_inicio']
-    list_filter = [VersaoIdFilter, 'classificacao', 'data_lancamento', 'data_vigencia_inicio']
+    list_filter = [RegistroAtivoFilter, VersaoIdFilter, 'classificacao', 'data_lancamento', 'data_vigencia_inicio']
     search_fields = ['versao_id', 'versao_numero', 'versao_nome', 'versao_descricao']
     readonly_fields = ['data_registro_inicio', 'data_registro_fim']
     date_hierarchy = 'data_vigencia_inicio'
@@ -176,7 +135,7 @@ class VersaoClassificacaoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
 @admin.register(VarianteClassificacao)
 class VarianteClassificacaoAdmin(AutoExportAdminMixin, admin.ModelAdmin):
     list_display = ['variante_id', 'variante_nome', 'tipo_variante', 'classificacao', 'versao', 'data_vigencia_inicio']
-    list_filter = [VarianteIdFilter, 'tipo_variante', 'classificacao', 'versao', 'data_vigencia_inicio']
+    list_filter = [RegistroAtivoFilter, VarianteIdFilter, 'tipo_variante', 'classificacao', 'versao', 'data_vigencia_inicio']
     search_fields = ['variante_id', 'variante_nome', 'variante_descricao', 'proposito']
     readonly_fields = ['data_registro_inicio', 'data_registro_fim']
     date_hierarchy = 'data_vigencia_inicio'
