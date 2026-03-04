@@ -80,6 +80,9 @@ class SerieClassificacaoAdmin(
     ]
     form = SerieClassificacaoForm
 
+    class Media:
+        js = ("core/admin_bitemporal_date_shortcuts.js",)
+
     def orgao_responsavel_both(self, obj):
         """
         Mostrar código armazenado (value) e rótulo (label) das choices.
