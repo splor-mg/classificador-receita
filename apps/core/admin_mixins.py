@@ -10,6 +10,7 @@ from datetime import date
 from pathlib import Path
 
 from django.contrib import admin
+from django.contrib import messages
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils import timezone
@@ -106,6 +107,68 @@ ItemIdFilter = make_id_filter('item_id', title='Identificador do Item')
 VersaoIdFilter = make_id_filter('versao_id', title='Identificador da Versão')
 VarianteIdFilter = make_id_filter('variante_id', title='Identificador da Variante')
 BaseLegalTecnicaIdFilter = make_id_filter('base_legal_tecnica_id', title='Identificador da Base Legal/Técnica')
+
+#---------------------------------------------------------------------------------------------------
+# Torna registros bitemporais inativos somente leitura
+class BitemporalInactiveReadOnlyMixin:
+    """
+    Mixin que torna registros bitemporais inativos somente leitura no Admin.
+
+    Considera inativo quando data_registro_fim é diferente de TRANSACTION_TIME_SENTINEL.
+    Nesses casos:
+    - o usuário vê o formulário apenas para consulta (view-only);
+    - botões de salvar são ocultados (sem permissão de change);
+    - uma mensagem informativa é exibida no topo do formulário.
+    """
+
+    inactive_message = (
+        "Registro inativo — apenas consulta histórica; edição desabilitada."
+    )
+
+    def _is_inactive_record(self, obj) -> bool:
+        """
+        Determina se o registro é inativo consultando o banco, para
+        evitar problemas de comparação entre datetimes (naive/aware).
+
+        Consideramos ATIVO se existe uma linha com pk e data_registro_fim
+        exatamente igual ao sentinela; caso contrário, é inativo.
+        """
+        if not obj:
+            return False
+        Model = obj.__class__
+        is_active = Model._default_manager.filter(
+            pk=obj.pk, data_registro_fim=TRANSACTION_TIME_SENTINEL
+        ).exists()
+        return not is_active
+
+    def has_change_permission(self, request, obj=None):
+        """
+        Remove permissão de alteração apenas para objetos inativos,
+        preservando o comportamento padrão para demais casos.
+        """
+        has_perm = super().has_change_permission(request, obj)
+        if not has_perm:
+            return False
+        if obj is not None and self._is_inactive_record(obj):
+            return False
+        return has_perm
+
+    def render_change_form(
+        self, request, context, add=False, change=False, form_url="", obj=None
+    ):
+        """
+        Exibe mensagem informativa quando o objeto é inativo.
+        """
+        if obj is not None and self._is_inactive_record(obj):
+            try:
+                messages.info(
+                    request,
+                    getattr(self, "inactive_message", self.inactive_message),
+                )
+            except Exception:
+                # Falha ao usar messages não deve quebrar a tela.
+                pass
+        return super().render_change_form(request, context, add, change, form_url, obj)
 
 #---------------------------------------------------------------------------------------------------
 # Verifica se houve alteração no form e aplica fluxo de confirmação bitemporal.

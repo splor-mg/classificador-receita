@@ -311,6 +311,12 @@ class BitemporalChangeHandler:
             return None
 
         obj = self.admin.get_object(request, object_id)
+        # Se o usuário não tem permissão de alteração para este objeto
+        # (por exemplo, registro inativo tratado pelo mixin de somente leitura),
+        # delegamos para o fluxo padrão do Admin, que irá bloquear o POST.
+        if not self.admin.has_change_permission(request, obj):
+            return None
+
         form_class = self.admin.get_form(request, obj)
         form = form_class(request.POST, request.FILES, instance=obj)
 
