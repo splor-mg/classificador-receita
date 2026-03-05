@@ -168,30 +168,7 @@
   </div>
   {% endif %}
 
-  {% if vigencia_diffs and not only_vigencia_changes %}
-  <div class="diff-section">
-    <h3>Vigência</h3>
-    <table class="diff-table">
-      <thead>
-        <tr>
-          <th class="col-campo">Campo</th>
-          <th>Conteúdo</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for d in vigencia_diffs %}
-        <tr>
-          <td>{{ d.field }}</td>
-          <td>
-            <div class="diff-value"><span class="diff-label diff-label-atual">Atual</span> {{ d.old }}</div>
-            <div class="diff-value"><span class="diff-label diff-label-novo">Novo</span> {{ d.new }}</div>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% endif %}
+  <h3>Vigência</h3>
 
   <div class="strategy-section">
     <div class="strategy-options">
