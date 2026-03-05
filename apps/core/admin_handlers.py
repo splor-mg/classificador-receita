@@ -33,6 +33,47 @@ class BitemporalChangeHandler:
         self.model = admin_instance.model
         self.logger = logging.getLogger(__name__)
 
+    def _get_business_id_and_name(self, obj: Any, form) -> Dict[str, Any]:
+        """
+        Tenta identificar automaticamente campos de ID e Nome de negócio
+        seguindo o padrão <recurso>_id e <recurso>_nome, para exibição
+        de um resumo do registro na tela de confirmação.
+        """
+        id_field = None
+        name_field = None
+
+        for field in self.model._meta.get_fields():
+            # Ignora relacionamentos reversos e many-to-many implícitos.
+            if not hasattr(field, "name"):
+                continue
+            if getattr(field, "many_to_many", False) or getattr(field, "one_to_many", False):
+                continue
+            fname = field.name
+            if fname.endswith("_id") and id_field is None:
+                id_field = field
+            if fname.endswith("_nome") and name_field is None:
+                name_field = field
+
+        def field_info(f):
+            if not f:
+                return None, None
+            label = getattr(f, "verbose_name", f.name).capitalize()
+            if hasattr(form, "initial") and f.name in form.initial:
+                value = form.initial.get(f.name)
+            else:
+                value = getattr(obj, f.name, None)
+            return label, value
+
+        id_label, id_value = field_info(id_field)
+        name_label, name_value = field_info(name_field)
+
+        return {
+            "resource_id_label": id_label,
+            "resource_id_value": id_value,
+            "resource_name_label": name_label,
+            "resource_name_value": name_value,
+        }
+
     def _build_diffs(self, form, changed_data: List[str]) -> Tuple[List[Dict], List[Dict]]:
         """Separa diffs em atributos gerais e vigência."""
         general_diffs = []
@@ -323,7 +364,13 @@ class BitemporalChangeHandler:
         if not form.is_valid():
             return None
 
-        if not form.has_changed():
+        edit_vigencia_flag = bool(request.POST.get("_edit_vigencia"))
+
+        # Em fluxos normais, sem alterações não há o que confirmar.
+        # Porém, quando o usuário clica em "Editar vigência", queremos
+        # abrir a tela de confirmação mesmo que apenas as datas sejam
+        # ajustadas na próxima etapa.
+        if not form.has_changed() and not edit_vigencia_flag:
             return None
 
         # Se usuário clicou em Cancel na tela de confirmação, volta para edição
@@ -333,8 +380,20 @@ class BitemporalChangeHandler:
         strategy = request.POST.get("edit_strategy")
 
         if not strategy:
-            general_diffs, vigencia_diffs = self._build_diffs(form, form.changed_data)
-            vigencia_preview = self._compute_vigencia_preview(obj, form, form.changed_data)
+            changed_fields: List[str] = list(form.changed_data)
+
+            # Quando o usuário clica no botão "Editar vigência", forçamos
+            # a inclusão dos campos de vigência na comparação, mesmo que
+            # ainda não tenham sido alterados no formulário inicial. Isso
+            # permite que a tela de confirmação apresente o preview e os
+            # inputs de data, onde a vigência será de fato ajustada.
+            if edit_vigencia_flag:
+                for field in VIGENCIA_FIELDS:
+                    if field in form.fields and field not in changed_fields:
+                        changed_fields.append(field)
+
+            general_diffs, vigencia_diffs = self._build_diffs(form, changed_fields)
+            vigencia_preview = self._compute_vigencia_preview(obj, form, changed_fields)
 
             post_items: List[Tuple[str, str]] = []
             for k in request.POST.keys():
@@ -383,6 +442,8 @@ class BitemporalChangeHandler:
                 args=[object_id]
             )
 
+            only_vigencia_changes = not general_diffs
+
             context = {
                 **self.admin.admin_site.each_context(request),
                 "title": "Confirmar atualização",
@@ -398,7 +459,9 @@ class BitemporalChangeHandler:
                 "changed_data": form.changed_data,
                 "form": form,
                 "change_url": change_url,
+                "only_vigencia_changes": only_vigencia_changes,
             }
+            context.update(self._get_business_id_and_name(obj, form))
             return TemplateResponse(request, "admin/core/bitemporal_confirm.html", context)
 
         # Segunda etapa: usuário escolheu estratégia e confirmou.
