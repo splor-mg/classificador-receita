@@ -154,32 +154,123 @@
     } catch (e) {}
   }
 
-  function init() {
-    var inputs = document.querySelectorAll("input.vDateField");
-    try {
-      console.log(
-        "[bitemporal-date-shortcuts] iniciando. vDateField encontrados:",
-        inputs.length
-      );
-    } catch (e) {}
-    inputs.forEach(function (input) {
-      var name = input.name || "";
+  function enhanceChangeFormVigencia() {
+    var body = document.body || document.getElementsByTagName("body")[0];
+    if (!body || !body.classList.contains("change-form")) {
+      return;
+    }
+
+    var inicio = document.querySelector(
+      'input.vDateField[name$="data_vigencia_inicio"]'
+    );
+    var fim = document.querySelector(
+      'input.vDateField[name$="data_vigencia_fim"]'
+    );
+    if (!inicio || !fim) {
+      return;
+    }
+
+    [inicio, fim].forEach(function (input) {
+      input.readOnly = true;
+      input.classList.add("bitemporal-vigencia-readonly");
       try {
-        console.log(
-          "[bitemporal-date-shortcuts] analisando input:",
-          "name=" + name,
-          "id=" + input.id
-        );
+        input.style.backgroundColor = "#f5f5f5";
+        input.style.cursor = "default";
       } catch (e) {}
-      if (name.endsWith("data_vigencia_inicio")) {
-        // Apenas "Ano Corrente" para início da vigência.
-        addCurrentYearShortcut(input, "inicio");
-      } else if (name.endsWith("data_vigencia_fim")) {
-        // Para fim da vigência: "Indefinida" + "Ano Corrente".
-        addCurrentYearShortcut(input, "fim");
-        addIndefinidaShortcut(input);
+
+      // Esconde atalhos padrão do Django admin ("Hoje" e ícone de calendário)
+      var shortcuts = findShortcutsSpan(input);
+      if (shortcuts) {
+        shortcuts.style.display = "none";
       }
     });
+
+    function createEditButton() {
+      var btn = document.createElement("button");
+      btn.type = "submit";
+      btn.name = "_edit_vigencia";
+      btn.value = "1";
+      btn.className = "button bitemporal-edit-vigencia";
+      btn.textContent = "✎";
+      btn.title = "Editar intervalo de vigência (início e fim)";
+      btn.style.marginLeft = "0.5rem";
+      return btn;
+    }
+
+    [inicio, fim].forEach(function (input) {
+      var wrapper = input.parentElement;
+      if (!wrapper) {
+        return;
+      }
+
+      // Evitar duplicar o botão caso o script rode mais de uma vez.
+      if (wrapper.querySelector(".bitemporal-edit-vigencia")) {
+        return;
+      }
+
+      // Garantir que o input e o botão fiquem lado a lado, com o botão
+      // colado à borda direita do campo de data.
+      if (!wrapper.style.display) {
+        wrapper.style.display = "inline-flex";
+        wrapper.style.alignItems = "center";
+        wrapper.style.gap = "0.25rem";
+      }
+
+      var btn = createEditButton();
+
+      // Ajustar altura para acompanhar o campo de data e evitar
+      // que o ícone de lápis fique "achatado".
+      var h = input.offsetHeight;
+      if (h && h > 0) {
+        btn.style.height = h + "px";
+        btn.style.display = "inline-flex";
+        btn.style.alignItems = "center";
+        btn.style.justifyContent = "center";
+        btn.style.padding = "0 6px";
+        btn.style.fontSize = "14px";
+        btn.style.lineHeight = "1";
+      }
+
+      input.insertAdjacentElement("afterend", btn);
+    });
+  }
+
+  function init() {
+    var body = document.body || document.getElementsByTagName("body")[0];
+    var isAddForm = body && body.classList.contains("add-form");
+
+    // Mantém atalhos de data apenas em formulários de adição.
+    if (isAddForm) {
+      var inputs = document.querySelectorAll("input.vDateField");
+      try {
+        console.log(
+          "[bitemporal-date-shortcuts] iniciando. vDateField encontrados:",
+          inputs.length
+        );
+      } catch (e) {}
+      inputs.forEach(function (input) {
+        var name = input.name || "";
+        try {
+          console.log(
+            "[bitemporal-date-shortcuts] analisando input:",
+            "name=" + name,
+            "id=" + input.id
+          );
+        } catch (e) {}
+        if (name.endsWith("data_vigencia_inicio")) {
+          // Apenas "Ano Corrente" para início da vigência.
+          addCurrentYearShortcut(input, "inicio");
+        } else if (name.endsWith("data_vigencia_fim")) {
+          // Para fim da vigência: "Indefinida" + "Ano Corrente".
+          addCurrentYearShortcut(input, "fim");
+          addIndefinidaShortcut(input);
+        }
+      });
+    }
+
+    // Em formulários de alteração, tornamos vigência somente leitura
+    // e adicionamos o botão de edição que leva à tela de confirmação.
+    enhanceChangeFormVigencia();
   }
 
   function scheduleInit() {

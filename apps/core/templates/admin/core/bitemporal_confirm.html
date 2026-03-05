@@ -39,17 +39,53 @@
   .strikethrough input { text-decoration: line-through; color: #999; }
   .actions { margin-top: 1.5em; }
   .actions button, .actions a.button { margin-right: 0.5em; }
+
+.record-summary {
+  margin: 0.5em 0 1em 0;
+  padding: 0.4em 0.8em;
+  border-radius: 3px;
+  background-color: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  font-size: 0.9em;
+  color: #555;
+}
+
+.record-summary-muted {
+  font-size: 0.9em;
+  color: #666;
+}
+
+.record-summary strong:first-child {
+  color: #417690; /* azul padrão do admin para dar destaque similar ao "Novo" */
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<p>Foram detectadas as seguintes alterações. Escolha a estratégia para aplicar:</p>
-
 <form method="post" action="" id="bitemporal-form">
   {% csrf_token %}
   {% for k, v in post_items %}
   <input type="hidden" name="{{ k }}" value="{{ v|escape }}">
   {% endfor %}
+
+  {% if resource_id_value or resource_name_value %}
+  <div class="record-summary {% if not only_vigencia_changes %}record-summary-muted{% endif %}">
+    <strong>Em edição</strong> |
+    {% if resource_id_value %}
+      <span class="record-id"><strong>{{ resource_id_label }}:</strong> {{ resource_id_value }}</span>
+    {% endif %}
+    {% if resource_name_value %}
+      {% if resource_id_value %} — {% endif %}
+      <span class="record-name"><strong>{{ resource_name_label }}:</strong> {{ resource_name_value }}</span>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if only_vigencia_changes %}
+    <p>Não foram detectadas alterações em outros atributos desta classificação. Para atualizar somente o período de vigência, ajuste as datas abaixo conforme desejar.</p>
+  {% else %}
+    <p>Foram detectadas as seguintes alterações. Escolha a estratégia para aplicar:</p>
+  {% endif %}
 
   {% if general_diffs %}
   <div class="diff-section">
@@ -89,7 +125,7 @@
   </div>
   {% endif %}
 
-  {% if vigencia_diffs %}
+  {% if vigencia_diffs and not only_vigencia_changes %}
   <div class="diff-section">
     <h3>Vigência</h3>
     <table class="diff-table">
@@ -116,14 +152,21 @@
 
   <div class="strategy-section">
     <div class="strategy-options">
-      <div class="strategy-option">
-        <input type="radio" id="strategy-nova" name="edit_strategy" value="nova_vigencia" checked>
-        <label for="strategy-nova">Registrar nova vigência</label>
-      </div>
-      <div class="strategy-option">
-        <input type="radio" id="strategy-sobrescrever" name="edit_strategy" value="sobrescrever">
-        <label for="strategy-sobrescrever">Sobrescrever/ajustar vigência anterior</label>
-      </div>
+      {% if not only_vigencia_changes %}
+        <div class="strategy-option">
+          <input type="radio" id="strategy-nova" name="edit_strategy" value="nova_vigencia" checked>
+          <label for="strategy-nova">Registrar nova vigência</label>
+        </div>
+        <div class="strategy-option">
+          <input type="radio" id="strategy-sobrescrever" name="edit_strategy" value="sobrescrever">
+          <label for="strategy-sobrescrever">Sobrescrever/ajustar vigência anterior</label>
+        </div>
+      {% else %}
+        <div class="strategy-option">
+          <input type="radio" id="strategy-sobrescrever" name="edit_strategy" value="sobrescrever" checked>
+          <label for="strategy-sobrescrever">Sobrescrever/ajustar vigência anterior</label>
+        </div>
+      {% endif %}
     </div>
 
     <div id="preview-container">
