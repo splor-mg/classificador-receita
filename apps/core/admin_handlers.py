@@ -525,14 +525,32 @@ class BitemporalChangeHandler:
             if old_comp != new_comp:
                 attr_changes[field_name] = new_val
 
+        # Verifica se houve alteração real em campos de negócio (não-vigência)
         debug_snapshot["attr_changes"] = attr_changes
+
+        # Verifica se houve alteração real em campos de vigência
+        vigencia_changed = False
+        for field_name in VIGENCIA_FIELDS:
+            if field_name not in new_values:
+                continue
+            if field_name in original_values:
+                old_val = original_values[field_name]
+            else:
+                old_val = getattr(obj, field_name, None)
+            if old_val != new_values[field_name]:
+                vigencia_changed = True
+                break
+
+        debug_snapshot["vigencia_changed"] = vigencia_changed
 
         try:
             self.logger.warning("BitemporalChangeHandler-debug %s", debug_snapshot)
         except Exception:
             pass
 
-        if not attr_changes:
+        # Se não houver alterações nem em atributos gerais nem nas datas de vigência,
+        # não há motivo para aplicar atualização bitemporal.
+        if not attr_changes and not vigencia_changed:
             self.admin.message_user(
                 request,
                 "Nenhuma alteração detectada — atualização bitemporal não aplicada.",
