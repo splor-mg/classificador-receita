@@ -1,5 +1,5 @@
 {% extends "admin/base_site.html" %}
-{% load i18n %}
+{% load i18n admin_urls %}
 
 {% block extrahead %}
 {{ block.super }}
@@ -36,9 +36,7 @@
   .preview-table input[type="text"].date-input.invalid { border-color: #c00; background-color: #fff0f0; }
   .date-hint { font-size: 0.8em; color: #666; font-weight: normal; margin-left: 0.5em; }
   .strikethrough { text-decoration: line-through; color: #999; }
-  .strikethrough input { text-decoration: line-through; color: #999; }
-  .actions { margin-top: 1.5em; }
-  .actions button, .actions a.button { margin-right: 0.5em; }
+.strikethrough input { text-decoration: line-through; color: #999; }
 
 .record-summary {
   margin: 0.5em 0 1em 0;
@@ -57,6 +55,51 @@
 
 .record-summary strong:first-child {
   color: #417690; /* azul padrão do admin para dar destaque similar ao "Novo" */
+}
+
+.bitemporal-submit-row {
+  margin-top: 1.5em;
+  display: flex;
+  gap: 0.5em;
+}
+
+.bitemporal-submit-row .btn {
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-size: 0.9em;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.bitemporal-submit-row a.btn,
+.bitemporal-submit-row a.btn:link,
+.bitemporal-submit-row a.btn:visited,
+.bitemporal-submit-row a.btn:hover,
+.bitemporal-submit-row a.btn:active {
+  text-decoration: none !important;
+}
+
+.bitemporal-submit-row .btn-primary {
+  background-color: #417690;
+  border-color: #355f73;
+  color: #fff;
+}
+
+.bitemporal-submit-row .btn-secondary {
+  background-color: #f5f5f5;
+  border-color: #d4d4d4;
+  color: #333;
+}
+
+.bitemporal-submit-row .btn-secondary:hover {
+  background-color: #e5e5e5;
+}
+
+.bitemporal-submit-row .btn-danger {
+  background-color: #ba2121;
+  border-color: #a41515;
+  color: #fff;
 }
 </style>
 {% endblock %}
@@ -184,9 +227,11 @@
     </div>
   </div>
 
-  <div class="actions">
-    <button type="submit" class="default">Confirm</button>
-    <button type="button" class="button" id="cancel-btn">Cancel</button>
+  <div class="bitemporal-submit-row">
+    <button type="submit" name="_save" class="btn btn-primary">{% translate "Confirmar" %}</button>
+    <button type="button" class="btn btn-secondary" id="cancel-btn">{% translate "Voltar" %}</button>
+    {% url opts|admin_urlname:'changelist' as changelist_url %}
+    <a href="{% add_preserved_filters changelist_url %}" class="btn btn-secondary">{% translate "Cancelar" %}</a>
   </div>
 </form>
 
