@@ -22,6 +22,7 @@ from apps.core.admin_mixins import (
     VersaoIdFilter,
     VarianteIdFilter,
     BaseLegalTecnicaIdFilter,
+    CoreChangeSaveFormSubmitMixin,
     BitemporalInactiveReadOnlyMixin,
     BitemporalAdminMixin,
     BitemporalDateFormatMixin,
@@ -34,6 +35,7 @@ class SerieClassificacaoAdmin(
     BitemporalAdminMixin,
     BitemporalInactiveReadOnlyMixin,
     BitemporalDateFormatMixin,
+    CoreChangeSaveFormSubmitMixin,
     AutoExportAdminMixin,
     admin.ModelAdmin,
 ):
@@ -98,7 +100,7 @@ class SerieClassificacaoAdmin(
 
 
 @admin.register(Classificacao)
-class ClassificacaoAdmin(BitemporalInactiveReadOnlyMixin, AutoExportAdminMixin, admin.ModelAdmin):
+class ClassificacaoAdmin(CoreChangeSaveFormSubmitMixin, BitemporalInactiveReadOnlyMixin, AutoExportAdminMixin, admin.ModelAdmin):
     list_display = ['classificacao_id', 'classificacao_nome', 'serie_id', 'tipo_classificacao', 'numero_niveis', 'data_vigencia_inicio']
     list_filter = [RegistroAtivoFilter, ClassificacaoIdFilter, 'tipo_classificacao', 'numero_niveis', 'serie_id', 'data_vigencia_inicio']
     search_fields = ['classificacao_id', 'classificacao_nome', 'classificacao_descricao']
@@ -108,7 +110,7 @@ class ClassificacaoAdmin(BitemporalInactiveReadOnlyMixin, AutoExportAdminMixin, 
 
 
 @admin.register(NivelHierarquico)
-class NivelHierarquicoAdmin(BitemporalInactiveReadOnlyMixin, AutoExportAdminMixin, admin.ModelAdmin):
+class NivelHierarquicoAdmin(CoreChangeSaveFormSubmitMixin, BitemporalInactiveReadOnlyMixin, AutoExportAdminMixin, admin.ModelAdmin):
     list_display = ['nivel_id', 'nivel_numero', 'nivel_nome', 'classificacao_id', 'tipo_codigo', 'data_vigencia_inicio']
     list_filter = [RegistroAtivoFilter, NivelIdFilter, 'nivel_numero', 'tipo_codigo', 'classificacao_id', 'data_vigencia_inicio']
     search_fields = ['nivel_id', 'nivel_nome', 'nivel_descricao']
@@ -118,7 +120,7 @@ class NivelHierarquicoAdmin(BitemporalInactiveReadOnlyMixin, AutoExportAdminMixi
 
 
 @admin.register(ItemClassificacao)
-class ItemClassificacaoAdmin(BitemporalInactiveReadOnlyMixin, AutoExportAdminMixin, admin.ModelAdmin):
+class ItemClassificacaoAdmin(CoreChangeSaveFormSubmitMixin, BitemporalInactiveReadOnlyMixin, AutoExportAdminMixin, admin.ModelAdmin):
     list_display = ['receita_cod', 'item_id', 'receita_nome', 'nivel_id', 'matriz', 'item_gerado', 'data_vigencia_inicio']
     list_filter = [RegistroAtivoFilter, ItemIdFilter, 'matriz', 'item_gerado', 'nivel_id', 'data_vigencia_inicio']
     search_fields = ['receita_cod', 'receita_nome', 'item_id']
@@ -128,7 +130,7 @@ class ItemClassificacaoAdmin(BitemporalInactiveReadOnlyMixin, AutoExportAdminMix
 
 
 @admin.register(VersaoClassificacao)
-class VersaoClassificacaoAdmin(BitemporalInactiveReadOnlyMixin, AutoExportAdminMixin, admin.ModelAdmin):
+class VersaoClassificacaoAdmin(CoreChangeSaveFormSubmitMixin, BitemporalInactiveReadOnlyMixin, AutoExportAdminMixin, admin.ModelAdmin):
     list_display = ['versao_id', 'versao_numero', 'versao_nome', 'classificacao', 'data_lancamento', 'data_vigencia_inicio']
     list_filter = [RegistroAtivoFilter, VersaoIdFilter, 'classificacao', 'data_lancamento', 'data_vigencia_inicio']
     search_fields = ['versao_id', 'versao_numero', 'versao_nome', 'versao_descricao']
@@ -138,7 +140,7 @@ class VersaoClassificacaoAdmin(BitemporalInactiveReadOnlyMixin, AutoExportAdminM
 
 
 @admin.register(VarianteClassificacao)
-class VarianteClassificacaoAdmin(BitemporalInactiveReadOnlyMixin, AutoExportAdminMixin, admin.ModelAdmin):
+class VarianteClassificacaoAdmin(CoreChangeSaveFormSubmitMixin, BitemporalInactiveReadOnlyMixin, AutoExportAdminMixin, admin.ModelAdmin):
     list_display = ['variante_id', 'variante_nome', 'tipo_variante', 'classificacao', 'versao', 'data_vigencia_inicio']
     list_filter = [RegistroAtivoFilter, VarianteIdFilter, 'tipo_variante', 'classificacao', 'versao', 'data_vigencia_inicio']
     search_fields = ['variante_id', 'variante_nome', 'variante_descricao', 'proposito']
@@ -148,7 +150,7 @@ class VarianteClassificacaoAdmin(BitemporalInactiveReadOnlyMixin, AutoExportAdmi
 
 
 @admin.register(BaseLegalTecnica)
-class BaseLegalTecnicaAdmin(AutoExportAdminMixin, admin.ModelAdmin):
+class BaseLegalTecnicaAdmin(CoreChangeSaveFormSubmitMixin, AutoExportAdminMixin, admin.ModelAdmin):
     list_display = ['base_legal_tecnica_id', 'titulo_norma', 'tipo_legal', 'esfera_federativa', 'data_edicao']
     list_filter = [BaseLegalTecnicaIdFilter, 'tipo_legal', 'esfera_federativa', 'data_edicao']
     search_fields = ['base_legal_tecnica_id', 'titulo_norma', 'ementa']

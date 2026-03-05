@@ -4,6 +4,7 @@ Mixins reutilizáveis para Django Admin.
 AutoExportAdminMixin — dispara export do seed após save.
 BitemporalAdminMixin — fluxo de confirmação bitemporal (sobrescrever / nova vigência).
 BitemporalDateFormatMixin — formatação de datas bitemporais (dd/mm/yyyy).
+CoreChangeSaveFormSubmitMixin — tela de edição com apenas Salvar e Cancelar.
 """
 import logging
 from datetime import date
@@ -107,6 +108,16 @@ ItemIdFilter = make_id_filter('item_id', title='Identificador do Item')
 VersaoIdFilter = make_id_filter('versao_id', title='Identificador da Versão')
 VarianteIdFilter = make_id_filter('variante_id', title='Identificador da Variante')
 BaseLegalTecnicaIdFilter = make_id_filter('base_legal_tecnica_id', title='Identificador da Base Legal/Técnica')
+
+#---------------------------------------------------------------------------------------------------
+# Tela de edição: apenas Salvar e Cancelar (sem Salvar e adicionar outro / Salvar e continuar)
+class CoreChangeSaveFormSubmitMixin:
+    """
+    Usa o template admin/core/change_form.html, que exibe apenas os botões
+    Salvar e Cancelar (volta para a changelist), sem "Salvar e adicionar outro"
+    nem "Salvar e continuar editando".
+    """
+    change_form_template = "admin/core/change_form.html"
 
 #---------------------------------------------------------------------------------------------------
 # Torna registros bitemporais inativos somente leitura

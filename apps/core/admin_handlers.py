@@ -399,7 +399,7 @@ class BitemporalChangeHandler:
                 "form": form,
                 "change_url": change_url,
             }
-            return TemplateResponse(request, "admin/bitemporal_confirm.html", context)
+            return TemplateResponse(request, "admin/core/bitemporal_confirm.html", context)
 
         # Segunda etapa: usuário escolheu estratégia e confirmou.
         # Reaplicamos os edits feitos na tela de confirmação e
