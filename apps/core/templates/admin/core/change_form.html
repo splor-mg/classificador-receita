@@ -5,6 +5,7 @@
 <div class="submit-row">
 {% if not is_popup %}
   {% if has_change_permission and change or has_add_permission and add or has_editable_inline_admin_formsets %}<input type="submit" value="{% translate 'Save' %}" class="default" name="_save">{% endif %}
+  <a role="button" href="{{ request.get_full_path }}" class="closelink">Limpar</a>
   {% url opts|admin_urlname:'changelist' as changelist_url %}
   <a role="button" href="{% add_preserved_filters changelist_url %}" class="closelink">Cancelar</a>
   {% if has_delete_permission and change and original %}
