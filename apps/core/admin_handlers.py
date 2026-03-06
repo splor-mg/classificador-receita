@@ -10,6 +10,7 @@ import logging
 from django.template.response import TemplateResponse
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.contrib import messages
 
 from apps.core.bitemporal_registry import get_sentinela_date
 
@@ -239,6 +240,9 @@ class BitemporalChangeHandler:
         ]
 
         if has_vig_inicio_change or has_vig_fim_change:
+            # Quando já houve alteração explícita de vigência no formulário
+            # original, mostramos a versão atual riscada e a nova vigência
+            # como segunda linha editável.
             sobrescrever_preview = [
                 {
                     "version": "Versão 1",
@@ -248,15 +252,32 @@ class BitemporalChangeHandler:
                 },
                 {
                     "version": "Versão 2",
-                    "vig_inicio": form.cleaned_data.get("data_vigencia_inicio", current_vig_inicio),
-                    "vig_fim": form.cleaned_data.get("data_vigencia_fim", current_vig_fim),
+                    "vig_inicio": form.cleaned_data.get(
+                        "data_vigencia_inicio", current_vig_inicio
+                    ),
+                    "vig_fim": form.cleaned_data.get(
+                        "data_vigencia_fim", current_vig_fim
+                    ),
                     "strikethrough": False,
                 },
             ]
         else:
+            # Mesmo que a vigência não tenha sido alterada ainda no
+            # formulário inicial, ao escolher "Sobrescrever/ajustar
+            # vigência atual" queremos permitir o ajuste direto na tela
+            # de confirmação. Por isso exibimos sempre duas linhas:
+            # - Versão 1 (atual) riscada, com vigência corrente;
+            # - Versão 2 (nova vigência) com os mesmos valores de início
+            #   e fim, porém editáveis na confirmação.
             sobrescrever_preview = [
                 {
                     "version": "Versão 1",
+                    "vig_inicio": current_vig_inicio,
+                    "vig_fim": current_vig_fim,
+                    "strikethrough": True,
+                },
+                {
+                    "version": "Versão 2",
                     "vig_inicio": current_vig_inicio,
                     "vig_fim": current_vig_fim,
                     "strikethrough": False,
@@ -565,6 +586,28 @@ class BitemporalChangeHandler:
         for field_name in VIGENCIA_FIELDS:
             if field_name in new_values:
                 effective_new_values[field_name] = new_values[field_name]
+
+        # Validação de consistência temporal antes de aplicar a atualização.
+        # Regra: data_vigencia_fim não pode ser anterior a data_vigencia_inicio.
+        vig_inicio = effective_new_values.get(
+            "data_vigencia_inicio", getattr(obj, "data_vigencia_inicio", None)
+        )
+        vig_fim = effective_new_values.get(
+            "data_vigencia_fim", getattr(obj, "data_vigencia_fim", None)
+        )
+        if vig_inicio and vig_fim and vig_fim < vig_inicio:
+            # Guarda de segurança no backend: em caso de inconsistência de vigência,
+            # não aplica a atualização e retorna o usuário para o formulário de edição
+            # com uma mensagem de erro padrão do Django Admin.
+            change_url = reverse(
+                f'admin:{self.model._meta.app_label}_{self.model._meta.model_name}_change',
+                args=[object_id]
+            )
+            messages.error(
+                request,
+                "Data de Início de Vigência não pode ser anterior à Data de Fim de Vigência.",
+            )
+            return HttpResponseRedirect(change_url)
 
         try:
             self.logger.warning(

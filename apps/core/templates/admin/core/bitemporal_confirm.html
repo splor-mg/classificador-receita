@@ -248,11 +248,8 @@
   color: #333;
 }
 </style>
+<script src="{% static 'core/admin_bitemporal_confirm_validations.js' %}"></script>
 <link rel="stylesheet" href="{% static 'admin/css/widgets.css' %}">
-{# Calendário do admin: um clique no ícone abre direto a tabela de mês (sem modal intermediário) #}
-<script src="{% static 'admin/js/core.js' %}"></script>
-<script src="{% static 'admin/js/calendar.js' %}"></script>
-<script src="{% static 'admin/js/admin/DateTimeShortcuts.js' %}"></script>
 <script src="{% static 'core/admin_bitemporal_date_shortcuts.js' %}"></script>
 {% endblock %}
 
@@ -512,11 +509,13 @@
   // - Linha "Versão atual" com datas somente leitura na UI.
   // - Data de fim da "Versão atual" sempre = (data de início da "Nova versão" - 1 dia),
   //   atualizada dinamicamente quando o usuário altera a data de início da nova versão.
+  const originalEnhanceConfirmVigencia = window.bitemporalEnhanceConfirmVigencia;
+
   window.bitemporalEnhanceConfirmVigencia = function() {
     const selected = document.querySelector('input[name="edit_strategy"]:checked');
-    if (!selected || selected.value !== 'nova_vigencia') {
-      return;
-    }
+    if (originalEnhanceConfirmVigencia) originalEnhanceConfirmVigencia();
+
+    if (!selected || selected.value !== 'nova_vigencia') return;
 
     const rows = document.querySelectorAll('#preview-body tr');
     let atualFimCell = null;
@@ -605,6 +604,15 @@
       e.preventDefault();
       alert('Por favor, corrija as datas inválidas. Use o formato dd/mm/aaaa.');
       return;
+    }
+
+    // Validação adicional de consistência de vigência (utiliza helper externo).
+    if (window.bitemporalValidateVigenciaOnSubmit) {
+      var ok = window.bitemporalValidateVigenciaOnSubmit();
+      if (!ok) {
+        e.preventDefault();
+        return;
+      }
     }
     
     // Só converter se todas forem válidas

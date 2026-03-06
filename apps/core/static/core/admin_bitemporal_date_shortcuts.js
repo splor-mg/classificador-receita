@@ -5,12 +5,6 @@
 // usando os widgets padrão de data do admin (vDateField).
 
 (function () {
-  // Log básico para confirmar que o script foi carregado.
-  try {
-    console.log("[bitemporal-date-shortcuts] script carregado.");
-  } catch (e) {
-    // Ambiente sem console — ignora.
-  }
   function formatDateBR(day, month, year) {
     var dd = String(day).padStart(2, "0");
     var mm = String(month).padStart(2, "0");
@@ -236,7 +230,7 @@
   }
 
   function enhanceConfirmVigenciaPreview() {
-    // Campos de vigência na tela de confirmação (com vDateField para o admin).
+    // Campos de vigência na tela de confirmação (pré-visualização).
     var inputs = document.querySelectorAll(
       'input.vDateField[name^="edit_vig_inicio_"], input.vDateField[name^="edit_vig_fim_"]'
     );
@@ -244,17 +238,23 @@
       return;
     }
 
-    // Se o admin já anexou o calendário (DateTimeShortcuts), o ícone abre direto
-    // a tabela de mês. Só acrescentamos "Indefinida" e "Ano Corrente" no span.
-    var useDjangoCalendar =
-      window.DateTimeShortcuts &&
-      typeof DateTimeShortcuts.addCalendar === "function";
-
-    function prependLink(container, label, handler, className) {
+    // Para a tela de confirmação, sempre criamos nosso próprio container
+    // de atalhos ao lado do input, independente de DateTimeShortcuts.
+    function createShortcutsContainer(inp) {
+      var parent = inp.parentElement;
+      if (!parent) return null;
+      var existing = parent.querySelector(".bitemporal-preview-shortcuts");
+      if (existing) return existing;
+      var span = document.createElement("span");
+      span.className = "datetimeshortcuts bitemporal-preview-shortcuts";
+      span.style.marginLeft = "0.5rem";
+      parent.appendChild(span);
+      return span;
+    }
+    function addShortcutLink(container, label, handler) {
       var link = document.createElement("a");
       link.href = "#";
       link.textContent = label;
-      if (className) link.className = className;
       link.style.textDecoration = "none";
       link.style.borderBottom = "none";
       link.style.cursor = "pointer";
@@ -262,260 +262,29 @@
         evt.preventDefault();
         handler();
       });
-      container.insertBefore(document.createTextNode(" | "), container.firstChild);
-      container.insertBefore(link, container.firstChild);
+      if (container.childNodes.length) {
+        container.appendChild(document.createTextNode(" | "));
+      }
+      container.appendChild(link);
     }
-
     inputs.forEach(function (input) {
-      if (input.dataset && input.dataset.bitemporalShortcutsAttached === "1") {
-        return;
-      }
-      if (input.dataset) input.dataset.bitemporalShortcutsAttached = "1";
-
       var name = input.name || "";
-      var shortcuts = findShortcutsSpan(input);
+      var container = createShortcutsContainer(input);
+      if (!container) return;
+      // Evitar duplicação: se já existem links (ex.: segunda chamada de enhance), não adicionar de novo.
+      if (container.querySelector("a")) return;
 
-      if (useDjangoCalendar && !shortcuts) {
-        DateTimeShortcuts.addCalendar(input);
-        if (typeof DateTimeShortcuts.addTimezoneWarning === "function") {
-          DateTimeShortcuts.addTimezoneWarning(input);
-        }
-        shortcuts = findShortcutsSpan(input);
-      }
-
-      if (shortcuts) {
-        if (shortcuts.style.marginLeft !== "0.5rem") {
-          shortcuts.style.marginLeft = "0.5rem";
-        }
-        // Evitar duplicar nossos links ao trocar de estratégia e re-renderizar.
-        if (shortcuts.querySelector(".date-current-year")) {
-          return;
-        }
-        if (name.indexOf("edit_vig_fim_") === 0) {
-          prependLink(shortcuts, "Indefinida", function () {
-            input.value = formatDateBR(31, 12, 9999);
-            if (input.classList) input.classList.remove("invalid");
-            try { input.dispatchEvent(new Event("change", { bubbles: true })); } catch (e) {}
-          }, "date-indefinida");
-        }
-        prependLink(shortcuts, "Ano Corrente", function () {
-          var today = new Date();
-          var year = today.getFullYear();
-          input.value =
-            name.indexOf("edit_vig_inicio_") === 0
-              ? formatDateBR(1, 1, year)
-              : formatDateBR(31, 12, year);
-          if (input.classList) input.classList.remove("invalid");
-          try { input.dispatchEvent(new Event("change", { bubbles: true })); } catch (e) {}
-        }, "date-current-year");
-        return;
-      }
-
-      // Fallback: DateTimeShortcuts não disponível; criar span e atalhos manualmente
-      // (incluindo popup com input type="date").
-      function createShortcutsContainer(inp) {
-        var parent = inp.parentElement;
-        if (!parent) return null;
-        var existing = parent.querySelector(".bitemporal-preview-shortcuts");
-        if (existing) return existing;
-        var span = document.createElement("span");
-        span.className = "datetimeshortcuts bitemporal-preview-shortcuts";
-        span.style.marginLeft = "0.5rem";
-        parent.appendChild(span);
-        return span;
-      }
-      function addShortcutLink(container, label, handler) {
-        var link = document.createElement("a");
-        link.href = "#";
-        link.textContent = label;
-        link.style.textDecoration = "none";
-        link.style.borderBottom = "none";
-        link.style.cursor = "pointer";
-        link.addEventListener("click", function (evt) {
-          evt.preventDefault();
-          handler();
-        });
-        if (container.childNodes.length) {
-          container.appendChild(document.createTextNode(" | "));
-        }
-        container.appendChild(link);
-      }
-      function openCalendarPopup(targetInput) {
-        var overlay = document.createElement("div");
-        overlay.className = "bitemporal-calendar-overlay";
-        var box = document.createElement("div");
-        box.className = "bitemporal-calendar-box bitemporal-calendar-grid";
-        var monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-          "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-        var weekDays = ["D", "S", "T", "Q", "Q", "S", "S"];
-        var currentVal = (targetInput && targetInput.value) || "";
-        var viewDate = new Date();
-        if (currentVal) {
-          var parts = currentVal.split("/");
-          if (parts.length === 3) {
-            var d = parseInt(parts[0], 10);
-            var m = parseInt(parts[1], 10) - 1;
-            var y = parseInt(parts[2], 10);
-            if (!isNaN(d) && !isNaN(m) && m >= 0 && m <= 11 && !isNaN(y)) {
-              viewDate = new Date(y, m, d);
-            }
-          }
-        }
-        function setAndClose(day, month, year) {
-          if (targetInput) {
-            targetInput.value = formatDateBR(day, month + 1, year);
-            if (targetInput.classList) targetInput.classList.remove("invalid");
-            try { targetInput.dispatchEvent(new Event("change", { bubbles: true })); } catch (e) {}
-          }
-          if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-        }
-        function renderMonth() {
-          gridBody.innerHTML = "";
-          var y = viewDate.getFullYear();
-          var m = viewDate.getMonth();
-          var first = new Date(y, m, 1);
-          var last = new Date(y, m + 1, 0);
-          var startDay = first.getDay();
-          var daysInMonth = last.getDate();
-          var today = new Date();
-          var row = document.createElement("tr");
-          for (var i = 0; i < startDay; i++) {
-            var empty = document.createElement("td");
-            empty.className = "bitemporal-cal-noday";
-            empty.textContent = "\u00A0";
-            row.appendChild(empty);
-          }
-          for (var day = 1; day <= daysInMonth; day++) {
-            if (row.children.length === 7) {
-              gridBody.appendChild(row);
-              row = document.createElement("tr");
-            }
-            var td = document.createElement("td");
-            var a = document.createElement("a");
-            a.href = "#";
-            a.textContent = day;
-            var isToday = today.getDate() === day && today.getMonth() === m && today.getFullYear() === y;
-            if (isToday) td.className = "bitemporal-cal-today";
-            (function (d, mon, yr) {
-              a.addEventListener("click", function (evt) {
-                evt.preventDefault();
-                setAndClose(d, mon, yr);
-              });
-            })(day, m, y);
-            td.appendChild(a);
-            row.appendChild(td);
-          }
-          while (row.children.length < 7 && row.children.length > 0) {
-            var empty = document.createElement("td");
-            empty.className = "bitemporal-cal-noday";
-            empty.textContent = "\u00A0";
-            row.appendChild(empty);
-          }
-          if (row.children.length) gridBody.appendChild(row);
-          titleEl.textContent = monthNames[m] + " " + y;
-        }
-        var nav = document.createElement("div");
-        nav.className = "bitemporal-cal-nav";
-        var prev = document.createElement("a");
-        prev.href = "#";
-        prev.textContent = "\u2039";
-        prev.addEventListener("click", function (e) {
-          e.preventDefault();
-          viewDate.setMonth(viewDate.getMonth() - 1);
-          renderMonth();
-        });
-        var titleEl = document.createElement("span");
-        titleEl.className = "bitemporal-cal-title";
-        var next = document.createElement("a");
-        next.href = "#";
-        next.textContent = "\u203A";
-        next.addEventListener("click", function (e) {
-          e.preventDefault();
-          viewDate.setMonth(viewDate.getMonth() + 1);
-          renderMonth();
-        });
-        nav.appendChild(prev);
-        nav.appendChild(titleEl);
-        nav.appendChild(next);
-        box.appendChild(nav);
-        var table = document.createElement("table");
-        table.className = "bitemporal-cal-table";
-        var thead = document.createElement("thead");
-        var trHead = document.createElement("tr");
-        weekDays.forEach(function (w) {
-          var th = document.createElement("th");
-          th.textContent = w;
-          trHead.appendChild(th);
-        });
-        thead.appendChild(trHead);
-        table.appendChild(thead);
-        var gridBody = document.createElement("tbody");
-        table.appendChild(gridBody);
-        box.appendChild(table);
-        var shortcuts = document.createElement("div");
-        shortcuts.className = "bitemporal-cal-shortcuts";
-        var yesterday = document.createElement("a");
-        yesterday.href = "#";
-        yesterday.textContent = "Ontem";
-        yesterday.addEventListener("click", function (e) {
-          e.preventDefault();
-          var t = new Date();
-          t.setDate(t.getDate() - 1);
-          setAndClose(t.getDate(), t.getMonth(), t.getFullYear());
-        });
-        var todayLink = document.createElement("a");
-        todayLink.href = "#";
-        todayLink.textContent = "Hoje";
-        todayLink.addEventListener("click", function (e) {
-          e.preventDefault();
-          var t = new Date();
-          setAndClose(t.getDate(), t.getMonth(), t.getFullYear());
-        });
-        var tomorrow = document.createElement("a");
-        tomorrow.href = "#";
-        tomorrow.textContent = "Amanhã";
-        tomorrow.addEventListener("click", function (e) {
-          e.preventDefault();
-          var t = new Date();
-          t.setDate(t.getDate() + 1);
-          setAndClose(t.getDate(), t.getMonth(), t.getFullYear());
-        });
-        shortcuts.appendChild(yesterday);
-        shortcuts.appendChild(document.createTextNode(" | "));
-        shortcuts.appendChild(todayLink);
-        shortcuts.appendChild(document.createTextNode(" | "));
-        shortcuts.appendChild(tomorrow);
-        box.appendChild(shortcuts);
-        var cancelP = document.createElement("p");
-        cancelP.className = "bitemporal-cal-cancel";
-        var cancelLink = document.createElement("a");
-        cancelLink.href = "#";
-        cancelLink.textContent = "Cancelar";
-        cancelLink.addEventListener("click", function (e) {
-          e.preventDefault();
-          if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-        });
-        cancelP.appendChild(cancelLink);
-        box.appendChild(cancelP);
-        overlay.appendChild(box);
-        overlay.addEventListener("click", function (evt) {
-          if (evt.target === overlay && overlay.parentNode) {
-            overlay.parentNode.removeChild(overlay);
-          }
-        });
-        document.body.appendChild(overlay);
-        renderMonth();
-      }
-      var fallbackSpan = createShortcutsContainer(input);
-      if (!fallbackSpan) return;
       if (name.indexOf("edit_vig_fim_") === 0) {
-        addShortcutLink(fallbackSpan, "Indefinida", function () {
+        addShortcutLink(container, "Indefinida", function () {
           input.value = formatDateBR(31, 12, 9999);
           if (input.classList) input.classList.remove("invalid");
-          try { input.dispatchEvent(new Event("change", { bubbles: true })); } catch (e) {}
+          try {
+            input.dispatchEvent(new Event("change", { bubbles: true }));
+          } catch (e) {}
         });
       }
-      addShortcutLink(fallbackSpan, "Ano Corrente", function () {
+
+      addShortcutLink(container, "Ano Corrente", function () {
         var today = new Date();
         var year = today.getFullYear();
         input.value =
@@ -523,31 +292,192 @@
             ? formatDateBR(1, 1, year)
             : formatDateBR(31, 12, year);
         if (input.classList) input.classList.remove("invalid");
-        try { input.dispatchEvent(new Event("change", { bubbles: true })); } catch (e) {}
+        try {
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+        } catch (e) {}
       });
-      addShortcutLink(fallbackSpan, "Hoje", function () {
+
+      addShortcutLink(container, "Hoje", function () {
         var d = new Date();
-        input.value = formatDateBR(d.getDate(), d.getMonth() + 1, d.getFullYear());
+        input.value = formatDateBR(
+          d.getDate(),
+          d.getMonth() + 1,
+          d.getFullYear()
+        );
         if (input.classList) input.classList.remove("invalid");
-        try { input.dispatchEvent(new Event("change", { bubbles: true })); } catch (e) {}
+        try {
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+        } catch (e) {}
       });
+
+      // Ícone de calendário: abre popup para escolher data
+      if (container.childNodes.length) {
+        container.appendChild(document.createTextNode(" | "));
+      }
       var calLink = document.createElement("a");
       calLink.href = "#";
-      calLink.title = "Calendário";
+      calLink.title = "Abrir calendário";
       calLink.style.textDecoration = "none";
       calLink.style.borderBottom = "none";
       calLink.style.cursor = "pointer";
-      calLink.addEventListener("click", function (evt) {
-        evt.preventDefault();
-        openCalendarPopup(input);
-      });
+      calLink.style.display = "inline-block";
+      calLink.style.verticalAlign = "middle";
       var calIcon = document.createElement("span");
       calIcon.className = "date-icon";
-      calIcon.setAttribute("aria-hidden", "true");
+      calIcon.setAttribute("aria-label", "Calendário");
       calLink.appendChild(calIcon);
-      fallbackSpan.appendChild(document.createTextNode(" | "));
-      fallbackSpan.appendChild(calLink);
+      calLink.addEventListener("click", function (evt) {
+        evt.preventDefault();
+        openConfirmCalendarPopup(input);
+      });
+      container.appendChild(calLink);
     });
+  }
+
+  function openConfirmCalendarPopup(input) {
+    var overlay = document.createElement("div");
+    overlay.className = "bitemporal-calendar-overlay";
+    var box = document.createElement("div");
+    box.className = "bitemporal-calendar-box";
+    overlay.appendChild(box);
+
+    var grid = document.createElement("div");
+    grid.className = "bitemporal-calendar-grid";
+    box.appendChild(grid);
+
+    var monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+    var weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+    var current = new Date();
+    var value = (input.value || "").trim();
+    if (value && /^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+      var p = value.split("/");
+      current = new Date(parseInt(p[2], 10), parseInt(p[1], 10) - 1, parseInt(p[0], 10));
+      if (isNaN(current.getTime())) current = new Date();
+    }
+
+    var year = current.getFullYear();
+    var month = current.getMonth();
+
+    function renderMonth() {
+      grid.innerHTML = "";
+      var nav = document.createElement("div");
+      nav.className = "bitemporal-cal-nav";
+      var prev = document.createElement("a");
+      prev.href = "#";
+      prev.textContent = "< ";
+      prev.addEventListener("click", function (e) {
+        e.preventDefault();
+        month--;
+        if (month < 0) {
+          month = 11;
+          year--;
+        }
+        renderMonth();
+      });
+      var next = document.createElement("a");
+      next.href = "#";
+      next.textContent = " >";
+      next.addEventListener("click", function (e) {
+        e.preventDefault();
+        month++;
+        if (month > 11) {
+          month = 0;
+          year++;
+        }
+        renderMonth();
+      });
+      var label = document.createElement("span");
+      label.textContent = monthNames[month] + " " + year;
+      nav.appendChild(prev);
+      nav.appendChild(label);
+      nav.appendChild(next);
+      grid.appendChild(nav);
+
+      var table = document.createElement("table");
+      table.className = "bitemporal-cal-table";
+      var thead = document.createElement("thead");
+      var trHead = document.createElement("tr");
+      weekDays.forEach(function (d) {
+        var th = document.createElement("th");
+        th.textContent = d;
+        trHead.appendChild(th);
+      });
+      thead.appendChild(trHead);
+      table.appendChild(thead);
+      var tbody = document.createElement("tbody");
+      table.appendChild(tbody);
+
+      var first = new Date(year, month, 1);
+      var last = new Date(year, month + 1, 0);
+      var startOffset = first.getDay();
+      var daysInMonth = last.getDate();
+      var today = new Date();
+
+      var row = document.createElement("tr");
+      var dayCount = 0;
+      for (var i = 0; i < startOffset; i++) {
+        var empty = document.createElement("td");
+        empty.className = "bitemporal-cal-noday";
+        empty.innerHTML = " ";
+        row.appendChild(empty);
+        dayCount++;
+      }
+      for (var d = 1; d <= daysInMonth; d++) {
+        if (dayCount === 7) {
+          tbody.appendChild(row);
+          row = document.createElement("tr");
+          dayCount = 0;
+        }
+        var td = document.createElement("td");
+        var a = document.createElement("a");
+        a.href = "#";
+        a.textContent = d;
+        if (today.getFullYear() === year && today.getMonth() === month && today.getDate() === d) {
+          td.className = "bitemporal-cal-today";
+        }
+        a.addEventListener("click", function (evt) {
+          evt.preventDefault();
+          var dayNum = parseInt(this.textContent, 10);
+          input.value = formatDateBR(dayNum, month + 1, year);
+          if (input.classList) input.classList.remove("invalid");
+          try {
+            input.dispatchEvent(new Event("change", { bubbles: true }));
+          } catch (e) {}
+          overlay.remove();
+        });
+        td.appendChild(a);
+        row.appendChild(td);
+        dayCount++;
+      }
+      while (dayCount < 7) {
+        var empty = document.createElement("td");
+        empty.className = "bitemporal-cal-noday";
+        empty.innerHTML = " ";
+        row.appendChild(empty);
+        dayCount++;
+      }
+      tbody.appendChild(row);
+      grid.appendChild(table);
+
+      var cancelRow = document.createElement("div");
+      cancelRow.className = "bitemporal-cal-cancel";
+      var cancelLink = document.createElement("a");
+      cancelLink.href = "#";
+      cancelLink.textContent = "Fechar";
+      cancelLink.addEventListener("click", function (e) {
+        e.preventDefault();
+        overlay.remove();
+      });
+      cancelRow.appendChild(cancelLink);
+      grid.appendChild(cancelRow);
+    }
+
+    renderMonth();
+    overlay.addEventListener("click", function (e) {
+      if (e.target === overlay) overlay.remove();
+    });
+    document.body.appendChild(overlay);
   }
 
   function init() {
