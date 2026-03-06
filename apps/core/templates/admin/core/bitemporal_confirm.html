@@ -49,9 +49,22 @@
   .bitemporal-preview-shortcuts a:hover .date-icon {
     background-position: 0 -24px;
   }
-  .preview-table input[type="text"].date-input { padding: 4px 6px; border: 1px solid #ccc; border-radius: 3px; width: 100px; text-align: center; }
-  .preview-table input[type="text"].date-input:focus { border-color: #417690; outline: none; }
-  .preview-table input[type="text"].date-input.invalid { border-color: #c00; background-color: #fff0f0; }
+  .preview-table input[type="text"].date-input,
+  .preview-table input[type="text"].date-input-readonly {
+    padding: 4px 6px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    width: 100px;
+    text-align: center;
+  }
+  .preview-table input[type="text"].date-input:focus {
+    border-color: #417690;
+    outline: none;
+  }
+  .preview-table input[type="text"].date-input.invalid {
+    border-color: #c00;
+    background-color: #fff0f0;
+  }
   .date-hint { font-size: 0.8em; color: #666; font-weight: normal; margin-left: 0.5em; }
   .strikethrough { text-decoration: line-through; color: #999; }
 .strikethrough input { text-decoration: line-through; color: #999; }
@@ -408,18 +421,25 @@
     }
   }
 
-  function renderPreview(records) {
+  function renderPreview(records, strategy) {
     const tbody = document.getElementById('preview-body');
     tbody.innerHTML = '';
 
     records.forEach(function(rec, index) {
       const tr = document.createElement('tr');
-      const isEditable = !rec.strikethrough;
+      const isNovaVigenciaStrategy = strategy === 'nova_vigencia';
       const rowId = 'row_' + index;
 
       const tdVersion = document.createElement('td');
       const displayVersion = versionLabels[rec.version] || rec.version;
       tdVersion.textContent = displayVersion;
+
+      let isEditable = !rec.strikethrough;
+      if (isNovaVigenciaStrategy) {
+        // Na estratégia "Registrar nova vigência", apenas a linha "Nova versão"
+        // é editável; a linha "Versão atual" fica somente leitura.
+        isEditable = displayVersion === 'Nova versão';
+      }
 
       const tdInicio = document.createElement('td');
       if (isEditable) {
@@ -433,7 +453,20 @@
         inputInicio.addEventListener('blur', validateDateInput);
         tdInicio.appendChild(inputInicio);
       } else {
-        tdInicio.textContent = formatDateToDMY(rec.vig_inicio) || '-';
+        // Para "Versão atual" na estratégia nova_vigencia, mostrar em campo
+        // visualmente igual, mas somente leitura e sem participar do POST.
+        if (isNovaVigenciaStrategy && displayVersion === 'Versão atual') {
+          tdInicio.classList.add('preview-date-cell');
+          const inputInicioRo = document.createElement('input');
+          inputInicioRo.type = 'text';
+          inputInicioRo.className = 'vDateField date-input-readonly';
+          inputInicioRo.value = formatDateToDMY(rec.vig_inicio);
+          inputInicioRo.readOnly = true;
+          inputInicioRo.tabIndex = -1;
+          tdInicio.appendChild(inputInicioRo);
+        } else {
+          tdInicio.textContent = formatDateToDMY(rec.vig_inicio) || '-';
+        }
       }
 
       const tdFim = document.createElement('td');
@@ -448,7 +481,18 @@
         inputFim.addEventListener('blur', validateDateInput);
         tdFim.appendChild(inputFim);
       } else {
-        tdFim.textContent = formatDateToDMY(rec.vig_fim) || '-';
+        if (isNovaVigenciaStrategy && displayVersion === 'Versão atual') {
+          tdFim.classList.add('preview-date-cell');
+          const inputFimRo = document.createElement('input');
+          inputFimRo.type = 'text';
+          inputFimRo.className = 'vDateField date-input-readonly';
+          inputFimRo.value = formatDateToDMY(rec.vig_fim);
+          inputFimRo.readOnly = true;
+          inputFimRo.tabIndex = -1;
+          tdFim.appendChild(inputFimRo);
+        } else {
+          tdFim.textContent = formatDateToDMY(rec.vig_fim) || '-';
+        }
       }
 
       if (rec.strikethrough) {
@@ -464,12 +508,76 @@
     });
   }
 
+  // Ajustes adicionais para a estratégia "Registrar nova vigência":
+  // - Linha "Versão atual" com datas somente leitura na UI.
+  // - Data de fim da "Versão atual" sempre = (data de início da "Nova versão" - 1 dia),
+  //   atualizada dinamicamente quando o usuário altera a data de início da nova versão.
+  window.bitemporalEnhanceConfirmVigencia = function() {
+    const selected = document.querySelector('input[name="edit_strategy"]:checked');
+    if (!selected || selected.value !== 'nova_vigencia') {
+      return;
+    }
+
+    const rows = document.querySelectorAll('#preview-body tr');
+    let atualFimCell = null;
+    let atualFimInput = null;
+    let novaInicioInput = null;
+
+    rows.forEach(function(tr) {
+      const cells = tr.querySelectorAll('td');
+      if (cells.length < 3) {
+        return;
+      }
+      const label = (cells[0].textContent || '').trim();
+      if (label === 'Versão atual') {
+        atualFimCell = cells[2];
+        atualFimInput = atualFimCell.querySelector('input[type="text"]');
+      } else if (label === 'Nova versão') {
+        const possibleInput = tr.querySelector('input[name^="edit_vig_inicio_"]');
+        if (possibleInput) {
+          novaInicioInput = possibleInput;
+        }
+      }
+    });
+
+    if (!atualFimCell || !atualFimInput || !novaInicioInput) {
+      return;
+    }
+
+    function syncPrevFimFromNovaInicio() {
+      var value = novaInicioInput.value;
+      if (!isValidDateDMY(value)) {
+        return;
+      }
+      var parts = value.split('/');
+      var day = parseInt(parts[0], 10);
+      var month = parseInt(parts[1], 10) - 1; // JS months 0-11
+      var year = parseInt(parts[2], 10);
+      var d = new Date(year, month, day);
+      d.setDate(d.getDate() - 1);
+      var dd = ('0' + d.getDate()).slice(-2);
+      var mm = ('0' + (d.getMonth() + 1)).slice(-2);
+      var yyyy = d.getFullYear();
+      atualFimInput.value = dd + '/' + mm + '/' + yyyy;
+    }
+
+    // Evita múltiplos listeners se o preview for re-renderizado.
+    if (!novaInicioInput.dataset.prevFimBound) {
+      novaInicioInput.addEventListener('change', syncPrevFimFromNovaInicio);
+      novaInicioInput.addEventListener('blur', syncPrevFimFromNovaInicio);
+      novaInicioInput.dataset.prevFimBound = '1';
+    }
+
+    // Ajuste inicial com o valor atual da nova versão.
+    syncPrevFimFromNovaInicio();
+  };
+
   function updatePreview() {
     const selected = document.querySelector('input[name="edit_strategy"]:checked');
     if (selected && selected.value === 'nova_vigencia') {
-      renderPreview(novaVigenciaPreview);
+      renderPreview(novaVigenciaPreview, 'nova_vigencia');
     } else {
-      renderPreview(sobrescreverPreview);
+      renderPreview(sobrescreverPreview, 'sobrescrever');
     }
     if (window.bitemporalEnhanceConfirmVigencia) window.bitemporalEnhanceConfirmVigencia();
   }

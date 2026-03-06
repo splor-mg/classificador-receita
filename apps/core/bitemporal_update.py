@@ -62,6 +62,8 @@ def apply_bitemporal_update(model, prev_obj, new_values: Dict[str, Any], strateg
     sentinela = get_sentinela_datetime()
     now = timezone.now()
     today = date.today()
+    # Padrão de nova vigência: 1º de janeiro do ano corrente,
+    # quando nenhuma data de início for explicitamente informada.
     first_jan_current_year = date(today.year, 1, 1)
 
     Model = model

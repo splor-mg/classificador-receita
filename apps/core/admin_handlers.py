@@ -202,6 +202,7 @@ class BitemporalChangeHandler:
         """
         sentinela = get_sentinela_date()
         today = date.today()
+        # Padrão: 1º de janeiro do ano corrente para nova vigência.
         first_jan_current_year = date(today.year, 1, 1)
 
         current_vig_inicio = getattr(obj, "data_vigencia_inicio", None)
@@ -210,10 +211,10 @@ class BitemporalChangeHandler:
         has_vig_inicio_change = "data_vigencia_inicio" in changed_data
         has_vig_fim_change = "data_vigencia_fim" in changed_data
 
-        if has_vig_inicio_change:
-            new_vig_inicio = form.cleaned_data.get("data_vigencia_inicio")
-        else:
-            new_vig_inicio = first_jan_current_year
+        # Para a estratégia de nova vigência, queremos sempre propor,
+        # por padrão, o 1º de janeiro do ano corrente como início da
+        # nova versão.
+        new_vig_inicio = first_jan_current_year
 
         if has_vig_fim_change:
             new_vig_fim = form.cleaned_data.get("data_vigencia_fim")
