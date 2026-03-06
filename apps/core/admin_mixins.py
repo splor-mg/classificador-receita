@@ -263,7 +263,11 @@ class AutoExportAdminMixin:
             result = export_resource(recurso, output=out, scope="all", do_backup=self.export_backup_default, backup_dir=self.export_backup_dir)
             backup_msg = f" Backup: {result['backup']}" if result.get("backup") else ""
             try:
-                self.message_user(request, f"Export completed for {out}.{backup_msg}")
+                self.message_user(
+                    request,
+                    f"Export completed for {out}.{backup_msg}",
+                    level=messages.SUCCESS,
+                )
             except Exception:
                 logging.getLogger(__name__).info("Export completed for %s -> %s", recurso, out)
         except Exception:

@@ -582,6 +582,21 @@ class BitemporalChangeHandler:
             )
             return HttpResponseRedirect(changelist_url)
 
+        # Se o usuário reverteu todos os atributos na tela de confirmação (attr_changes
+        # vazio) e a única “mudança” são as datas de vigência padrão do formulário,
+        # não aplicar: ele chegou à confirmação por ter alterado um campo e depois
+        # desfez na própria tela. Só aplicar mudança só de vigência quando a confirmação
+        # foi aberta explicitamente pelo botão "Editar vigência" (_edit_vigencia no POST).
+        if not attr_changes and vigencia_changed and not request.POST.get("_edit_vigencia"):
+            self.admin.message_user(
+                request,
+                "Nenhuma alteração detectada — atualização bitemporal não aplicada.",
+            )
+            changelist_url = reverse(
+                f'admin:{self.model._meta.app_label}_{self.model._meta.model_name}_changelist'
+            )
+            return HttpResponseRedirect(changelist_url)
+
         effective_new_values: Dict[str, Any] = dict(attr_changes)
         for field_name in VIGENCIA_FIELDS:
             if field_name in new_values:
@@ -629,7 +644,11 @@ class BitemporalChangeHandler:
             strategy=strategy,
         )
 
-        self.admin.message_user(request, "Atualização bitemporal aplicada com sucesso.")
+        self.admin.message_user(
+            request,
+            "Atualização bitemporal aplicada com sucesso.",
+            level=messages.SUCCESS,
+        )
 
         if hasattr(self.admin, 'trigger_export'):
             self.admin.trigger_export(request, self.model)
