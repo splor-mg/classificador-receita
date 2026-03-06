@@ -88,6 +88,39 @@
   color: #417690; /* azul padrão do admin para dar destaque similar ao "Novo" */
 }
 
+.bitemporal-explicativo {
+  margin-top: 1.25em;
+  margin-bottom: 0.75em;
+  margin-left: 1.25em;
+  padding: 0.6em 0.9em;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border-left: 3px solid #b0bcc4;
+  font-size: 0.875em;
+  line-height: 1.5;
+  color: #5c6266;
+}
+.bitemporal-explicativo p {
+  margin: 0 0 0.4em 0;
+}
+.bitemporal-explicativo p:last-child {
+  margin-bottom: 0;
+}
+.bitemporal-explicativo strong {
+  color: #333;
+  font-weight: 600;
+}
+.bitemporal-explicativo .bitemporal-alerta {
+  margin-top: 0.5em;
+  padding-top: 0.5em;
+  border-top: 1px solid #e0e0e0;
+  font-size: 0.85em;
+  color: #856404;
+  background: #fff8e6;
+  padding: 0.4em 0.6em;
+  border-radius: 3px;
+  border-left: 3px solid #d4a017;
+}
 .bitemporal-submit-row {
   margin-top: 1.5em;
   display: flex;
@@ -249,6 +282,7 @@
 }
 </style>
 <script src="{% static 'core/admin_bitemporal_confirm_validations.js' %}"></script>
+<script src="{% static 'core/admin_bitemporal_confirm_messages.js' %}"></script>
 <link rel="stylesheet" href="{% static 'admin/css/widgets.css' %}">
 <script src="{% static 'core/admin_bitemporal_date_shortcuts.js' %}"></script>
 {% endblock %}
@@ -352,6 +386,13 @@
       </table>
     </div>
   </div>
+
+  <div
+    id="bitemporal-explicativo"
+    class="bitemporal-explicativo"
+    aria-live="polite"
+    data-only-vigencia-changes="{{ only_vigencia_changes|yesno:'true,false' }}"
+  ></div>
 
   <div class="bitemporal-submit-row">
     <button type="submit" name="_save" class="btn btn-primary">{% translate "Confirmar" %}</button>
@@ -558,6 +599,7 @@
       var mm = ('0' + (d.getMonth() + 1)).slice(-2);
       var yyyy = d.getFullYear();
       atualFimInput.value = dd + '/' + mm + '/' + yyyy;
+      if (window.bitemporalUpdateMessage) window.bitemporalUpdateMessage();
     }
 
     // Evita múltiplos listeners se o preview for re-renderizado.
@@ -569,6 +611,7 @@
 
     // Ajuste inicial com o valor atual da nova versão.
     syncPrevFimFromNovaInicio();
+    if (window.bitemporalUpdateMessage) window.bitemporalUpdateMessage();
   };
 
   function updatePreview() {
@@ -579,6 +622,7 @@
       renderPreview(sobrescreverPreview, 'sobrescrever');
     }
     if (window.bitemporalEnhanceConfirmVigencia) window.bitemporalEnhanceConfirmVigencia();
+    if (window.bitemporalUpdateMessage) window.bitemporalUpdateMessage();
   }
 
   document.querySelectorAll('input[name="edit_strategy"]').forEach(function(radio) {

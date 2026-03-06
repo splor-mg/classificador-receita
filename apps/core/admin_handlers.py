@@ -611,9 +611,6 @@ class BitemporalChangeHandler:
             "data_vigencia_fim", getattr(obj, "data_vigencia_fim", None)
         )
         if vig_inicio and vig_fim and vig_fim < vig_inicio:
-            # Guarda de segurança no backend: em caso de inconsistência de vigência,
-            # não aplica a atualização e retorna o usuário para o formulário de edição
-            # com uma mensagem de erro padrão do Django Admin.
             change_url = reverse(
                 f'admin:{self.model._meta.app_label}_{self.model._meta.model_name}_change',
                 args=[object_id]
@@ -623,6 +620,25 @@ class BitemporalChangeHandler:
                 "Data de Início de Vigência não pode ser anterior à Data de Fim de Vigência.",
             )
             return HttpResponseRedirect(change_url)
+
+        # Em "nova_vigencia", a versão atual será fechada com fim = novo_início - 1 dia.
+        # Esse fim não pode ser anterior ao início da versão atual.
+        if strategy == "nova_vigencia" and vig_inicio:
+            current_vig_inicio = getattr(obj, "data_vigencia_inicio", None)
+            if current_vig_inicio:
+                vig_inicio_date = vig_inicio.date() if hasattr(vig_inicio, "date") else vig_inicio
+                current_inicio_date = current_vig_inicio.date() if hasattr(current_vig_inicio, "date") else current_vig_inicio
+                prev_vig_fim = vig_inicio_date - timedelta(days=1)
+                if prev_vig_fim < current_inicio_date:
+                    change_url = reverse(
+                        f'admin:{self.model._meta.app_label}_{self.model._meta.model_name}_change',
+                        args=[object_id]
+                    )
+                    messages.error(
+                        request,
+                        "Data de Início de Vigência não pode ser anterior à Data de Fim de Vigência.",
+                    )
+                    return HttpResponseRedirect(change_url)
 
         try:
             self.logger.warning(

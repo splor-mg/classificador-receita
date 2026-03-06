@@ -26,29 +26,27 @@
     return parts[2] + '-' + parts[1] + '-' + parts[0];
   }
 
+  function getCellValue(cell) {
+    if (!cell) return '';
+    var input = cell.querySelector('input');
+    return input ? input.value.trim() : (cell.textContent || '').trim();
+  }
+
   function validateVigenciaOnSubmit() {
-    // Valida para ambas as estratégias: "Registrar nova vigência" e "Sobrescrever/ajustar".
-    // Sempre checa a linha "Nova versão" na tabela de preview.
+    // Valida todos os pares início/fim de cada linha da tabela de preview
+    // (incluindo "Versão atual", cujos inputs são readonly e sem name).
+    // Regra: data de fim não pode ser anterior à data de início.
     var vigenciaInvalida = false;
     var rows = document.querySelectorAll('#preview-body tr');
     rows.forEach(function (tr) {
       var cells = tr.querySelectorAll('td');
       if (cells.length < 3) return;
-      var label = (cells[0].textContent || '').trim();
-      if (label !== 'Nova versão') return;
-      var inicioInput = tr.querySelector('input[name^="edit_vig_inicio_"]');
-      var fimInput = tr.querySelector('input[name^="edit_vig_fim_"]');
-      if (!inicioInput || !fimInput || !inicioInput.value || !fimInput.value)
-        return;
-      if (
-        !isValidDateDMY(inicioInput.value) ||
-        !isValidDateDMY(fimInput.value)
-      )
-        return;
-      var inicioIso = parseDMYtoISO(inicioInput.value);
-      var fimIso = parseDMYtoISO(fimInput.value);
-      var inicioDate = new Date(inicioIso);
-      var fimDate = new Date(fimIso);
+      var inicioVal = getCellValue(cells[1]);
+      var fimVal = getCellValue(cells[2]);
+      if (!inicioVal || !fimVal) return;
+      if (!isValidDateDMY(inicioVal) || !isValidDateDMY(fimVal)) return;
+      var inicioDate = new Date(parseDMYtoISO(inicioVal));
+      var fimDate = new Date(parseDMYtoISO(fimVal));
       if (fimDate < inicioDate) {
         vigenciaInvalida = true;
       }
