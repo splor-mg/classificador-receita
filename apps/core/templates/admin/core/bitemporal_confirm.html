@@ -398,7 +398,7 @@
     <button type="submit" name="_save" class="btn btn-primary">{% translate "Confirmar" %}</button>
     <button type="button" class="btn btn-secondary" id="cancel-btn">{% translate "Voltar" %}</button>
     {% url opts|admin_urlname:'changelist' as changelist_url %}
-    <a href="{% add_preserved_filters changelist_url %}" class="btn btn-secondary">{% translate "Cancelar" %}</a>
+    <a href="{% add_preserved_filters changelist_url %}" class="btn btn-secondary" id="bitemporal-cancel-link">{% translate "Cancelar" %}</a>
   </div>
 </form>
 
@@ -416,6 +416,14 @@
 (function() {
   var novaVigenciaPreview = JSON.parse('{{ nova_vigencia_preview_json|escapejs }}');
   var sobrescreverPreview = JSON.parse('{{ sobrescrever_preview_json|escapejs }}');
+
+  var isDirty = false;
+  var isSubmitting = false;
+  var hasInitialChanges = "{{ has_changes_from_initial_form|yesno:'true,false' }}" === "true";
+
+  function markDirty() {
+    isDirty = true;
+  }
 
   var versionLabels = {
     'Versão 1': 'Versão atual',
@@ -459,6 +467,14 @@
     }
   }
 
+  function attachGeneralDiffDirtyListeners() {
+    var diffFields = document.querySelectorAll('.diff-input, .diff-textarea, .diff-select');
+    diffFields.forEach(function(field) {
+      field.addEventListener('change', markDirty);
+      field.addEventListener('input', markDirty);
+    });
+  }
+
   function renderPreview(records, strategy) {
     const tbody = document.getElementById('preview-body');
     tbody.innerHTML = '';
@@ -489,6 +505,8 @@
         inputInicio.value = formatDateToDMY(rec.vig_inicio);
         inputInicio.placeholder = 'dd/mm/aaaa';
         inputInicio.addEventListener('blur', validateDateInput);
+        inputInicio.addEventListener('change', markDirty);
+        inputInicio.addEventListener('input', markDirty);
         tdInicio.appendChild(inputInicio);
       } else {
         // Para "Versão atual" na estratégia nova_vigencia, mostrar em campo
@@ -517,6 +535,8 @@
         inputFim.value = formatDateToDMY(rec.vig_fim);
         inputFim.placeholder = 'dd/mm/aaaa';
         inputFim.addEventListener('blur', validateDateInput);
+        inputFim.addEventListener('change', markDirty);
+        inputFim.addEventListener('input', markDirty);
         tdFim.appendChild(inputFim);
       } else {
         if (isNovaVigenciaStrategy && displayVersion === 'Versão atual') {
@@ -626,10 +646,14 @@
   }
 
   document.querySelectorAll('input[name="edit_strategy"]').forEach(function(radio) {
-    radio.addEventListener('change', updatePreview);
+    radio.addEventListener('change', function() {
+      updatePreview();
+      markDirty();
+    });
   });
 
   document.getElementById('bitemporal-form').addEventListener('submit', function(e) {
+    isSubmitting = true;
     var dateInputs = document.querySelectorAll('input.date-input');
     var hasInvalid = false;
     
@@ -666,10 +690,124 @@
   });
 
   updatePreview();
+  attachGeneralDiffDirtyListeners();
+
+  function syncCancelFormWithEdits() {
+    var cancelForm = document.getElementById('cancel-form');
+    if (!cancelForm) {
+      return;
+    }
+
+    // 1) Campos gerais editados via edit_field_*
+    var editedFields = document.querySelectorAll('[name^="edit_field_"]');
+    editedFields.forEach(function(input) {
+      var baseName = input.name.replace(/^edit_field_/, '');
+      var target = cancelForm.querySelector('[name="' + baseName + '"]');
+      if (target) {
+        target.value = input.value;
+      }
+    });
+  }
+
+  function hasEffectiveGeneralChanges() {
+    // Compara valores atuais dos campos gerais com o snapshot original
+    // enviado nos campos ocultos "orig_field_*".
+    var editedFields = document.querySelectorAll('[name^="edit_field_"]');
+    for (var i = 0; i < editedFields.length; i++) {
+      var input = editedFields[i];
+      var baseName = input.name.replace(/^edit_field_/, '');
+      var origField = document.querySelector('[name="orig_field_' + baseName + '"]');
+      if (!origField) {
+        continue;
+      }
+      var currentVal = input.value == null ? '' : String(input.value);
+      var originalVal = origField.value == null ? '' : String(origField.value);
+      if (currentVal !== originalVal) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function hasEffectiveVigenciaChanges() {
+    // Usa a linha "Nova versão" do preview e compara com os snapshots
+    // originais de vigência (orig_field_data_vigencia_inicio/fim), em ISO.
+    var origInicio = document.querySelector('input[name="orig_field_data_vigencia_inicio"]');
+    var origFim = document.querySelector('input[name="orig_field_data_vigencia_fim"]');
+
+    if (!origInicio && !origFim) {
+      // Não há snapshot de vigência relevante.
+      return false;
+    }
+
+    var rows = document.querySelectorAll('#preview-body tr');
+    var novaRow = null;
+    rows.forEach(function(tr) {
+      var firstCell = tr.querySelector('td');
+      if (!firstCell) {
+        return;
+      }
+      var label = (firstCell.textContent || '').trim();
+      if (label === 'Nova versão') {
+        novaRow = tr;
+      }
+    });
+
+    if (!novaRow) {
+      return false;
+    }
+
+    var inicioInput = novaRow.querySelector('input[name^="edit_vig_inicio_"]');
+    var fimInput = novaRow.querySelector('input[name^="edit_vig_fim_"]');
+
+    var currentInicioIso = '';
+    var currentFimIso = '';
+
+    if (inicioInput && inicioInput.value) {
+      currentInicioIso = parseDMYtoISO(inicioInput.value);
+    }
+    if (fimInput && fimInput.value) {
+      currentFimIso = parseDMYtoISO(fimInput.value);
+    }
+
+    var originalInicioIso = origInicio ? (origInicio.value || '') : '';
+    var originalFimIso = origFim ? (origFim.value || '') : '';
+
+    return currentInicioIso !== originalInicioIso || currentFimIso !== originalFimIso;
+  }
+
+  function hasEffectiveChanges() {
+    var selected = document.querySelector('input[name="edit_strategy"]:checked');
+    var strategy = selected ? selected.value : null;
+
+    // Para "Registrar nova vigência", só consideramos mudanças reais
+    // se houver diferença em atributos gerais (não-vigência).
+    if (strategy === 'nova_vigencia') {
+      return hasEffectiveGeneralChanges();
+    }
+
+    // Para "Sobrescrever/ajustar vigência atual", tanto atributos gerais
+    // quanto datas de vigência contam como alteração.
+    return hasEffectiveGeneralChanges() || hasEffectiveVigenciaChanges();
+  }
 
   document.getElementById('cancel-btn').addEventListener('click', function() {
+    syncCancelFormWithEdits();
     document.getElementById('cancel-form').submit();
   });
+
+  var cancelListLink = document.getElementById('bitemporal-cancel-link');
+  if (cancelListLink) {
+    cancelListLink.addEventListener('click', function(e) {
+      if (!hasEffectiveChanges()) {
+        return;
+      }
+      var message = 'Há alterações não salvas. Se continuar, as alterações serão perdidas. Deseja realmente sair sem salvar?';
+      if (!window.confirm(message)) {
+        e.preventDefault();
+      }
+    });
+  }
 })();
 </script>
 {% endblock %}

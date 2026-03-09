@@ -7,11 +7,82 @@
   {% if has_change_permission and change or has_add_permission and add or has_editable_inline_admin_formsets %}<input type="submit" value="{% translate 'Save' %}" class="default" name="_save">{% endif %}
   <a role="button" href="{{ request.get_full_path }}" class="closelink">Limpar</a>
   {% url opts|admin_urlname:'changelist' as changelist_url %}
-  <a role="button" href="{% add_preserved_filters changelist_url %}" class="closelink">Cancelar</a>
+  <a role="button" href="{% add_preserved_filters changelist_url %}" class="closelink" id="core-cancel-link">Cancelar</a>
   {% if has_delete_permission and change and original %}
     {% url opts|admin_urlname:'delete' original.pk|admin_urlquote as delete_url %}
     <a role="button" href="{% add_preserved_filters delete_url %}" class="deletelink">{% translate "Delete" %}</a>
   {% endif %}
 {% endif %}
 </div>
+<script type="text/javascript">
+(function() {
+  function setupUnsavedChangesWarning() {
+    var isSubmitting = false;
+    var isDirty = false;
+
+    function getFieldState(field) {
+      if (field.type === 'checkbox' || field.type === 'radio') {
+        return field.checked ? '1' : '0';
+      }
+      return field.value;
+    }
+
+    // Considera qualquer alteração em campos de formulário na página
+    var fields = Array.prototype.slice.call(
+      document.querySelectorAll('form input, form textarea, form select')
+    );
+
+    // Captura o estado inicial de cada campo
+    fields.forEach(function(field) {
+      if (field.type === 'hidden') {
+        return;
+      }
+      field.dataset.initialState = getFieldState(field);
+    });
+
+    function recomputeDirty() {
+      isDirty = fields.some(function(field) {
+        if (field.type === 'hidden') {
+          return false;
+        }
+        return getFieldState(field) !== field.dataset.initialState;
+      });
+    }
+
+    fields.forEach(function(field) {
+      if (field.type === 'hidden') {
+        return;
+      }
+      field.addEventListener('change', recomputeDirty);
+      field.addEventListener('input', recomputeDirty);
+    });
+
+    // Marca submissão para não mostrar alerta ao salvar
+    document.addEventListener('submit', function() {
+      isSubmitting = true;
+    }, true);
+
+    var cancelLink = document.getElementById('core-cancel-link');
+    if (!cancelLink) {
+      return;
+    }
+
+    cancelLink.addEventListener('click', function(event) {
+      if (!isDirty || isSubmitting) {
+        return;
+      }
+      var message = 'Há alterações não salvas. Se continuar, as alterações serão perdidas. Deseja realmente sair sem salvar?';
+      if (!window.confirm(message)) {
+        event.preventDefault();
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupUnsavedChangesWarning);
+  } else {
+    setupUnsavedChangesWarning();
+  }
+})();
+</script>
 {% endblock %}
