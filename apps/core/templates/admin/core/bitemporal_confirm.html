@@ -367,11 +367,23 @@
     <div class="strategy-options">
       {% if not only_vigencia_changes %}
         <div class="strategy-option">
-          <input type="radio" id="strategy-nova" name="edit_strategy" value="nova_vigencia" checked>
+          <input
+            type="radio"
+            id="strategy-nova"
+            name="edit_strategy"
+            value="nova_vigencia"
+            {% if not prefer_sobrescrever_default %}checked{% endif %}
+          >
           <label for="strategy-nova">Registrar nova vigência</label>
         </div>
         <div class="strategy-option">
-          <input type="radio" id="strategy-sobrescrever" name="edit_strategy" value="sobrescrever">
+          <input
+            type="radio"
+            id="strategy-sobrescrever"
+            name="edit_strategy"
+            value="sobrescrever"
+            {% if prefer_sobrescrever_default %}checked{% endif %}
+          >
           <label for="strategy-sobrescrever">Sobrescrever/ajustar vigência atual</label>
         </div>
       {% else %}
