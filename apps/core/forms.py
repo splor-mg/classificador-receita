@@ -2,19 +2,20 @@ from django import forms
 from django.forms import TextInput, Textarea
 
 from apps.core.models import SerieClassificacao
-from apps.core.domain_choices import ORGAOS_ENTIDADES_CHOICES
+from apps.core.domain_choices import ORGAOS_ENTIDADES_GROUPED_CHOICES
 
 
 class SerieClassificacaoForm(forms.ModelForm):
     """Formulário do Admin para SerieClassificacao com widgets ajustados."""
 
     orgao_responsavel = forms.ChoiceField(
-        choices=[
-            (value, f"{value} - {label}")
-            for value, label in ORGAOS_ENTIDADES_CHOICES
-        ],
+        choices=ORGAOS_ENTIDADES_GROUPED_CHOICES,
         label="Órgão Responsável",
-        help_text="Órgão ou entidade responsável pela manutenção da série de classificações. Valores válidos em domínio/orgaos_entidades.yaml (domínio/Ref).",
+        help_text=(
+            "Órgão ou entidade responsável pela manutenção da série de "
+            "classificações. Valores válidos em dominios/orgaos_entidades.yaml "
+            "(domainRef)."
+        ),
     )
 
     class Meta:
@@ -22,6 +23,7 @@ class SerieClassificacaoForm(forms.ModelForm):
         fields = "__all__"
         widgets = {
             "serie_nome": TextInput(attrs={"style": "width:60ch;"}),
-            "serie_descricao": Textarea(attrs={"style": "width:60ch; height:8em;"}),
+            "serie_descricao": Textarea(
+                attrs={"style": "width:60ch; height:8em;"},
+            ),
         }
-

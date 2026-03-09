@@ -331,7 +331,17 @@
             <div class="diff-value"><span class="diff-label diff-label-atual">Atual</span> <span>{{ d.old_display }}</span></div>
             <div class="diff-value">
               <span class="diff-label diff-label-novo">Novo</span>
-              {% if d.choices %}
+              {% if d.grouped_choices %}
+              <select class="diff-select" name="edit_field_{{ d.field_name }}">
+                {% for group_label, group_choices in d.grouped_choices %}
+                <optgroup label="{{ group_label }}">
+                  {% for choice_val, choice_label in group_choices %}
+                  <option value="{{ choice_val }}" {% if choice_val == d.new %}selected{% endif %}>{{ choice_label }}</option>
+                  {% endfor %}
+                </optgroup>
+                {% endfor %}
+              </select>
+              {% elif d.choices %}
               <select class="diff-select" name="edit_field_{{ d.field_name }}">
                 {% for choice_val, choice_label in d.choices %}
                 <option value="{{ choice_val }}" {% if choice_val == d.new %}selected{% endif %}>{{ choice_val }} - {{ choice_label }}</option>

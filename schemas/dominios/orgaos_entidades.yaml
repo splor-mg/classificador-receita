@@ -13,50 +13,56 @@ description: |
   - base_legal_tecnica.orgao_responsavel
 
 values:
-  # União
-  - Planalto-BRA
-  - Congresso-BRA
+  # Federal – Legislativo e Executivo
   - Camara-BRA
+  - Congresso-BRA
+  - Planalto-BRA
   - Senado-BRA
+  # Federal – Justiça e Controle
+  - AGU-BRA
+  - CGU-BRA
   - STF-BRA
   - STJ-BRA
-  - TRF-BRA
   - TCU-BRA
-  - CGU-BRA
-  - AGU-BRA
-  - STN-BRA
-  - SOF-BRA
-  - RFB-BRA
+  - TRF-BRA
+  # Federal – Finanças Públicas
   - BACEN-BRA
-  # Minas Gerais
+  - RFB-BRA
+  - SOF-BRA
+  - STN-BRA
+  # Estadual – Minas Gerais
+  - AGE-MG
   - AL-MG
+  - CGE-MG
+  - SEF-MG
+  - SEPLAG-MG
   - TCE-MG
   - TJ-MG
-  - CGE-MG
-  - AGE-MG
-  - SEPLAG-MG
-  - SEF-MG
 
 labels:
-  Planalto-BRA: Presidência da República / Planalto
-  Congresso-BRA: Congresso Nacional
+  # Federal – Legislativo e Executivo
   Camara-BRA: Câmara dos Deputados
+  Congresso-BRA: Congresso Nacional
+  Planalto-BRA: Presidência da República / Planalto
   Senado-BRA: Senado Federal
+  # Federal – Justiça e Controle
+  AGU-BRA: Advocacia-Geral da União
+  CGU-BRA: Controladoria-Geral da União
   STF-BRA: Supremo Tribunal Federal
   STJ-BRA: Superior Tribunal de Justiça
-  TRF-BRA: Tribunal Regional Federal
   TCU-BRA: Tribunal de Contas da União
-  CGU-BRA: Controladoria-Geral da União
-  AGU-BRA: Advocacia-Geral da União
-  STN-BRA: Secretaria do Tesouro Nacional
-  SOF-BRA: Secretaria de Orçamento Federal
-  RFB-BRA: Receita Federal do Brasil
+  TRF-BRA: Tribunal Regional Federal
+  # Federal – Finanças Públicas
   BACEN-BRA: Banco Central do Brasil
+  RFB-BRA: Receita Federal do Brasil
+  SOF-BRA: Secretaria de Orçamento Federal
+  STN-BRA: Secretaria do Tesouro Nacional
+  # Estadual – Minas Gerais
+  AGE-MG: Advocacia-Geral do Estado de Minas Gerais
   AL-MG: Assembleia Legislativa de Minas Gerais
+  CGE-MG: Controladoria-Geral do Estado de Minas Gerais
+  SEF-MG: Secretaria de Estado da Fazenda de Minas Gerais
+  SEPLAG-MG: Secretaria de Estado de Planejamento e Gestão de Minas Gerais
   TCE-MG: Tribunal de Contas do Estado de Minas Gerais
   TJ-MG: Tribunal de Justiça de Minas Gerais
-  CGE-MG: Controladoria-Geral do Estado de Minas Gerais
-  AGE-MG: Advocacia-Geral do Estado de Minas Gerais
-  SEPLAG-MG: Secretaria de Estado de Planejamento e Gestão de Minas Gerais
-  SEF-MG: Secretaria de Estado da Fazenda de Minas Gerais
 

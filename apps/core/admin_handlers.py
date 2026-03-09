@@ -13,6 +13,7 @@ from django.urls import reverse
 from django.contrib import messages
 
 from apps.core.bitemporal_registry import get_sentinela_date
+from apps.core.domain_choices import ORGAOS_ENTIDADES_GROUPED_CHOICES
 
 VIGENCIA_FIELDS = {"data_vigencia_inicio", "data_vigencia_fim"}
 
@@ -87,8 +88,13 @@ class BitemporalChangeHandler:
             new = form.cleaned_data.get(field)
 
             choices = None
+            grouped_choices = None
             if hasattr(field_meta, 'choices') and field_meta.choices:
                 choices = list(field_meta.choices)
+                # Para orgao_responsavel, aproveitar metadado de agrupamento
+                # para exibir um select mais informativo na tela de confirmação.
+                if field == "orgao_responsavel":
+                    grouped_choices = ORGAOS_ENTIDADES_GROUPED_CHOICES
             if choices:
                 choices_dict = dict(choices)
                 label_display = choices_dict.get(old, old)
@@ -106,6 +112,7 @@ class BitemporalChangeHandler:
                 "old_display": old_display,
                 "new": new,
                 "choices": choices,
+                "grouped_choices": grouped_choices,
             }
 
             if field in VIGENCIA_FIELDS:
