@@ -13,6 +13,11 @@
     <a role="button" href="{% add_preserved_filters delete_url %}" class="deletelink">{% translate "Delete" %}</a>
   {% endif %}
 {% endif %}
+{% if orig_field_items %}
+  {% for k, v in orig_field_items %}
+  <input type="hidden" name="{{ k }}" value="{{ v|escape }}">
+  {% endfor %}
+{% endif %}
 </div>
 <script type="text/javascript">
 (function() {
@@ -27,10 +32,39 @@
       return field.value;
     }
 
+    function normalizeSnapshotForField(field, rawValue) {
+      if (rawValue == null) {
+        return '';
+      }
+      var v = String(rawValue);
+      if (field.type === 'checkbox' || field.type === 'radio') {
+        var lower = v.toLowerCase();
+        var truthy = ['true', '1', 'on', 'yes'];
+        return truthy.indexOf(lower) !== -1 ? '1' : '0';
+      }
+      return v;
+    }
+
+    function getBaselineState(field) {
+      if (field.dataset.originalState !== undefined) {
+        return field.dataset.originalState;
+      }
+      return field.dataset.initialState;
+    }
+
     // Considera qualquer alteração em campos de formulário na página
     var fields = Array.prototype.slice.call(
       document.querySelectorAll('form input, form textarea, form select')
     );
+
+    // Mapa com snapshot original vindo do backend (orig_field_*)
+    var origSnapshotByName = {};
+    Array.prototype.slice.call(
+      document.querySelectorAll('input[name^="orig_field_"]')
+    ).forEach(function(input) {
+      var baseName = input.name.substring('orig_field_'.length);
+      origSnapshotByName[baseName] = input.value;
+    });
 
     // Captura o estado inicial de cada campo
     fields.forEach(function(field) {
@@ -38,6 +72,10 @@
         return;
       }
       field.dataset.initialState = getFieldState(field);
+      var origRaw = origSnapshotByName[field.name];
+      if (origRaw !== undefined) {
+        field.dataset.originalState = normalizeSnapshotForField(field, origRaw);
+      }
     });
 
     function recomputeDirty() {
@@ -45,7 +83,7 @@
         if (field.type === 'hidden') {
           return false;
         }
-        return getFieldState(field) !== field.dataset.initialState;
+        return getFieldState(field) !== getBaselineState(field);
       });
     }
 
@@ -56,6 +94,11 @@
       field.addEventListener('change', recomputeDirty);
       field.addEventListener('input', recomputeDirty);
     });
+
+    // Garante que isDirty reflita imediatamente diferenças em relação
+    // ao snapshot original (orig_field_*), mesmo antes de qualquer
+    // interação do usuário após o carregamento da página.
+    recomputeDirty();
 
     // Marca submissão para não mostrar alerta ao salvar
     document.addEventListener('submit', function() {

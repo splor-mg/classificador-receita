@@ -377,6 +377,16 @@ class BitemporalChangeHandler:
             'is_popup_var': IS_POPUP_VAR,
             'app_label': opts.app_label,
         }
+
+        # Propaga snapshot dos valores originais (orig_field_*) para a tela de edição,
+        # permitindo que o JavaScript compare o estado atual dos campos com esse snapshot
+        # em vez de depender apenas de flags de alteração.
+        orig_field_items = []
+        prefix = "orig_field_"
+        for key, value in request.POST.items():
+            if key.startswith(prefix):
+                orig_field_items.append((key, value))
+        context["orig_field_items"] = orig_field_items
         
         return TemplateResponse(
             request,

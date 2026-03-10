@@ -815,7 +815,9 @@
 
   document.getElementById('cancel-btn').addEventListener('click', function() {
     syncCancelFormWithEdits();
-    document.getElementById('cancel-form').submit();
+
+    var cancelForm = document.getElementById('cancel-form');
+    cancelForm.submit();
   });
 
   var cancelListLink = document.getElementById('bitemporal-cancel-link');
