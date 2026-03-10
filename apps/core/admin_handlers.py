@@ -11,6 +11,7 @@ from django.template.response import TemplateResponse
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.contrib import messages
+from django.utils.html import format_html
 
 from apps.core.bitemporal_registry import get_sentinela_date
 from apps.core.domain_choices import ORGAOS_ENTIDADES_GROUPED_CHOICES
@@ -699,14 +700,135 @@ class BitemporalChangeHandler:
         except Exception:
             pass
 
-        from apps.core.bitemporal_update import apply_bitemporal_update
+        from apps.core.bitemporal_update import apply_bitemporal_update, BitemporalOverlapError
 
-        apply_bitemporal_update(
-            model=self.model,
-            prev_obj=obj,
-            new_values=effective_new_values,
-            strategy=strategy,
-        )
+        try:
+            apply_bitemporal_update(
+                model=self.model,
+                prev_obj=obj,
+                new_values=effective_new_values,
+                strategy=strategy,
+            )
+        except BitemporalOverlapError as exc:
+            # Em caso de conflito de vigência, permanecemos na tela de
+            # confirmação, exibindo a mensagem de erro e permitindo que
+            # o usuário ajuste as datas.
+            try:
+                overlap_start = getattr(exc, "overlap_start", None)
+                overlap_end = getattr(exc, "overlap_end", None)
+                entity_descr = getattr(exc, "entity_descr", "")
+                conflicting_pk = getattr(exc, "conflicting_pk", None)
+                series_id = None
+                if entity_descr:
+                    # entity_descr é algo como "serie_id=SERIE-RECEITA-UNIAO"
+                    parts = entity_descr.split("=")
+                    if len(parts) == 2 and parts[0].strip() == "serie_id":
+                        series_id = parts[1].strip()
+
+                if conflicting_pk is not None:
+                    conflict_url = reverse(
+                        f'admin:{self.model._meta.app_label}_{self.model._meta.model_name}_change',
+                        args=[conflicting_pk],
+                    )
+                else:
+                    conflict_url = "#"
+
+                series_label = series_id or entity_descr or getattr(obj, "pk", "")
+                period_label = f"{overlap_start} a {overlap_end}"
+
+                msg = format_html(
+                    'Conflito de vigência: já existe registro ativo para '
+                    '<strong>{}</strong> com período de vigência de <strong>{}</strong>. '
+                    'Esse período é sobreposto pela vigência informada para a nova atualização - '
+                    '<a href="{}" target="_blank" rel="noopener noreferrer">'
+                    'clique aqui para editar a vigência desse outro registro</a>.',
+                    series_label,
+                    period_label,
+                    conflict_url,
+                )
+            except Exception:
+                msg = "Atualização bloqueada por conflito de vigência em registro ativo."
+
+            messages.error(request, msg)
+
+            changed_fields: List[str] = list(form.changed_data)
+            if edit_vigencia_flag:
+                for field in VIGENCIA_FIELDS:
+                    if field in form.fields and field not in changed_fields:
+                        changed_fields.append(field)
+
+            general_diffs, vigencia_diffs = self._build_diffs(form, changed_fields)
+            vigencia_preview = self._compute_vigencia_preview(obj, form, changed_fields)
+
+            post_items: List[Tuple[str, str]] = []
+            for k in request.POST.keys():
+                for v in request.POST.getlist(k):
+                    post_items.append((k, v))
+
+            for d in general_diffs + vigencia_diffs:
+                field_name = d.get("field_name")
+                if not field_name:
+                    continue
+                orig_key = f"orig_field_{field_name}"
+                orig_val = d.get("old")
+                post_items.append((orig_key, "" if orig_val is None else str(orig_val)))
+
+            import json
+
+            nova_vigencia_preview_json = json.dumps(
+                [
+                    {
+                        "version": r["version"],
+                        "vig_inicio": r["vig_inicio"].isoformat() if r["vig_inicio"] else None,
+                        "vig_fim": r["vig_fim"].isoformat() if r["vig_fim"] else None,
+                        "strikethrough": r["strikethrough"],
+                    }
+                    for r in vigencia_preview["nova_vigencia_preview"]
+                ]
+            )
+            sobrescrever_preview_json = json.dumps(
+                [
+                    {
+                        "version": r["version"],
+                        "vig_inicio": r["vig_inicio"].isoformat() if r["vig_inicio"] else None,
+                        "vig_fim": r["vig_fim"].isoformat() if r["vig_fim"] else None,
+                        "strikethrough": r["strikethrough"],
+                    }
+                    for r in vigencia_preview["sobrescrever_preview"]
+                ]
+            )
+
+            change_url = reverse(
+                f'admin:{self.model._meta.app_label}_{self.model._meta.model_name}_change',
+                args=[object_id]
+            )
+
+            only_vigencia_changes = not general_diffs
+            prefer_sobrescrever_default = bool(
+                vigencia_preview.get("current_vig_inicio_in_current_year")
+            )
+
+            context = {
+                **self.admin.admin_site.each_context(request),
+                "title": "Confirmar atualização",
+                "opts": self.model._meta,
+                "original": obj,
+                "object": obj,
+                "general_diffs": general_diffs,
+                "vigencia_diffs": vigencia_diffs,
+                "vigencia_preview": vigencia_preview,
+                "nova_vigencia_preview_json": nova_vigencia_preview_json,
+                "sobrescrever_preview_json": sobrescrever_preview_json,
+                "post_items": post_items,
+                "changed_data": form.changed_data,
+                "form": form,
+                "change_url": change_url,
+                "only_vigencia_changes": only_vigencia_changes,
+                "prefer_sobrescrever_default": prefer_sobrescrever_default,
+                "has_changes_from_initial_form": bool(form.changed_data),
+            }
+            context.update(self._get_business_id_and_name(obj, form))
+            return TemplateResponse(request, "admin/core/bitemporal_confirm.html", context)
 
         self.admin.message_user(
             request,

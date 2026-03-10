@@ -37,7 +37,29 @@ from typing import Any, Dict, Optional
 from django.db import transaction
 from django.utils import timezone
 
-from apps.core.bitemporal_registry import get_sentinela_datetime
+from apps.core.bitemporal_registry import (
+    get_sentinela_datetime,
+    get_sentinela_date,
+    get_resource_for_model,
+    get_resource,
+)
+
+
+class BitemporalOverlapError(Exception):
+    """Erro para conflitos de vigência entre linhas ativas da mesma entidade."""
+
+    def __init__(
+        self,
+        entity_descr: str,
+        overlap_start: date,
+        overlap_end: date,
+        conflicting_pk: Any,
+    ):
+        self.entity_descr = entity_descr
+        self.overlap_start = overlap_start
+        self.overlap_end = overlap_end
+        self.conflicting_pk = conflicting_pk
+        super().__init__("Bitemporal overlap detected")
 
 
 def apply_bitemporal_update(model, prev_obj, new_values: Dict[str, Any], strategy: str = "sobrescrever") -> Any:
@@ -60,6 +82,7 @@ def apply_bitemporal_update(model, prev_obj, new_values: Dict[str, Any], strateg
     Retorna a nova instância criada (ou a Versão 2 no caso de nova_vigencia).
     """
     sentinela = get_sentinela_datetime()
+    valid_sentinela = get_sentinela_date()
     now = timezone.now()
     today = date.today()
     # Padrão de nova vigência: 1º de janeiro do ano corrente,
@@ -72,6 +95,70 @@ def apply_bitemporal_update(model, prev_obj, new_values: Dict[str, Any], strateg
         prev = Model.objects.select_for_update().get(pk=prev_obj.pk)
 
         new_registro_inicio = now
+
+        # Descobrir a chave de entidade de negócio (ex.: serie_id) a partir do registry.
+        entity_filter: Dict[str, Any] = {}
+        entity_label_parts = []
+        try:
+            resource_name = get_resource_for_model(Model)
+        except Exception:
+            resource_name = None
+        if resource_name:
+            try:
+                res = get_resource(resource_name)
+            except Exception:
+                res = {}
+            for ek in res.get("entity_key", []):
+                lookup = ek.get("lookup")
+                if not lookup:
+                    continue
+                val = getattr(prev, lookup, None)
+                entity_filter[lookup] = val
+                entity_label_parts.append(f"{lookup}={val}")
+        entity_descr = ", ".join(entity_label_parts) or f"pk={prev.pk}"
+
+        # Calcular os intervalos de vigência que ficarão ativos após a atualização.
+        new_intervals = []
+        if strategy == "nova_vigencia":
+            new_vig_inicio = new_values.get("data_vigencia_inicio", first_jan_current_year)
+            if hasattr(new_vig_inicio, "date") and not isinstance(new_vig_inicio, date):
+                new_vig_inicio = new_vig_inicio.date()
+            prev_vig_inicio = getattr(prev, "data_vigencia_inicio", None)
+            prev_vig_fim_closed = new_vig_inicio - timedelta(days=1)
+            new_intervals.append((prev_vig_inicio, prev_vig_fim_closed))
+            new_intervals.append((new_vig_inicio, valid_sentinela))
+        else:
+            vig_inicio_novo = new_values.get(
+                "data_vigencia_inicio", getattr(prev, "data_vigencia_inicio", None)
+            )
+            vig_fim_novo = new_values.get(
+                "data_vigencia_fim", getattr(prev, "data_vigencia_fim", None)
+            )
+            new_intervals.append((vig_inicio_novo, vig_fim_novo))
+
+        # Verificar se algum desses intervalos conflita com outras linhas ativas
+        # da mesma entidade (data_registro_fim = sentinela).
+        if entity_filter and hasattr(Model, "data_registro_fim"):
+            active_qs = (
+                Model.objects.select_for_update()
+                .filter(**entity_filter, data_registro_fim=sentinela)
+                .exclude(pk=prev.pk)
+            )
+            for other in active_qs:
+                e_inicio = getattr(other, "data_vigencia_inicio", None)
+                e_fim = getattr(other, "data_vigencia_fim", None)
+                if e_inicio is None or e_fim is None:
+                    continue
+                for n_inicio, n_fim in new_intervals:
+                    if n_inicio is None or n_fim is None:
+                        continue
+                    if n_inicio <= e_fim and e_inicio <= n_fim:
+                        raise BitemporalOverlapError(
+                            entity_descr=entity_descr,
+                            overlap_start=e_inicio,
+                            overlap_end=e_fim,
+                            conflicting_pk=other.pk,
+                        )
 
         prev.data_registro_fim = new_registro_inicio
         prev.save(update_fields=["data_registro_fim"])
