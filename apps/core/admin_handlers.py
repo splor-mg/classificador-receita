@@ -3,8 +3,9 @@ Handlers para fluxos de Admin.
 
 BitemporalChangeHandler — coordena fluxo de confirmação bitemporal (sobrescrever / nova vigência).
 BlockHandler — coordena fluxo de confirmação de bloqueio (encerrar vigência com data específica).
+DeleteHandler — coordena fluxo de confirmação de exclusão (inativar registro via data_registro_fim).
 """
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Tuple
 import logging
 
@@ -1071,5 +1072,150 @@ class BlockHandler:
         return TemplateResponse(
             request,
             "admin/core/block_confirm.html",
+            context,
+        )
+
+
+class DeleteHandler:
+    """
+    Handler que gerencia o fluxo de confirmação de exclusão no Admin.
+
+    Exclusão = remover integralmente a vigência de um registro, inativando-o
+    via data_registro_fim (transaction time). O registro deixa de produzir
+    efeitos em qualquer período e passa a ser tratado como inexistente no
+    histórico de vigências. Não há exclusão física, apenas lógica.
+    """
+
+    def __init__(self, admin_instance):
+        self.admin = admin_instance
+        self.model = admin_instance.model
+        self.logger = logging.getLogger(__name__)
+
+    def _get_business_id_and_name(self, obj: Any) -> Dict[str, Any]:
+        """Identifica campos de ID e Nome para exibição na tela de confirmação."""
+        id_field = None
+        name_field = None
+        for field in self.model._meta.get_fields():
+            if not hasattr(field, "name"):
+                continue
+            if getattr(field, "many_to_many", False) or getattr(field, "one_to_many", False):
+                continue
+            fname = field.name
+            if fname.endswith("_id") and id_field is None:
+                id_field = field
+            if fname.endswith("_nome") and name_field is None:
+                name_field = field
+
+        def field_info(f):
+            if not f:
+                return None, None
+            label = getattr(f, "verbose_name", f.name).capitalize()
+            value = getattr(obj, f.name, None)
+            return label, value
+
+        id_label, id_value = field_info(id_field)
+        name_label, name_value = field_info(name_field)
+        return {
+            "resource_id_label": id_label,
+            "resource_id_value": id_value,
+            "resource_name_label": name_label,
+            "resource_name_value": name_value,
+        }
+
+    def handle(self, request, object_id):
+        """
+        Processa o fluxo de exclusão.
+
+        GET: exibe tela de confirmação.
+        POST: altera data_registro_fim do registro para a data/hora atual (inativa).
+        """
+        obj = self.admin.get_object(request, object_id)
+        if not obj:
+            from django.http import HttpResponseNotFound
+            return HttpResponseNotFound()
+
+        if not self.admin.has_delete_permission(request, obj):
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied()
+
+        change_url = reverse(
+            f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_change",
+            args=[object_id],
+        )
+
+        if request.method == "POST" and request.POST.get("_save"):
+            from apps.core.models import TRANSACTION_TIME_SENTINEL
+
+            # Usa consulta ao banco para evitar problemas de comparação naive/aware (USE_TZ)
+            is_active = self.model._default_manager.filter(
+                pk=obj.pk, data_registro_fim=TRANSACTION_TIME_SENTINEL
+            ).exists()
+            if not is_active:
+                messages.info(
+                    request,
+                    "Este registro já está inativo (Data do Fim do Registro já definida).",
+                )
+                changelist_url = reverse(
+                    f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_changelist"
+                )
+                return HttpResponseRedirect(changelist_url)
+
+            try:
+                now = datetime.now()
+                obj.data_registro_fim = now
+                obj.save(update_fields=["data_registro_fim"])
+            except Exception as exc:
+                self.logger.exception("DeleteHandler save failed")
+                messages.error(request, str(exc))
+                return self._render_delete_confirm(request, obj, object_id, change_url)
+
+            messages.success(request, "Exclusão aplicada com sucesso.")
+
+            if hasattr(self.admin, "trigger_export"):
+                self.admin.trigger_export(request, self.model)
+
+            changelist_url = reverse(
+                f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_changelist"
+            )
+            return HttpResponseRedirect(changelist_url)
+
+        return self._render_delete_confirm(request, obj, object_id, change_url)
+
+    def _render_delete_confirm(self, request, obj, object_id, change_url):
+        """Renderiza a tela de confirmação de exclusão."""
+        current_inicio = getattr(obj, "data_vigencia_inicio", None)
+        current_fim = getattr(obj, "data_vigencia_fim", None)
+
+        delete_preview = [
+            {
+                "vig_inicio": current_inicio.isoformat() if current_inicio else None,
+                "vig_fim": current_fim.isoformat() if current_fim else None,
+                "strikethrough": True,
+            },
+        ]
+
+        import json
+        delete_preview_json = json.dumps(delete_preview)
+
+        delete_url = reverse(
+            f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_delete",
+            args=[object_id],
+        )
+
+        context = {
+            **self.admin.admin_site.each_context(request),
+            "title": "",
+            "opts": self.model._meta,
+            "original": obj,
+            "object": obj,
+            "change_url": change_url,
+            "delete_url": delete_url,
+            "delete_preview_json": delete_preview_json,
+        }
+        context.update(self._get_business_id_and_name(obj))
+
+        return TemplateResponse(
+            request,
+            "admin/core/delete_confirm.html",
             context,
         )

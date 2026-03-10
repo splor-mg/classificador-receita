@@ -30,7 +30,7 @@ from apps.core.admin_mixins import (
     BitemporalDateFormatMixin,
     AutoExportAdminMixin,
 )
-from apps.core.admin_handlers import BlockHandler
+from apps.core.admin_handlers import BlockHandler, DeleteHandler
 
 
 @admin.register(SerieClassificacao)
@@ -92,6 +92,7 @@ class SerieClassificacaoAdmin(
         urls = super().get_urls()
         custom = [
             path("<path:object_id>/block/", self.admin_site.admin_view(self.block_view), name="core_serieclassificacao_block"),
+            path("<path:object_id>/delete/", self.admin_site.admin_view(self.delete_view), name="core_serieclassificacao_delete"),
         ]
         return custom + urls
 
@@ -99,11 +100,19 @@ class SerieClassificacaoAdmin(
         handler = BlockHandler(self)
         return handler.handle(request, object_id)
 
+    def delete_view(self, request, object_id):
+        handler = DeleteHandler(self)
+        return handler.handle(request, object_id)
+
     def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
         extra_context = extra_context or {}
         if object_id:
             extra_context["block_url"] = reverse(
                 "admin:core_serieclassificacao_block",
+                args=[object_id],
+            )
+            extra_context["delete_url"] = reverse(
+                "admin:core_serieclassificacao_delete",
                 args=[object_id],
             )
         return super().changeform_view(request, object_id, form_url, extra_context)

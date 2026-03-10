@@ -64,14 +64,26 @@
       Bloquear
     </a>
     {% endif %}
+    {% if delete_url %}
     <a
-      href="javascript:void(0);"
+      href="{{ delete_url }}"
       id="core-delete-button"
       class="deletelink"
       title="Remove integralmente a vigência de um registro, fazendo com que ele deixe de produzir efeitos em qualquer período e passe a ser tratado como inexistente no histórico de vigências. Não há exclusão física do registro, apenas lógica."
     >
       Excluir
     </a>
+    {% else %}
+    <a
+      href="javascript:void(0);"
+      id="core-delete-button"
+      class="deletelink"
+      style="pointer-events: none; opacity: 0.6;"
+      title="Excluir não disponível para este modelo."
+    >
+      Excluir
+    </a>
+    {% endif %}
   </div>
 {% endif %}
 {% if orig_field_items %}

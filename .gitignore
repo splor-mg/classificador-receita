@@ -98,6 +98,9 @@ venv.bak/
 # pdm
 .pdm.toml
 
+# uv (projeto usa Poetry)
+uv.lock
+
 # PEP 582
 __pypackages__/
 
