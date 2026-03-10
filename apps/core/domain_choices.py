@@ -23,7 +23,7 @@ ORGAOS_ENTIDADES_CHOICES = [
     ("TCU-BRA", "Tribunal de Contas da União"),
     ("TRF-BRA", "Tribunal Regional Federal"),
 
-    # Federal – Finanças Públicas
+    # Federal – Orçamento e Finanças
     ("BACEN-BRA", "Banco Central do Brasil"),
     ("RFB-BRA", "Receita Federal do Brasil"),
     ("SOF-BRA", "Secretaria de Orçamento Federal"),
@@ -52,7 +52,7 @@ ORGAOS_ENTIDADES_GROUPS = [
         ["AGU-BRA", "CGU-BRA", "STF-BRA", "STJ-BRA", "TCU-BRA", "TRF-BRA"],
     ),
     (
-        "Federal – Finanças Públicas",
+        "Federal – Orçamento e Finanças",
         ["BACEN-BRA", "RFB-BRA", "SOF-BRA", "STN-BRA"],
     ),
     (
