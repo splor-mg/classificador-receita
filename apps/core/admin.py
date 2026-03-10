@@ -13,6 +13,8 @@ from apps.core.models import (
 )
 from apps.core.models_base_legal import BaseLegalTecnica
 from apps.core.forms import SerieClassificacaoForm
+from django.urls import path, reverse
+
 from apps.core.admin_mixins import (
     RegistroAtivoFilter,
     SerieIdFilter,
@@ -28,6 +30,7 @@ from apps.core.admin_mixins import (
     BitemporalDateFormatMixin,
     AutoExportAdminMixin,
 )
+from apps.core.admin_handlers import BlockHandler
 
 
 @admin.register(SerieClassificacao)
@@ -84,6 +87,26 @@ class SerieClassificacaoAdmin(
 
     class Media:
         js = ("core/admin_bitemporal_date_shortcuts.js",)
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom = [
+            path("<path:object_id>/block/", self.admin_site.admin_view(self.block_view), name="core_serieclassificacao_block"),
+        ]
+        return custom + urls
+
+    def block_view(self, request, object_id):
+        handler = BlockHandler(self)
+        return handler.handle(request, object_id)
+
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+        extra_context = extra_context or {}
+        if object_id:
+            extra_context["block_url"] = reverse(
+                "admin:core_serieclassificacao_block",
+                args=[object_id],
+            )
+        return super().changeform_view(request, object_id, form_url, extra_context)
 
     def orgao_responsavel_both(self, obj):
         """

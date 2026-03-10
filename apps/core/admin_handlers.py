@@ -2,6 +2,7 @@
 Handlers para fluxos de Admin.
 
 BitemporalChangeHandler — coordena fluxo de confirmação bitemporal (sobrescrever / nova vigência).
+BlockHandler — coordena fluxo de confirmação de bloqueio (encerrar vigência com data específica).
 """
 from datetime import date, timedelta
 from typing import Any, Dict, List, Tuple
@@ -853,3 +854,222 @@ class BitemporalChangeHandler:
             f'admin:{self.model._meta.app_label}_{self.model._meta.model_name}_changelist'
         )
         return HttpResponseRedirect(changelist_url)
+
+
+class BlockHandler:
+    """
+    Handler que gerencia o fluxo de confirmação de bloqueio no Admin.
+
+    Bloqueio = encerrar a vigência de um registro ao definir uma data específica
+    para data_vigencia_fim. O registro permanece vigente no período entre a data de início e fim informados,
+    mas não produz efeitos após a data estabelecida.
+    """
+
+    def __init__(self, admin_instance):
+        self.admin = admin_instance
+        self.model = admin_instance.model
+        self.logger = logging.getLogger(__name__)
+
+    def _parse_date_dmy_or_iso(self, value: str):
+        """Parse data em dd/mm/aaaa ou aaaa-mm-dd. Retorna date ou None."""
+        from datetime import datetime
+
+        value = (value or "").strip()
+        if not value:
+            return None
+        for fmt in ("%d/%m/%Y", "%Y-%m-%d"):
+            try:
+                dt = datetime.strptime(value, fmt)
+                return dt.date() if hasattr(dt, "date") else dt
+            except (ValueError, TypeError):
+                continue
+        return None
+
+    def _get_business_id_and_name(self, obj: Any) -> Dict[str, Any]:
+        """Identifica campos de ID e Nome para exibição na tela de confirmação."""
+        id_field = None
+        name_field = None
+        for field in self.model._meta.get_fields():
+            if not hasattr(field, "name"):
+                continue
+            if getattr(field, "many_to_many", False) or getattr(field, "one_to_many", False):
+                continue
+            fname = field.name
+            if fname.endswith("_id") and id_field is None:
+                id_field = field
+            if fname.endswith("_nome") and name_field is None:
+                name_field = field
+
+        def field_info(f):
+            if not f:
+                return None, None
+            label = getattr(f, "verbose_name", f.name).capitalize()
+            value = getattr(obj, f.name, None)
+            return label, value
+
+        id_label, id_value = field_info(id_field)
+        name_label, name_value = field_info(name_field)
+        return {
+            "resource_id_label": id_label,
+            "resource_id_value": id_value,
+            "resource_name_label": name_label,
+            "resource_name_value": name_value,
+        }
+
+    def handle(self, request, object_id):
+        """
+        Processa o fluxo de bloqueio.
+
+        GET: exibe tela de confirmação.
+        POST (SCD-2): altera apenas data_registro_fim do registro existente; cria nova
+        linha com as datas de vigência informadas na tela.
+        """
+        obj = self.admin.get_object(request, object_id)
+        if not obj:
+            from django.http import HttpResponseNotFound
+            return HttpResponseNotFound()
+
+        if not self.admin.has_change_permission(request, obj):
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied()
+
+        change_url = reverse(
+            f'admin:{self.model._meta.app_label}_{self.model._meta.model_name}_change',
+            args=[object_id],
+        )
+
+        if request.method == "POST" and request.POST.get("_save"):
+            # Aplicar bloqueio
+            fim_key = "edit_vig_fim_1"
+            fim_str = (request.POST.get(fim_key) or "").strip()
+            if not fim_str:
+                messages.error(
+                    request,
+                    "Informe a data de fim de vigência para o bloqueio.",
+                )
+                return self._render_block_confirm(request, obj, object_id, change_url)
+
+            new_fim = self._parse_date_dmy_or_iso(fim_str)
+            if not new_fim:
+                messages.error(
+                    request,
+                    "Data inválida. Use o formato dd/mm/aaaa.",
+                )
+                return self._render_block_confirm(request, obj, object_id, change_url)
+
+            from apps.core.bitemporal_registry import get_sentinela_date
+
+            if new_fim == get_sentinela_date():
+                messages.error(
+                    request,
+                    "Para registrar um bloqueio de um registro, a Data de Fim de Vigência deve ser diferente do valor sentinela (31/12/9999).",
+                )
+                return self._render_block_confirm(request, obj, object_id, change_url)
+
+            current_inicio = getattr(obj, "data_vigencia_inicio", None)
+            current_fim = getattr(obj, "data_vigencia_fim", None)
+
+            if current_inicio and new_fim < current_inicio:
+                messages.error(
+                    request,
+                    "Data de Fim de Vigência não pode ser anterior à Data de Início de Vigência.",
+                )
+                return self._render_block_confirm(request, obj, object_id, change_url)
+
+            # Se não houve alteração de vigência (fim informado igual ao atual),
+            # não aplicamos nenhuma operação bitemporal: apenas informamos o
+            # usuário e redirecionamos para a lista.
+            if current_fim and new_fim == current_fim:
+                messages.info(
+                    request,
+                    "Nenhuma alteração de vigência foi identificada. Nenhum registro foi modificado.",
+                )
+                changelist_url = reverse(
+                    f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_changelist"
+                )
+                return HttpResponseRedirect(changelist_url)
+
+            from apps.core.bitemporal_update import apply_bitemporal_update
+
+            # Bloqueio (SCD-2): o registro existente permanece imutável; alteramos apenas
+            # data_registro_fim (encerra em transaction time). A nova linha recebe as datas
+            # de vigência conforme informadas na tela.
+            try:
+                apply_bitemporal_update(
+                    model=self.model,
+                    prev_obj=obj,
+                    new_values={
+                        "data_vigencia_inicio": current_inicio,
+                        "data_vigencia_fim": new_fim,
+                    },
+                    strategy="sobrescrever",
+                )
+            except Exception as exc:
+                self.logger.exception("BlockHandler apply_bitemporal_update failed")
+                messages.error(request, str(exc))
+                return self._render_block_confirm(request, obj, object_id, change_url)
+
+            messages.success(request, "Bloqueio aplicado com sucesso.")
+
+            if hasattr(self.admin, "trigger_export"):
+                self.admin.trigger_export(request, self.model)
+
+            changelist_url = reverse(
+                f'admin:{self.model._meta.app_label}_{self.model._meta.model_name}_changelist'
+            )
+            return HttpResponseRedirect(changelist_url)
+
+        return self._render_block_confirm(request, obj, object_id, change_url)
+
+    def _render_block_confirm(self, request, obj, object_id, change_url):
+        """Renderiza a tela de confirmação de bloqueio."""
+        current_inicio = getattr(obj, "data_vigencia_inicio", None)
+        current_fim = getattr(obj, "data_vigencia_fim", None)
+        today = date.today()
+
+        vigencia_inicio_iso = current_inicio.isoformat() if current_inicio else ""
+        vigencia_fim_iso = current_fim.isoformat() if current_fim else ""
+
+        block_preview = [
+            {
+                "version": "Versão 1",
+                "vig_inicio": current_inicio.isoformat() if current_inicio else None,
+                "vig_fim": current_fim.isoformat() if current_fim else None,
+                "strikethrough": True,
+            },
+            {
+                "version": "Versão 2",
+                "vig_inicio": current_inicio.isoformat() if current_inicio else None,
+                "vig_fim": today.isoformat(),
+                "strikethrough": False,
+            },
+        ]
+
+        import json
+        block_preview_json = json.dumps(block_preview)
+
+        block_url = reverse(
+            f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_block",
+            args=[object_id],
+        )
+
+        context = {
+            **self.admin.admin_site.each_context(request),
+            "title": "",
+            "opts": self.model._meta,
+            "original": obj,
+            "object": obj,
+            "change_url": change_url,
+            "block_url": block_url,
+            "vigencia_inicio_iso": vigencia_inicio_iso,
+            "vigencia_fim_iso": vigencia_fim_iso,
+            "nova_vigencia_fim_iso": today.isoformat(),
+            "block_preview_json": block_preview_json,
+        }
+        context.update(self._get_business_id_and_name(obj))
+
+        return TemplateResponse(
+            request,
+            "admin/core/block_confirm.html",
+            context,
+        )

@@ -238,6 +238,8 @@
       return;
     }
 
+    var isBlockConfirmPage = !!document.getElementById("block-form");
+
     // Para a tela de confirmação, sempre criamos nosso próprio container
     // de atalhos ao lado do input, independente de DateTimeShortcuts.
     function createShortcutsContainer(inp) {
@@ -274,7 +276,7 @@
       // Evitar duplicação: se já existem links (ex.: segunda chamada de enhance), não adicionar de novo.
       if (container.querySelector("a")) return;
 
-      if (name.indexOf("edit_vig_fim_") === 0) {
+      if (name.indexOf("edit_vig_fim_") === 0 && !isBlockConfirmPage) {
         addShortcutLink(container, "Indefinida", function () {
           input.value = formatDateBR(31, 12, 9999);
           if (input.classList) input.classList.remove("invalid");
