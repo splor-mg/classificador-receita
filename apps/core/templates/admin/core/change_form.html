@@ -2,16 +2,65 @@
 {% load i18n admin_urls %}
 
 {% block submit_buttons_bottom %}
-<div class="submit-row">
+<style>
+  .submit-row.submit-row-unified input[type="submit"],
+  .submit-row.submit-row-unified a.closelink,
+  .submit-row.submit-row-unified a.button,
+  .submit-row.submit-row-unified a.deletelink {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    min-height: 28px;
+    padding: 4px 15px;
+    box-sizing: border-box;
+    font-size: 13px;
+    line-height: 1;
+    text-decoration: none !important;
+    margin: 0 5px 0 0;
+  }
+  .submit-row.submit-row-unified a.button:hover,
+  .submit-row.submit-row-unified a.button:focus,
+  .submit-row.submit-row-unified a.button:visited,
+  .submit-row.submit-row-unified a.deletelink:hover,
+  .submit-row.submit-row-unified a.deletelink:focus,
+  .submit-row.submit-row-unified a.deletelink:visited {
+    text-decoration: none !important;
+  }
+  .submit-row.submit-row-unified .submit-row-right a {
+    margin: 0 0 0 5px;
+  }
+  .submit-row.submit-row-unified .submit-row-right a:first-child {
+    margin-left: 0;
+  }
+</style>
+<div class="submit-row submit-row-unified" style="display: flex; justify-content: space-between; align-items: center;">
 {% if not is_popup %}
-  {% if has_change_permission and change or has_add_permission and add or has_editable_inline_admin_formsets %}<input type="submit" value="{% translate 'Save' %}" class="default" name="_save">{% endif %}
-  <a role="button" href="{{ request.get_full_path }}" class="closelink">Limpar</a>
-  {% url opts|admin_urlname:'changelist' as changelist_url %}
-  <a role="button" href="{% add_preserved_filters changelist_url %}" class="closelink" id="core-cancel-link">Cancelar</a>
-  {% if has_delete_permission and change and original %}
-    {% url opts|admin_urlname:'delete' original.pk|admin_urlquote as delete_url %}
-    <a role="button" href="{% add_preserved_filters delete_url %}" class="deletelink">{% translate "Delete" %}</a>
-  {% endif %}
+  <div style="display: flex; align-items: center;">
+    {% if has_change_permission and change or has_add_permission and add or has_editable_inline_admin_formsets %}<input type="submit" value="{% translate 'Save' %}" class="default" name="_save">{% endif %}
+    <a role="button" href="{{ request.get_full_path }}" class="closelink">Limpar</a>
+    {% url opts|admin_urlname:'changelist' as changelist_url %}
+    <a role="button" href="{% add_preserved_filters changelist_url %}" class="closelink" id="core-cancel-link">Cancelar</a>
+  </div>
+  <div class="submit-row-right" style="display: flex; align-items: center; gap: 5px;">
+    <a
+      href="javascript:void(0);"
+      id="core-block-button"
+      class="button"
+      style="background-color: #f0ad4e; border-color: #eea236; color: #fff;"
+      title="Encerra a vigência de um registro ao definir uma data específica para o campo 'Data do Fim da Vigência'. O registro permanece ativo no período definido, mas não produz efeitos após a data estabelecida."
+    >
+      Bloquear
+    </a>
+    <a
+      href="javascript:void(0);"
+      id="core-delete-button"
+      class="deletelink"
+      title="Remove integralmente a vigência de um registro, fazendo com que ele deixe de produzir efeitos em qualquer período e passe a ser tratado como inexistente no histórico de vigências."
+    >
+      Excluir
+    </a>
+  </div>
 {% endif %}
 {% if orig_field_items %}
   {% for k, v in orig_field_items %}
