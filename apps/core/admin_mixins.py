@@ -168,16 +168,17 @@ class BitemporalInactiveReadOnlyMixin:
         self, request, context, add=False, change=False, form_url="", obj=None
     ):
         """
-        Exibe mensagem informativa quando o objeto é inativo.
+        Exibe mensagem informativa quando o objeto é inativo e sinaliza
+        ao template via flag 'is_inactive_record'.
         """
         if obj is not None and self._is_inactive_record(obj):
+            context["is_inactive_record"] = True
             try:
                 messages.info(
                     request,
                     getattr(self, "inactive_message", self.inactive_message),
                 )
             except Exception:
-                # Falha ao usar messages não deve quebrar a tela.
                 pass
         return super().render_change_form(request, context, add, change, form_url, obj)
 

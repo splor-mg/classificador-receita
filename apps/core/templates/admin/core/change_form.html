@@ -36,6 +36,35 @@
 </style>
 <div class="submit-row submit-row-unified" style="display: flex; justify-content: space-between; align-items: center;">
 {% if not is_popup %}
+  {% if is_inactive_record %}
+  <div style="display: flex; align-items: center;">
+    {% url opts|admin_urlname:'changelist' as changelist_url %}
+    <a role="button" href="{% add_preserved_filters changelist_url %}" class="closelink">Voltar</a>
+  </div>
+  <div class="submit-row-right" style="display: flex; align-items: center; gap: 5px;">
+    {% if reactivate_url %}
+    <a
+      href="{{ reactivate_url }}"
+      id="core-reactivate-button"
+      class="button"
+      style="background-color: #f0ad4e; border-color: #eea236; color: #fff;"
+      title="Reativa o registro, restaurando a Data do Fim do Registro para o valor sentinela, fazendo com que ele volte a ser considerado ativo pelo sistema."
+    >
+      Reativar
+    </a>
+    {% else %}
+    <a
+      href="javascript:void(0);"
+      id="core-reactivate-button"
+      class="button"
+      style="background-color: #f0ad4e; border-color: #eea236; color: #fff; pointer-events: none; opacity: 0.6;"
+      title="Reativar não disponível para este modelo."
+    >
+      Reativar
+    </a>
+    {% endif %}
+  </div>
+  {% else %}
   <div style="display: flex; align-items: center;">
     {% if has_change_permission and change or has_add_permission and add or has_editable_inline_admin_formsets %}<input type="submit" value="{% translate 'Save' %}" class="default" name="_save">{% endif %}
     <a role="button" href="{{ request.get_full_path }}" class="closelink">Limpar</a>
@@ -85,6 +114,7 @@
     </a>
     {% endif %}
   </div>
+  {% endif %}
 {% endif %}
 {% if orig_field_items %}
   {% for k, v in orig_field_items %}
