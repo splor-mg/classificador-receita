@@ -861,7 +861,7 @@ class BlockHandler:
     """
     Handler que gerencia o fluxo de confirmação de bloqueio no Admin.
 
-    Bloqueio = encerrar a vigência de um registro ao definir uma data específica
+    Bloqueio = encerrar a vigência do respectivo registro ao definir uma data específica
     para data_vigencia_fim. O registro permanece vigente no período entre a data de início e fim informados,
     mas não produz efeitos após a data estabelecida.
     """
@@ -1080,7 +1080,7 @@ class DeleteHandler:
     """
     Handler que gerencia o fluxo de confirmação de exclusão no Admin.
 
-    Exclusão = remover integralmente a vigência de um registro, inativando-o
+    Exclusão = remover integralmente a vigência do respectivo registro, inativando-o
     via data_registro_fim (transaction time). O registro deixa de produzir
     efeitos em qualquer período e passa a ser tratado como inexistente no
     histórico de vigências. Não há exclusão física, apenas lógica.
