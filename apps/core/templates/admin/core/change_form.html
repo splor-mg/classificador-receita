@@ -71,6 +71,7 @@
     {% url opts|admin_urlname:'changelist' as changelist_url %}
     <a role="button" href="{% add_preserved_filters changelist_url %}" class="closelink" id="core-cancel-link">Cancelar</a>
   </div>
+  {% if change %}
   <div class="submit-row-right" style="display: flex; align-items: center; gap: 5px;">
     {% if block_url %}
     <a
@@ -114,6 +115,7 @@
     </a>
     {% endif %}
   </div>
+  {% endif %}
   {% endif %}
 {% endif %}
 {% if orig_field_items %}

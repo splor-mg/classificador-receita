@@ -148,9 +148,13 @@
     } catch (e) {}
   }
 
+  function isAddView() {
+    return /\/add\/?$/.test(window.location.pathname);
+  }
+
   function enhanceChangeFormVigencia() {
     var body = document.body || document.getElementsByTagName("body")[0];
-    if (!body || !body.classList.contains("change-form")) {
+    if (!body || !body.classList.contains("change-form") || isAddView()) {
       return;
     }
 
@@ -482,37 +486,95 @@
     document.body.appendChild(overlay);
   }
 
-  function init() {
-    var body = document.body || document.getElementsByTagName("body")[0];
-    var isAddForm = body && body.classList.contains("add-form");
+  function enhanceAddFormVigencia() {
+    if (!isAddView()) return;
 
-    // Mantém atalhos de data apenas em formulários de adição.
-    if (isAddForm) {
-      var inputs = document.querySelectorAll("input.vDateField");
-      try {
-        console.log(
-          "[bitemporal-date-shortcuts] iniciando. vDateField encontrados:",
-          inputs.length
-        );
-      } catch (e) {}
-      inputs.forEach(function (input) {
-        var name = input.name || "";
-        try {
-          console.log(
-            "[bitemporal-date-shortcuts] analisando input:",
-            "name=" + name,
-            "id=" + input.id
-          );
-        } catch (e) {}
-        if (name.endsWith("data_vigencia_inicio")) {
-          // Apenas "Ano Corrente" para início da vigência.
-          addCurrentYearShortcut(input, "inicio");
-        } else if (name.endsWith("data_vigencia_fim")) {
-          // Para fim da vigência: "Indefinida" + "Ano Corrente".
-          addCurrentYearShortcut(input, "fim");
-          addIndefinidaShortcut(input);
+    var inputs = document.querySelectorAll("input.vDateField");
+    inputs.forEach(function (input) {
+      var name = input.name || "";
+      if (
+        !name.endsWith("data_vigencia_inicio") &&
+        !name.endsWith("data_vigencia_fim")
+      )
+        return;
+
+      var djangoShortcuts = findShortcutsSpan(input);
+      if (djangoShortcuts) djangoShortcuts.style.display = "none";
+
+      var parent = input.parentElement;
+      if (!parent) return;
+      if (parent.querySelector(".bitemporal-add-shortcuts")) return;
+
+      var container = document.createElement("span");
+      container.className = "datetimeshortcuts bitemporal-add-shortcuts";
+      container.style.marginLeft = "0.5rem";
+
+      function appendLink(label, handler) {
+        if (container.childNodes.length) {
+          container.appendChild(document.createTextNode(" | "));
         }
+        var a = document.createElement("a");
+        a.href = "#";
+        a.textContent = label;
+        a.style.textDecoration = "none";
+        a.style.borderBottom = "none";
+        a.style.cursor = "pointer";
+        a.addEventListener("click", function (evt) {
+          evt.preventDefault();
+          handler();
+        });
+        container.appendChild(a);
+      }
+
+      if (name.endsWith("data_vigencia_fim")) {
+        appendLink("Indefinida", function () {
+          input.value = formatDateBR(31, 12, 9999);
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+      }
+
+      appendLink("Ano Corrente", function () {
+        var y = new Date().getFullYear();
+        input.value = name.endsWith("data_vigencia_inicio")
+          ? formatDateBR(1, 1, y)
+          : formatDateBR(31, 12, y);
+        input.dispatchEvent(new Event("change", { bubbles: true }));
       });
+
+      appendLink("Hoje", function () {
+        var d = new Date();
+        input.value = formatDateBR(d.getDate(), d.getMonth() + 1, d.getFullYear());
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+
+      if (container.childNodes.length) {
+        container.appendChild(document.createTextNode(" | "));
+      }
+      var calLink = document.createElement("a");
+      calLink.href = "#";
+      calLink.title = "Abrir calendário";
+      calLink.style.textDecoration = "none";
+      calLink.style.borderBottom = "none";
+      calLink.style.cursor = "pointer";
+      calLink.style.display = "inline-block";
+      calLink.style.verticalAlign = "middle";
+      var calIcon = document.createElement("span");
+      calIcon.className = "date-icon";
+      calIcon.setAttribute("aria-label", "Calendário");
+      calLink.appendChild(calIcon);
+      calLink.addEventListener("click", function (evt) {
+        evt.preventDefault();
+        openConfirmCalendarPopup(input);
+      });
+      container.appendChild(calLink);
+
+      input.insertAdjacentElement("afterend", container);
+    });
+  }
+
+  function init() {
+    if (isAddView()) {
+      enhanceAddFormVigencia();
     }
 
     // Em formulários de alteração, tornamos vigência somente leitura

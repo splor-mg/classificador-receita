@@ -13,6 +13,7 @@ from pathlib import Path
 
 from django.contrib import admin
 from django.contrib import messages
+from django.db.models import Max
 from django.http import HttpResponseRedirect
 from django.urls import path, reverse
 from django.utils import timezone
@@ -20,7 +21,7 @@ from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
 
 from apps.core.exporter import export_resource
 from apps.core.bitemporal_registry import get_resource_for_model
-from apps.core.models import TRANSACTION_TIME_SENTINEL
+from apps.core.models import TRANSACTION_TIME_SENTINEL, VALID_TIME_SENTINEL
 
 #---------------------------------------------------------------------------------------------------
 # Filtro para registros ativos (correntes, históricos e futuros) e inativos em termos de registro/vigência
@@ -136,6 +137,53 @@ class BitemporalInactiveReadOnlyMixin:
     inactive_message = (
         "Registro inativo — apenas consulta histórica; edição desabilitada."
     )
+
+    _REGISTRO_FIELDS = frozenset({
+        "data_registro_inicio", "data_registro_fim",
+        "data_registro_inicio_fmt", "data_registro_fim_fmt",
+    })
+
+    def get_changeform_initial_data(self, request):
+        """Pre-preenche campos no formulário de adição (add view)."""
+        initial = super().get_changeform_initial_data(request)
+
+        for f in self.model._meta.concrete_fields:
+            if f.name.endswith("_ref"):
+                max_val = self.model.objects.aggregate(Max(f.name))[f"{f.name}__max"]
+                initial[f.name] = (max_val or 0) + 1
+                break
+
+        initial.setdefault("data_vigencia_inicio", date(date.today().year, 1, 1))
+        initial.setdefault("data_vigencia_fim", VALID_TIME_SENTINEL)
+
+        return initial
+
+    def get_fields(self, request, obj=None):
+        fields = super().get_fields(request, obj)
+        if obj is None:
+            fields = [f for f in fields if f not in self._REGISTRO_FIELDS]
+        return fields
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = list(super().get_readonly_fields(request, obj))
+        if obj is None:
+            ref_names = {
+                f.name
+                for f in self.model._meta.concrete_fields
+                if f.name.endswith("_ref")
+            }
+            exclude = self._REGISTRO_FIELDS | ref_names
+            fields = [f for f in fields if f not in exclude]
+        return fields
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        formfield = super().formfield_for_dbfield(db_field, request, **kwargs)
+        if db_field.name.endswith("_ref") and formfield is not None:
+            formfield.widget.attrs["readonly"] = True
+            formfield.widget.attrs["style"] = (
+                "background-color:#f4f4f4; color:#555;"
+            )
+        return formfield
 
     def _is_inactive_record(self, obj) -> bool:
         """

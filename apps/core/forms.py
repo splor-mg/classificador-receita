@@ -9,7 +9,7 @@ class SerieClassificacaoForm(forms.ModelForm):
     """Formulário do Admin para SerieClassificacao com widgets ajustados."""
 
     orgao_responsavel = forms.ChoiceField(
-        choices=ORGAOS_ENTIDADES_GROUPED_CHOICES,
+        choices=[("", "---------")] + ORGAOS_ENTIDADES_GROUPED_CHOICES,
         label="Órgão Responsável",
         help_text=(
             "Órgão ou entidade responsável pela manutenção da série de "
