@@ -96,13 +96,14 @@ def apply_bitemporal_update(model, prev_obj, new_values: Dict[str, Any], strateg
 
         new_registro_inicio = now
 
-        # Descobrir a chave de entidade de negócio (ex.: serie_id) a partir do registry.
+        # Descobrir a chave surrogate da entidade (*_ref) para validação de
+        # sobreposição e o campo semântico (*_id) para mensagens de erro.
         entity_filter: Dict[str, Any] = {}
-        entity_label_parts = []
         try:
             resource_name = get_resource_for_model(Model)
         except Exception:
             resource_name = None
+        res: Dict[str, Any] = {}
         if resource_name:
             try:
                 res = get_resource(resource_name)
@@ -114,8 +115,13 @@ def apply_bitemporal_update(model, prev_obj, new_values: Dict[str, Any], strateg
                     continue
                 val = getattr(prev, lookup, None)
                 entity_filter[lookup] = val
-                entity_label_parts.append(f"{lookup}={val}")
-        entity_descr = ", ".join(entity_label_parts) or f"pk={prev.pk}"
+
+        semantic_field = res.get("semantic_id_field")
+        if semantic_field:
+            semantic_val = getattr(prev, semantic_field, None)
+            entity_descr = f"{semantic_field}={semantic_val}" if semantic_val else f"pk={prev.pk}"
+        else:
+            entity_descr = f"pk={prev.pk}"
 
         # Calcular os intervalos de vigência que ficarão ativos após a atualização.
         new_intervals = []

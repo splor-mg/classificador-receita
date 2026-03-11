@@ -5,14 +5,20 @@ RESOURCES contém apenas recursos bitemporais (SCD-2, append-only), aos quais se
 aplicam a ADR-004. O recurso base_legal_tecnica é modelo temporal
 simples (SCD-1, alteração in-place) e não entra neste registry.
 
-Cada recurso define: model, chave de entidade, campos (cadastro/edição/export),
+Cada recurso define: model, chave de entidade (surrogate), campos (cadastro/edição/export),
 resolução de FKs, colunas de export e list_display. Usado pelos comandos genéricos
 cadastrar_bitemporal, editar_bitemporal e exportar_bitemporal.
 
+entity_key usa a chave surrogate (*_ref) para identificação inequívoca da
+entidade-negócio em validações de sobreposição de vigência. O campo
+semantic_id_field indica qual campo semântico (*_id) usar para exibição
+em mensagens de erro.
+
 Para incluir um novo recurso bitemporal: adicione um entry em RESOURCES com
-model_name, entity_key (lista de {arg, lookup}), fields (name, type, required,
-default; type fk aceita fk_resource, fk_semantic_attr, fk_current), export_columns,
-list_display, select_related e order_by. FK para base_legal_tecnica é tratada em
+model_name, entity_key (lista de {arg, lookup} usando *_ref),
+semantic_id_field, fields (name, type, required, default; type fk aceita
+fk_resource, fk_semantic_attr, fk_current), export_columns, list_display,
+select_related e order_by. FK para base_legal_tecnica é tratada em
 resolve_fk() (modelo SCD-1).
 """
 from datetime import date, datetime
@@ -45,8 +51,9 @@ RESOURCES: Dict[str, Dict[str, Any]] = {
     "serie_classificacao": {
         "model_name": "SerieClassificacao",
         "entity_key": [
-            {"arg": "serie_id", "lookup": "serie_id"},
+            {"arg": "serie_ref", "lookup": "serie_ref"},
         ],
+        "semantic_id_field": "serie_id",
         "fields": [
             {"name": "serie_id", "type": "string", "required": True},
             {"name": "serie_ref", "type": "integer", "required": True},
@@ -69,8 +76,9 @@ RESOURCES: Dict[str, Dict[str, Any]] = {
     "classificacao": {
         "model_name": "Classificacao",
         "entity_key": [
-            {"arg": "classificacao_id", "lookup": "classificacao_id"},
+            {"arg": "classificacao_ref", "lookup": "classificacao_ref"},
         ],
+        "semantic_id_field": "classificacao_id",
         "fields": [
             {"name": "classificacao_id", "type": "string", "required": True},
             {"name": "classificacao_ref", "type": "integer", "required": True},
@@ -94,9 +102,9 @@ RESOURCES: Dict[str, Dict[str, Any]] = {
     "nivel_hierarquico": {
         "model_name": "NivelHierarquico",
         "entity_key": [
-            {"arg": "nivel_id", "lookup": "nivel_id"},
-            {"arg": "classificacao_id", "lookup": "classificacao_id__classificacao_id"},
+            {"arg": "nivel_ref", "lookup": "nivel_ref"},
         ],
+        "semantic_id_field": "nivel_id",
         "fields": [
             {"name": "nivel_id", "type": "string", "required": True},
             {"name": "nivel_ref", "type": "integer", "required": True},
@@ -119,7 +127,8 @@ RESOURCES: Dict[str, Dict[str, Any]] = {
     },
     "versao_classificacao": {
         "model_name": "VersaoClassificacao",
-        "entity_key": [{"arg": "versao_id", "lookup": "versao_id"}],
+        "entity_key": [{"arg": "versao_ref", "lookup": "versao_ref"}],
+        "semantic_id_field": "versao_id",
         "fields": [
             {"name": "versao_id", "type": "string", "required": True},
             {"name": "versao_ref", "type": "integer", "required": False, "default": None},
@@ -140,6 +149,7 @@ RESOURCES: Dict[str, Dict[str, Any]] = {
     "variante_classificacao": {
         "model_name": "VarianteClassificacao",
         "entity_key": [{"arg": "variante_id", "lookup": "variante_id"}],
+        "semantic_id_field": "variante_id",
         "fields": [
             {"name": "variante_id", "type": "string", "required": True},
             {"name": "classificacao", "type": "fk", "required": True, "fk_resource": "classificacao", "fk_semantic_attr": "classificacao_id", "fk_current": True},
@@ -161,9 +171,9 @@ RESOURCES: Dict[str, Dict[str, Any]] = {
     "item_classificacao": {
         "model_name": "ItemClassificacao",
         "entity_key": [
-            {"arg": "item_id", "lookup": "item_id"},
-            {"arg": "classificacao_id", "lookup": "classificacao_id__classificacao_id"},
+            {"arg": "item_ref", "lookup": "item_ref"},
         ],
+        "semantic_id_field": "item_id",
         "fields": [
             {"name": "item_id", "type": "string", "required": True},
             {"name": "item_ref", "type": "integer", "required": False, "default": None},
@@ -188,8 +198,9 @@ RESOURCES: Dict[str, Dict[str, Any]] = {
     "base_legal_tecnica": {
         "model_name": "BaseLegalTecnica",
         "entity_key": [
-            {"arg": "base_legal_tecnica_id", "lookup": "base_legal_tecnica_id"},
+            {"arg": "base_legal_tecnica_ref", "lookup": "base_legal_tecnica_ref"},
         ],
+        "semantic_id_field": "base_legal_tecnica_id",
         "fields": [
             {"name": "base_legal_tecnica_id", "type": "string", "required": True},
             {"name": "base_legal_tecnica_ref", "type": "integer", "required": True},

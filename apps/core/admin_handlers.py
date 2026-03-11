@@ -736,12 +736,11 @@ class BitemporalChangeHandler:
                 overlap_end = getattr(exc, "overlap_end", None)
                 entity_descr = getattr(exc, "entity_descr", "")
                 conflicting_pk = getattr(exc, "conflicting_pk", None)
-                series_id = None
+                semantic_label = None
                 if entity_descr:
-                    # entity_descr é algo como "serie_id=SERIE-RECEITA-UNIAO"
-                    parts = entity_descr.split("=")
-                    if len(parts) == 2 and parts[0].strip() == "serie_id":
-                        series_id = parts[1].strip()
+                    parts = entity_descr.split("=", 1)
+                    if len(parts) == 2:
+                        semantic_label = parts[1].strip()
 
                 if conflicting_pk is not None:
                     conflict_url = reverse(
@@ -751,7 +750,7 @@ class BitemporalChangeHandler:
                 else:
                     conflict_url = "#"
 
-                series_label = series_id or entity_descr or getattr(obj, "pk", "")
+                series_label = semantic_label or entity_descr or getattr(obj, "pk", "")
                 period_label = f"{overlap_start} a {overlap_end}"
 
                 msg = format_html(
@@ -1455,8 +1454,10 @@ class ReactivateHandler:
             return self._render_reactivate_confirm(request, obj, object_id, change_url)
 
         # Verificar conflito de vigência com registros ativos da mesma entidade.
+        # Usa entity_key (chave surrogate *_ref) para o filtro e
+        # semantic_id_field (chave semântica *_id) para mensagens de erro.
         entity_filter: Dict[str, Any] = {}
-        entity_label_parts: List[str] = []
+        res: Dict[str, Any] = {}
         try:
             resource_name = get_resource_for_model(self.model)
         except Exception:
@@ -1472,7 +1473,8 @@ class ReactivateHandler:
                     continue
                 val = getattr(obj, lookup, None)
                 entity_filter[lookup] = val
-                entity_label_parts.append(f"{lookup}={val}")
+
+        semantic_field = res.get("semantic_id_field")
 
         if entity_filter and vig_inicio and vig_fim:
             active_qs = (
@@ -1489,25 +1491,19 @@ class ReactivateHandler:
                         f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_change",
                         args=[other.pk],
                     )
-                    entity_descr = ", ".join(entity_label_parts) or f"pk={obj.pk}"
-                    series_id = None
-                    if entity_descr:
-                        parts = entity_descr.split("=")
-                        if len(parts) == 2:
-                            series_id = parts[1].strip()
-                    series_label = series_id or entity_descr or str(obj.pk)
+                    if semantic_field:
+                        series_label = getattr(other, semantic_field, None) or str(obj.pk)
+                    else:
+                        series_label = str(obj.pk)
                     period_label = f"{e_inicio} a {e_fim}"
                     messages.error(
                         request,
                         format_html(
-                            'Conflito de vigência com '
-                            '<a href="{}" target="_blank" rel="noopener noreferrer">registro ativo (PK {})</a> '
-                            'para <strong>{}</strong> no período de vigência de <strong>{}</strong>. '
+                            'Conflito de vigência: já existe registro ativo para '
+                            '<strong>{}</strong> com período de vigência de <strong>{}</strong>. '
                             'Esse período é sobreposto pela vigência informada para a nova reativação — '
                             '<a href="{}" target="_blank" rel="noopener noreferrer">'
                             'clique aqui para editar a vigência desse outro registro</a>.',
-                            conflict_url,
-                            other.pk,
                             series_label,
                             period_label,
                             conflict_url,
