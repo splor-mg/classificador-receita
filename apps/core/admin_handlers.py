@@ -425,6 +425,12 @@ class BitemporalChangeHandler:
         if not form.is_valid():
             return None
 
+        # Se usuário clicou em Voltar na tela de confirmação, volta para edição.
+        # Precisa vir antes de has_changed() porque o usuário pode ter desfeito
+        # manualmente as alterações na tela de confirmação.
+        if request.POST.get("_cancel_confirm"):
+            return self._render_change_form_with_data(request, obj, form, object_id)
+
         edit_vigencia_flag = bool(request.POST.get("_edit_vigencia"))
 
         # Em fluxos normais, sem alterações não há o que confirmar.
@@ -433,10 +439,6 @@ class BitemporalChangeHandler:
         # ajustadas na próxima etapa.
         if not form.has_changed() and not edit_vigencia_flag:
             return None
-
-        # Se usuário clicou em Cancel na tela de confirmação, volta para edição
-        if request.POST.get("_cancel_confirm"):
-            return self._render_change_form_with_data(request, obj, form, object_id)
 
         strategy = request.POST.get("edit_strategy")
 
