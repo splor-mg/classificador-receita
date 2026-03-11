@@ -1,9 +1,9 @@
-- foi possível salvar classificação sem alteração no órgão responsável
-- se a classificação ativa que estiver sendo editada, apresentar data de início de vigência maior que a data de fim de vigência da versão atual, 
-- verificar não travamento da opção de editar registro anterior e criar nova vigência que sobreponha - conflito vigência concorrente
-- na página de edição, implementar protocolo de exclusão e bloqueio
+# lista-toDO
+- criação de novo registro
+  - definir padrão de conversão/registro de identificador
+  - verificar validação de data de vigência fim menor que início
+  - impedir criação de novo identificador com nome idêntico a um identificador ainda ativo
 - remover protocolo de ação de exclusão física que existe na tela inicial e substituir por exportar
-- revisar parâmetro de criação de nova classificação
 - verificar comportamento para reativar receita já bloqueada/inativada
 
 - reorganizar issues - modelagem dados antigos etc, fechar issues antigos
@@ -21,6 +21,13 @@
 
 CRIAR ORIENTAÇÕES PARA INSTALAÇÃO DO POETRY E DO PYTHON E MELHORAR PARA WSL OU WINDOWS
 
+-------- feito
+
+x na página de edição, implementar protocolo de exclusão e bloqueio
+x verificar edição de norma cujo início de vigência seja o ano corrente -> sem prejuízo de registro
+
+
+-------------------------------------------------------------------------------------------------------
 
 --- VERSIONAMENTO
 - versões alterações que fazem versionamente e por quê
