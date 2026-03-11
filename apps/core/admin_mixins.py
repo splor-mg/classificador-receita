@@ -3,6 +3,7 @@ Mixins reutilizáveis para Django Admin.
 
 AutoExportAdminMixin — dispara export do seed após save.
 BitemporalAdminMixin — fluxo de confirmação bitemporal (sobrescrever / nova vigência).
+BitemporalInactiveReadOnlyMixin — somente leitura para registros inativos + rota de reativação.
 BitemporalDateFormatMixin — formatação de datas bitemporais (dd/mm/yyyy).
 CoreChangeSaveFormSubmitMixin — tela de edição com apenas Salvar e Cancelar.
 """
@@ -13,7 +14,7 @@ from pathlib import Path
 from django.contrib import admin
 from django.contrib import messages
 from django.http import HttpResponseRedirect
-from django.urls import reverse
+from django.urls import path, reverse
 from django.utils import timezone
 from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
 
@@ -152,6 +153,23 @@ class BitemporalInactiveReadOnlyMixin:
         ).exists()
         return not is_active
 
+    def get_urls(self):
+        urls = super().get_urls()
+        custom = [
+            path(
+                "<path:object_id>/reactivate/",
+                self.admin_site.admin_view(self.reactivate_view),
+                name=f"{self.model._meta.app_label}_{self.model._meta.model_name}_reactivate",
+            ),
+        ]
+        return custom + urls
+
+    def reactivate_view(self, request, object_id):
+        from apps.core.admin_handlers import ReactivateHandler
+
+        handler = ReactivateHandler(self)
+        return handler.handle(request, object_id)
+
     def has_change_permission(self, request, obj=None):
         """
         Remove permissão de alteração apenas para objetos inativos,
@@ -169,10 +187,14 @@ class BitemporalInactiveReadOnlyMixin:
     ):
         """
         Exibe mensagem informativa quando o objeto é inativo e sinaliza
-        ao template via flag 'is_inactive_record'.
+        ao template via flag 'is_inactive_record' + URL de reativação.
         """
         if obj is not None and self._is_inactive_record(obj):
             context["is_inactive_record"] = True
+            context["reactivate_url"] = reverse(
+                f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_reactivate",
+                args=[obj.pk],
+            )
             try:
                 messages.info(
                     request,

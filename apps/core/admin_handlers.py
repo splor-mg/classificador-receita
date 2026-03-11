@@ -4,6 +4,7 @@ Handlers para fluxos de Admin.
 BitemporalChangeHandler — coordena fluxo de confirmação bitemporal (sobrescrever / nova vigência).
 BlockHandler — coordena fluxo de confirmação de bloqueio (encerrar vigência com data específica).
 DeleteHandler — coordena fluxo de confirmação de exclusão (inativar registro via data_registro_fim).
+ReactivateHandler — coordena fluxo de confirmação de reativação (criar nova linha ativa a partir de registro inativo).
 """
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Tuple
@@ -14,6 +15,9 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.contrib import messages
 from django.utils.html import format_html
+
+from django.db import models as django_models
+from django.utils import timezone
 
 from apps.core.bitemporal_registry import get_sentinela_date
 from apps.core.domain_choices import ORGAOS_ENTIDADES_GROUPED_CHOICES
@@ -1163,8 +1167,7 @@ class DeleteHandler:
                 return HttpResponseRedirect(changelist_url)
 
             try:
-                now = datetime.now()
-                obj.data_registro_fim = now
+                obj.data_registro_fim = timezone.now()
                 obj.save(update_fields=["data_registro_fim"])
             except Exception as exc:
                 self.logger.exception("DeleteHandler save failed")
@@ -1219,5 +1222,349 @@ class DeleteHandler:
         return TemplateResponse(
             request,
             "admin/core/delete_confirm.html",
+            context,
+        )
+
+
+class ReactivateHandler:
+    """
+    Handler que gerencia o fluxo de confirmação de reativação no Admin.
+
+    Reativação = criar uma nova linha ativa (data_registro_fim = sentinela) a
+    partir dos dados de um registro inativo, permitindo que o usuário edite
+    atributos e vigência antes de confirmar. O registro inativo original
+    permanece inalterado (append-only / SCD-2).
+    """
+
+    SYSTEM_FIELDS = {"data_registro_inicio", "data_registro_fim"}
+    VIGENCIA_FIELDS = {"data_vigencia_inicio", "data_vigencia_fim"}
+
+    def __init__(self, admin_instance):
+        self.admin = admin_instance
+        self.model = admin_instance.model
+        self.logger = logging.getLogger(__name__)
+
+    def _get_business_id_and_name(self, obj: Any) -> Dict[str, Any]:
+        id_field = None
+        name_field = None
+        for field in self.model._meta.get_fields():
+            if not hasattr(field, "name"):
+                continue
+            if getattr(field, "many_to_many", False) or getattr(field, "one_to_many", False):
+                continue
+            fname = field.name
+            if fname.endswith("_id") and id_field is None:
+                id_field = field
+            if fname.endswith("_nome") and name_field is None:
+                name_field = field
+
+        def field_info(f):
+            if not f:
+                return None, None
+            label = getattr(f, "verbose_name", f.name).capitalize()
+            value = getattr(obj, f.name, None)
+            return label, value
+
+        id_label, id_value = field_info(id_field)
+        name_label, name_value = field_info(name_field)
+        return {
+            "resource_id_label": id_label,
+            "resource_id_value": id_value,
+            "resource_name_label": name_label,
+            "resource_name_value": name_value,
+        }
+
+    def _get_form_choices(self, obj) -> Dict[str, list]:
+        """
+        Obtém as choices do formulário do admin (que pode ter grouped choices),
+        retornando um mapa {field_name: choices_list}.
+        """
+        form_choices: Dict[str, list] = {}
+        try:
+            form_class = self.admin.get_form(None, obj)
+            for fname, form_field in form_class.base_fields.items():
+                if hasattr(form_field, "choices") and form_field.choices:
+                    form_choices[fname] = list(form_field.choices)
+        except Exception:
+            pass
+        return form_choices
+
+    @staticmethod
+    def _is_grouped_choices(choices: list) -> bool:
+        """Verifica se a lista de choices usa o formato agrupado do Django."""
+        if not choices:
+            return False
+        for _label, value in choices:
+            if isinstance(value, (list, tuple)):
+                return True
+        return False
+
+    def _build_field_metadata(self, obj) -> List[Dict[str, Any]]:
+        """Constrói metadados dos campos de negócio para renderização no template."""
+        fields = []
+        pk_name = self.model._meta.pk.name
+        form_choices = self._get_form_choices(obj)
+
+        for f in self.model._meta.concrete_fields:
+            name = f.name
+            if name == pk_name:
+                continue
+            if name in self.SYSTEM_FIELDS or name in self.VIGENCIA_FIELDS:
+                continue
+            if name.endswith("_ref"):
+                continue
+
+            label = getattr(f, "verbose_name", name).capitalize()
+            is_fk = f.is_relation
+
+            if is_fk:
+                raw_value = getattr(obj, f.attname)
+                related_obj = getattr(obj, f.name, None)
+                display_value = str(related_obj) if related_obj else ""
+                field_type = "fk"
+                choices = None
+                is_grouped = False
+            elif name in form_choices:
+                raw_value = getattr(obj, name)
+                display_value = raw_value
+                choices = form_choices[name]
+                is_grouped = self._is_grouped_choices(choices)
+                field_type = "select_grouped" if is_grouped else "select"
+            elif hasattr(f, "choices") and f.choices:
+                raw_value = getattr(obj, name)
+                display_value = raw_value
+                field_type = "select"
+                choices = list(f.choices)
+                is_grouped = False
+            elif isinstance(f, django_models.TextField):
+                raw_value = getattr(obj, name)
+                display_value = raw_value
+                field_type = "textarea"
+                choices = None
+                is_grouped = False
+            else:
+                raw_value = getattr(obj, name)
+                display_value = raw_value
+                field_type = "text"
+                choices = None
+                is_grouped = False
+
+            fields.append({
+                "name": name,
+                "attname": f.attname if is_fk else name,
+                "label": label,
+                "value": raw_value,
+                "display_value": display_value,
+                "field_type": field_type,
+                "choices": choices,
+                "is_fk": is_fk,
+                "is_grouped": is_grouped,
+            })
+
+        return fields
+
+    def handle(self, request, object_id):
+        """
+        Processa o fluxo de reativação.
+
+        GET: exibe tela de confirmação com campos editáveis.
+        POST: valida, verifica conflitos de vigência e cria nova linha ativa.
+        """
+        obj = self.admin.get_object(request, object_id)
+        if not obj:
+            from django.http import HttpResponseNotFound
+            return HttpResponseNotFound()
+
+        change_url = reverse(
+            f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_change",
+            args=[object_id],
+        )
+
+        if request.method == "POST" and request.POST.get("_save"):
+            return self._process_reactivation(request, obj, object_id, change_url)
+
+        return self._render_reactivate_confirm(request, obj, object_id, change_url)
+
+    def _process_reactivation(self, request, obj, object_id, change_url):
+        from apps.core.bitemporal_registry import (
+            get_sentinela_datetime,
+            get_resource_for_model,
+            get_resource,
+        )
+        from django.db import transaction as db_transaction
+
+        sentinela = get_sentinela_datetime()
+        now = timezone.now()
+        pk_name = self.model._meta.pk.name
+
+        # Copiar todos os campos do registro inativo como base.
+        base_data: Dict[str, Any] = {}
+        for f in self.model._meta.concrete_fields:
+            if f.name == pk_name:
+                continue
+            if f.is_relation:
+                base_data[f.attname] = getattr(obj, f.attname)
+            else:
+                base_data[f.name] = getattr(obj, f.name)
+
+        # Aplicar edições do usuário (campos de negócio).
+        for f in self.model._meta.concrete_fields:
+            name = f.name
+            if name == pk_name or name in self.SYSTEM_FIELDS:
+                continue
+            edit_key = f"edit_field_{name}"
+            if edit_key not in request.POST:
+                continue
+            raw_val = request.POST.get(edit_key)
+            try:
+                val = f.to_python(raw_val) if hasattr(f, "to_python") else raw_val
+            except Exception:
+                val = raw_val
+            if f.is_relation:
+                base_data[f.attname] = val
+            else:
+                base_data[name] = val
+
+        # Aplicar datas de vigência editadas.
+        vig_inicio_str = (request.POST.get("edit_vig_inicio_1") or "").strip()
+        vig_fim_str = (request.POST.get("edit_vig_fim_1") or "").strip()
+
+        if vig_inicio_str:
+            try:
+                base_data["data_vigencia_inicio"] = datetime.strptime(vig_inicio_str, "%Y-%m-%d").date()
+            except ValueError:
+                pass
+        if vig_fim_str:
+            try:
+                base_data["data_vigencia_fim"] = datetime.strptime(vig_fim_str, "%Y-%m-%d").date()
+            except ValueError:
+                pass
+
+        # Definir transaction time da nova linha.
+        base_data["data_registro_inicio"] = now
+        base_data["data_registro_fim"] = sentinela
+
+        vig_inicio = base_data.get("data_vigencia_inicio")
+        vig_fim = base_data.get("data_vigencia_fim")
+
+        if vig_inicio and vig_fim and vig_fim < vig_inicio:
+            messages.error(
+                request,
+                "Data de Fim de Vigência não pode ser anterior à Data de Início de Vigência.",
+            )
+            return self._render_reactivate_confirm(request, obj, object_id, change_url)
+
+        # Verificar conflito de vigência com registros ativos da mesma entidade.
+        entity_filter: Dict[str, Any] = {}
+        entity_label_parts: List[str] = []
+        try:
+            resource_name = get_resource_for_model(self.model)
+        except Exception:
+            resource_name = None
+        if resource_name:
+            try:
+                res = get_resource(resource_name)
+            except Exception:
+                res = {}
+            for ek in res.get("entity_key", []):
+                lookup = ek.get("lookup")
+                if not lookup:
+                    continue
+                val = getattr(obj, lookup, None)
+                entity_filter[lookup] = val
+                entity_label_parts.append(f"{lookup}={val}")
+
+        if entity_filter and vig_inicio and vig_fim:
+            active_qs = (
+                self.model.objects
+                .filter(**entity_filter, data_registro_fim=sentinela)
+            )
+            for other in active_qs:
+                e_inicio = getattr(other, "data_vigencia_inicio", None)
+                e_fim = getattr(other, "data_vigencia_fim", None)
+                if e_inicio is None or e_fim is None:
+                    continue
+                if vig_inicio <= e_fim and e_inicio <= vig_fim:
+                    conflict_url = reverse(
+                        f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_change",
+                        args=[other.pk],
+                    )
+                    entity_descr = ", ".join(entity_label_parts) or f"pk={obj.pk}"
+                    series_id = None
+                    if entity_descr:
+                        parts = entity_descr.split("=")
+                        if len(parts) == 2:
+                            series_id = parts[1].strip()
+                    series_label = series_id or entity_descr or str(obj.pk)
+                    period_label = f"{e_inicio} a {e_fim}"
+                    messages.error(
+                        request,
+                        format_html(
+                            'Conflito de vigência com '
+                            '<a href="{}" target="_blank" rel="noopener noreferrer">registro ativo (PK {})</a> '
+                            'para <strong>{}</strong> no período de vigência de <strong>{}</strong>. '
+                            'Esse período é sobreposto pela vigência informada para a nova reativação — '
+                            '<a href="{}" target="_blank" rel="noopener noreferrer">'
+                            'clique aqui para editar a vigência desse outro registro</a>.',
+                            conflict_url,
+                            other.pk,
+                            series_label,
+                            period_label,
+                            conflict_url,
+                        ),
+                    )
+                    return self._render_reactivate_confirm(request, obj, object_id, change_url)
+
+        try:
+            with db_transaction.atomic():
+                self.model.objects.create(**base_data)
+        except Exception as exc:
+            self.logger.exception("ReactivateHandler create failed")
+            messages.error(request, str(exc))
+            return self._render_reactivate_confirm(request, obj, object_id, change_url)
+
+        messages.success(request, "Reativação aplicada com sucesso.")
+
+        if hasattr(self.admin, "trigger_export"):
+            self.admin.trigger_export(request, self.model)
+
+        changelist_url = reverse(
+            f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_changelist"
+        )
+        return HttpResponseRedirect(changelist_url)
+
+    def _render_reactivate_confirm(self, request, obj, object_id, change_url):
+        business_fields = self._build_field_metadata(obj)
+
+        current_inicio = getattr(obj, "data_vigencia_inicio", None)
+        current_fim = getattr(obj, "data_vigencia_fim", None)
+
+        vigencia_inicio_iso = current_inicio.isoformat() if current_inicio else ""
+        vigencia_fim_iso = current_fim.isoformat() if current_fim else ""
+
+        import json
+        reactivate_preview = [{
+            "vig_inicio": vigencia_inicio_iso or None,
+            "vig_fim": vigencia_fim_iso or None,
+        }]
+        reactivate_preview_json = json.dumps(reactivate_preview)
+
+        context = {
+            **self.admin.admin_site.each_context(request),
+            "title": "",
+            "opts": self.model._meta,
+            "original": obj,
+            "object": obj,
+            "change_url": change_url,
+            "business_fields": business_fields,
+            "vigencia_inicio_iso": vigencia_inicio_iso,
+            "vigencia_fim_iso": vigencia_fim_iso,
+            "reactivate_preview_json": reactivate_preview_json,
+        }
+        context.update(self._get_business_id_and_name(obj))
+
+        return TemplateResponse(
+            request,
+            "admin/core/reactivate_confirm.html",
             context,
         )
