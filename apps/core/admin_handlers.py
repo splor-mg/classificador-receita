@@ -510,7 +510,7 @@ class BitemporalChangeHandler:
 
             context = {
                 **self.admin.admin_site.each_context(request),
-                "title": "Confirmar atualização",
+                "title": "",
                 "opts": self.model._meta,
                 "original": obj,
                 "object": obj,
@@ -822,7 +822,7 @@ class BitemporalChangeHandler:
 
             context = {
                 **self.admin.admin_site.each_context(request),
-                "title": "Confirmar atualização",
+                "title": "",
                 "opts": self.model._meta,
                 "original": obj,
                 "object": obj,

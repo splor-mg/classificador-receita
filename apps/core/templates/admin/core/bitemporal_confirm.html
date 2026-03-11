@@ -1,6 +1,8 @@
 {% extends "admin/base_site.html" %}
 {% load i18n admin_urls static %}
 
+{% block title %}Confirmar atualização{% endblock %}
+
 {% block extrahead %}
 {{ block.super }}
 <style>
@@ -70,7 +72,7 @@
 .strikethrough input { text-decoration: line-through; color: #999; }
 
 .record-summary {
-  margin: 0.5em 0 1em 0;
+  margin: 0.5em 0 2.25em 0;
   padding: 0.4em 0.8em;
   border-radius: 3px;
   background-color: #f9f9f9;
@@ -122,9 +124,9 @@
   border-left: 3px solid #d4a017;
 }
 .bitemporal-submit-row {
-  margin-top: 1.5em;
+  margin-top: 2.50em;
   display: flex;
-  gap: 0.5em;
+  gap: 0.75em;
 }
 
 .bitemporal-submit-row .btn {
@@ -288,6 +290,7 @@
 {% endblock %}
 
 {% block content %}
+<h1 style="margin:0 0 0.25em 0;font-size:1.5em;font-weight:400;">Confirmar <span style="color:#28a745;font-weight:600">atualização</span></h1>
 <form method="post" action="" id="bitemporal-form">
   {% csrf_token %}
   {% for k, v in post_items %}
@@ -361,6 +364,7 @@
   </div>
   {% endif %}
 
+  <br>
   <h3>Vigência</h3>
 
   <div class="strategy-section">
