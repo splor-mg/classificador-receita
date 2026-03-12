@@ -11,13 +11,13 @@
 - reorganizar issues - modelagem dados antigos etc, fechar issues antigos
 
 - criar protocolo de incorporação de bases
-  - tratamento excel/csv anos
+  - tratamento Excel/csv anos
   - gerar script que vai considerar alteração nos metadados d
 - implementar schemas/correspondence-table
 - ver description de chave semântica de todas tabelas
 - funcionalidade exportar
 - revisar datapackage.yaml
-  - avaliar menção à mensão à estrutura
+  - avaliar menção à estrutura
 - garantir que, para cada entidade de negócio, haja um e somente um período de "ativo". Isto é, um mesmo código somente pode constar um registro ativo por
 - implementar atualizador de base_legal_tecnica
 
@@ -32,7 +32,7 @@ x verificar edição de norma cujo início de vigência seja o ano corrente -> s
 ----------------------------------------------------------------------------------------------------
 
 --- VERSIONAMENTO
-- versões alterações que fazem versionamente e por quê
+- versões alterações que fazem versionamento e por quê
 
 
 
@@ -43,14 +43,14 @@ x verificar edição de norma cujo início de vigência seja o ano corrente -> s
 
 
 
-A alternativa implementda foi a de harmonizar os conceitos de versionamento semântico com os conceitos de versionamentos sugeridos pelo GSIM. De acordo com o GSIM, uma nova versão do classificador deve ser gerada toda vez que uma alteração/atualização modifique as fronteiras entre códigos. Isso ocorre basicamente em dois momentos: 
+A alternativa implementada foi a de harmonizar os conceitos de versionamento semântico com os conceitos de versionamentos sugeridos pelo GSIM. De acordo com o GSIM, uma nova versão do classificador deve ser gerada toda vez que uma alteração/atualização modifique as fronteiras entre códigos. Isso ocorre basicamente em dois momentos: 
  - quando um objeto/entidade de negócio/conteúdo lógico que antes estava registrado em um código, passa a ser registrado em outro código. Por exemplo, o ICMS que antes era classificado no código X, passou a ser registrado no código Z,
  - quando algo de novo começa a ser classificado, como ocorre na maior parte dos casos em que se inclui um novo código no classificador. Por exemplo, com o advento dos acordos do Desastre de Brumadinho, passou a ingressar nos cofres públicos um recurso totalmente novo para o Estado, que eram os repasses decorrentes dos acertos judiciais.
 
-Do ponto de vista do versionamento semântico (senVer), em que o número da versão consegue comunicar qual tipo de alteração houve, nos apropriamos, com ligeiras adaptações, dos conceitos de uma alterações:
+Do ponto de vista do versionamento semântico (SemVer), em que o número da versão consegue comunicar qual tipo de alteração houve, nos apropriamos, com ligeiras adaptações, dos conceitos de alterações:
  - Major, em que queremos identificar alteração na compatibilidade de uma versão com a outra;
  - Minor, em que não há quebra de compatibilidade, apenas novas funcionalidades; e
- - Patch, em que, sem mudar funcionaliades, faz algum tipo de correção/ajuste. 
+ - Patch, em que, sem mudar funcionalidades, faz algum tipo de correção/ajuste. 
 
 Portanto, o versionamento do banco de dados será identificado em 3 campos, [colocar aqui expressão que simboliza essas alterações]
 
@@ -62,11 +62,11 @@ Portanto, a proposta de registro de versões:
    - alteração no somatório do número de dígitos existentes. Essa alteração é observada pela alteração no somatório de número de dígitos, coluna `numero_digitos` de todas as instâncias com campo `data_vigência_fim` =valor sentinela (9999-12-31) na tabela `seed_classificacao.csv`.
    - alteração no valor máximo da coluna `nivel_numero` entre todas as instâncias com campo `data_vigência_fim` =valor sentinela (9999-12-31) na tabela `seed_classificacao.csv`.
 
-  - Minor: implementação do conceito GSIM em estrito, sendo gerada nova "Minor" toda vez que um houver alterações nas fronteiras, inclusive com o surgimento de um novo código
+  - Minor: implementação do conceito GSIM em estrito, sendo gerada nova "Minor" toda vez que houver alterações nas fronteiras, inclusive com o surgimento de um novo código
    - alteração na quantidade de entidades-objetos existentes de forma ativa no banco. Essa alteração é observada toda vez que houver alteração no maior valor do campo `item_ref` entre as instâncias com campo `data_vigência_fim` =valor sentinela (9999-12-31) na tabela `seed_item_classificacao.csv`.
    - alteração na quantidade de entidades-objetos
 
-   - alterações que impactarem na estrutura da receita. Considerando que esse conceito se assemelhe com o da tabela de classificador, a qual é responsável pela descrição dos qualificadores básicos da **estrutura** vigente, indicando tipo do classificador, número de níveis, se, no arquivo seed_classificao, houver a alteração na quantidade de instâncias com data_vigencia_fim = ao valor sentinela (9999-12-31),  
+   - alterações que impactarem na estrutura da receita. Considerando que esse conceito se assemelhe com o da tabela de classificador, a qual é responsável pela descrição dos qualificadores básicos da **estrutura** vigente, indicando tipo do classificador, número de níveis, se, no arquivo seed_classificacao, houver a alteração na quantidade de instâncias com data_vigencia_fim = ao valor sentinela (9999-12-31),  
 
 
 ----
@@ -79,22 +79,22 @@ Portanto, a proposta de registro de versões:
  
 
  - Como saber quantas versões/edições/vigências uma entidade-objeto (coluna `[nome-da-tabela]_id`) teve?
-  - filtrar a entidade-objeto desejada e contar quantas instâncias com `data_registro_fim` estiverem com valores sentinla (31/12/9999)
-  -> regra: para cada entidade-objeto, pode haver somente uma instância ativa (`data_registro_fim` = 31/12/9999) por *período* . Isto é, para a mesma entidade-objeto cuja classificação está sendo evoluída no banco de dados, não pode haver duas linhas ativas para períodos que, mesmo que não exatamente iguais em termos de início e fim de vigência, representem períodos que se sobrebõe. 
+  - filtrar a entidade-objeto desejada e contar quantas instâncias com `data_registro_fim` estiverem com valores sentinela (31/12/9999)
+  -> regra: para cada entidade-objeto, pode haver somente uma instância ativa (`data_registro_fim` = 31/12/9999) por *período* . Isto é, para a mesma entidade-objeto cuja classificação está sendo evoluída no banco de dados, não pode haver duas linhas ativas para períodos que, mesmo que não exatamente iguais em termos de início e fim de vigência, representem períodos que se sobrepõem. 
 
   ```
   cod: 10
   nome: "receita tributária"
   data_vigencia_inicio: 01/01/2002
-  dafa_vigencia_fim: 01/01/2010
+  data_vigencia_fim: 01/01/2010
 
   cod: 10
   nome: "receita tributária e de taxas"
   data_vigencia_inicio: 01/01/2009
-  dafa_vigencia_fim: 31/12/9999
+  data_vigencia_fim: 31/12/9999
   ```
 
-  Nesse caso, duarante o período de 01/01/2009 e 01/01/2010, seria possível que o cod 10 tivesse 2 descrições possíveis
+  Nesse caso, durante o período de 01/01/2009 e 01/01/2010, seria possível que o cod 10 tivesse 2 descrições possíveis
 
 
 ---- DAMA
