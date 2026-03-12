@@ -1328,6 +1328,11 @@ class ReactivateHandler:
                 display_value = raw_value
                 choices = form_choices[name]
                 is_grouped = self._is_grouped_choices(choices)
+                if is_grouped:
+                    choices = [
+                        (gl, gc) for gl, gc in choices
+                        if isinstance(gc, (list, tuple))
+                    ]
                 field_type = "select_grouped" if is_grouped else "select"
             elif hasattr(f, "choices") and f.choices:
                 raw_value = getattr(obj, name)
