@@ -1,4 +1,6 @@
-# lista-toDO
+----------------------------------------------------------------------------------------------------
+# lista
+
 - criação de novo registro
   - definir padrão de conversão/registro de identificador
   - verificar validação de data de vigência fim menor que início
@@ -27,7 +29,7 @@ x na página de edição, implementar protocolo de exclusão e bloqueio
 x verificar edição de norma cujo início de vigência seja o ano corrente -> sem prejuízo de registro
 
 
--------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
 
 --- VERSIONAMENTO
 - versões alterações que fazem versionamente e por quê
