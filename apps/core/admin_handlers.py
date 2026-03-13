@@ -217,13 +217,13 @@ class BitemporalChangeHandler:
         """
         sentinela = get_sentinela_date()
         today = date.today()
-        # Padrão histórico: 1º de janeiro do ano corrente para nova vigência.
-        first_jan_current_year = date(today.year, 1, 1)
+        current_year = today.year
+        first_jan_current_year = date(current_year, 1, 1)
 
         current_vig_inicio = getattr(obj, "data_vigencia_inicio", None)
         current_vig_fim = getattr(obj, "data_vigencia_fim", None)
 
-        # Normaliza data de início atual para comparações por ano.
+        # Normaliza datas atuais para comparações por ano.
         current_inicio_year = None
         current_inicio_date = None
         if current_vig_inicio is not None:
@@ -234,33 +234,78 @@ class BitemporalChangeHandler:
             )
             current_inicio_year = current_inicio_date.year
 
-        # Sinalizadores de contexto temporal da vigência atual.
-        current_vig_inicio_in_current_year = current_inicio_year == today.year
-        current_vig_inicio_is_future = bool(
-            current_inicio_date and current_inicio_date > today
+        current_fim_year = None
+        current_fim_date = None
+        if current_vig_fim is not None:
+            current_fim_date = (
+                current_vig_fim.date()
+                if hasattr(current_vig_fim, "date")
+                else current_vig_fim
+            )
+            current_fim_year = current_fim_date.year
+
+        # Marcadores auxiliares para regras temporais.
+        inicio_ano_anterior = (
+            current_inicio_year is not None and current_inicio_year < current_year
+        )
+        inicio_ano_corrente = current_inicio_year == current_year
+        inicio_ano_futuro = (
+            current_inicio_year is not None and current_inicio_year > current_year
         )
 
-        has_vig_inicio_change = "data_vigencia_inicio" in changed_data
-        has_vig_fim_change = "data_vigencia_fim" in changed_data
+        fim_is_sentinela = bool(current_fim_date and current_fim_date == sentinela)
+        fim_no_ano_corrente = current_fim_year == current_year
+        fim_antes_ano_corrente = bool(
+            current_fim_date and current_fim_date < first_jan_current_year
+        )
+        fim_a_partir_ano_corrente = bool(
+            current_fim_date and current_fim_date >= first_jan_current_year
+        )
 
-        # Para a estratégia de nova vigência:
-        # - regra geral: propor 1º de janeiro do ano corrente como início da nova versão;
-        # - exceção 1: quando a versão atual já começou no ano corrente,
-        #   propor o dia atual como data de início da nova versão;
-        # - exceção 2: quando a versão atual ainda não começou (vigência futura),
-        #   propor 1º de janeiro do ano seguinte à vigência atual, evitando
-        #   sobreposição automática entre versões futuras.
-        if has_vig_inicio_change:
-            new_vig_inicio = form.cleaned_data.get("data_vigencia_inicio")
-        elif current_vig_inicio_in_current_year:
-            new_vig_inicio = today
-        elif current_vig_inicio_is_future and current_inicio_year is not None:
+        # Regra completa para início da nova versão (Registrar nova vigência),
+        # sempre baseada na versão atual e na data corrente, independentemente
+        # de ter vindo de lápis ou Salvar.
+        if inicio_ano_corrente and current_inicio_date:
+            if current_inicio_date < today:
+                # Início no ano corrente, mas antes de hoje -> nova começa hoje.
+                new_vig_inicio = today
+            elif current_inicio_date == today:
+                # Início igual a hoje -> nova começa amanhã.
+                new_vig_inicio = today + timedelta(days=1)
+            else:
+                # Início no ano corrente, em data futura -> nova começa no dia seguinte.
+                new_vig_inicio = current_inicio_date + timedelta(days=1)
+        elif inicio_ano_futuro and current_inicio_year is not None:
+            # Versão atual ainda não começou (vigência futura) ->
+            # nova versão sugerida a partir de 1º jan do ano seguinte.
             new_vig_inicio = date(current_inicio_year + 1, 1, 1)
+        elif inicio_ano_anterior and current_inicio_date:
+            # Versão atual começou em ano anterior ao corrente.
+            if fim_is_sentinela or fim_a_partir_ano_corrente:
+                # Vigência que alcança ou ultrapassa o ano corrente (ou é aberta).
+                new_vig_inicio = first_jan_current_year
+            elif fim_antes_ano_corrente:
+                # Vigência inteiramente no passado -> nova começa no dia seguinte ao início.
+                new_vig_inicio = current_inicio_date + timedelta(days=1)
+            else:
+                # Fallback seguro: usar 1º jan do ano corrente.
+                new_vig_inicio = first_jan_current_year
         else:
+            # Sem informações suficientes de início -> padrão 1º jan ano corrente.
             new_vig_inicio = first_jan_current_year
 
-        if has_vig_fim_change:
-            new_vig_fim = form.cleaned_data.get("data_vigencia_fim")
+        # Regra para fim da nova versão:
+        # - Casos "originais" (início no ano corrente ou ano futuro) -> sentinela.
+        # - Casos de início em ano anterior:
+        #   - fim sentinela -> nova também com sentinela;
+        #   - fim em qualquer ano específico -> copiar fim da versão atual.
+        if inicio_ano_anterior:
+            if current_fim_date is None:
+                new_vig_fim = sentinela
+            elif fim_is_sentinela:
+                new_vig_fim = sentinela
+            else:
+                new_vig_fim = current_vig_fim
         else:
             new_vig_fim = sentinela
 
@@ -276,10 +321,13 @@ class BitemporalChangeHandler:
             {
                 "version": "Versão 2",
                 "vig_inicio": new_vig_inicio,
-                "vig_fim": sentinela,
+                "vig_fim": new_vig_fim,
                 "strikethrough": False,
             },
         ]
+
+        has_vig_inicio_change = "data_vigencia_inicio" in changed_data
+        has_vig_fim_change = "data_vigencia_fim" in changed_data
 
         if has_vig_inicio_change or has_vig_fim_change:
             # Quando já houve alteração explícita de vigência no formulário
@@ -333,8 +381,15 @@ class BitemporalChangeHandler:
             "new_vig_fim": new_vig_fim,
             "nova_vigencia_preview": nova_vigencia_preview,
             "sobrescrever_preview": sobrescrever_preview,
-            "current_vig_inicio_in_current_year": current_vig_inicio_in_current_year,
-            "current_vig_inicio_is_future": current_vig_inicio_is_future,
+            "current_vig_inicio": current_vig_inicio,
+            "current_vig_fim": current_vig_fim,
+            # Estratégia padrão: Registrar nova vigência apenas quando
+            # a versão atual começou em ano anterior ao corrente e
+            # (fim é sentinela ou fim está no ano corrente). Em todos
+            # os demais casos, preferimos Sobrescrever.
+            "prefer_nova_vigencia_default": bool(
+                inicio_ano_anterior and (fim_is_sentinela or fim_no_ano_corrente)
+            ),
         }
 
     def _render_change_form_with_data(self, request, obj, form, object_id):
@@ -521,10 +576,10 @@ class BitemporalChangeHandler:
             )
 
             only_vigencia_changes = not general_diffs
-            prefer_sobrescrever_default = bool(
-                vigencia_preview.get("current_vig_inicio_in_current_year")
-                or vigencia_preview.get("current_vig_inicio_is_future")
+            prefer_nova_vigencia_default = bool(
+                vigencia_preview.get("prefer_nova_vigencia_default")
             )
+            prefer_sobrescrever_default = not prefer_nova_vigencia_default
 
             context = {
                 **self.admin.admin_site.each_context(request),
@@ -833,10 +888,10 @@ class BitemporalChangeHandler:
             )
 
             only_vigencia_changes = not general_diffs
-            prefer_sobrescrever_default = bool(
-                vigencia_preview.get("current_vig_inicio_in_current_year")
-                or vigencia_preview.get("current_vig_inicio_is_future")
+            prefer_nova_vigencia_default = bool(
+                vigencia_preview.get("prefer_nova_vigencia_default")
             )
+            prefer_sobrescrever_default = not prefer_nova_vigencia_default
 
             context = {
                 **self.admin.admin_site.each_context(request),
