@@ -1486,6 +1486,7 @@ class ReactivateHandler:
                 self.model.objects
                 .filter(**entity_filter, data_registro_fim=sentinela)
             )
+            conflicts = []
             for other in active_qs:
                 e_inicio = getattr(other, "data_vigencia_inicio", None)
                 e_fim = getattr(other, "data_vigencia_fim", None)
@@ -1501,6 +1502,12 @@ class ReactivateHandler:
                     else:
                         series_label = str(obj.pk)
                     period_label = f"{e_inicio} a {e_fim}"
+                    conflicts.append((e_inicio, series_label, period_label, conflict_url))
+
+            if conflicts:
+                # Ordena conflitos pela data de início de vigência (crescente)
+                conflicts.sort(key=lambda c: c[0])
+                for _e_inicio, series_label, period_label, conflict_url in conflicts[:3]:
                     messages.error(
                         request,
                         format_html(
@@ -1514,7 +1521,19 @@ class ReactivateHandler:
                             conflict_url,
                         ),
                     )
-                    return self._render_reactivate_confirm(request, obj, object_id, change_url)
+
+                extra_count = len(conflicts) - 3
+                if extra_count > 0:
+                    messages.error(
+                        request,
+                        format_html(
+                            'Há mais <strong>{}</strong> conflito(s) de vigência não listado(s) aqui. '
+                            'Ajuste as vigências ou refine o período da nova reativação.',
+                            extra_count,
+                        ),
+                    )
+
+                return self._render_reactivate_confirm(request, obj, object_id, change_url)
 
         try:
             with db_transaction.atomic():
@@ -1540,8 +1559,32 @@ class ReactivateHandler:
         current_inicio = getattr(obj, "data_vigencia_inicio", None)
         current_fim = getattr(obj, "data_vigencia_fim", None)
 
-        vigencia_inicio_iso = current_inicio.isoformat() if current_inicio else ""
-        vigencia_fim_iso = current_fim.isoformat() if current_fim else ""
+        # Quando houver POST com erros de validação, preservar os valores
+        # editados pelo usuário (atributos gerais e vigência) na reexibição.
+        if request.method == "POST":
+            post = request.POST
+            for field in business_fields:
+                name = field.get("name")
+                if not name:
+                    continue
+                key = f"edit_field_{name}"
+                if key in post:
+                    raw_val = post.get(key)
+                    field["value"] = raw_val
+                    field["display_value"] = raw_val
+
+            vig_inicio_str = (post.get("edit_vig_inicio_1") or "").strip()
+            vig_fim_str = (post.get("edit_vig_fim_1") or "").strip()
+
+            vigencia_inicio_iso = vig_inicio_str or (
+                current_inicio.isoformat() if current_inicio else ""
+            )
+            vigencia_fim_iso = vig_fim_str or (
+                current_fim.isoformat() if current_fim else ""
+            )
+        else:
+            vigencia_inicio_iso = current_inicio.isoformat() if current_inicio else ""
+            vigencia_fim_iso = current_fim.isoformat() if current_fim else ""
 
         import json
         reactivate_preview = [{
