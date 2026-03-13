@@ -223,11 +223,9 @@ class BitemporalChangeHandler:
         current_vig_inicio = getattr(obj, "data_vigencia_inicio", None)
         current_vig_fim = getattr(obj, "data_vigencia_fim", None)
 
-        # Se a vigência atual já começa no ano corrente, entender que é
-        # mais natural ajustar essa própria vigência (sobrescrever) e,
-        # caso o usuário opte mesmo por "Registrar nova vigência", usar
-        # o dia atual como sugestão para o início da nova versão.
+        # Normaliza data de início atual para comparações por ano.
         current_inicio_year = None
+        current_inicio_date = None
         if current_vig_inicio is not None:
             current_inicio_date = (
                 current_vig_inicio.date()
@@ -235,17 +233,29 @@ class BitemporalChangeHandler:
                 else current_vig_inicio
             )
             current_inicio_year = current_inicio_date.year
+
+        # Sinalizadores de contexto temporal da vigência atual.
         current_vig_inicio_in_current_year = current_inicio_year == today.year
+        current_vig_inicio_is_future = bool(
+            current_inicio_date and current_inicio_date > today
+        )
 
         has_vig_inicio_change = "data_vigencia_inicio" in changed_data
         has_vig_fim_change = "data_vigencia_fim" in changed_data
 
         # Para a estratégia de nova vigência:
         # - regra geral: propor 1º de janeiro do ano corrente como início da nova versão;
-        # - exceção: quando a versão atual já começou no ano corrente,
-        #   propor o dia atual como data de início da nova versão.
-        if current_vig_inicio_in_current_year:
+        # - exceção 1: quando a versão atual já começou no ano corrente,
+        #   propor o dia atual como data de início da nova versão;
+        # - exceção 2: quando a versão atual ainda não começou (vigência futura),
+        #   propor 1º de janeiro do ano seguinte à vigência atual, evitando
+        #   sobreposição automática entre versões futuras.
+        if has_vig_inicio_change:
+            new_vig_inicio = form.cleaned_data.get("data_vigencia_inicio")
+        elif current_vig_inicio_in_current_year:
             new_vig_inicio = today
+        elif current_vig_inicio_is_future and current_inicio_year is not None:
+            new_vig_inicio = date(current_inicio_year + 1, 1, 1)
         else:
             new_vig_inicio = first_jan_current_year
 
@@ -324,6 +334,7 @@ class BitemporalChangeHandler:
             "nova_vigencia_preview": nova_vigencia_preview,
             "sobrescrever_preview": sobrescrever_preview,
             "current_vig_inicio_in_current_year": current_vig_inicio_in_current_year,
+            "current_vig_inicio_is_future": current_vig_inicio_is_future,
         }
 
     def _render_change_form_with_data(self, request, obj, form, object_id):
@@ -512,6 +523,7 @@ class BitemporalChangeHandler:
             only_vigencia_changes = not general_diffs
             prefer_sobrescrever_default = bool(
                 vigencia_preview.get("current_vig_inicio_in_current_year")
+                or vigencia_preview.get("current_vig_inicio_is_future")
             )
 
             context = {
@@ -823,6 +835,7 @@ class BitemporalChangeHandler:
             only_vigencia_changes = not general_diffs
             prefer_sobrescrever_default = bool(
                 vigencia_preview.get("current_vig_inicio_in_current_year")
+                or vigencia_preview.get("current_vig_inicio_is_future")
             )
 
             context = {
