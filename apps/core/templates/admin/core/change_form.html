@@ -126,9 +126,80 @@
 </div>
 <script type="text/javascript">
 (function() {
+  function normalizeIdentifierValue(raw) {
+    return raw.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[\s_]+/g, '-');
+  }
+
+  function setupIdentifierNormalization() {
+    var checkIdUrl = '{{ check_id_url|default:"" }}';
+    var idFieldName = '{{ id_field_name|default:"" }}';
+
+    var idFields = document.querySelectorAll(
+      'input[name$="_id"][type="text"]'
+    );
+    idFields.forEach(function(input) {
+      input.addEventListener('blur', function() {
+        var v = normalizeIdentifierValue(input.value);
+        if (v !== input.value) {
+          input.value = v;
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        var fieldRow = input.closest('.form-row') || input.closest('div');
+        var formatMsg = fieldRow.querySelector('.id-format-warning');
+        if (formatMsg) formatMsg.remove();
+
+        var idPattern = /^[A-Z0-9]+(-[A-Z0-9]+)*$/;
+        if (v && !idPattern.test(v)) {
+          var ulFormat = document.createElement('ul');
+          ulFormat.className = 'errorlist id-format-warning';
+          var liFormat = document.createElement('li');
+          liFormat.textContent = 'Use apenas letras maiúsculas e números, separados por traço (-). Não utilize caracteres especiais.';
+          ulFormat.appendChild(liFormat);
+          fieldRow.insertBefore(ulFormat, fieldRow.firstChild);
+          return;
+        }
+
+        if (!checkIdUrl || !v || input.name !== idFieldName) return;
+
+        var existingMsg = fieldRow.querySelector('.id-duplicate-warning');
+        if (existingMsg) existingMsg.remove();
+
+        var serverError = fieldRow.querySelector('ul.errorlist:not(.id-duplicate-warning):not(.id-format-warning)');
+        if (serverError) return;
+
+        fetch(checkIdUrl + '?value=' + encodeURIComponent(v), {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.exists) {
+            var ul = document.createElement('ul');
+            ul.className = 'errorlist id-duplicate-warning';
+            var li = document.createElement('li');
+            var linkHtml = data.change_url
+              ? ' <a href="' + data.change_url + '" target="_blank" style="text-decoration:underline;">Abrir registro</a>'
+              : '';
+            li.innerHTML = 'Já existe um registro ativo com o identificador "' + v + '".' + linkHtml;
+            ul.appendChild(li);
+            fieldRow.insertBefore(ul, fieldRow.firstChild);
+          }
+        })
+        .catch(function() {});
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupIdentifierNormalization);
+  } else {
+    setupIdentifierNormalization();
+  }
+
   function setupUnsavedChangesWarning() {
     var isSubmitting = false;
     var isDirty = false;
+    var formHasErrorsOnLoad = !!document.querySelector('form .errorlist');
 
     function getFieldState(field) {
       if (field.type === 'checkbox' || field.type === 'radio') {
@@ -216,7 +287,7 @@
     }
 
     cancelLink.addEventListener('click', function(event) {
-      if (!isDirty || isSubmitting) {
+      if ((!isDirty && !formHasErrorsOnLoad) || isSubmitting) {
         return;
       }
       var message = 'Há alterações não salvas. Se continuar, as alterações serão perdidas. Deseja realmente sair sem salvar?';

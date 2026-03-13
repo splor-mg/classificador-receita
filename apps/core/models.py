@@ -4,13 +4,14 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from django.core.exceptions import ValidationError
 
-from apps.core.models_base_legal import BaseLegalTecnica
+from apps.core.models_base_legal import BaseLegalTecnica, identifier_validator
 from apps.core.domain_choices import ORGAOS_ENTIDADES_CHOICES
 
 
 # Constantes para valores sentinelas (conforme ADR-001)
 VALID_TIME_SENTINEL = datetime.date(9999, 12, 31)
 TRANSACTION_TIME_SENTINEL = datetime.datetime(9999, 12, 31, 00, 00, 00)
+
 
 
 class BitemporalModel(models.Model):
@@ -70,7 +71,8 @@ class SerieClassificacao(BitemporalModel):
         max_length=100,
         verbose_name='Identificador da Série',
         help_text='Identificador único da série de classificações (serie_id).',
-        db_index=True
+        db_index=True,
+        validators=[identifier_validator],
     )
     serie_ref = models.IntegerField(
         null=False,
@@ -152,7 +154,8 @@ class Classificacao(BitemporalModel):
         max_length=100,
         verbose_name='Identificador da Classificação',
         help_text='Identificador único da classificação estatística (chave semântica) (classificacao_id).',
-        db_index=True
+        db_index=True,
+        validators=[identifier_validator],
     )
     classificacao_ref = models.IntegerField(
         null=False,
@@ -273,7 +276,8 @@ class NivelHierarquico(BitemporalModel):
         max_length=100,
         verbose_name='Identificador do Nível',
         help_text='Identificador único do nível hierárquico (chave semântica).',
-        db_index=True
+        db_index=True,
+        validators=[identifier_validator],
     )
     nivel_ref = models.IntegerField(
         null=True,
@@ -379,6 +383,7 @@ class ItemClassificacao(BitemporalModel):
         verbose_name='Identificador do Item',
         help_text='Identificador único do item de classificação',
         db_index=True,
+        validators=[identifier_validator],
     )
     item_ref = models.IntegerField(
         null=True,
@@ -603,7 +608,8 @@ class VersaoClassificacao(BitemporalModel):
         max_length=100,
         verbose_name='Identificador da Versão',
         help_text='Identificador único da versão da classificação',
-        db_index=True
+        db_index=True,
+        validators=[identifier_validator],
     )
     classificacao = models.ForeignKey(
         Classificacao,
@@ -679,7 +685,8 @@ class VarianteClassificacao(BitemporalModel):
         max_length=100,
         verbose_name='Identificador da Variante',
         help_text='Identificador único da variante de classificação',
-        db_index=True
+        db_index=True,
+        validators=[identifier_validator],
     )
     classificacao = models.ForeignKey(
         Classificacao,

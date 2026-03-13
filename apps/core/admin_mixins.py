@@ -7,21 +7,35 @@ BitemporalInactiveReadOnlyMixin — somente leitura para registros inativos + ro
 BitemporalDateFormatMixin — formatação de datas bitemporais (dd/mm/yyyy).
 CoreChangeSaveFormSubmitMixin — tela de edição com apenas Salvar e Cancelar.
 """
+import re
 import logging
+import unicodedata
 from datetime import date
 from pathlib import Path
 
 from django.contrib import admin
 from django.contrib import messages
+from django.db import models as django_models
 from django.db.models import Max
 from django.http import HttpResponseRedirect
 from django.urls import path, reverse
 from django.utils import timezone
+from django.utils.safestring import mark_safe
 from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
 
 from apps.core.exporter import export_resource
 from apps.core.bitemporal_registry import get_resource_for_model
 from apps.core.models import TRANSACTION_TIME_SENTINEL, VALID_TIME_SENTINEL
+
+ID_HELP_EXAMPLES = {
+    "serieclassificacao": "SERIE-RECEITA-UNIAO",
+    "classificacao": "CLASSIFICACAO-EXEMPLO",
+    "nivelhierarquico": "NIVEL-EXEMPLO",
+    "itemclassificacao": "ITEM-EXEMPLO",
+    "versaoclassificacao": "VERSAO-2024",
+    "varianteclassificacao": "VARIANTE-EXEMPLO",
+    "baselegaltecnica": "CR-88-PLANALTO",
+}
 
 #---------------------------------------------------------------------------------------------------
 # Filtro para registros ativos (correntes, históricos e futuros) e inativos em termos de registro/vigência
@@ -176,6 +190,62 @@ class BitemporalInactiveReadOnlyMixin:
             fields = [f for f in fields if f not in exclude]
         return fields
 
+    @staticmethod
+    def _is_identifier_field(db_field):
+        return (
+            db_field.name.endswith("_id")
+            and not db_field.is_relation
+            and isinstance(db_field, django_models.CharField)
+        )
+
+    def _get_identifier_field_name(self):
+        for f in self.model._meta.concrete_fields:
+            if self._is_identifier_field(f):
+                return f.name
+        return None
+
+    def get_form(self, request, obj=None, **kwargs):
+        FormClass = super().get_form(request, obj, **kwargs)
+        if obj is not None:
+            return FormClass
+
+        id_field_name = self._get_identifier_field_name()
+        if not id_field_name:
+            return FormClass
+
+        model = self.model
+        sentinel = TRANSACTION_TIME_SENTINEL
+
+        admin_instance = self
+
+        class FormWithIdValidation(FormClass):
+            def clean(form_self):
+                cleaned = super().clean()
+                value = cleaned.get(id_field_name)
+                if value:
+                    existing = model._default_manager.filter(
+                        **{id_field_name: value, "data_registro_fim": sentinel}
+                    ).first()
+                    if existing:
+                        from django.core.exceptions import ValidationError
+                        from django.utils.safestring import mark_safe
+                        change_url = reverse(
+                            f"admin:{model._meta.app_label}_{model._meta.model_name}_change",
+                            args=[existing.pk],
+                        )
+                        msg = mark_safe(
+                            f'Já existe um registro ativo com o identificador "{value}". '
+                            f'<a href="{change_url}" target="_blank" '
+                            f'style="text-decoration:underline;">Abrir registro</a>'
+                        )
+                        form_self.add_error(
+                            id_field_name,
+                            ValidationError(msg, code='duplicate_active_id'),
+                        )
+                return cleaned
+
+        return FormWithIdValidation
+
     def formfield_for_dbfield(self, db_field, request, **kwargs):
         formfield = super().formfield_for_dbfield(db_field, request, **kwargs)
         if db_field.name.endswith("_ref") and formfield is not None:
@@ -183,6 +253,49 @@ class BitemporalInactiveReadOnlyMixin:
             formfield.widget.attrs["style"] = (
                 "background-color:#f4f4f4; color:#555;"
             )
+        if self._is_identifier_field(db_field) and formfield is not None:
+            # Exemplo dinâmico/estático no help_text apenas na tela de adição
+            try:
+                is_add_view = (
+                    request is not None
+                    and request.resolver_match is not None
+                    and request.resolver_match.url_name.endswith("_add")
+                )
+            except Exception:
+                is_add_view = False
+
+            if is_add_view:
+                model = self.model
+                id_field_name = db_field.name
+                latest = (
+                    model._default_manager.filter(
+                        data_registro_fim=TRANSACTION_TIME_SENTINEL
+                    )
+                    .order_by("-pk")
+                    .values_list(id_field_name, flat=True)
+                    .first()
+                )
+                if latest:
+                    example = latest
+                else:
+                    example = ID_HELP_EXAMPLES.get(model._meta.model_name)
+
+                if example:
+                    base_help = formfield.help_text or ""
+                    extra = f' Ex.: <code>{example}</code>'
+                    formfield.help_text = mark_safe(base_help + extra)
+
+            original_clean = formfield.clean
+
+            def normalizing_clean(value):
+                if value and isinstance(value, str):
+                    value = unicodedata.normalize('NFD', value)
+                    value = ''.join(c for c in value if unicodedata.category(c) != 'Mn')
+                    value = value.strip().upper()
+                    value = re.sub(r'[\s_]+', '-', value)
+                return original_clean(value)
+
+            formfield.clean = normalizing_clean
         return formfield
 
     def _is_inactive_record(self, obj) -> bool:
@@ -205,12 +318,35 @@ class BitemporalInactiveReadOnlyMixin:
         urls = super().get_urls()
         custom = [
             path(
+                "check-id-exists/",
+                self.admin_site.admin_view(self._check_id_exists_view),
+                name=f"{self.model._meta.app_label}_{self.model._meta.model_name}_check_id_exists",
+            ),
+            path(
                 "<path:object_id>/reactivate/",
                 self.admin_site.admin_view(self.reactivate_view),
                 name=f"{self.model._meta.app_label}_{self.model._meta.model_name}_reactivate",
             ),
         ]
         return custom + urls
+
+    def _check_id_exists_view(self, request):
+        from django.http import JsonResponse
+        value = request.GET.get("value", "").strip()
+        id_field_name = self._get_identifier_field_name()
+        if not value or not id_field_name:
+            return JsonResponse({"exists": False})
+        qs = self.model._default_manager.filter(
+            **{id_field_name: value, "data_registro_fim": TRANSACTION_TIME_SENTINEL}
+        )
+        obj = qs.first()
+        if not obj:
+            return JsonResponse({"exists": False})
+        change_url = reverse(
+            f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_change",
+            args=[obj.pk],
+        )
+        return JsonResponse({"exists": True, "change_url": change_url})
 
     def reactivate_view(self, request, object_id):
         from apps.core.admin_handlers import ReactivateHandler
@@ -236,7 +372,15 @@ class BitemporalInactiveReadOnlyMixin:
         """
         Exibe mensagem informativa quando o objeto é inativo e sinaliza
         ao template via flag 'is_inactive_record' + URL de reativação.
+        Injeta URL de verificação de ID duplicado para o JS do frontend.
         """
+        if add:
+            id_field = self._get_identifier_field_name()
+            if id_field:
+                context["check_id_url"] = reverse(
+                    f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_check_id_exists"
+                )
+                context["id_field_name"] = id_field
         if obj is not None and self._is_inactive_record(obj):
             context["is_inactive_record"] = True
             context["reactivate_url"] = reverse(
@@ -251,6 +395,13 @@ class BitemporalInactiveReadOnlyMixin:
             except Exception:
                 pass
         return super().render_change_form(request, context, add, change, form_url, obj)
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            now = timezone.now()
+            obj.data_registro_inicio = now
+            obj.data_registro_fim = TRANSACTION_TIME_SENTINEL
+        super().save_model(request, obj, form, change)
 
 #---------------------------------------------------------------------------------------------------
 # Verifica se houve alteração no form e aplica fluxo de confirmação bitemporal.

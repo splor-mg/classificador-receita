@@ -1,6 +1,15 @@
 from django.db import models
+from django.core.validators import RegexValidator
 
 from apps.core.domain_choices import ORGAOS_ENTIDADES_CHOICES
+
+identifier_validator = RegexValidator(
+    regex=r'^[A-Z0-9]+(-[A-Z0-9]+)*$',
+    message=(
+        'Use apenas letras maiúsculas e números, separados por traço (-). '
+        'Não utilize caracteres especiais. Ex.: CR-88-PLANALTO.'
+    ),
+)
 
 
 class BaseLegalTecnica(models.Model):
@@ -143,6 +152,7 @@ class BaseLegalTecnica(models.Model):
             '[{tipo_legal}-{numero}-{orgao_responsavel}], ex.: CR-88-PLANALTO, LC-101-BRA.'
         ),
         db_index=True,
+        validators=[identifier_validator],
     )
     base_legal_tecnica_ref = models.IntegerField(
         verbose_name='Referência Numérica da Base Legal/Técnica',
