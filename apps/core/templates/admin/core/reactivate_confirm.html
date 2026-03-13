@@ -411,4 +411,53 @@
   renderPreview();
 })();
 </script>
+
+<script type="text/javascript">
+(function() {
+  function normalizeIdentifierValue(raw) {
+    var v = raw.trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .replace(/[\s_]+/g, '-');
+    v = v.replace(/-+/g, '-');
+    v = v.replace(/^-+/, '').replace(/-+$/, '');
+    return v;
+  }
+
+  function setupIdentifierNormalization() {
+    var idFields = document.querySelectorAll('input[name$="_id"][type="text"]');
+    idFields.forEach(function(input) {
+      input.addEventListener('blur', function() {
+        var v = normalizeIdentifierValue(input.value);
+        if (v !== input.value) {
+          input.value = v;
+        }
+
+        var cell = input.closest('td') || input.parentNode;
+        if (!cell) return;
+
+        var existing = cell.querySelector('.id-format-warning');
+        if (existing) existing.remove();
+
+        var idPattern = /^[A-Z0-9]+(-[A-Z0-9]+)*$/;
+        if (v && !idPattern.test(v)) {
+          var ul = document.createElement('ul');
+          ul.className = 'errorlist id-format-warning';
+          var li = document.createElement('li');
+          li.textContent = 'Use apenas letras maiúsculas e números, separados por traço (-). Não utilize caracteres especiais.';
+          ul.appendChild(li);
+          cell.insertBefore(ul, cell.firstChild);
+        }
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupIdentifierNormalization);
+  } else {
+    setupIdentifierNormalization();
+  }
+})();
+</script>
 {% endblock %}

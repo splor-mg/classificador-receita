@@ -127,7 +127,14 @@
 <script type="text/javascript">
 (function() {
   function normalizeIdentifierValue(raw) {
-    return raw.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[\s_]+/g, '-');
+    var v = raw.trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .replace(/[\s_]+/g, '-');
+    v = v.replace(/-+/g, '-');       // colapsa múltiplos traços
+    v = v.replace(/^-+/, '').replace(/-+$/, ''); // remove traços nas extremidades
+    return v;
   }
 
   function setupIdentifierNormalization() {

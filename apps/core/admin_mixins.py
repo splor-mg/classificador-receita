@@ -294,6 +294,8 @@ class BitemporalInactiveReadOnlyMixin:
                     value = ''.join(c for c in value if unicodedata.category(c) != 'Mn')
                     value = value.strip().upper()
                     value = re.sub(r'[\s_]+', '-', value)
+                    value = re.sub(r'-+', '-', value)
+                    value = value.strip('-')
                 return original_clean(value)
 
             formfield.clean = normalizing_clean
