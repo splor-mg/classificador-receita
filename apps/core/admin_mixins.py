@@ -57,7 +57,8 @@ class RegistroAtivoFilter(admin.SimpleListFilter):
         )
 
     def queryset(self, request, queryset):
-        ano_corrente = date.today().year
+        today = date.today()
+        ano_corrente = today.year
         primeiro_dia_ano = date(ano_corrente, 1, 1)
         ultimo_dia_ano = date(ano_corrente, 12, 31)
 
@@ -70,7 +71,7 @@ class RegistroAtivoFilter(admin.SimpleListFilter):
         if self.value() == "ativo_futuro":
             return queryset.filter(
                 data_registro_fim=TRANSACTION_TIME_SENTINEL,
-                data_vigencia_fim__gt=primeiro_dia_ano,
+                data_vigencia_fim__gt=ultimo_dia_ano,
             )
         if self.value() == "ativo_historico":
             return queryset.filter(
