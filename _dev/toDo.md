@@ -1,33 +1,32 @@
 ----------------------------------------------------------------------------------------------------
 # lista
 
-- criação de novo registro
-  - definir padrão de conversão/registro de identificador
-  - verificar validação de data de vigência fim menor que início
-  - impedir criação de novo identificador com nome idêntico a um identificador ainda ativo
-- remover protocolo de ação de exclusão física que existe na tela inicial e substituir por exportar
-- verificar comportamento para reativar receita já bloqueada/inativada
-
-- reorganizar issues - modelagem dados antigos etc, fechar issues antigos
 
 - criar protocolo de incorporação de bases
   - tratamento Excel/csv anos
   - gerar script que vai considerar alteração nos metadados d
 - implementar schemas/correspondence-table
-- ver description de chave semântica de todas tabelas
+- revisar description de chave semântica de todas tabelas
 - funcionalidade exportar
 - revisar datapackage.yaml
   - avaliar menção à estrutura
 - garantir que, para cada entidade de negócio, haja um e somente um período de "ativo". Isto é, um mesmo código somente pode constar um registro ativo por
 - implementar atualizador de base_legal_tecnica
-
-CRIAR ORIENTAÇÕES PARA INSTALAÇÃO DO POETRY E DO PYTHON E MELHORAR PARA WSL OU WINDOWS
+- remover protocolo de ação de exclusão física que existe na tela inicial e substituir por exportar
+- reorganizar issues - modelagem dados antigos etc, fechar issues antigos
+- criar oreintações para instalação do poetry e python e melhorar para wsl/windows
 
 -------- feito
 
+x garantir protocolo de normalização/padronização de campo id para quando editar/reativar registro
+x verificar comportamento para reativar receita já bloqueada/inativada
 x na página de edição, implementar protocolo de exclusão e bloqueio
 x verificar edição de norma cujo início de vigência seja o ano corrente -> sem prejuízo de registro
 
+x criação de novo registro
+  x definir padrão de conversão/registro de identificador
+  x verificar validação de data de vigência fim menor que início
+  x impedir criação de novo identificador com nome idêntico a um identificador ainda ativo
 
 ----------------------------------------------------------------------------------------------------
 
