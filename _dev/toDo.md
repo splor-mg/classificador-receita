@@ -1,7 +1,6 @@
 ----------------------------------------------------------------------------------------------------
 # lista
-
-
+- implementar padrões à gestão das novas tabelas
 - criar protocolo de incorporação de bases
   - tratamento Excel/csv anos
   - gerar script que vai considerar alteração nos metadados d
@@ -15,6 +14,10 @@
 - remover protocolo de ação de exclusão física que existe na tela inicial e substituir por exportar
 - reorganizar issues - modelagem dados antigos etc, fechar issues antigos
 - criar oreintações para instalação do poetry e python e melhorar para wsl/windows
+
+- avaliar dicionário de palavras abreviadas, para poder serem reaproveitadas especialmente quando da criação do detalhamento - entendo que, a princípio, isso envolveria a implementação de uma tabela para manutenção dessas palavras abreviadas. Essa implementação, além de facilitar/agilizar a implementação
+
+- avaliar estratégia de documentação das áreas de intervenção que classificam as áreas dos convênios
 
 -------- feito
 
