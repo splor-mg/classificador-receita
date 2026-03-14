@@ -1,5 +1,7 @@
 ----------------------------------------------------------------------------------------------------
 # lista
+
+- avaliar a "justificativa de alteração" não apenas como parâmetro de registro, mas como parâmetro de documentação 
 - implementar padrões à gestão das novas tabelas
 - criar protocolo de incorporação de bases
   - tratamento Excel/csv anos
