@@ -180,8 +180,8 @@ class ClassificacaoAdmin(
         "base_legal_tecnica_id",
         "data_vigencia_inicio",
         "data_vigencia_fim",
-        "data_registro_inicio",
-        "data_registro_fim",
+        "data_registro_inicio_fmt",
+        "data_registro_fim_fmt",
     ]
 
     class Media:
