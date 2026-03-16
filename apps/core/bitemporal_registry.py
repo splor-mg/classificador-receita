@@ -249,9 +249,23 @@ def get_model_for_resource(name: str):
     res = get_resource(name)
     models_map, _, _ = _get_models()
     model_name = res["model_name"]
-    if model_name not in models_map:
-        raise KeyError(f"Model '{model_name}' não encontrado em core.models")
-    return models_map[model_name]
+    cls = models_map.get(model_name)
+
+    # Fallback: resolver dinamicamente via registry de apps do Django,
+    # o que permite localizar models definidos fora de apps.core.models
+    # (ex.: BaseLegalTecnica em models_base_legal).
+    if cls is None:
+        try:
+            from django.apps import apps as django_apps
+
+            cls = django_apps.get_model("core", model_name)
+        except Exception:
+            cls = None
+
+    if cls is None:
+        raise KeyError(f"Model '{model_name}' não encontrado para recurso '{name}'")
+
+    return cls
 
 
 def get_resource_for_model(model_cls) -> Optional[str]:
