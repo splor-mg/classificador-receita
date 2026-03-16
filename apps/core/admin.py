@@ -169,6 +169,20 @@ class ClassificacaoAdmin(
     readonly_fields = ["data_registro_inicio_fmt", "data_registro_fim_fmt"]
     date_hierarchy = "data_vigencia_inicio"
     raw_id_fields = ["serie_id", "base_legal_tecnica_id"]
+    fields = [
+        ("classificacao_id", "classificacao_ref"),
+        "serie_id",
+        "classificacao_nome",
+        "classificacao_descricao",
+        "tipo_classificacao",
+        "numero_niveis",
+        "numero_digitos",
+        "base_legal_tecnica_id",
+        "data_vigencia_inicio",
+        "data_vigencia_fim",
+        "data_registro_inicio",
+        "data_registro_fim",
+    ]
 
     class Media:
         js = ("core/admin_bitemporal_date_shortcuts.js",)
