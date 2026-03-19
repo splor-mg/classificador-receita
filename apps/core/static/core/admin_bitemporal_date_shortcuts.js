@@ -5,6 +5,128 @@
 // usando os widgets padrão de data do admin (vDateField).
 
 (function () {
+  function ensureCalendarCss() {
+    if (document.getElementById("bitemporal-calendar-css")) return;
+    var style = document.createElement("style");
+    style.id = "bitemporal-calendar-css";
+    style.textContent = `
+.bitemporal-calendar-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.bitemporal-calendar-box {
+  background: #fff;
+  padding: 1.5em;
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75em;
+}
+.bitemporal-calendar-box input[type="date"] {
+  padding: 6px 10px;
+  font-size: 1em;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.bitemporal-calendar-grid { min-width: 19em; text-align: center; }
+.bitemporal-calendar-grid .bitemporal-cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  background: var(--accent, #ffc);
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: #333;
+}
+.bitemporal-calendar-grid .bitemporal-cal-nav a {
+  text-decoration: none;
+  color: #333;
+  padding: 2px 6px;
+}
+.bitemporal-calendar-grid .bitemporal-cal-nav a:hover { color: #417690; }
+.bitemporal-calendar-grid .bitemporal-cal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  margin: 0;
+}
+.bitemporal-calendar-grid .bitemporal-cal-table th {
+  padding: 6px 4px;
+  background: var(--darkened-bg, #e8e8e8);
+  border-bottom: 1px solid #ddd;
+  font-weight: 400;
+  color: #666;
+}
+.bitemporal-calendar-grid .bitemporal-cal-table td { padding: 0; border: none; }
+.bitemporal-calendar-grid .bitemporal-cal-table td a {
+  display: block;
+  padding: 6px;
+  text-decoration: none;
+  color: #333;
+}
+.bitemporal-calendar-grid .bitemporal-cal-table td a:hover {
+  background: #417690;
+  color: #fff;
+}
+.bitemporal-calendar-grid .bitemporal-cal-table td.bitemporal-cal-today a {
+  font-weight: 700;
+  border: 1px solid #417690;
+}
+.bitemporal-calendar-grid .bitemporal-cal-table td.bitemporal-cal-noday {
+  color: #ccc;
+}
+.bitemporal-calendar-grid .bitemporal-cal-shortcuts {
+  padding: 8px;
+  font-size: 0.6875rem;
+  border-top: 1px solid #eee;
+  background: #f9f9f9;
+}
+.bitemporal-calendar-grid .bitemporal-cal-shortcuts a {
+  color: #417690;
+  text-decoration: none;
+}
+.bitemporal-calendar-grid .bitemporal-cal-shortcuts a:hover { text-decoration: underline; }
+.bitemporal-calendar-grid .bitemporal-cal-cancel {
+  margin: 0;
+  padding: 6px;
+  font-size: 0.75rem;
+  background: #f0f0f0;
+  border-top: 1px solid #ddd;
+}
+.bitemporal-calendar-grid .bitemporal-cal-cancel a {
+  color: #333;
+  text-decoration: none;
+}
+.bitemporal-calendar-grid .bitemporal-cal-cancel a:hover { text-decoration: underline; }
+.bitemporal-calendar-box .btn {
+  margin-right: 0.5em;
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-size: 0.9em;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+.bitemporal-calendar-box .btn-primary {
+  background-color: #417690;
+  border-color: #355f73;
+  color: #fff;
+}
+.bitemporal-calendar-box .btn-secondary {
+  background-color: #f5f5f5;
+  border-color: #d4d4d4;
+  color: #333;
+}
+`;
+    document.head.appendChild(style);
+  }
+
   function formatDateBR(day, month, year) {
     var dd = String(day).padStart(2, "0");
     var mm = String(month).padStart(2, "0");
@@ -574,6 +696,7 @@
 
   function init() {
     if (isAddView()) {
+      ensureCalendarCss();
       enhanceAddFormVigencia();
     }
 
