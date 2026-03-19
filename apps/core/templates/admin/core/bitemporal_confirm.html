@@ -287,6 +287,64 @@
 <script src="{% static 'core/admin_bitemporal_confirm_messages.js' %}"></script>
 <link rel="stylesheet" href="{% static 'admin/css/widgets.css' %}">
 <script src="{% static 'core/admin_bitemporal_date_shortcuts.js' %}"></script>
+{# Garante comportamento padrão de lupa (popup) para links .related-lookup #}
+<script src="{% static 'admin/js/admin/RelatedObjectLookups.js' %}"></script>
+{# Fallback para garantir popup + dismiss em tela de confirmação #}
+<script>
+  (function () {
+    function removePopupIndex(name) {
+      return String(name || "").replace(/__\d+$/, "");
+    }
+
+    // Override mínimo do dismiss usado pelas telas de lookup do Django.
+    // Atualiza o hidden input no opener e dispara change.
+    window.dismissRelatedLookupPopup = function (win, chosenId) {
+      try {
+        const name = removePopupIndex(win.name);
+        const elem = document.getElementById(name);
+        if (!elem) return;
+        elem.value = chosenId;
+        try {
+          if (window.django && window.django.jQuery) {
+            window.django.jQuery(elem).trigger("change");
+          } else if (window.jQuery) {
+            window.jQuery(elem).trigger("change");
+          } else {
+            elem.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+        } catch (e) {
+          try {
+            elem.dispatchEvent(new Event("change", { bubbles: true }));
+          } catch (e2) {}
+        }
+      } finally {
+        try {
+          if (win && win.close) win.close();
+        } catch (e) {}
+      }
+    };
+
+    // Abre a popup no formato esperado pelo dismiss (baseName + "__1").
+    window.coreBitemporalLookupPopup = function (anchor, evt) {
+      evt = evt || window.event;
+      if (evt && evt.preventDefault) evt.preventDefault();
+      if (evt && evt.stopPropagation) evt.stopPropagation();
+
+      var anchorId = anchor && anchor.id ? anchor.id : "";
+      var baseName = anchorId.replace(/^lookup_/, ""); // => id_edit_field_<campo>
+
+      var href = anchor.getAttribute("href") || anchor.href;
+      try {
+        var u = new URL(href, window.location.href);
+        u.searchParams.set("_popup", "1");
+        href = u.toString();
+      } catch (e) {}
+
+      window.open(href, baseName + "__1", "height=500,width=800,resizable=yes,scrollbars=yes");
+      return false;
+    };
+  })();
+</script>
 {% endblock %}
 
 {% block content %}
@@ -334,7 +392,92 @@
             <div class="diff-value"><span class="diff-label diff-label-atual">Atual</span> <span>{{ d.old_display }}</span></div>
             <div class="diff-value">
               <span class="diff-label diff-label-novo">Novo</span>
-              {% if d.grouped_choices %}
+              {% if d.fk_lookup_url %}
+              <input
+                type="hidden"
+                name="edit_field_{{ d.field_name }}"
+                value="{{ d.new }}"
+                id="id_edit_field_{{ d.field_name }}"
+              />
+              <div style="display:flex; align-items:center; gap: 6px;">
+                <input
+                  type="text"
+                  disabled
+                  value="{{ d.new_display }}"
+                  id="id_edit_field_{{ d.field_name }}_display"
+                  class="vTextField"
+                  style="width: 12em;"
+                />
+                <a
+                  href="{{ d.fk_lookup_url }}"
+                  class="related-lookup"
+                  id="lookup_id_edit_field_{{ d.field_name }}"
+                  title="Lookup"
+                  onclick="return window.coreBitemporalLookupPopup(this, event);"
+                  style="display:inline-block; width:1rem; height:1rem; margin-left:5px; vertical-align:middle;"
+                >
+                  <img
+                    src="{% static 'admin/img/search.svg' %}"
+                    alt=""
+                    style="width:14px; height:14px;"
+                  />
+                </a>
+                {% if d.fk_link_url %}
+                <a
+                  href="{{ d.fk_link_url }}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  id="record_link_edit_field_{{ d.field_name }}"
+                  class="related-object-link"
+                  style="margin-left:6px;"
+                >{{ d.new_display }}</a>
+                {% endif %}
+              </div>
+              {% if d.fk_semantic_lookup_url %}
+              <script>
+                (function () {
+                  var hidden = document.getElementById("id_edit_field_{{ d.field_name }}");
+                  var display = document.getElementById("id_edit_field_{{ d.field_name }}_display");
+                  if (!hidden || !display) return;
+
+                  function update(pk) {
+                    if (!pk) { display.value = ""; return; }
+                    var url = "{{ d.fk_semantic_lookup_url }}".replace("{pk}", pk);
+                    fetch(url, { method: "GET", credentials: "same-origin" })
+                      .then(function (r) { return r.json(); })
+                      .then(function (data) {
+                        if (data && typeof data.semantic_value !== "undefined") {
+                          display.value = data.semantic_value;
+                        }
+                        var linkEl = document.getElementById("record_link_edit_field_{{ d.field_name }}");
+                        if (linkEl && data) {
+                          linkEl.href = data.link_url || "#";
+                          if (typeof data.display_label !== "undefined" && data.display_label !== null && data.display_label !== "") {
+                            linkEl.textContent = data.display_label;
+                          } else if (typeof data.semantic_value !== "undefined") {
+                            linkEl.textContent = data.semantic_value;
+                          }
+                        }
+                      })
+                      .catch(function () {});
+                  }
+
+                  var jq = null;
+                  try {
+                    jq = window.django && window.django.jQuery ? window.django.jQuery : window.jQuery;
+                  } catch (e) {}
+
+                  if (jq) {
+                    jq(hidden).on("change", function () { update(hidden.value); });
+                  } else {
+                    hidden.addEventListener("change", function () { update(hidden.value); });
+                  }
+
+                  if (hidden.value) update(hidden.value);
+                })();
+              </script>
+              {% endif %}
+              {% elif d.grouped_choices %}
               <select class="diff-select" name="edit_field_{{ d.field_name }}">
                 {% for group_label, group_choices in d.grouped_choices %}
                 <optgroup label="{{ group_label }}">
@@ -347,7 +490,7 @@
               {% elif d.choices %}
               <select class="diff-select" name="edit_field_{{ d.field_name }}">
                 {% for choice_val, choice_label in d.choices %}
-                <option value="{{ choice_val }}" {% if choice_val == d.new %}selected{% endif %}>{{ choice_val }} - {{ choice_label }}</option>
+                <option value="{{ choice_val }}" {% if choice_val == d.new %}selected{% endif %}>{{ choice_label }}</option>
                 {% endfor %}
               </select>
               {% elif d.new|length > 80 %}

@@ -226,7 +226,7 @@ class ClassificacaoAdmin(
                 return JsonResponse(
                     {
                         "semantic_value": obj.serie_id,
-                        "display_label": str(obj),
+                        "display_label": f"{obj.serie_id} - {obj.serie_nome}",
                         "link_url": link_url,
                     }
                 )

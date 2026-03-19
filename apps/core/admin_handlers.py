@@ -96,21 +96,95 @@ class BitemporalChangeHandler:
 
             choices = None
             grouped_choices = None
-            if hasattr(field_meta, 'choices') and field_meta.choices:
-                choices = list(field_meta.choices)
-                # Para orgao_responsavel, aproveitar metadado de agrupamento
-                # para exibir um select mais informativo na tela de confirmação.
-                if field == "orgao_responsavel":
-                    grouped_choices = ORGAOS_ENTIDADES_GROUPED_CHOICES
-            if choices:
-                choices_dict = dict(choices)
-                label_display = choices_dict.get(old, old)
-                if old is not None and label_display is not None and old != label_display:
-                    old_display = f"{old} - {label_display}"
-                else:
-                    old_display = label_display
+            old_display = old
+            fk_lookup_url = None
+            fk_semantic_lookup_url = None
+            fk_kind = None
+            fk_link_url = None
+            new_display = None
+
+            # ForeignKey: renderizar pela chave semântica (*_id) e, se possível,
+            # exibir como select (para não ficar "livre" como input texto).
+            if getattr(field_meta, "is_relation", False) and getattr(field_meta, "many_to_one", False):
+                related_model = field_meta.remote_field.model
+                semantic_attr = field_meta.name  # ex.: serie_id, base_legal_tecnica_id
+                if field_meta.name == "serie_id":
+                    fk_kind = "serie"
+                elif field_meta.name == "base_legal_tecnica_id":
+                    fk_kind = "base_legal_tecnica"
+
+                def resolve_obj(val):
+                    if val is None or val == "":
+                        return None
+                    if isinstance(val, related_model):
+                        return val
+                    try:
+                        return related_model._default_manager.filter(pk=val).first()
+                    except Exception:
+                        return None
+
+                old_obj = resolve_obj(old)
+                new_obj = resolve_obj(new)
+
+                old_pk = getattr(old_obj, "pk", old)
+                new_pk = getattr(new_obj, "pk", new)
+
+                old_display = getattr(old_obj, semantic_attr, old_pk)
+                new_display = getattr(new_obj, semantic_attr, new_pk)
+
+                old = old_pk
+                new = new_pk
+
+                # Link direto para abrir o registro relacionado (tela de change).
+                fk_link_url = None
+                try:
+                    if new_obj is not None:
+                        fk_link_url = reverse(
+                            f"admin:{related_model._meta.app_label}_{related_model._meta.model_name}_change",
+                            args=[new_obj.pk],
+                        )
+                except Exception:
+                    fk_link_url = None
+
+                # Usar "lupa" (lookup popup) em vez de dropdown.
+                fk_lookup_url = None
+                fk_semantic_lookup_url = None
+                if fk_kind:
+                    from django.contrib.admin.widgets import ForeignKeyRawIdWidget as DRFWidget
+
+                    lookup_widget = DRFWidget(field_meta.remote_field, self.admin.admin_site)
+                    # Para obter related_url, o nome/attrs não precisam refletir o input final,
+                    # pois a URL vem da configuração do widget.
+                    fk_lookup_url = lookup_widget.get_context(
+                        f"edit_field_{field}",
+                        new_pk,
+                        attrs={"id": f"id_edit_field_{field}"},
+                    ).get("related_url")
+
+                    # Endpoint para converter pk -> *_id semântico.
+                    fk_semantic_lookup_url = reverse(
+                        f"admin:core_classificacao_semantic_lookup",
+                        kwargs={"kind": fk_kind, "pk": 0},
+                    )
+                    fk_semantic_lookup_url = fk_semantic_lookup_url.replace("/0/", "/{pk}/")
+
+                # Impede renderização como select no template.
+                choices = None
+                grouped_choices = None
+
             else:
-                old_display = old
+                if hasattr(field_meta, "choices") and field_meta.choices:
+                    choices = list(field_meta.choices)
+                    # Para orgao_responsavel, aproveitar metadado de agrupamento
+                    # para exibir um select mais informativo na tela de confirmação.
+                    if field == "orgao_responsavel":
+                        grouped_choices = ORGAOS_ENTIDADES_GROUPED_CHOICES
+
+                if choices:
+                    choices_dict = dict(choices)
+                    # Para evitar duplicação "valor - label", exibir somente o label.
+                    label_display = choices_dict.get(old, old)
+                    old_display = label_display
 
             diff_entry = {
                 "field": label,
@@ -120,6 +194,11 @@ class BitemporalChangeHandler:
                 "new": new,
                 "choices": choices,
                 "grouped_choices": grouped_choices,
+                "fk_lookup_url": fk_lookup_url,
+                "fk_semantic_lookup_url": fk_semantic_lookup_url,
+                "fk_kind": fk_kind,
+                "fk_link_url": fk_link_url,
+                "new_display": new_display,
             }
 
             if field in VIGENCIA_FIELDS:
@@ -156,7 +235,18 @@ class BitemporalChangeHandler:
                 else:
                     if hasattr(field_obj, "to_python"):
                         try:
-                            new_val = field_obj.to_python(raw_val)
+                            # Para ForeignKey, `to_python()` nem sempre retorna
+                            # instância do relacionado quando o valor vem do
+                            # hidden/raw_id. Garantimos conversão para
+                            # instância para evitar erro de atribuição no ORM.
+                            if getattr(field_obj, "is_relation", False) and getattr(field_obj, "many_to_one", False):
+                                rel_model = field_obj.remote_field.model
+                                if raw_val in (None, ""):
+                                    new_val = None
+                                else:
+                                    new_val = rel_model._default_manager.filter(pk=raw_val).first()
+                            else:
+                                new_val = field_obj.to_python(raw_val)
                         except Exception:
                             new_val = raw_val
                     else:

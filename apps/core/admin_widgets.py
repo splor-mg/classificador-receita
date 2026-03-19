@@ -36,6 +36,7 @@ class ForeignKeySemanticDisplayRawIdWidget(ForeignKeyRawIdWidget):
         context = super().get_context(name, value, attrs)
 
         semantic_value = ""
+        link_label = None
         if context["widget"].get("value"):
             try:
                 key = self.rel.get_related_field().name
@@ -45,10 +46,19 @@ class ForeignKeySemanticDisplayRawIdWidget(ForeignKeyRawIdWidget):
                     )
                 )
                 semantic_value = getattr(obj, self.semantic_field, "") or ""
+
+                # Padroniza o texto exibido ao lado da lupa para "Série de Classificações"
+                # no mesmo estilo usado por BaseLegalTecnica: "<*_id> - <nome>".
+                if self.semantic_field == "serie_id":
+                    serie_nome = getattr(obj, "serie_nome", "") or ""
+                    serie_id = getattr(obj, "serie_id", "") or ""
+                    link_label = f"{serie_id} - {serie_nome}".strip(" -")
             except Exception:
                 semantic_value = ""
 
         context["widget"]["semantic_value"] = semantic_value
         context["widget"]["semantic_lookup_url"] = self.semantic_lookup_url
+        if link_label is not None:
+            context["link_label"] = link_label
         return context
 
