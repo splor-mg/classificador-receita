@@ -2,6 +2,7 @@ from datetime import date
 
 from django.contrib import admin
 from django.forms import TextInput
+from django.http import JsonResponse
 
 from apps.core.models import (
     SerieClassificacao,
@@ -193,6 +194,11 @@ class ClassificacaoAdmin(
         urls = super().get_urls()
         custom = [
             path(
+                "semantic-lookup/<str:kind>/<int:pk>/",
+                self.admin_site.admin_view(self.semantic_lookup_view),
+                name="core_classificacao_semantic_lookup",
+            ),
+            path(
                 "<path:object_id>/block/",
                 self.admin_site.admin_view(self.block_view),
                 name="core_classificacao_block",
@@ -204,6 +210,55 @@ class ClassificacaoAdmin(
             ),
         ]
         return custom + urls
+
+    def semantic_lookup_view(self, request, kind: str, pk: int):
+        """
+        Endpoint usado pelo widget para atualizar a exibição semântica (*_id)
+        após a seleção na popup de "lupa".
+        """
+        if kind == "serie":
+            try:
+                obj = SerieClassificacao.objects.get(pk=pk)
+                link_url = reverse(
+                    f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change",
+                    args=[obj.pk],
+                )
+                return JsonResponse(
+                    {
+                        "semantic_value": obj.serie_id,
+                        "display_label": str(obj),
+                        "link_url": link_url,
+                    }
+                )
+            except Exception:
+                return JsonResponse(
+                    {"semantic_value": "", "display_label": "", "link_url": ""}
+                )
+        if kind == "base_legal_tecnica":
+            try:
+                obj = BaseLegalTecnica.objects.get(pk=pk)
+                link_url = reverse(
+                    f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change",
+                    args=[obj.pk],
+                )
+                return JsonResponse(
+                    {
+                        "semantic_value": obj.base_legal_tecnica_id,
+                        "display_label": str(obj),
+                        "link_url": link_url,
+                    }
+                )
+            except Exception:
+                return JsonResponse(
+                    {
+                        "semantic_value": "",
+                        "display_label": "",
+                        "link_url": "",
+                    }
+                )
+        return JsonResponse(
+            {"semantic_value": "", "display_label": "", "link_url": ""}
+        )
 
     def block_view(self, request, object_id):
         handler = BlockHandler(self)
@@ -220,18 +275,31 @@ class ClassificacaoAdmin(
         """
         if db_field.name == "serie_id":
             db = kwargs.get("using")
+            lookup_url = reverse(
+                "admin:core_classificacao_semantic_lookup",
+                kwargs={"kind": "serie", "pk": 0},
+            )
+            # trocamos o pk=0 por um placeholder para ser substituído no widget JS
+            lookup_url = lookup_url.replace("/0/", "/{pk}/")
             kwargs["widget"] = ForeignKeySemanticDisplayRawIdWidget(
                 db_field.remote_field,
                 self.admin_site,
                 semantic_field="serie_id",
+                semantic_lookup_url=lookup_url,
                 using=db,
             )
         elif db_field.name == "base_legal_tecnica_id":
             db = kwargs.get("using")
+            lookup_url = reverse(
+                "admin:core_classificacao_semantic_lookup",
+                kwargs={"kind": "base_legal_tecnica", "pk": 0},
+            )
+            lookup_url = lookup_url.replace("/0/", "/{pk}/")
             kwargs["widget"] = ForeignKeySemanticDisplayRawIdWidget(
                 db_field.remote_field,
                 self.admin_site,
                 semantic_field="base_legal_tecnica_id",
+                semantic_lookup_url=lookup_url,
                 using=db,
             )
 

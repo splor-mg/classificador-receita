@@ -15,7 +15,7 @@
   disabled
   id="{{ widget.attrs.id }}_display"
   class="vTextField {{ widget.attrs.class|default:'' }}"
-  style="width: 30ch;"
+  style="width: 37ch;"
 />{% if related_url %}
 
 <a
@@ -25,8 +25,74 @@
   title="{{ link_title }}"
 ></a>
 {% endif %}{% if link_label %}
-<strong>{% if link_url %}<a href="{{ link_url }}">{{ link_label }}</a>{% else %}{{ link_label }}{% endif %}</strong>
+<strong id="{{ widget.attrs.id }}_label">
+  {% if link_url %}
+    <a id="{{ widget.attrs.id }}_label_link" href="{{ link_url }}">{{ link_label }}</a>
+  {% else %}
+    {{ link_label }}
+  {% endif %}
+</strong>
 {% endif %}{% if related_url %}
 </div>
+{% endif %}
+
+{% if widget.semantic_lookup_url %}
+<script>
+  (function () {
+    var hiddenId = "{{ widget.attrs.id }}";
+    var displayId = hiddenId + "_display";
+    var hidden = document.getElementById(hiddenId);
+    var display = document.getElementById(displayId);
+    if (!hidden || !display) return;
+
+    function updateDisplayFromSemanticPk(pk) {
+      if (!pk) {
+        display.value = "";
+        return;
+      }
+      var url = "{{ widget.semantic_lookup_url }}".replace("{pk}", pk);
+      fetch(url, { method: "GET", credentials: "same-origin" })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data && typeof data.semantic_value !== "undefined") {
+            display.value = data.semantic_value;
+          }
+          var labelStrong = document.getElementById(hiddenId + "_label");
+          var labelLink = document.getElementById(hiddenId + "_label_link");
+          if (labelLink && data && data.link_url) {
+            labelLink.href = data.link_url;
+            labelLink.textContent =
+              typeof data.display_label !== "undefined" && data.display_label !== null
+                ? data.display_label
+                : data.semantic_value;
+          } else if (labelStrong) {
+            labelStrong.textContent =
+              typeof data.display_label !== "undefined" && data.display_label !== null
+                ? data.display_label
+                : data.semantic_value;
+          }
+        })
+        .catch(function () {});
+    }
+
+    var jq = null;
+    try {
+      jq = window.django && window.django.jQuery ? window.django.jQuery : window.jQuery;
+    } catch (e) {}
+
+    function onHiddenChanged() {
+      updateDisplayFromSemanticPk(hidden.value);
+    }
+
+    if (jq) {
+      jq(hidden).on("change", onHiddenChanged);
+    } else {
+      hidden.addEventListener("change", onHiddenChanged);
+    }
+
+    // Se já houver valor inicial, sincroniza o texto por consistência.
+    if (hidden.value) updateDisplayFromSemanticPk(hidden.value);
+  })();
+</script>
 {% endif %}
 

@@ -24,11 +24,13 @@ class ForeignKeySemanticDisplayRawIdWidget(ForeignKeyRawIdWidget):
         admin_site,
         *,
         semantic_field: str,
+        semantic_lookup_url: str | None = None,
         attrs: dict[str, Any] | None = None,
         using: str | None = None,
     ):
         super().__init__(rel, admin_site, attrs=attrs, using=using)
         self.semantic_field = semantic_field
+        self.semantic_lookup_url = semantic_lookup_url
 
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
@@ -47,5 +49,6 @@ class ForeignKeySemanticDisplayRawIdWidget(ForeignKeyRawIdWidget):
                 semantic_value = ""
 
         context["widget"]["semantic_value"] = semantic_value
+        context["widget"]["semantic_lookup_url"] = self.semantic_lookup_url
         return context
 
