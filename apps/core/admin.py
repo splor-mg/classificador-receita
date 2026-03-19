@@ -1,6 +1,7 @@
 from datetime import date
 
 from django.contrib import admin
+from django.forms import TextInput
 
 from apps.core.models import (
     SerieClassificacao,
@@ -235,6 +236,21 @@ class ClassificacaoAdmin(
             )
 
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        """
+        Ajusta widgets para melhorar UX do formulário de Classificacao.
+        """
+        formfield = super().formfield_for_dbfield(db_field, request, **kwargs)
+        if db_field.name == "classificacao_nome" and formfield is not None:
+            # O Django Admin configura o textarea de `classificacao_descricao`
+            # com `cols=40` e classe `.vLargeTextField`.
+            # Para o input de `classificacao_nome`, o padrão da classe causa
+            # divergência visual; então igualamos pela largura em `ch`.
+            formfield.widget = TextInput(
+                attrs={"class": "vLargeTextField", "style": "width:87ch;"}
+            )
+        return formfield
 
     def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
         extra_context = extra_context or {}
