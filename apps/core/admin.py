@@ -30,6 +30,7 @@ from apps.core.admin_mixins import (
     BitemporalDateFormatMixin,
     AutoExportAdminMixin,
 )
+from apps.core.admin_widgets import ForeignKeySemanticDisplayRawIdWidget
 from apps.core.admin_handlers import BlockHandler, DeleteHandler
 
 
@@ -210,6 +211,30 @@ class ClassificacaoAdmin(
     def delete_view(self, request, object_id):
         handler = DeleteHandler(self)
         return handler.handle(request, object_id)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        """
+        Exibe o identificador semântico (*_id) no campo FK, preservando o
+        valor real (PK) submetido para validação do Django.
+        """
+        if db_field.name == "serie_id":
+            db = kwargs.get("using")
+            kwargs["widget"] = ForeignKeySemanticDisplayRawIdWidget(
+                db_field.remote_field,
+                self.admin_site,
+                semantic_field="serie_id",
+                using=db,
+            )
+        elif db_field.name == "base_legal_tecnica_id":
+            db = kwargs.get("using")
+            kwargs["widget"] = ForeignKeySemanticDisplayRawIdWidget(
+                db_field.remote_field,
+                self.admin_site,
+                semantic_field="base_legal_tecnica_id",
+                using=db,
+            )
+
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
         extra_context = extra_context or {}

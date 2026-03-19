@@ -1,0 +1,32 @@
+{% if related_url %}<div>{% endif %}
+
+{# Hidden field keeps the real value (PK) for form validation #}
+<input
+  type="hidden"
+  name="{{ widget.name }}"
+  value="{{ widget.value }}"
+  id="{{ widget.attrs.id }}"
+/>
+
+{# Visible semantic display: not submitted #}
+<input
+  type="text"
+  value="{{ widget.semantic_value }}"
+  disabled
+  id="{{ widget.attrs.id }}_display"
+  class="vTextField {{ widget.attrs.class|default:'' }}"
+  style="width: 30ch;"
+/>{% if related_url %}
+
+<a
+  href="{{ related_url }}"
+  class="related-lookup"
+  id="lookup_id_{{ widget.name }}"
+  title="{{ link_title }}"
+></a>
+{% endif %}{% if link_label %}
+<strong>{% if link_url %}<a href="{{ link_url }}">{{ link_label }}</a>{% else %}{{ link_label }}{% endif %}</strong>
+{% endif %}{% if related_url %}
+</div>
+{% endif %}
+
