@@ -496,7 +496,15 @@
               {% elif d.new|length > 80 %}
               <textarea class="diff-textarea" name="edit_field_{{ d.field_name }}">{{ d.new }}</textarea>
               {% else %}
-              <input type="text" class="diff-input" name="edit_field_{{ d.field_name }}" value="{{ d.new }}">
+              <input
+                type="{{ d.input_type|default:'text' }}"
+                class="diff-input"
+                name="edit_field_{{ d.field_name }}"
+                value="{{ d.new }}"
+                {% if d.input_type == 'number' %}
+                step="{{ d.input_step|default:'1' }}"
+                {% endif %}
+              >
               {% endif %}
             </div>
           </td>

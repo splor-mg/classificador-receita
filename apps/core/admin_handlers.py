@@ -102,6 +102,32 @@ class BitemporalChangeHandler:
             fk_kind = None
             fk_link_url = None
             new_display = None
+            input_type = "text"
+            input_step = None
+
+            # Para campos numéricos, renderizar input como `type="number"` para manter
+            # o comportamento de setas e restringir a entrada ao tipo numérico.
+            try:
+                from django.db import models as dj_models
+
+                if isinstance(
+                    field_meta,
+                    (
+                        dj_models.IntegerField,
+                        dj_models.PositiveIntegerField,
+                        dj_models.PositiveSmallIntegerField,
+                        dj_models.SmallIntegerField,
+                        dj_models.BigIntegerField,
+                    ),
+                ):
+                    input_type = "number"
+                    input_step = "1"
+                elif isinstance(field_meta, (dj_models.DecimalField, dj_models.FloatField)):
+                    input_type = "number"
+                    input_step = "any"
+            except Exception:
+                # Caso não identifiquemos o tipo com segurança, mantemos fallback `text`.
+                pass
 
             # ForeignKey: renderizar pela chave semântica (*_id) e, se possível,
             # exibir como select (para não ficar "livre" como input texto).
@@ -199,6 +225,8 @@ class BitemporalChangeHandler:
                 "fk_kind": fk_kind,
                 "fk_link_url": fk_link_url,
                 "new_display": new_display,
+                "input_type": input_type,
+                "input_step": input_step,
             }
 
             if field in VIGENCIA_FIELDS:
