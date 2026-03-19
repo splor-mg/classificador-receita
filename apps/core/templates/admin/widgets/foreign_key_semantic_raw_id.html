@@ -25,15 +25,21 @@
   title="{{ link_title }}"
   style="display:inline-block; margin-right: 14px;"
 ></a>
-{% endif %}{% if link_label %}
+{% endif %}
+
+{% if not widget.semantic_value %}
+<strong id="{{ widget.attrs.id }}_label" style="display:none;">
+{% else %}
 <strong id="{{ widget.attrs.id }}_label">
-  {% if link_url %}
-    <a id="{{ widget.attrs.id }}_label_link" href="{{ link_url }}">{{ link_label }}</a>
-  {% else %}
-    {{ link_label }}
-  {% endif %}
+{% endif %}
+  <a
+    id="{{ widget.attrs.id }}_label_link"
+    href="{{ link_url|default:'' }}"
+  >
+    {{ link_label|default:widget.semantic_value }}
+  </a>
 </strong>
-{% endif %}{% if related_url %}
+{% if related_url %}
 </div>
 {% endif %}
 
@@ -47,8 +53,13 @@
     if (!hidden || !display) return;
 
     function updateDisplayFromSemanticPk(pk) {
+      var labelStrong = document.getElementById(hiddenId + "_label");
+      var labelLink = document.getElementById(hiddenId + "_label_link");
+
       if (!pk) {
         display.value = "";
+        if (labelStrong) labelStrong.style.display = "none";
+        if (labelLink) labelLink.textContent = "";
         return;
       }
       var url = "{{ widget.semantic_lookup_url }}".replace("{pk}", pk);
@@ -58,19 +69,20 @@
           if (data && typeof data.semantic_value !== "undefined") {
             display.value = data.semantic_value;
           }
-          var labelStrong = document.getElementById(hiddenId + "_label");
-          var labelLink = document.getElementById(hiddenId + "_label_link");
-          if (labelLink && data && data.link_url) {
-            labelLink.href = data.link_url;
-            labelLink.textContent =
-              typeof data.display_label !== "undefined" && data.display_label !== null
-                ? data.display_label
-                : data.semantic_value;
-          } else if (labelStrong) {
-            labelStrong.textContent =
-              typeof data.display_label !== "undefined" && data.display_label !== null
-                ? data.display_label
-                : data.semantic_value;
+          var resolvedText =
+            data && typeof data.display_label !== "undefined" && data.display_label !== null
+              ? data.display_label
+              : (data ? data.semantic_value : "");
+
+          if (labelLink) {
+            if (data && data.link_url) {
+              labelLink.href = data.link_url;
+            }
+            labelLink.textContent = resolvedText || "";
+          }
+
+          if (labelStrong) {
+            labelStrong.style.display = resolvedText ? "" : "none";
           }
         })
         .catch(function () {});
