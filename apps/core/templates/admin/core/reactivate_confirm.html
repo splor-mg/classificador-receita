@@ -247,6 +247,8 @@
             {% elif field.field_type == 'fk' %}
             <input type="hidden" name="edit_field_{{ field.name }}" value="{{ field.value|default_if_none:'' }}">
             <span class="diff-readonly">{{ field.display_value }}</span>
+            {% elif field.readonly %}
+            <input type="text" name="edit_field_{{ field.name }}" value="{{ field.value|default_if_none:'' }}" class="diff-input" disabled>
             {% else %}
             <input type="text" name="edit_field_{{ field.name }}" value="{{ field.value|default_if_none:'' }}" class="diff-input">
             {% endif %}

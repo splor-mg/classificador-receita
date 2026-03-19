@@ -1378,8 +1378,7 @@ class ReactivateHandler:
                 continue
             if name in self.SYSTEM_FIELDS or name in self.VIGENCIA_FIELDS:
                 continue
-            if name.endswith("_ref"):
-                continue
+            is_ref_field = name.endswith("_ref")
 
             label = getattr(f, "verbose_name", name).capitalize()
             is_fk = f.is_relation
@@ -1431,6 +1430,7 @@ class ReactivateHandler:
                 "choices": choices,
                 "is_fk": is_fk,
                 "is_grouped": is_grouped,
+                "readonly": is_ref_field,
             })
 
         return fields
