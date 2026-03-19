@@ -699,6 +699,15 @@ class BitemporalChangeHandler:
             )
             prefer_sobrescrever_default = not prefer_nova_vigencia_default
 
+            # Se o usuário já selecionou uma estratégia na tela de confirmação,
+            # preservamos a escolha para permitir que ele corrija os campos e tente
+            # novamente sem perder o caminho.
+            selected_strategy = request.POST.get("edit_strategy")
+            if selected_strategy == "nova_vigencia":
+                prefer_sobrescrever_default = False
+            elif selected_strategy == "sobrescrever":
+                prefer_sobrescrever_default = True
+
             context = {
                 **self.admin.admin_site.each_context(request),
                 "title": "",
@@ -854,6 +863,14 @@ class BitemporalChangeHandler:
             if field_name in new_values:
                 effective_new_values[field_name] = new_values[field_name]
 
+        # Sempre defina a URL de retorno para a tela de edição.
+        # O código abaixo usa `change_url` inclusive dentro de exceções
+        # (ex.: validação de range), portanto precisa estar inicializada.
+        change_url = reverse(
+            f'admin:{self.model._meta.app_label}_{self.model._meta.model_name}_change',
+            args=[object_id],
+        )
+
         # Validação de consistência temporal antes de aplicar a atualização.
         # Regra: data_vigencia_fim não pode ser anterior a data_vigencia_inicio.
         vig_inicio = effective_new_values.get(
@@ -863,10 +880,6 @@ class BitemporalChangeHandler:
             "data_vigencia_fim", getattr(obj, "data_vigencia_fim", None)
         )
         if vig_inicio and vig_fim and vig_fim < vig_inicio:
-            change_url = reverse(
-                f'admin:{self.model._meta.app_label}_{self.model._meta.model_name}_change',
-                args=[object_id]
-            )
             messages.error(
                 request,
                 "Data de Início de Vigência não pode ser anterior à Data de Fim de Vigência.",
@@ -882,15 +895,157 @@ class BitemporalChangeHandler:
                 current_inicio_date = current_vig_inicio.date() if hasattr(current_vig_inicio, "date") else current_vig_inicio
                 prev_vig_fim = vig_inicio_date - timedelta(days=1)
                 if prev_vig_fim < current_inicio_date:
-                    change_url = reverse(
-                        f'admin:{self.model._meta.app_label}_{self.model._meta.model_name}_change',
-                        args=[object_id]
-                    )
                     messages.error(
                         request,
                         "Data de Início de Vigência não pode ser anterior à Data de Fim de Vigência.",
                     )
                     return HttpResponseRedirect(change_url)
+
+        # Valida campos de negócio usando os mesmos validators do model.
+        # Na tela de confirmação, os valores do POST são sobrescritos via
+        # `edit_field_*` sem passar novamente pelo `form.is_valid()`.
+        # Isso pode permitir valores fora do range (ex.: numero_niveis 1..9).
+        # Garantimos aqui que os validators do model serão aplicados antes
+        # de persistir a alteração bitemporal.
+        try:
+            import copy
+            from django.core.exceptions import ValidationError
+
+            validation_instance = copy.copy(obj)
+            for field_name, value in effective_new_values.items():
+                try:
+                    validation_instance._meta.get_field(field_name)
+                except Exception:
+                    continue
+                setattr(validation_instance, field_name, value)
+
+            validation_instance.full_clean(validate_unique=False)
+        except ValidationError as exc:
+            # Re-renderiza a própria tela de confirmação com mensagens por campo
+            # para o usuário ajustar sem sair do fluxo.
+            details = None
+            if hasattr(exc, "messages") and exc.messages:
+                details = "; ".join([str(m) for m in exc.messages])
+            else:
+                details = str(exc)
+
+            field_errors = getattr(exc, "message_dict", None) or {}
+
+            # Mantém mensagem superior genérica (UX), enquanto o detalhe fica por campo.
+            messages.error(request, "Por favor corrija os erros abaixo.")
+
+            # Monta changed_fields/preview com base nos valores efetivos
+            # (já sobrescritos via edit_field_*).
+            vigencia_fields_changed: List[str] = []
+            for field_name in VIGENCIA_FIELDS:
+                if field_name in new_values and field_name in original_values:
+                    if new_values[field_name] != original_values[field_name]:
+                        vigencia_fields_changed.append(field_name)
+
+            changed_fields_for_preview: List[str] = list(attr_changes.keys()) + vigencia_fields_changed
+
+            class _DiffFormLike:
+                def __init__(self, initial, cleaned_data):
+                    self.initial = initial
+                    self.cleaned_data = cleaned_data
+
+            diff_form = _DiffFormLike(initial=original_values, cleaned_data=new_values)
+
+            general_diffs, vigencia_diffs = self._build_diffs(
+                diff_form,
+                changed_fields_for_preview,
+            )
+            vigencia_preview = self._compute_vigencia_preview(
+                obj,
+                diff_form,
+                changed_fields_for_preview,
+            )
+
+            # Anota diffs com mensagens de erro por campo, para que o template
+            # possa renderizar a marcação visual sem depender de lookup dinâmico
+            # em dicionários (o Django template language é limitado nesse ponto).
+            if isinstance(field_errors, dict):
+                for d in (general_diffs + vigencia_diffs):
+                    field_name = d.get("field_name")
+                    if not field_name:
+                        continue
+                    errs = field_errors.get(field_name) or []
+                    message = None
+                    if isinstance(errs, (list, tuple)) and errs:
+                        message = str(errs[0])
+                    elif errs:
+                        message = str(errs)
+                    d["error_message"] = message
+            else:
+                for d in (general_diffs + vigencia_diffs):
+                    d["error_message"] = None
+
+            import json
+
+            nova_vigencia_preview_json = json.dumps(
+                [
+                    {
+                        "version": r["version"],
+                        "vig_inicio": r["vig_inicio"].isoformat() if r["vig_inicio"] else None,
+                        "vig_fim": r["vig_fim"].isoformat() if r["vig_fim"] else None,
+                        "strikethrough": r["strikethrough"],
+                    }
+                    for r in vigencia_preview["nova_vigencia_preview"]
+                ]
+            )
+
+            sobrescrever_preview_json = json.dumps(
+                [
+                    {
+                        "version": r["version"],
+                        "vig_inicio": r["vig_inicio"].isoformat() if r["vig_inicio"] else None,
+                        "vig_fim": r["vig_fim"].isoformat() if r["vig_fim"] else None,
+                        "strikethrough": r["strikethrough"],
+                    }
+                    for r in vigencia_preview["sobrescrever_preview"]
+                ]
+            )
+
+            post_items: List[Tuple[str, str]] = []
+            for k in request.POST.keys():
+                for v in request.POST.getlist(k):
+                    post_items.append((k, v))
+
+            only_vigencia_changes = not general_diffs
+            prefer_nova_vigencia_default = bool(
+                vigencia_preview.get("prefer_nova_vigencia_default")
+            )
+            prefer_sobrescrever_default = not prefer_nova_vigencia_default
+
+            context = {
+                **self.admin.admin_site.each_context(request),
+                "title": "",
+                "opts": self.model._meta,
+                "original": obj,
+                "object": obj,
+                "general_diffs": general_diffs,
+                "vigencia_diffs": vigencia_diffs,
+                "vigencia_preview": vigencia_preview,
+                "nova_vigencia_preview_json": nova_vigencia_preview_json,
+                "sobrescrever_preview_json": sobrescrever_preview_json,
+                "post_items": post_items,
+                # A template não depende diretamente deste valor, mas mantemos
+                # para consistência com o fluxo normal.
+                "changed_data": changed_fields_for_preview,
+                "form": form,
+                "change_url": change_url,
+                "only_vigencia_changes": only_vigencia_changes,
+                "prefer_sobrescrever_default": prefer_sobrescrever_default,
+                "has_changes_from_initial_form": bool(changed_fields_for_preview),
+                "field_errors": field_errors,
+            }
+
+            context.update(self._get_business_id_and_name(obj, form))
+            return TemplateResponse(request, "admin/core/bitemporal_confirm.html", context)
+        except Exception:
+            # Se algo falhar inesperadamente na validação, não bloqueamos
+            # o fluxo (mas o erro real aparecerá em seguida no apply).
+            pass
 
         try:
             self.logger.warning(

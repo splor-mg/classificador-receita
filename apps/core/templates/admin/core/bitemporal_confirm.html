@@ -494,7 +494,16 @@
                 {% endfor %}
               </select>
               {% elif d.new|length > 80 %}
-              <textarea class="diff-textarea" name="edit_field_{{ d.field_name }}">{{ d.new }}</textarea>
+              <textarea
+                class="diff-textarea"
+                name="edit_field_{{ d.field_name }}"
+                {% if d.error_message %}style="border-color:#dc3545;"{% endif %}
+              >{{ d.new }}</textarea>
+              {% if d.error_message %}
+                <div class="field-error" style="color:#dc3545; margin-top:4px;">
+                  {{ d.error_message }}
+                </div>
+              {% endif %}
               {% else %}
               <input
                 type="{{ d.input_type|default:'text' }}"
@@ -504,7 +513,13 @@
                 {% if d.input_type == 'number' %}
                 step="{{ d.input_step|default:'1' }}"
                 {% endif %}
+                {% if d.error_message %}style="border-color:#dc3545;"{% endif %}
               >
+              {% if d.error_message %}
+                <div class="field-error" style="color:#dc3545; margin-top:4px;">
+                  {{ d.error_message }}
+                </div>
+              {% endif %}
               {% endif %}
             </div>
           </td>
