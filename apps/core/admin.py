@@ -149,6 +149,7 @@ class ClassificacaoAdmin(
         "serie_id_raw",
         "tipo_classificacao",
         "numero_niveis",
+        "numero_digitos",
         "data_vigencia_inicio_fmt",
         "data_vigencia_fim_fmt",
         "data_registro_inicio_fmt",
