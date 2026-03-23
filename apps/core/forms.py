@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import TextInput, Textarea
 
-from apps.core.models import SerieClassificacao, NivelHierarquico
+from apps.core.models import SerieClassificacao, Classificacao, NivelHierarquico
 from apps.core.domain_choices import ORGAOS_ENTIDADES_GROUPED_CHOICES
 
 
@@ -25,6 +25,20 @@ class SerieClassificacaoForm(forms.ModelForm):
             "serie_nome": TextInput(attrs={"style": "width:60ch;"}),
             "serie_descricao": Textarea(
                 attrs={"style": "width:60ch; height:8em;"},
+            ),
+        }
+
+
+class ClassificacaoForm(forms.ModelForm):
+    """Formulário do Admin para Classificacao com widgets ajustados."""
+
+    class Meta:
+        model = Classificacao
+        fields = "__all__"
+        widgets = {
+            # Mantém a largura alinhada visualmente ao textarea de descrição.
+            "classificacao_nome": TextInput(
+                attrs={"class": "vLargeTextField", "style": "width:87ch;"}
             ),
         }
 
