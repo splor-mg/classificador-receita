@@ -345,9 +345,8 @@ class NivelHierarquicoAdmin(
 ):
     list_display = [
         'nivel_id',
-        'nivel_numero',
         'nivel_nome',
-        'classificacao_id',
+        'classificacao_id_raw',
         'tipo_codigo',
         'data_vigencia_inicio_fmt',
         'data_vigencia_fim_fmt',
@@ -390,6 +389,15 @@ class NivelHierarquicoAdmin(
 
     class Media:
         js = ("core/admin_bitemporal_date_shortcuts.js",)
+
+    @admin.display(description="Classificação")
+    def classificacao_id_raw(self, obj):
+        if obj.classificacao_id_id is None:
+            return ""
+        try:
+            return obj.classificacao_id.classificacao_id
+        except Exception:
+            return obj.classificacao_id_id
 
 
 @admin.register(ItemClassificacao)
