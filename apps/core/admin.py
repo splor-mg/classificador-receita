@@ -14,7 +14,7 @@ from apps.core.models import (
     TRANSACTION_TIME_SENTINEL,
 )
 from apps.core.models_base_legal import BaseLegalTecnica
-from apps.core.forms import SerieClassificacaoForm
+from apps.core.forms import SerieClassificacaoForm, NivelHierarquicoForm
 from django.urls import path, reverse
 
 from apps.core.admin_mixins import (
@@ -346,13 +346,61 @@ class ClassificacaoAdmin(
 
 
 @admin.register(NivelHierarquico)
-class NivelHierarquicoAdmin(CoreChangeSaveFormSubmitMixin, BitemporalInactiveReadOnlyMixin, AutoExportAdminMixin, admin.ModelAdmin):
-    list_display = ['nivel_id', 'nivel_numero', 'nivel_nome', 'classificacao_id', 'tipo_codigo', 'data_vigencia_inicio']
-    list_filter = [RegistroAtivoFilter, NivelIdFilter, 'nivel_numero', 'tipo_codigo', 'classificacao_id', 'data_vigencia_inicio']
+class NivelHierarquicoAdmin(
+    BitemporalAdminMixin,
+    BitemporalInactiveReadOnlyMixin,
+    BitemporalDateFormatMixin,
+    CoreChangeSaveFormSubmitMixin,
+    AutoExportAdminMixin,
+    admin.ModelAdmin,
+):
+    list_display = [
+        'nivel_id',
+        'nivel_numero',
+        'nivel_nome',
+        'classificacao_id',
+        'tipo_codigo',
+        'data_vigencia_inicio_fmt',
+        'data_vigencia_fim_fmt',
+        'data_registro_inicio_fmt',
+        'data_registro_fim_fmt',
+    ]
+    ordering = [
+        'nivel_ref',
+        'data_vigencia_inicio',
+        'data_registro_inicio',
+    ]
+    list_filter = [
+        RegistroAtivoFilter,
+        NivelIdFilter,
+        'nivel_numero',
+        'tipo_codigo',
+        'classificacao_id',
+        'data_vigencia_inicio',
+        'data_registro_inicio',
+    ]
     search_fields = ['nivel_id', 'nivel_nome', 'nivel_descricao']
-    readonly_fields = ['data_registro_inicio', 'data_registro_fim']
+    readonly_fields = ['data_registro_inicio_fmt', 'data_registro_fim_fmt']
     date_hierarchy = 'data_vigencia_inicio'
     raw_id_fields = ['classificacao_id']
+    fields = [
+        ('nivel_id', 'nivel_ref'),
+        'classificacao_id',
+        'nivel_numero',
+        'nivel_nome',
+        'nivel_descricao',
+        'estrutura_codigo',
+        'numero_digitos',
+        'tipo_codigo',
+        'data_vigencia_inicio',
+        'data_vigencia_fim',
+        'data_registro_inicio_fmt',
+        'data_registro_fim_fmt',
+    ]
+    form = NivelHierarquicoForm
+
+    class Media:
+        js = ("core/admin_bitemporal_date_shortcuts.js",)
 
 
 @admin.register(ItemClassificacao)

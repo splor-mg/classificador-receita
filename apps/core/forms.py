@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import TextInput, Textarea
 
-from apps.core.models import SerieClassificacao
+from apps.core.models import SerieClassificacao, NivelHierarquico
 from apps.core.domain_choices import ORGAOS_ENTIDADES_GROUPED_CHOICES
 
 
@@ -27,3 +27,11 @@ class SerieClassificacaoForm(forms.ModelForm):
                 attrs={"style": "width:60ch; height:8em;"},
             ),
         }
+
+
+class NivelHierarquicoForm(forms.ModelForm):
+    """Formulário padrão do Admin para NivelHierarquico."""
+
+    class Meta:
+        model = NivelHierarquico
+        fields = "__all__"
