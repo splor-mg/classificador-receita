@@ -12,17 +12,19 @@ import logging
 import unicodedata
 from datetime import date
 from pathlib import Path
+from typing import Any, Callable, Dict
 
 from django.contrib import admin
 from django.contrib import messages
 from django.db import models as django_models
 from django.db.models import Max
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import path, reverse
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
 
+from apps.core.admin_widgets import ForeignKeySemanticDisplayRawIdWidget
 from apps.core.exporter import export_resource
 from apps.core.bitemporal_registry import get_resource_for_model
 from apps.core.models import TRANSACTION_TIME_SENTINEL, VALID_TIME_SENTINEL
@@ -135,6 +137,197 @@ class CoreChangeSaveFormSubmitMixin:
     nem "Salvar e continuar editando".
     """
     change_form_template = "admin/core/change_form.html"
+
+#---------------------------------------------------------------------------------------------------
+# Reutiliza rotas/handlers de ações bitemporais por objeto (ex.: block/delete)
+class BitemporalObjectActionsMixin:
+    """
+    Mixin para reduzir duplicação de URLs/handlers de ações por objeto no Admin.
+
+    Exemplo:
+        bitemporal_object_actions = ("block", "delete")
+    """
+
+    bitemporal_object_actions = ("block", "delete")
+
+    def _get_bitemporal_action_handler(self, action: str):
+        from apps.core.admin_handlers import BlockHandler, DeleteHandler
+
+        handlers = {
+            "block": BlockHandler,
+            "delete": DeleteHandler,
+        }
+        return handlers.get(action)
+
+    def _get_bitemporal_action_url_name(self, action: str) -> str:
+        return f"{self.model._meta.app_label}_{self.model._meta.model_name}_{action}"
+
+    def _build_bitemporal_action_urls(self):
+        custom = []
+        for action in self.bitemporal_object_actions:
+            view_method = getattr(self, f"{action}_view", None)
+            if view_method is None:
+                continue
+            custom.append(
+                path(
+                    f"<path:object_id>/{action}/",
+                    self.admin_site.admin_view(view_method),
+                    name=self._get_bitemporal_action_url_name(action),
+                )
+            )
+        return custom
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom = self._build_bitemporal_action_urls()
+        return custom + urls
+
+    def _handle_bitemporal_action(self, request, object_id, action: str):
+        handler_cls = self._get_bitemporal_action_handler(action)
+        if handler_cls is None:
+            from django.http import HttpResponseNotFound
+
+            return HttpResponseNotFound()
+        handler = handler_cls(self)
+        return handler.handle(request, object_id)
+
+    def block_view(self, request, object_id):
+        return self._handle_bitemporal_action(request, object_id, "block")
+
+    def delete_view(self, request, object_id):
+        return self._handle_bitemporal_action(request, object_id, "delete")
+
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+        extra_context = extra_context or {}
+        if object_id:
+            for action in self.bitemporal_object_actions:
+                extra_context[f"{action}_url"] = reverse(
+                    f"admin:{self._get_bitemporal_action_url_name(action)}",
+                    args=[object_id],
+                )
+        return super().changeform_view(request, object_id, form_url, extra_context)
+
+
+#---------------------------------------------------------------------------------------------------
+# Reutiliza lookup semântico para ForeignKeys (lupa + *_id em vez de PK)
+class SemanticForeignKeyAdminMixin:
+    """
+    Mixin para padronizar:
+    - rota semantic-lookup/<kind>/<pk>/
+    - endpoint JSON de lookup semântico
+    - aplicação do ForeignKeySemanticDisplayRawIdWidget
+
+    Configure no Admin:
+        semantic_fk_config = {
+            "serie_id": {
+                "kind": "serie",
+                "model": SerieClassificacao,
+                "semantic_field": "serie_id",
+                "display_label": lambda obj: f"{obj.serie_id} - {obj.serie_nome}",
+            },
+        }
+    """
+
+    semantic_fk_config: Dict[str, Dict[str, Any]] = {}
+
+    def _get_semantic_lookup_url_name(self) -> str:
+        return f"{self.model._meta.app_label}_{self.model._meta.model_name}_semantic_lookup"
+
+    def _iter_semantic_kinds(self):
+        config = getattr(self, "semantic_fk_config", {}) or {}
+        for field_name, cfg in config.items():
+            kind = cfg.get("kind")
+            if kind:
+                yield field_name, kind, cfg
+
+    def _get_semantic_cfg_by_kind(self, kind: str):
+        for _, cfg_kind, cfg in self._iter_semantic_kinds():
+            if cfg_kind == kind:
+                return cfg
+        return None
+
+    def _build_semantic_lookup_urls(self):
+        config = getattr(self, "semantic_fk_config", {}) or {}
+        if not config:
+            return []
+        return [
+            path(
+                "semantic-lookup/<str:kind>/<int:pk>/",
+                self.admin_site.admin_view(self.semantic_lookup_view),
+                name=self._get_semantic_lookup_url_name(),
+            )
+        ]
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom = self._build_semantic_lookup_urls()
+        return custom + urls
+
+    def semantic_lookup_view(self, request, kind: str, pk: int):
+        cfg = self._get_semantic_cfg_by_kind(kind)
+        if not cfg:
+            return JsonResponse({"semantic_value": "", "display_label": "", "link_url": ""})
+
+        model = cfg.get("model")
+        semantic_field = cfg.get("semantic_field")
+        display_label_cfg = cfg.get("display_label")
+
+        if not model or not semantic_field:
+            return JsonResponse({"semantic_value": "", "display_label": "", "link_url": ""})
+
+        try:
+            obj = model.objects.get(pk=pk)
+            link_url = reverse(
+                f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change",
+                args=[obj.pk],
+            )
+
+            semantic_value = getattr(obj, semantic_field, "") or ""
+
+            if callable(display_label_cfg):
+                display_label = display_label_cfg(obj)
+            elif isinstance(display_label_cfg, str) and display_label_cfg:
+                display_label = getattr(obj, display_label_cfg, "") or semantic_value
+            else:
+                display_label = semantic_value
+
+            return JsonResponse(
+                {
+                    "semantic_value": semantic_value,
+                    "display_label": display_label,
+                    "link_url": link_url,
+                }
+            )
+        except Exception:
+            return JsonResponse({"semantic_value": "", "display_label": "", "link_url": ""})
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        formfield = super().formfield_for_foreignkey(db_field, request, **kwargs)
+        config = getattr(self, "semantic_fk_config", {}) or {}
+        cfg = config.get(db_field.name)
+        if not cfg or formfield is None:
+            return formfield
+
+        kind = cfg.get("kind")
+        semantic_field = cfg.get("semantic_field")
+        if not kind or not semantic_field:
+            return formfield
+
+        lookup_url = reverse(
+            f"admin:{self._get_semantic_lookup_url_name()}",
+            kwargs={"kind": kind, "pk": 0},
+        ).replace("/0/", "/{pk}/")
+
+        using_db = kwargs.get("using") or getattr(formfield.widget, "db", None)
+        formfield.widget = ForeignKeySemanticDisplayRawIdWidget(
+            db_field.remote_field,
+            self.admin_site,
+            semantic_field=semantic_field,
+            semantic_lookup_url=lookup_url,
+            attrs=getattr(formfield.widget, "attrs", None),
+            using=using_db,
+        )
+        return formfield
 
 #---------------------------------------------------------------------------------------------------
 # Torna registros bitemporais inativos somente leitura

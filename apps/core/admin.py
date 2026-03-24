@@ -1,7 +1,6 @@
 from datetime import date
 
 from django.contrib import admin
-from django.http import JsonResponse
 
 from apps.core.models import (
     SerieClassificacao,
@@ -18,7 +17,7 @@ from apps.core.forms import (
     ClassificacaoForm,
     NivelHierarquicoForm,
 )
-from django.urls import path, reverse
+from django.urls import reverse
 
 from apps.core.admin_mixins import (
     RegistroAtivoFilter,
@@ -34,13 +33,14 @@ from apps.core.admin_mixins import (
     BitemporalAdminMixin,
     BitemporalDateFormatMixin,
     AutoExportAdminMixin,
+    SemanticForeignKeyAdminMixin,
+    BitemporalObjectActionsMixin,
 )
-from apps.core.admin_widgets import ForeignKeySemanticDisplayRawIdWidget
-from apps.core.admin_handlers import BlockHandler, DeleteHandler
 
 
 @admin.register(SerieClassificacao)
 class SerieClassificacaoAdmin(
+    BitemporalObjectActionsMixin,
     BitemporalAdminMixin,
     BitemporalInactiveReadOnlyMixin,
     BitemporalDateFormatMixin,
@@ -94,35 +94,6 @@ class SerieClassificacaoAdmin(
     class Media:
         js = ("core/admin_bitemporal_date_shortcuts.js",)
 
-    def get_urls(self):
-        urls = super().get_urls()
-        custom = [
-            path("<path:object_id>/block/", self.admin_site.admin_view(self.block_view), name="core_serieclassificacao_block"),
-            path("<path:object_id>/delete/", self.admin_site.admin_view(self.delete_view), name="core_serieclassificacao_delete"),
-        ]
-        return custom + urls
-
-    def block_view(self, request, object_id):
-        handler = BlockHandler(self)
-        return handler.handle(request, object_id)
-
-    def delete_view(self, request, object_id):
-        handler = DeleteHandler(self)
-        return handler.handle(request, object_id)
-
-    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
-        extra_context = extra_context or {}
-        if object_id:
-            extra_context["block_url"] = reverse(
-                "admin:core_serieclassificacao_block",
-                args=[object_id],
-            )
-            extra_context["delete_url"] = reverse(
-                "admin:core_serieclassificacao_delete",
-                args=[object_id],
-            )
-        return super().changeform_view(request, object_id, form_url, extra_context)
-
     def orgao_responsavel_both(self, obj):
         """
         Mostrar código armazenado (value) e rótulo (label) das choices.
@@ -139,6 +110,8 @@ class SerieClassificacaoAdmin(
 
 @admin.register(Classificacao)
 class ClassificacaoAdmin(
+    SemanticForeignKeyAdminMixin,
+    BitemporalObjectActionsMixin,
     BitemporalAdminMixin,
     BitemporalInactiveReadOnlyMixin,
     BitemporalDateFormatMixin,
@@ -191,137 +164,23 @@ class ClassificacaoAdmin(
         "data_registro_fim_fmt",
     ]
     form = ClassificacaoForm
+    semantic_fk_config = {
+        "serie_id": {
+            "kind": "serie",
+            "model": SerieClassificacao,
+            "semantic_field": "serie_id",
+            "display_label": lambda obj: f"{obj.serie_id} - {obj.serie_nome}",
+        },
+        "base_legal_tecnica_id": {
+            "kind": "base_legal_tecnica",
+            "model": BaseLegalTecnica,
+            "semantic_field": "base_legal_tecnica_id",
+            "display_label": lambda obj: str(obj),
+        },
+    }
 
     class Media:
         js = ("core/admin_bitemporal_date_shortcuts.js",)
-
-    def get_urls(self):
-        urls = super().get_urls()
-        custom = [
-            path(
-                "semantic-lookup/<str:kind>/<int:pk>/",
-                self.admin_site.admin_view(self.semantic_lookup_view),
-                name="core_classificacao_semantic_lookup",
-            ),
-            path(
-                "<path:object_id>/block/",
-                self.admin_site.admin_view(self.block_view),
-                name="core_classificacao_block",
-            ),
-            path(
-                "<path:object_id>/delete/",
-                self.admin_site.admin_view(self.delete_view),
-                name="core_classificacao_delete",
-            ),
-        ]
-        return custom + urls
-
-    def semantic_lookup_view(self, request, kind: str, pk: int):
-        """
-        Endpoint usado pelo widget para atualizar a exibição semântica (*_id)
-        após a seleção na popup de "lupa".
-        """
-        if kind == "serie":
-            try:
-                obj = SerieClassificacao.objects.get(pk=pk)
-                link_url = reverse(
-                    f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change",
-                    args=[obj.pk],
-                )
-                return JsonResponse(
-                    {
-                        "semantic_value": obj.serie_id,
-                        "display_label": f"{obj.serie_id} - {obj.serie_nome}",
-                        "link_url": link_url,
-                    }
-                )
-            except Exception:
-                return JsonResponse(
-                    {"semantic_value": "", "display_label": "", "link_url": ""}
-                )
-        if kind == "base_legal_tecnica":
-            try:
-                obj = BaseLegalTecnica.objects.get(pk=pk)
-                link_url = reverse(
-                    f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change",
-                    args=[obj.pk],
-                )
-                return JsonResponse(
-                    {
-                        "semantic_value": obj.base_legal_tecnica_id,
-                        "display_label": str(obj),
-                        "link_url": link_url,
-                    }
-                )
-            except Exception:
-                return JsonResponse(
-                    {
-                        "semantic_value": "",
-                        "display_label": "",
-                        "link_url": "",
-                    }
-                )
-        return JsonResponse(
-            {"semantic_value": "", "display_label": "", "link_url": ""}
-        )
-
-    def block_view(self, request, object_id):
-        handler = BlockHandler(self)
-        return handler.handle(request, object_id)
-
-    def delete_view(self, request, object_id):
-        handler = DeleteHandler(self)
-        return handler.handle(request, object_id)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        """
-        Exibe o identificador semântico (*_id) no campo FK, preservando o
-        valor real (PK) submetido para validação do Django.
-        """
-        if db_field.name == "serie_id":
-            db = kwargs.get("using")
-            lookup_url = reverse(
-                "admin:core_classificacao_semantic_lookup",
-                kwargs={"kind": "serie", "pk": 0},
-            )
-            # trocamos o pk=0 por um placeholder para ser substituído no widget JS
-            lookup_url = lookup_url.replace("/0/", "/{pk}/")
-            kwargs["widget"] = ForeignKeySemanticDisplayRawIdWidget(
-                db_field.remote_field,
-                self.admin_site,
-                semantic_field="serie_id",
-                semantic_lookup_url=lookup_url,
-                using=db,
-            )
-        elif db_field.name == "base_legal_tecnica_id":
-            db = kwargs.get("using")
-            lookup_url = reverse(
-                "admin:core_classificacao_semantic_lookup",
-                kwargs={"kind": "base_legal_tecnica", "pk": 0},
-            )
-            lookup_url = lookup_url.replace("/0/", "/{pk}/")
-            kwargs["widget"] = ForeignKeySemanticDisplayRawIdWidget(
-                db_field.remote_field,
-                self.admin_site,
-                semantic_field="base_legal_tecnica_id",
-                semantic_lookup_url=lookup_url,
-                using=db,
-            )
-
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
-    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
-        extra_context = extra_context or {}
-        if object_id:
-            extra_context["block_url"] = reverse(
-                "admin:core_classificacao_block",
-                args=[object_id],
-            )
-            extra_context["delete_url"] = reverse(
-                "admin:core_classificacao_delete",
-                args=[object_id],
-            )
-        return super().changeform_view(request, object_id, form_url, extra_context)
 
     @admin.display(description="Série de Classificações")
     def serie_id_raw(self, obj):
@@ -336,6 +195,7 @@ class ClassificacaoAdmin(
 
 @admin.register(NivelHierarquico)
 class NivelHierarquicoAdmin(
+    SemanticForeignKeyAdminMixin,
     BitemporalAdminMixin,
     BitemporalInactiveReadOnlyMixin,
     BitemporalDateFormatMixin,
@@ -385,6 +245,14 @@ class NivelHierarquicoAdmin(
         'data_registro_fim_fmt',
     ]
     form = NivelHierarquicoForm
+    semantic_fk_config = {
+        "classificacao_id": {
+            "kind": "classificacao",
+            "model": Classificacao,
+            "semantic_field": "classificacao_id",
+            "display_label": lambda obj: f"{obj.classificacao_id} - {obj.classificacao_nome}",
+        },
+    }
 
     class Media:
         js = ("core/admin_bitemporal_date_shortcuts.js",)
