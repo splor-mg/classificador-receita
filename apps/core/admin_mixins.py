@@ -216,6 +216,8 @@ class SemanticForeignKeyAdminMixin:
     - rota semantic-lookup/<kind>/<pk>/
     - endpoint JSON de lookup semântico
     - aplicação do ForeignKeySemanticDisplayRawIdWidget
+    - colunas de changelist ``{campo_fk}_raw`` (id semântico da FK), geradas a partir de
+      ``semantic_fk_config`` (salvo sobrescrita manual no Admin)
 
     Configure no Admin:
         semantic_fk_config = {
@@ -224,11 +226,61 @@ class SemanticForeignKeyAdminMixin:
                 "model": SerieClassificacao,
                 "semantic_field": "serie_id",
                 "display_label": lambda obj: f"{obj.serie_id} - {obj.serie_nome}",
+                # opcionais para a coluna *_raw:
+                # "list_column": False,  # não registrar método
+                # "list_column_method": "serie_id_raw",  # nome do método (default: {fk}_raw)
+                # "list_column_description": "Série",  # default: verbose_name do FK em model
             },
         }
+
+    Para usar o verbose_name do campo FK como rótulo da coluna, defina ``model = SeuModel``
+    no corpo do ModelAdmin (o ``@admin.register`` também preenche ``model``, mas só depois
+    da criação da classe; sem ``model`` no corpo, o título da coluna cai no fallback).
     """
 
     semantic_fk_config: Dict[str, Dict[str, Any]] = {}
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        config = getattr(cls, "semantic_fk_config", None) or {}
+        if not config:
+            return
+        Model = getattr(cls, "model", None)
+        for fk_name, cfg in config.items():
+            if cfg.get("list_column") is False:
+                continue
+            semantic_field = cfg.get("semantic_field")
+            if not semantic_field:
+                continue
+            method_name = cfg.get("list_column_method") or f"{fk_name}_raw"
+            if method_name in cls.__dict__:
+                continue
+            fk_id_attr = f"{fk_name}_id"
+            description = cfg.get("list_column_description")
+            if description is None and Model is not None:
+                try:
+                    description = Model._meta.get_field(fk_name).verbose_name
+                except Exception:
+                    description = None
+            if not description:
+                description = fk_name.replace("_", " ").title()
+
+            def _make_semantic_fk_raw_display(fk, sem, fid):
+                def raw(self, obj):
+                    if getattr(obj, fid, None) is None:
+                        return ""
+                    related = getattr(obj, fk, None)
+                    if related is None:
+                        return getattr(obj, fid, "")
+                    val = getattr(related, sem, "")
+                    return val if val is not None else ""
+
+                return raw
+
+            fn = admin.display(description=str(description))(
+                _make_semantic_fk_raw_display(fk_name, semantic_field, fk_id_attr)
+            )
+            setattr(cls, method_name, fn)
 
     def _get_semantic_lookup_url_name(self) -> str:
         return f"{self.model._meta.app_label}_{self.model._meta.model_name}_semantic_lookup"

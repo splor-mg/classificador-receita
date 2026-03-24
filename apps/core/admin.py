@@ -119,6 +119,8 @@ class ClassificacaoAdmin(
     AutoExportAdminMixin,
     admin.ModelAdmin,
 ):
+    # Garante verbose_name do FK nas colunas *_raw geradas pelo mixin (__init_subclass__).
+    model = Classificacao
     list_display = [
         "classificacao_id",
         "classificacao_nome",
@@ -182,16 +184,6 @@ class ClassificacaoAdmin(
     class Media:
         js = ("core/admin_bitemporal_date_shortcuts.js",)
 
-    @admin.display(description="Série de Classificações")
-    def serie_id_raw(self, obj):
-        if obj.serie_id_id is None:
-            return ""
-        # Mostra apenas o identificador semântico da série, sem o nome.
-        try:
-            return obj.serie_id.serie_id
-        except Exception:
-            return obj.serie_id_id
-
 
 @admin.register(NivelHierarquico)
 class NivelHierarquicoAdmin(
@@ -203,6 +195,7 @@ class NivelHierarquicoAdmin(
     AutoExportAdminMixin,
     admin.ModelAdmin,
 ):
+    model = NivelHierarquico
     list_display = [
         'nivel_id',
         'nivel_nome',
@@ -256,15 +249,6 @@ class NivelHierarquicoAdmin(
 
     class Media:
         js = ("core/admin_bitemporal_date_shortcuts.js",)
-
-    @admin.display(description="Classificação")
-    def classificacao_id_raw(self, obj):
-        if obj.classificacao_id_id is None:
-            return ""
-        try:
-            return obj.classificacao_id.classificacao_id
-        except Exception:
-            return obj.classificacao_id_id
 
 
 @admin.register(ItemClassificacao)
