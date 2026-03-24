@@ -178,8 +178,8 @@ class ClassificacaoAdmin(
     raw_id_fields = ["serie_id", "base_legal_tecnica_id"]
     fields = [
         ("classificacao_id", "classificacao_ref"),
-        "serie_id",
         "classificacao_nome",
+        "serie_id",
         "classificacao_descricao",
         "tipo_classificacao",
         "numero_niveis",
@@ -347,7 +347,6 @@ class NivelHierarquicoAdmin(
         'nivel_id',
         'nivel_nome',
         'classificacao_id_raw',
-        'tipo_codigo',
         'data_vigencia_inicio_fmt',
         'data_vigencia_fim_fmt',
         'data_registro_inicio_fmt',
