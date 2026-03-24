@@ -84,14 +84,22 @@ class RegistroAtivoFilter(admin.SimpleListFilter):
         return queryset
 
 #---------------------------------------------------------------------------------------------------
-# Filtro por ID de negócio
-def make_id_filter(field_name, *, title=None, parameter_name=None):
+# Filtros de sidebar (changelist): id local vs ForeignKey
+def make_filter_local_id(field_name, *, title=None, parameter_name=None):
     """
-    Fábrica de filtros genéricos para campos de ID de negócio.
+    Fábrica de ``SimpleListFilter`` para um campo **na própria tabela** do modelo
+    da changelist (ex.: ``CharField`` de id de negócio / id semântico).
 
-    Exemplo de uso em um ModelAdmin:
-        SerieIdFilter = make_id_filter('serie_id', title='Identificador da Série')
-        list_filter = [SerieIdFilter, ...]
+    O texto exibido nas opções e o valor enviado na query string são **o mesmo**
+    valor armazenado em ``field_name``. O filtro aplica ``queryset.filter(**{field_name: value})``.
+
+    As opções são os valores distintos desse campo em ``Model._default_manager``
+    (não restringe ao ``get_queryset`` da changelist).
+
+    Instâncias prontas para este projeto: ``apps.core.admin_filters``.
+    Exemplo genérico:
+        MeuFiltro = make_filter_local_id('meu_campo_id', title='Identificador')
+        list_filter = [MeuFiltro, ...]
     """
 
     # Resolvidos aqui para evitar NameError dentro do corpo da classe
@@ -120,13 +128,57 @@ def make_id_filter(field_name, *, title=None, parameter_name=None):
 
     return IdFilter
 
-SerieIdFilter = make_id_filter('serie_id', title='Identificador da Série')
-ClassificacaoIdFilter = make_id_filter('classificacao_id', title='Identificador da Classificação')
-NivelIdFilter = make_id_filter('nivel_id', title='Identificador do Nível')
-ItemIdFilter = make_id_filter('item_id', title='Identificador do Item')
-VersaoIdFilter = make_id_filter('versao_id', title='Identificador da Versão')
-VarianteIdFilter = make_id_filter('variante_id', title='Identificador da Variante')
-BaseLegalTecnicaIdFilter = make_id_filter('base_legal_tecnica_id', title='Identificador da Base Legal/Técnica')
+
+def fk_semantic_filter_lookups(qs, fk_id_attname, related_model, semantic_attr):
+    """[(pk, id semântico), …] para sidebar do admin (evita ``__str__`` do relacionado)."""
+    pks = list(qs.values_list(fk_id_attname, flat=True).distinct().order_by(fk_id_attname))
+    pks = [p for p in pks if p is not None]
+    if not pks:
+        return []
+    rows = related_model.objects.filter(pk__in=pks).order_by(semantic_attr)
+    return [(str(o.pk), str(getattr(o, semantic_attr))) for o in rows]
+
+
+def make_filter_fk_id(host_model, fk_name, semantic_attr=None):
+    """
+    Fábrica de ``SimpleListFilter`` para um **ForeignKey** no modelo da changelist.
+
+    **Query string:** usa o mesmo parâmetro que o ``RelatedFieldListFilter`` do Django
+    (``<fk>__<pk_do_relacionado>__exact``), com o **PK da linha relacionada** — não o id
+    semântico. O filtro aplica ``queryset.filter(**{esse_lookup: valor})``.
+
+    **Rótulos na sidebar:** leem o id semântico (ou outro atributo) no **modelo
+    relacionado**, via ``semantic_attr``, em vez de usar ``__str__`` do relacionado
+    (que costuma ser longo). Default de ``semantic_attr``: ``fk_name``, quando o campo
+    semântico no relacionado tem o mesmo nome que o FK.
+
+    **Opções do filtro:** PKs distintas observadas em ``model_admin.get_queryset(request)``
+    na coluna da FK, enriquecidas com o valor de ``semantic_attr`` para exibição.
+    """
+    field = host_model._meta.get_field(fk_name)
+    related_model = field.remote_field.model
+    attname = field.attname
+    lookup_kwarg = f"{fk_name}__{field.target_field.name}__exact"
+    sem = semantic_attr if semantic_attr is not None else fk_name
+    resolved_title = field.verbose_name
+
+    class SemanticFkSidebarFilter(admin.SimpleListFilter):
+        title = resolved_title
+        parameter_name = lookup_kwarg
+
+        def lookups(self, request, model_admin):
+            return fk_semantic_filter_lookups(
+                model_admin.get_queryset(request), attname, related_model, sem
+            )
+
+        def queryset(self, request, queryset):
+            v = self.value()
+            if v:
+                return queryset.filter(**{lookup_kwarg: v})
+            return queryset
+
+    return SemanticFkSidebarFilter
+
 
 #---------------------------------------------------------------------------------------------------
 # Tela de edição: apenas Salvar e Cancelar (sem Salvar e adicionar outro / Salvar e continuar)

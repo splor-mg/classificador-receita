@@ -19,15 +19,19 @@ from apps.core.forms import (
 )
 from django.urls import reverse
 
+from apps.core.admin_filters import (
+    BaseLegalTecnicaIdFilter,
+    SerieIdFilter,
+    SerieIdFKFilter,
+    ClassificacaoIdFilter,
+    ItemIdFilter,
+    NivelIdFilter,
+    NivelIdFKFilter,
+    VarianteIdFilter,
+    VersaoIdFilter,
+)
 from apps.core.admin_mixins import (
     RegistroAtivoFilter,
-    SerieIdFilter,
-    ClassificacaoIdFilter,
-    NivelIdFilter,
-    ItemIdFilter,
-    VersaoIdFilter,
-    VarianteIdFilter,
-    BaseLegalTecnicaIdFilter,
     CoreChangeSaveFormSubmitMixin,
     BitemporalInactiveReadOnlyMixin,
     BitemporalAdminMixin,
@@ -119,7 +123,6 @@ class ClassificacaoAdmin(
     AutoExportAdminMixin,
     admin.ModelAdmin,
 ):
-    # Garante verbose_name do FK nas colunas *_raw geradas pelo mixin (__init_subclass__).
     model = Classificacao
     list_display = [
         "classificacao_id",
@@ -143,7 +146,7 @@ class ClassificacaoAdmin(
         ClassificacaoIdFilter,
         "tipo_classificacao",
         "numero_niveis",
-        "serie_id",
+        SerieIdFKFilter,
         "data_vigencia_inicio",
         "data_registro_inicio",
     ]
@@ -213,9 +216,8 @@ class NivelHierarquicoAdmin(
     list_filter = [
         RegistroAtivoFilter,
         NivelIdFilter,
-        'nivel_numero',
         'tipo_codigo',
-        'classificacao_id',
+        NivelIdFKFilter,
         'data_vigencia_inicio',
         'data_registro_inicio',
     ]
