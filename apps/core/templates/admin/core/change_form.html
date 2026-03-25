@@ -208,24 +208,82 @@
     var isDirty = false;
     var formHasErrorsOnLoad = !!document.querySelector('form .errorlist');
 
+    function parseDateToIso(raw) {
+      if (raw == null) {
+        return '';
+      }
+      var v = String(raw).trim();
+      if (!v) {
+        return '';
+      }
+
+      // ISO: YYYY-MM-DD
+      var isoMatch = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (isoMatch) {
+        return isoMatch[1] + '-' + isoMatch[2] + '-' + isoMatch[3];
+      }
+
+      // BR: DD/MM/YYYY
+      var brMatch = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (brMatch) {
+        return brMatch[3] + '-' + brMatch[2] + '-' + brMatch[1];
+      }
+
+      return null;
+    }
+
+    function normalizeNumber(raw) {
+      if (raw == null) {
+        return '';
+      }
+      var v = String(raw).trim();
+      if (!v) {
+        return '';
+      }
+      var n = Number(v);
+      return Number.isNaN(n) ? v : String(n);
+    }
+
+    function normalizeCanonicalForField(field, rawValue) {
+      if (rawValue == null) {
+        return '';
+      }
+
+      if (field.type === 'checkbox' || field.type === 'radio') {
+        var boolRaw = String(rawValue).toLowerCase();
+        var truthy = ['true', '1', 'on', 'yes'];
+        return truthy.indexOf(boolRaw) !== -1 ? '1' : '0';
+      }
+
+      var rawString = String(rawValue).trim();
+      if (!rawString) {
+        return '';
+      }
+
+      // Date semantics first: treat DD/MM/YYYY and YYYY-MM-DD as equivalent.
+      var asIsoDate = parseDateToIso(rawString);
+      if (asIsoDate !== null && (field.classList.contains('vDateField') || asIsoDate !== null)) {
+        return asIsoDate;
+      }
+
+      // Number semantics for numeric inputs.
+      if (field.type === 'number') {
+        return normalizeNumber(rawString);
+      }
+
+      // Text/select semantics: trimmed string comparison.
+      return rawString;
+    }
+
     function getFieldState(field) {
       if (field.type === 'checkbox' || field.type === 'radio') {
         return field.checked ? '1' : '0';
       }
-      return field.value;
+      return normalizeCanonicalForField(field, field.value);
     }
 
     function normalizeSnapshotForField(field, rawValue) {
-      if (rawValue == null) {
-        return '';
-      }
-      var v = String(rawValue);
-      if (field.type === 'checkbox' || field.type === 'radio') {
-        var lower = v.toLowerCase();
-        var truthy = ['true', '1', 'on', 'yes'];
-        return truthy.indexOf(lower) !== -1 ? '1' : '0';
-      }
-      return v;
+      return normalizeCanonicalForField(field, rawValue);
     }
 
     function getBaselineState(field) {
