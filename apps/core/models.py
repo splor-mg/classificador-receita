@@ -319,7 +319,7 @@ class NivelHierarquico(BitemporalModel):
         max_length=50,
         blank=True,
         verbose_name='Estrutura do Código',
-        help_text='Padrão de estrutura do código neste nível (ex: "C", "C.O", "C.O.E")'
+        help_text='Padrão de estrutura do código neste nível (ex.: "X.0.0.0.00.0.00.000", para quando apenas o primeiro nível estiver detalhado)'
     )
     numero_digitos = models.IntegerField(
         null=True,
