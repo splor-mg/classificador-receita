@@ -209,7 +209,7 @@ class NivelHierarquicoAdmin(
         'data_registro_fim_fmt',
     ]
     ordering = [
-        'nivel_ref',
+        'nivel_numero',
         'data_vigencia_inicio',
         'data_registro_inicio',
     ]
@@ -227,9 +227,9 @@ class NivelHierarquicoAdmin(
     raw_id_fields = ['classificacao_id']
     fields = [
         ('nivel_id', 'nivel_ref'),
-        'classificacao_id',
         'nivel_numero',
         'nivel_nome',
+        'classificacao_id',
         'nivel_descricao',
         'estrutura_codigo',
         'numero_digitos',
