@@ -288,12 +288,7 @@
       isSubmitting = true;
     }, true);
 
-    var cancelLink = document.getElementById('core-cancel-link');
-    if (!cancelLink) {
-      return;
-    }
-
-    cancelLink.addEventListener('click', function(event) {
+    function confirmNavigationWithUnsavedChanges(event) {
       if ((!isDirty && !formHasErrorsOnLoad) || isSubmitting) {
         return;
       }
@@ -301,6 +296,19 @@
       if (!window.confirm(message)) {
         event.preventDefault();
       }
+    }
+
+    var guardedLinks = [
+      document.getElementById('core-cancel-link'),
+      document.getElementById('core-block-button'),
+      document.getElementById('core-delete-button')
+    ];
+
+    guardedLinks.forEach(function(link) {
+      if (!link) {
+        return;
+      }
+      link.addEventListener('click', confirmNavigationWithUnsavedChanges);
     });
   }
 

@@ -191,6 +191,7 @@ class ClassificacaoAdmin(
 @admin.register(NivelHierarquico)
 class NivelHierarquicoAdmin(
     SemanticForeignKeyAdminMixin,
+    BitemporalObjectActionsMixin,
     BitemporalAdminMixin,
     BitemporalInactiveReadOnlyMixin,
     BitemporalDateFormatMixin,

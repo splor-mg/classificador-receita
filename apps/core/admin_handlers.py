@@ -568,6 +568,20 @@ class BitemporalChangeHandler:
             'app_label': opts.app_label,
         }
 
+        # Reinjeta URLs de ações por objeto (ex.: block/delete) quando
+        # voltamos da tela de confirmação para a tela de edição. Sem isso,
+        # o template customizado renderiza os botões aparentes, porém
+        # inativos, por falta de block_url/delete_url no contexto.
+        try:
+            actions = getattr(self.admin, "bitemporal_object_actions", ()) or ()
+            for action in actions:
+                context[f"{action}_url"] = reverse(
+                    f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_{action}",
+                    args=[object_id],
+                )
+        except Exception:
+            pass
+
         # Propaga snapshot dos valores originais (orig_field_*) para a tela de edição,
         # permitindo que o JavaScript compare o estado atual dos campos com esse snapshot
         # em vez de depender apenas de flags de alteração.
