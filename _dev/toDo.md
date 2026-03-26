@@ -2,13 +2,12 @@
 # lista
 
 - avaliar a "justificativa de alteração" não apenas como parâmetro de registro, mas como parâmetro de documentação 
-- implementar padrões à gestão das novas tabelas
-- criar protocolo de incorporação de bases
-  - tratamento Excel/csv anos
+- criar protocolo de incorporação/importação de bases
+  - tratamento Excel/csv por ano
   - gerar script que vai considerar alteração nos metadados d
 - implementar schemas/correspondence-table
 - revisar description de chave semântica de todas tabelas
-- funcionalidade exportar
+- funcionalidade exportar para excel, csv, pdf
 - revisar datapackage.yaml
   - avaliar menção à estrutura
 - garantir que, para cada entidade de negócio, haja um e somente um período de "ativo". Isto é, um mesmo código somente pode constar um registro ativo por
