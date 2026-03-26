@@ -255,13 +255,89 @@ class NivelHierarquicoAdmin(
 
 
 @admin.register(ItemClassificacao)
-class ItemClassificacaoAdmin(CoreChangeSaveFormSubmitMixin, BitemporalInactiveReadOnlyMixin, AutoExportAdminMixin, admin.ModelAdmin):
-    list_display = ['receita_cod', 'item_id', 'receita_nome', 'nivel_id', 'matriz', 'item_gerado', 'data_vigencia_inicio']
-    list_filter = [RegistroAtivoFilter, ItemIdFilter, 'matriz', 'item_gerado', 'nivel_id', 'data_vigencia_inicio']
+class ItemClassificacaoAdmin(
+    SemanticForeignKeyAdminMixin,
+    BitemporalObjectActionsMixin,
+    BitemporalAdminMixin,
+    BitemporalInactiveReadOnlyMixin,
+    BitemporalDateFormatMixin,
+    CoreChangeSaveFormSubmitMixin,
+    AutoExportAdminMixin,
+    admin.ModelAdmin,
+):
+    model = ItemClassificacao
+    list_display = [
+        'receita_cod',
+        'item_id',
+        'receita_nome',
+        'classificacao_id_raw',
+        'nivel_id_raw',
+        'base_legal_tecnica_id_raw',
+        'matriz',
+        'item_gerado',
+        'data_vigencia_inicio_fmt',
+        'data_vigencia_fim_fmt',
+        'data_registro_inicio_fmt',
+        'data_registro_fim_fmt',
+    ]
+    ordering = [
+        'item_ref',
+        'data_vigencia_inicio',
+        'data_registro_inicio',
+    ]
+    list_filter = [
+        RegistroAtivoFilter,
+        ItemIdFilter,
+        'classificacao_id',
+        'nivel_id',
+        'base_legal_tecnica_id',
+        'matriz',
+        'item_gerado',
+        'data_vigencia_inicio',
+        'data_registro_inicio',
+    ]
     search_fields = ['receita_cod', 'receita_nome', 'item_id']
-    readonly_fields = ['data_registro_inicio', 'data_registro_fim']
+    readonly_fields = ['data_registro_inicio_fmt', 'data_registro_fim_fmt']
     date_hierarchy = 'data_vigencia_inicio'
     raw_id_fields = ['classificacao_id', 'nivel_id', 'parent_item_id', 'base_legal_tecnica_id']
+    fields = [
+        ('receita_cod', 'item_id', 'receita_nome'),
+        ('classificacao_id', 'nivel_id', 'parent_item_id', 'base_legal_tecnica_id'),
+        ('matriz', 'item_gerado'),
+        ('data_vigencia_inicio', 'data_vigencia_fim'),
+        ('data_registro_inicio_fmt', 'data_registro_fim_fmt'),
+    ]
+    semantic_fk_config = {
+        "classificacao_id": {
+            "kind": "classificacao",
+            "model": Classificacao,
+            "semantic_field": "classificacao_id",
+            "display_label": lambda obj: f"{obj.classificacao_id} - {obj.classificacao_nome}",
+        },
+        "nivel_id": {
+            "kind": "nivel",
+            "model": NivelHierarquico,
+            "semantic_field": "nivel_id",
+            "display_label": lambda obj: f"{obj.nivel_id} - {obj.nivel_nome}",
+        },
+        "base_legal_tecnica_id": {
+            "kind": "base_legal_tecnica",
+            "model": BaseLegalTecnica,
+            "semantic_field": "base_legal_tecnica_id",
+            "display_label": lambda obj: str(obj),
+        },
+        "parent_item_id": {
+            "kind": "item",
+            "model": ItemClassificacao,
+            "semantic_field": "item_id",
+            "display_label": lambda obj: f"{obj.item_id} - {obj.receita_nome or obj.receita_cod or ''}".strip(
+                " -"
+            ),
+        },
+    }
+
+    class Media:
+        js = ("core/admin_bitemporal_date_shortcuts.js",)
 
 
 @admin.register(VersaoClassificacao)
