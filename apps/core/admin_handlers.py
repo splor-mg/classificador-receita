@@ -133,11 +133,21 @@ class BitemporalChangeHandler:
             # exibir como select (para não ficar "livre" como input texto).
             if getattr(field_meta, "is_relation", False) and getattr(field_meta, "many_to_one", False):
                 related_model = field_meta.remote_field.model
-                semantic_attr = field_meta.name  # ex.: serie_id, base_legal_tecnica_id
-                if field_meta.name == "serie_id":
-                    fk_kind = "serie"
-                elif field_meta.name == "base_legal_tecnica_id":
-                    fk_kind = "base_legal_tecnica"
+                semantic_cfg = getattr(self.admin, "semantic_fk_config", {}) or {}
+                field_semantic_cfg = semantic_cfg.get(field_meta.name) or {}
+
+                # Semântica da FK:
+                # - preferir configuração declarada no Admin (semantic_fk_config);
+                # - manter fallback legado para campos clássicos.
+                semantic_attr = field_semantic_cfg.get("semantic_field") or field_meta.name
+                fk_kind = field_semantic_cfg.get("kind")
+                if not fk_kind:
+                    if field_meta.name == "serie_id":
+                        fk_kind = "serie"
+                    elif field_meta.name == "base_legal_tecnica_id":
+                        fk_kind = "base_legal_tecnica"
+                    elif field_meta.name == "classificacao_id":
+                        fk_kind = "classificacao"
 
                 def resolve_obj(val):
                     if val is None or val == "":
@@ -188,11 +198,20 @@ class BitemporalChangeHandler:
                     ).get("related_url")
 
                     # Endpoint para converter pk -> *_id semântico.
+                    semantic_lookup_url_name = None
+                    if hasattr(self.admin, "_get_semantic_lookup_url_name"):
+                        try:
+                            semantic_lookup_url_name = self.admin._get_semantic_lookup_url_name()
+                        except Exception:
+                            semantic_lookup_url_name = None
+
+                    if not semantic_lookup_url_name:
+                        semantic_lookup_url_name = "core_classificacao_semantic_lookup"
+
                     fk_semantic_lookup_url = reverse(
-                        f"admin:core_classificacao_semantic_lookup",
+                        f"admin:{semantic_lookup_url_name}",
                         kwargs={"kind": fk_kind, "pk": 0},
-                    )
-                    fk_semantic_lookup_url = fk_semantic_lookup_url.replace("/0/", "/{pk}/")
+                    ).replace("/0/", "/{pk}/")
 
                 # Impede renderização como select no template.
                 choices = None

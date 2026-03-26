@@ -282,6 +282,18 @@
   border-color: #d4d4d4;
   color: #333;
 }
+
+.fk-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fk-edit-row .fk-display-input {
+  width: 24em;
+  max-width: 100%;
+}
 </style>
 <script src="{% static 'core/admin_bitemporal_confirm_validations.js' %}"></script>
 <script src="{% static 'core/admin_bitemporal_confirm_messages.js' %}"></script>
@@ -399,14 +411,13 @@
                 value="{{ d.new }}"
                 id="id_edit_field_{{ d.field_name }}"
               />
-              <div style="display:flex; align-items:center; gap: 6px;">
+              <div class="fk-edit-row">
                 <input
                   type="text"
                   disabled
                   value="{{ d.new_display }}"
                   id="id_edit_field_{{ d.field_name }}_display"
-                  class="vTextField"
-                  style="width: 12em;"
+                  class="vTextField fk-display-input"
                 />
                 <a
                   href="{{ d.fk_lookup_url }}"
