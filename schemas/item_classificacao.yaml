@@ -3,10 +3,13 @@ fields:
     type: string
     title: Identificador Único do Item de Classificação
     description: |
-      Identificador único do item, correspondente ao código na classificação (chave semântica).
+      Chave semântica do item: prefixo fixo IT- seguido do código canônico da natureza de receita
+      (o mesmo valor que receita_cod). Ex.: receita_cod 1000000000000 → item_id IT-1000000000000.
+      parent_item_id no CSV deve usar o mesmo formato quando referenciar outro item.
     gsim: ClassificationItem.identifier
     constraints:
       required: true
+      pattern: "^IT-[0-9]{8,13}$"
   - name: item_ref
     type: integer
     title: Referência Numérica do Item
@@ -104,6 +107,7 @@ fields:
     gsim: ClassificationItem.parentItem
     constraints:
       required: false
+      pattern: "^IT-[0-9]{8,13}$"
   - name: item_gerado
     type: boolean
     title: Item Gerado Automaticamente

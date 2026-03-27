@@ -144,6 +144,24 @@ def find_classificacoes_for_item(
     return out
 
 
+ITEM_SEMANTIC_PREFIX = "IT-"
+
+
+def validate_item_semantic_id(item: dict) -> tuple[bool, str | None]:
+    """item_id deve ser IT-{receita_cod}."""
+    cod = (item.get("receita_cod") or "").strip()
+    iid = (item.get("item_id") or "").strip()
+    if not cod:
+        return False, "receita_cod vazio"
+    expected = f"{ITEM_SEMANTIC_PREFIX}{cod}"
+    if iid != expected:
+        return (
+            False,
+            f"item_id deve ser {expected!r} (prefixo IT- + receita_cod), obtido {iid!r}",
+        )
+    return True, None
+
+
 def validate_item(
     item: dict,
     classificacoes: list[dict],
@@ -195,13 +213,18 @@ def main() -> int:
     items = load_items(args.items)
 
     print("=" * 60)
-    print("Validação de quantidade de dígitos (receita_cod)")
+    print("Validação: item_id = IT-{receita_cod}; quantidade de dígitos (receita_cod)")
     print("=" * 60)
     print(f"Classificação: {args.classificacao} ({len(classificacoes)} linhas)")
     print(f"Itens: {args.items} ({len(items)} linhas)\n")
 
     errors = []
     for i, item in enumerate(items):
+        ok_sid, msg_sid = validate_item_semantic_id(item)
+        if not ok_sid:
+            item_id = item.get("item_id", "?")
+            item_ref = item.get("item_ref", "?")
+            errors.append((i + 1, item_id, item_ref, msg_sid))
         ok, msg = validate_item(item, classificacoes)
         if not ok:
             item_id = item.get("item_id", "?")

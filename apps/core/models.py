@@ -12,6 +12,23 @@ from apps.core.domain_choices import ORGAOS_ENTIDADES_CHOICES
 VALID_TIME_SENTINEL = datetime.date(9999, 12, 31)
 TRANSACTION_TIME_SENTINEL = datetime.datetime(9999, 12, 31, 00, 00, 00)
 
+# Chave semântica de item de classificação: prefixo + código canônico (receita_cod).
+ITEM_CLASSIFICACAO_SEMANTIC_PREFIX = "IT-"
+
+item_classificacao_semantic_id_validator = RegexValidator(
+    regex=r"^IT-[0-9]{8,13}$",
+    message=(
+        "item_id deve ser IT- seguido do código canônico da receita "
+        "(8 a 13 dígitos), ex.: IT-1000000000000."
+    ),
+)
+
+
+def item_semantic_id_from_receita_cod(receita_cod: str) -> str:
+    """Monta o item_id semântico a partir do código canônico (receita_cod)."""
+    cod = (receita_cod or "").strip()
+    return f"{ITEM_CLASSIFICACAO_SEMANTIC_PREFIX}{cod}"
+
 
 
 class BitemporalModel(models.Model):
@@ -381,9 +398,12 @@ class ItemClassificacao(BitemporalModel):
     item_id = models.CharField(
         max_length=100,
         verbose_name='Identificador do Item',
-        help_text='Identificador único do item de classificação',
+        help_text=(
+            'Chave semântica do item: prefixo IT- seguido do código canônico (receita_cod), '
+            'ex.: IT-1000000000000. Deve coincidir com receita_cod.'
+        ),
         db_index=True,
-        validators=[identifier_validator],
+        validators=[item_classificacao_semantic_id_validator],
     )
     item_ref = models.IntegerField(
         null=True,
@@ -559,6 +579,17 @@ class ItemClassificacao(BitemporalModel):
         - Itens de nível 2+ DEVEM ter parent_item_id preenchido.
         """
         super().clean()
+
+        if self.receita_cod and self.item_id:
+            expected = item_semantic_id_from_receita_cod(self.receita_cod)
+            if self.item_id != expected:
+                raise ValidationError(
+                    {
+                        "item_id": (
+                            f"item_id deve ser {expected!r} (prefixo IT- + receita_cod)."
+                        )
+                    }
+                )
 
         # Se não houver nível associado, deixamos a validação para outros pontos (schema já exige nivel_id).
         if not self.nivel_id:

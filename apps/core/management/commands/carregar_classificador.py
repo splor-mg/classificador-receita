@@ -38,8 +38,42 @@ from apps.core.models import (
     ItemClassificacao,
     VersaoClassificacao,
     VarianteClassificacao,
+    ITEM_CLASSIFICACAO_SEMANTIC_PREFIX,
+    item_semantic_id_from_receita_cod,
 )
 from apps.core.bitemporal_registry import get_sentinela_datetime
+
+
+def _strip_csv_empty(v: Any) -> str | None:
+    if v is None:
+        return None
+    s = str(v).strip()
+    return None if s in ("", "-", "NA", "null", "None") else s
+
+
+def _coerce_item_semantic_id(raw: Any, receita_cod: str) -> str | None:
+    """Normaliza item_id para IT-{receita_cod}; aceita CSV legado só numérico."""
+    cod = (receita_cod or "").strip()
+    rid = _strip_csv_empty(raw)
+    if rid is None:
+        return item_semantic_id_from_receita_cod(cod) if cod else None
+    if rid.startswith(ITEM_CLASSIFICACAO_SEMANTIC_PREFIX):
+        return rid
+    if rid.isdigit():
+        return item_semantic_id_from_receita_cod(rid)
+    return rid
+
+
+def _coerce_parent_item_semantic_key(raw: Any) -> str | None:
+    """Valor de parent_item_id no CSV alinhado ao item_id semântico (IT-...)."""
+    pc = _strip_csv_empty(raw)
+    if pc is None:
+        return None
+    if pc.startswith(ITEM_CLASSIFICACAO_SEMANTIC_PREFIX):
+        return pc
+    if pc.isdigit():
+        return item_semantic_id_from_receita_cod(pc)
+    return pc
 
 
 class Command(BaseCommand):
@@ -445,10 +479,18 @@ class Command(BaseCommand):
             if base_id and base_id != "-":
                 base_legal = BaseLegalTecnica.objects.get(base_legal_tecnica_id=base_id)
 
+            def _none_if_empty(v):
+                if v is None:
+                    return None
+                s = str(v).strip()
+                return None if s in ("", "-", "NA", "null", "None") else s
+
             parent = None
-            parent_code = prepared.get("parent_item_id") or None
-            if parent_code and parent_code != "-":
-                parent = ItemClassificacao.objects.filter(item_id=parent_code, data_registro_fim=get_sentinela_datetime()).first()
+            parent_code = _coerce_parent_item_semantic_key(prepared.get("parent_item_id"))
+            if parent_code:
+                parent = ItemClassificacao.objects.filter(
+                    item_id=parent_code, data_registro_fim=get_sentinela_datetime()
+                ).first()
 
             # Normalize boolean and empty values coming from CSV (csv.DictReader returns strings)
             def _to_bool(v):
@@ -459,20 +501,17 @@ class Command(BaseCommand):
                 s = str(v).strip().lower()
                 return s in ("1", "true", "t", "yes", "y")
 
-            def _none_if_empty(v):
-                if v is None:
-                    return None
-                s = str(v).strip()
-                return None if s in ("", "-", "NA", "null", "None") else s
-
             matriz_val = _to_bool(prepared.get("matriz"))
             item_gerado_val = _to_bool(prepared.get("item_gerado"))
 
+            receita_cod_val = _none_if_empty(prepared.get("receita_cod"))
+            item_id_val = _coerce_item_semantic_id(prepared.get("item_id"), receita_cod_val or "")
+
             item = ItemClassificacao(
-                item_id=_none_if_empty(prepared.get("item_id")),
+                item_id=item_id_val,
                 item_ref=_none_if_empty(prepared.get("item_ref")),
                 classificacao_id=classificacao,
-                receita_cod=_none_if_empty(prepared.get("receita_cod")),
+                receita_cod=receita_cod_val,
                 matriz=matriz_val,
                 receita_nome=_none_if_empty(prepared.get("receita_nome")),
                 receita_descricao=_none_if_empty(prepared.get("receita_descricao")),
