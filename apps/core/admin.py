@@ -268,13 +268,9 @@ class ItemClassificacaoAdmin(
     model = ItemClassificacao
     list_display = [
         'receita_cod',
-        'item_id',
         'receita_nome',
         'classificacao_id_raw',
-        'nivel_id_raw',
-        'base_legal_tecnica_id_raw',
-        'matriz',
-        'item_gerado',
+        'matriz_display',
         'data_vigencia_inicio_fmt',
         'data_vigencia_fim_fmt',
         'data_registro_inicio_fmt',
@@ -335,6 +331,13 @@ class ItemClassificacaoAdmin(
             ),
         },
     }
+
+    @admin.display(
+        description=ItemClassificacao._meta.get_field("matriz").verbose_name,
+        ordering="matriz",
+    )
+    def matriz_display(self, obj):
+        return "Matriz" if obj.matriz else "Detalhe"
 
     class Media:
         js = ("core/admin_bitemporal_date_shortcuts.js",)
