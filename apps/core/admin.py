@@ -269,7 +269,6 @@ class ItemClassificacaoAdmin(
     list_display = [
         'receita_cod',
         'receita_nome',
-        'classificacao_id_raw',
         'matriz_display',
         'data_vigencia_inicio_fmt',
         'data_vigencia_fim_fmt',
