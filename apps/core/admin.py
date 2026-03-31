@@ -297,11 +297,22 @@ class ItemClassificacaoAdmin(
     date_hierarchy = 'data_vigencia_inicio'
     raw_id_fields = ['classificacao_id', 'nivel_id', 'parent_item_id', 'base_legal_tecnica_id']
     fields = [
-        ('receita_cod', 'item_id', 'receita_nome'),
-        ('classificacao_id', 'nivel_id', 'parent_item_id', 'base_legal_tecnica_id'),
-        ('matriz', 'item_gerado'),
-        ('data_vigencia_inicio', 'data_vigencia_fim'),
-        ('data_registro_inicio_fmt', 'data_registro_fim_fmt'),
+        ('receita_cod', 'item_ref'),
+        'receita_nome',
+        'receita_descricao',
+        'classificacao_id',
+        'matriz',
+        'nivel_id', 
+        'base_legal_tecnica_id',
+        'base_legal_tecnica_referencia',
+        'destinacao_legal',
+        'informacoes_gerenciais',
+        'item_gerado',
+        'parent_item_id',
+        'data_vigencia_inicio',
+        'data_vigencia_fim',
+        'data_registro_inicio_fmt',
+        'data_registro_fim_fmt',
     ]
     semantic_fk_config = {
         "classificacao_id": {

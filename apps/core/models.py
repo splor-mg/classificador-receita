@@ -443,7 +443,7 @@ class ItemClassificacao(BitemporalModel):
         verbose_name='Identificador de Matriz',
         help_text=(
             'Indica se o item é natureza agregadora (Matriz) ou item folha (Detalhe). '
-            'Quando true, indica item agregador; quando false, item detalhe em que a '
+            'Quando marcado (TRUE), indica item agregador; quando desmarcado (FALSE), item detalhe em que a '
             'execução orçamentária pode ser registrada.'
         ),
     )
