@@ -1,6 +1,8 @@
 ----------------------------------------------------------------------------------------------------
 # lista
 
+- verificar consistência de não permitir a criação de item sem que exista matriz anterior existente?. Seria pelo campo `item_pai`?
+- avaliar estrutura de booleano para edição. Por exemplo, matriz seria "Sim/Não", assim como item gerado
 - avaliar a "justificativa de alteração" não apenas como parâmetro de registro, mas como parâmetro de documentação 
 - criar protocolo de incorporação/importação de bases
   - tratamento Excel/csv por ano
