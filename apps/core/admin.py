@@ -9,7 +9,6 @@ from apps.core.models import (
     ItemClassificacao,
     VersaoClassificacao,
     VarianteClassificacao,
-    TRANSACTION_TIME_SENTINEL,
 )
 from apps.core.models_base_legal import BaseLegalTecnica
 from apps.core.forms import (
@@ -18,6 +17,8 @@ from apps.core.forms import (
     NivelHierarquicoForm,
 )
 from django.urls import reverse
+
+from apps.core.admin_formatters import format_receita_cod_by_vigencia
 
 from apps.core.admin_filters import (
     BaseLegalTecnicaIdFilter,
@@ -267,7 +268,7 @@ class ItemClassificacaoAdmin(
 ):
     model = ItemClassificacao
     list_display = [
-        'receita_cod',
+        'receita_cod_formatado',
         'receita_nome',
         'matriz_display',
         'data_vigencia_inicio_fmt',
@@ -330,6 +331,23 @@ class ItemClassificacaoAdmin(
             ),
         },
     }
+
+    def get_queryset(self, request):
+        self._nivel_digit_cache = {}
+        qs = super().get_queryset(request)
+        return qs.select_related("classificacao_id")
+
+    @admin.display(
+        description=ItemClassificacao._meta.get_field("receita_cod").verbose_name,
+        ordering="receita_cod",
+    )
+    def receita_cod_formatado(self, obj):
+        return format_receita_cod_by_vigencia(
+            obj.receita_cod or "",
+            getattr(obj, "data_vigencia_inicio", None),
+            getattr(obj, "data_vigencia_fim", None),
+            getattr(self, "_nivel_digit_cache", {}),
+        )
 
     @admin.display(
         description=ItemClassificacao._meta.get_field("matriz").verbose_name,
