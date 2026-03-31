@@ -1,4 +1,5 @@
 from datetime import date
+import json
 
 from django.contrib import admin
 
@@ -18,7 +19,10 @@ from apps.core.forms import (
 )
 from django.urls import reverse
 
-from apps.core.admin_formatters import format_receita_cod_by_vigencia
+from apps.core.admin_formatters import (
+    format_receita_cod_by_vigencia,
+    get_active_vigencia_masks,
+)
 
 from apps.core.admin_filters import (
     BaseLegalTecnicaIdFilter,
@@ -347,6 +351,10 @@ class ItemClassificacaoAdmin(
         self._nivel_digit_cache = {}
         qs = super().get_queryset(request)
         return qs.select_related("classificacao_id")
+
+    def render_change_form(self, request, context, add=False, change=False, form_url="", obj=None):
+        context["item_receita_cod_masks_json"] = json.dumps(get_active_vigencia_masks())
+        return super().render_change_form(request, context, add, change, form_url, obj)
 
     @admin.display(
         description=ItemClassificacao._meta.get_field("receita_cod").verbose_name,

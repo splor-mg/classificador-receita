@@ -140,6 +140,94 @@
   function setupIdentifierNormalization() {
     var checkIdUrl = '{{ check_id_url|default:"" }}';
     var idFieldName = '{{ id_field_name|default:"" }}';
+    var itemReceitaCodMasks = JSON.parse('{{ item_receita_cod_masks_json|default:"[]"|escapejs }}');
+
+    function parseDateValue(value) {
+      if (!value) {
+        return null;
+      }
+      var raw = String(value).trim();
+      var isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (isoMatch) {
+        return {
+          year: parseInt(isoMatch[1], 10),
+          month: parseInt(isoMatch[2], 10),
+          day: parseInt(isoMatch[3], 10)
+        };
+      }
+
+      var brMatch = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (brMatch) {
+        return {
+          year: parseInt(brMatch[3], 10),
+          month: parseInt(brMatch[2], 10),
+          day: parseInt(brMatch[1], 10)
+        };
+      }
+
+      return null;
+    }
+
+    function compareIsoDates(a, b) {
+      if (!a || !b) {
+        return null;
+      }
+      if (a.year !== b.year) return a.year - b.year;
+      if (a.month !== b.month) return a.month - b.month;
+      return a.day - b.day;
+    }
+
+    function getDigitMaskForCurrentVigencia() {
+      var vigInicioInput = document.querySelector('input[name="data_vigencia_inicio"]');
+      var vigFimInput = document.querySelector('input[name="data_vigencia_fim"]');
+      var vigInicio = parseDateValue(vigInicioInput && vigInicioInput.value);
+      var vigFim = parseDateValue(vigFimInput && vigFimInput.value);
+      if (!vigInicio || !vigFim) {
+        return null;
+      }
+
+      for (var i = 0; i < itemReceitaCodMasks.length; i++) {
+        var mask = itemReceitaCodMasks[i];
+        var maskInicio = parseDateValue(mask.vigencia_inicio);
+        var maskFim = parseDateValue(mask.vigencia_fim);
+        if (!maskInicio || !maskFim) {
+          continue;
+        }
+        if (compareIsoDates(maskInicio, vigInicio) <= 0 && compareIsoDates(maskFim, vigFim) >= 0) {
+          return mask.digit_mask || null;
+        }
+      }
+      return null;
+    }
+
+    function stripReceitaCodFormatting(value) {
+      return String(value || '').replace(/\./g, '').trim();
+    }
+
+    function formatReceitaCodValue(rawValue) {
+      var codigo = stripReceitaCodFormatting(rawValue);
+      var digitMask = getDigitMaskForCurrentVigencia();
+      if (!codigo || !digitMask || !digitMask.length) {
+        return codigo;
+      }
+      for (var i = 0; i < digitMask.length; i++) {
+        if (!digitMask[i]) {
+          return codigo;
+        }
+      }
+      var totalDigits = digitMask.reduce(function(sum, current) { return sum + current; }, 0);
+      if (totalDigits !== codigo.length) {
+        return codigo;
+      }
+
+      var parts = [];
+      var pos = 0;
+      digitMask.forEach(function(size) {
+        parts.push(codigo.slice(pos, pos + size));
+        pos += size;
+      });
+      return parts.join('.');
+    }
 
     var idFields = document.querySelectorAll(
       'input[name$="_id"][type="text"]'
@@ -195,6 +283,35 @@
         .catch(function() {});
       });
     });
+
+    var receitaCodInput = document.querySelector('input[name="receita_cod"][type="text"]');
+    if (receitaCodInput && itemReceitaCodMasks.length) {
+      receitaCodInput.addEventListener('focus', function() {
+        var raw = stripReceitaCodFormatting(receitaCodInput.value);
+        if (raw !== receitaCodInput.value) {
+          receitaCodInput.value = raw;
+        }
+      });
+
+      receitaCodInput.addEventListener('blur', function() {
+        var formatted = formatReceitaCodValue(receitaCodInput.value);
+        if (formatted !== receitaCodInput.value) {
+          receitaCodInput.value = formatted;
+          receitaCodInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      });
+
+      if (receitaCodInput.value) {
+        receitaCodInput.value = formatReceitaCodValue(receitaCodInput.value);
+      }
+
+      var adminForm = receitaCodInput.form;
+      if (adminForm) {
+        adminForm.addEventListener('submit', function() {
+          receitaCodInput.value = stripReceitaCodFormatting(receitaCodInput.value);
+        });
+      }
+    }
   }
 
   if (document.readyState === 'loading') {

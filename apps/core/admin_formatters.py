@@ -36,3 +36,39 @@ def format_receita_cod_by_vigencia(codigo, vigencia_inicio, vigencia_fim, cache)
         partes.append(codigo[pos:pos + tamanho])
         pos += tamanho
     return ".".join(partes)
+
+
+def get_active_vigencia_masks():
+    masks = []
+    qs = (
+        NivelHierarquico.objects.filter(data_registro_fim=TRANSACTION_TIME_SENTINEL)
+        .order_by("data_vigencia_inicio", "data_vigencia_fim", "nivel_ref")
+        .values("data_vigencia_inicio", "data_vigencia_fim", "numero_digitos")
+    )
+
+    current_key = None
+    current_digits = []
+    for row in qs:
+        key = (row["data_vigencia_inicio"], row["data_vigencia_fim"])
+        if key != current_key:
+            if current_key is not None:
+                masks.append(
+                    {
+                        "vigencia_inicio": current_key[0].isoformat(),
+                        "vigencia_fim": current_key[1].isoformat(),
+                        "digit_mask": current_digits,
+                    }
+                )
+            current_key = key
+            current_digits = []
+        current_digits.append(row["numero_digitos"])
+
+    if current_key is not None:
+        masks.append(
+            {
+                "vigencia_inicio": current_key[0].isoformat(),
+                "vigencia_fim": current_key[1].isoformat(),
+                "digit_mask": current_digits,
+            }
+        )
+    return masks
