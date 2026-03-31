@@ -2,12 +2,15 @@ from datetime import date
 import json
 
 from django.contrib import admin
+from django.http import JsonResponse
+from django.urls import path, reverse
 
 from apps.core.models import (
     SerieClassificacao,
     Classificacao,
     NivelHierarquico,
     ItemClassificacao,
+    TRANSACTION_TIME_SENTINEL,
     VersaoClassificacao,
     VarianteClassificacao,
 )
@@ -18,8 +21,6 @@ from apps.core.forms import (
     NivelHierarquicoForm,
     ItemClassificacaoForm,
 )
-from django.urls import reverse
-
 from apps.core.admin_formatters import (
     format_receita_cod_by_vigencia,
     get_active_vigencia_masks,
@@ -343,12 +344,23 @@ class ItemClassificacaoAdmin(
         "parent_item_id": {
             "kind": "item",
             "model": ItemClassificacao,
-            "semantic_field": "item_id",
-            "display_label": lambda obj: f"{obj.item_id} - {obj.receita_nome or obj.receita_cod or ''}".strip(
+            "semantic_field": "receita_cod",
+            "display_label": lambda obj: f"{obj.receita_cod} - {obj.receita_nome or obj.item_id or ''}".strip(
                 " -"
             ),
         },
     }
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom = [
+            path(
+                "lookup-parent-by-code/",
+                self.admin_site.admin_view(self.lookup_parent_by_code_view),
+                name=f"{self.model._meta.app_label}_{self.model._meta.model_name}_lookup_parent_by_code",
+            )
+        ]
+        return custom + urls
 
     def get_queryset(self, request):
         self._nivel_digit_cache = {}
@@ -357,7 +369,40 @@ class ItemClassificacaoAdmin(
 
     def render_change_form(self, request, context, add=False, change=False, form_url="", obj=None):
         context["item_receita_cod_masks_json"] = json.dumps(get_active_vigencia_masks())
+        context["item_parent_lookup_url"] = reverse(
+            f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_lookup_parent_by_code"
+        )
         return super().render_change_form(request, context, add, change, form_url, obj)
+
+    def lookup_parent_by_code_view(self, request):
+        code = (request.GET.get("code") or "").replace(".", "").strip()
+        vigencia_inicio = request.GET.get("vigencia_inicio")
+        vigencia_fim = request.GET.get("vigencia_fim")
+        if not code or not vigencia_inicio or not vigencia_fim:
+            return JsonResponse({"pk": "", "semantic_value": "", "display_label": "", "link_url": ""})
+
+        qs = ItemClassificacao.objects.filter(
+            receita_cod=code,
+            data_registro_fim=TRANSACTION_TIME_SENTINEL,
+            data_vigencia_inicio__lte=vigencia_inicio,
+            data_vigencia_fim__gte=vigencia_fim,
+        ).order_by("pk")
+        obj = qs.first()
+        if not obj:
+            return JsonResponse({"pk": "", "semantic_value": "", "display_label": "", "link_url": ""})
+
+        link_url = reverse(
+            f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change",
+            args=[obj.pk],
+        )
+        return JsonResponse(
+            {
+                "pk": str(obj.pk),
+                "semantic_value": obj.receita_cod or "",
+                "display_label": f"{obj.receita_cod} - {obj.receita_nome or obj.item_id or ''}".strip(" -"),
+                "link_url": link_url,
+            }
+        )
 
     @admin.display(
         description=ItemClassificacao._meta.get_field("receita_cod").verbose_name,

@@ -141,6 +141,7 @@
     var checkIdUrl = '{{ check_id_url|default:"" }}';
     var idFieldName = '{{ id_field_name|default:"" }}';
     var itemReceitaCodMasks = JSON.parse('{{ item_receita_cod_masks_json|default:"[]"|escapejs }}');
+    var itemParentLookupUrl = '{{ item_parent_lookup_url|default:"" }}';
 
     function parseDateValue(value) {
       if (!value) {
@@ -177,7 +178,7 @@
       return a.day - b.day;
     }
 
-    function getDigitMaskForCurrentVigencia() {
+    function getMaskForCurrentVigencia() {
       var vigInicioInput = document.querySelector('input[name="data_vigencia_inicio"]');
       var vigFimInput = document.querySelector('input[name="data_vigencia_fim"]');
       var vigInicio = parseDateValue(vigInicioInput && vigInicioInput.value);
@@ -194,7 +195,7 @@
           continue;
         }
         if (compareIsoDates(maskInicio, vigInicio) <= 0 && compareIsoDates(maskFim, vigFim) >= 0) {
-          return mask.digit_mask || null;
+          return mask || null;
         }
       }
       return null;
@@ -211,7 +212,8 @@
 
     function formatReceitaCodValue(rawValue) {
       var codigo = stripReceitaCodFormatting(rawValue);
-      var digitMask = getDigitMaskForCurrentVigencia();
+      var mask = getMaskForCurrentVigencia();
+      var digitMask = mask && mask.digit_mask;
       if (!codigo || !digitMask || !digitMask.length) {
         return codigo;
       }
@@ -232,6 +234,54 @@
         pos += size;
       });
       return parts.join('.');
+    }
+
+    function getCurrentVigenciaIsoValues() {
+      var vigInicioInput = document.querySelector('input[name="data_vigencia_inicio"]');
+      var vigFimInput = document.querySelector('input[name="data_vigencia_fim"]');
+      function toIso(raw) {
+        var parsed = parseDateValue(raw);
+        if (!parsed) {
+          return '';
+        }
+        var mm = String(parsed.month).padStart(2, '0');
+        var dd = String(parsed.day).padStart(2, '0');
+        return parsed.year + '-' + mm + '-' + dd;
+      }
+      return {
+        vigenciaInicio: toIso(vigInicioInput && vigInicioInput.value),
+        vigenciaFim: toIso(vigFimInput && vigFimInput.value)
+      };
+    }
+
+    function deriveParentReceitaCod(rawValue, currentLevelPk) {
+      var codigo = stripReceitaCodFormatting(rawValue);
+      var mask = getMaskForCurrentVigencia();
+      var digitMask = mask && mask.digit_mask;
+      var levelPks = mask && mask.level_pks;
+      if (!codigo || !digitMask || !levelPks || !digitMask.length || !levelPks.length) {
+        return '';
+      }
+      var levelPkStr = String(currentLevelPk || '');
+      var levelIndex = levelPks.map(String).indexOf(levelPkStr);
+      if (levelIndex <= 0) {
+        return '';
+      }
+      var totalDigits = digitMask.reduce(function(sum, current) { return sum + current; }, 0);
+      if (totalDigits !== codigo.length) {
+        return '';
+      }
+
+      var segments = [];
+      var pos = 0;
+      digitMask.forEach(function(size) {
+        segments.push(codigo.slice(pos, pos + size));
+        pos += size;
+      });
+      for (var i = levelIndex; i < segments.length; i++) {
+        segments[i] = '0'.repeat(digitMask[i]);
+      }
+      return segments.join('');
     }
 
     var idFields = document.querySelectorAll(
@@ -291,11 +341,49 @@
 
     var receitaCodInput = document.querySelector('input[name="receita_cod"][type="text"]');
     var itemIdInput = document.querySelector('input[name="item_id"][type="text"]');
+    var nivelIdInput = document.getElementById('id_nivel_id');
+    var parentItemIdInput = document.getElementById('id_parent_item_id');
     if (receitaCodInput) {
       function syncItemIdPreview() {
         if (itemIdInput) {
           itemIdInput.value = buildItemSemanticId(receitaCodInput.value);
         }
+      }
+
+      function maybeSuggestParentItem() {
+        if (!itemParentLookupUrl || !parentItemIdInput || !nivelIdInput) {
+          return;
+        }
+        if (parentItemIdInput.dataset.readonlyRoot === '1') {
+          return;
+        }
+        if ((parentItemIdInput.value || '').trim()) {
+          return;
+        }
+        var parentReceitaCod = deriveParentReceitaCod(receitaCodInput.value, nivelIdInput.value);
+        if (!parentReceitaCod) {
+          return;
+        }
+        var vigencia = getCurrentVigenciaIsoValues();
+        if (!vigencia.vigenciaInicio || !vigencia.vigenciaFim) {
+          return;
+        }
+        var url = itemParentLookupUrl
+          + '?code=' + encodeURIComponent(parentReceitaCod)
+          + '&vigencia_inicio=' + encodeURIComponent(vigencia.vigenciaInicio)
+          + '&vigencia_fim=' + encodeURIComponent(vigencia.vigenciaFim);
+        fetch(url, {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!data || !data.pk || (parentItemIdInput.value || '').trim()) {
+            return;
+          }
+          parentItemIdInput.value = data.pk;
+          parentItemIdInput.dispatchEvent(new Event('change', { bubbles: true }));
+        })
+        .catch(function() {});
       }
 
       receitaCodInput.addEventListener('focus', function() {
@@ -313,6 +401,7 @@
           receitaCodInput.dispatchEvent(new Event('change', { bubbles: true }));
         }
         syncItemIdPreview();
+        maybeSuggestParentItem();
       });
 
       receitaCodInput.addEventListener('input', syncItemIdPreview);
@@ -322,6 +411,7 @@
         receitaCodInput.value = formatReceitaCodValue(receitaCodInput.value);
       }
       syncItemIdPreview();
+      maybeSuggestParentItem();
 
       var adminForm = receitaCodInput.form;
       if (adminForm) {

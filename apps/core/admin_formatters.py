@@ -43,11 +43,12 @@ def get_active_vigencia_masks():
     qs = (
         NivelHierarquico.objects.filter(data_registro_fim=TRANSACTION_TIME_SENTINEL)
         .order_by("data_vigencia_inicio", "data_vigencia_fim", "nivel_ref")
-        .values("data_vigencia_inicio", "data_vigencia_fim", "numero_digitos")
+        .values("id", "data_vigencia_inicio", "data_vigencia_fim", "numero_digitos")
     )
 
     current_key = None
     current_digits = []
+    current_level_pks = []
     for row in qs:
         key = (row["data_vigencia_inicio"], row["data_vigencia_fim"])
         if key != current_key:
@@ -57,11 +58,14 @@ def get_active_vigencia_masks():
                         "vigencia_inicio": current_key[0].isoformat(),
                         "vigencia_fim": current_key[1].isoformat(),
                         "digit_mask": current_digits,
+                        "level_pks": current_level_pks,
                     }
                 )
             current_key = key
             current_digits = []
+            current_level_pks = []
         current_digits.append(row["numero_digitos"])
+        current_level_pks.append(row["id"])
 
     if current_key is not None:
         masks.append(
@@ -69,6 +73,7 @@ def get_active_vigencia_masks():
                 "vigencia_inicio": current_key[0].isoformat(),
                 "vigencia_fim": current_key[1].isoformat(),
                 "digit_mask": current_digits,
+                "level_pks": current_level_pks,
             }
         )
     return masks
