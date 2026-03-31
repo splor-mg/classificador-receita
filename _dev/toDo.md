@@ -1,5 +1,5 @@
 ----------------------------------------------------------------------------------------------------
-# lista
+# lista 
 
 - verificar consistência de não permitir a criação de item sem que exista matriz anterior existente?. Seria pelo campo `item_pai`?
 - avaliar estrutura de booleano para edição. Por exemplo, matriz seria "Sim/Não", assim como item gerado
