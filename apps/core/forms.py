@@ -76,6 +76,15 @@ class ItemClassificacaoForm(forms.ModelForm):
             initial_receita_cod = self.initial.get("receita_cod") or ""
             self.fields["item_id"].initial = item_semantic_id_from_receita_cod(initial_receita_cod) if initial_receita_cod else ""
 
+        parent_field = self.fields.get("parent_item_id")
+        nivel = getattr(self.instance, "nivel_id", None) if self.instance else None
+        if parent_field is not None and nivel is not None and getattr(nivel, "nivel_numero", None) == 1:
+            parent_field.required = False
+            parent_field.initial = None
+            parent_field.widget.attrs["data_readonly_root"] = "1"
+            parent_field.widget.attrs["data_empty_display"] = ""
+            parent_field.widget.attrs["data_root_message"] = "Item raiz, de nível 1, não possui item pai."
+
     class Meta:
         model = ItemClassificacao
         fields = "__all__"
