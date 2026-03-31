@@ -16,6 +16,7 @@ from apps.core.forms import (
     SerieClassificacaoForm,
     ClassificacaoForm,
     NivelHierarquicoForm,
+    ItemClassificacaoForm,
 )
 from django.urls import reverse
 
@@ -301,7 +302,7 @@ class ItemClassificacaoAdmin(
     date_hierarchy = 'data_vigencia_inicio'
     raw_id_fields = ['classificacao_id', 'nivel_id', 'parent_item_id', 'base_legal_tecnica_id']
     fields = [
-        ('receita_cod', 'item_ref'),
+        ('receita_cod', 'item_ref', 'item_id'),
         'receita_nome',
         'receita_descricao',
         'classificacao_id',
@@ -318,6 +319,8 @@ class ItemClassificacaoAdmin(
         'data_registro_inicio_fmt',
         'data_registro_fim_fmt',
     ]
+    form = ItemClassificacaoForm
+    
     semantic_fk_config = {
         "classificacao_id": {
             "kind": "classificacao",

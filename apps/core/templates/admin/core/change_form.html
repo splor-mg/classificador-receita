@@ -204,6 +204,11 @@
       return String(value || '').replace(/\./g, '').trim();
     }
 
+    function buildItemSemanticId(rawReceitaCod) {
+      var codigo = stripReceitaCodFormatting(rawReceitaCod);
+      return codigo ? ('IT-' + codigo) : '';
+    }
+
     function formatReceitaCodValue(rawValue) {
       var codigo = stripReceitaCodFormatting(rawValue);
       var digitMask = getDigitMaskForCurrentVigencia();
@@ -285,12 +290,20 @@
     });
 
     var receitaCodInput = document.querySelector('input[name="receita_cod"][type="text"]');
-    if (receitaCodInput && itemReceitaCodMasks.length) {
+    var itemIdInput = document.querySelector('input[name="item_id"][type="text"]');
+    if (receitaCodInput) {
+      function syncItemIdPreview() {
+        if (itemIdInput) {
+          itemIdInput.value = buildItemSemanticId(receitaCodInput.value);
+        }
+      }
+
       receitaCodInput.addEventListener('focus', function() {
         var raw = stripReceitaCodFormatting(receitaCodInput.value);
         if (raw !== receitaCodInput.value) {
           receitaCodInput.value = raw;
         }
+        syncItemIdPreview();
       });
 
       receitaCodInput.addEventListener('blur', function() {
@@ -299,16 +312,22 @@
           receitaCodInput.value = formatted;
           receitaCodInput.dispatchEvent(new Event('change', { bubbles: true }));
         }
+        syncItemIdPreview();
       });
 
-      if (receitaCodInput.value) {
+      receitaCodInput.addEventListener('input', syncItemIdPreview);
+      receitaCodInput.addEventListener('change', syncItemIdPreview);
+
+      if (receitaCodInput.value && itemReceitaCodMasks.length) {
         receitaCodInput.value = formatReceitaCodValue(receitaCodInput.value);
       }
+      syncItemIdPreview();
 
       var adminForm = receitaCodInput.form;
       if (adminForm) {
         adminForm.addEventListener('submit', function() {
           receitaCodInput.value = stripReceitaCodFormatting(receitaCodInput.value);
+          syncItemIdPreview();
         });
       }
     }

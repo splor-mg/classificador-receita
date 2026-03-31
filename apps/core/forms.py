@@ -1,7 +1,13 @@
 from django import forms
 from django.forms import TextInput, Textarea
 
-from apps.core.models import SerieClassificacao, Classificacao, NivelHierarquico
+from apps.core.models import (
+    SerieClassificacao,
+    Classificacao,
+    NivelHierarquico,
+    ItemClassificacao,
+    item_semantic_id_from_receita_cod,
+)
 from apps.core.domain_choices import ORGAOS_ENTIDADES_GROUPED_CHOICES
 
 
@@ -49,3 +55,30 @@ class NivelHierarquicoForm(forms.ModelForm):
     class Meta:
         model = NivelHierarquico
         fields = "__all__"
+
+
+class ItemClassificacaoForm(forms.ModelForm):
+    """Formulário do Admin para ItemClassificacao com widgets ajustados."""
+
+    item_id = forms.CharField(
+        disabled=True,
+        required=False,
+        widget=TextInput(attrs={"style": "width:20em; background-color:#f4f4f4; color:#555;"}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        receita_cod = ""
+        if self.instance and getattr(self.instance, "pk", None):
+            receita_cod = self.instance.receita_cod or ""
+            self.fields["item_id"].initial = self.instance.item_id or item_semantic_id_from_receita_cod(receita_cod)
+        else:
+            initial_receita_cod = self.initial.get("receita_cod") or ""
+            self.fields["item_id"].initial = item_semantic_id_from_receita_cod(initial_receita_cod) if initial_receita_cod else ""
+
+    class Meta:
+        model = ItemClassificacao
+        fields = "__all__"
+        widgets = {
+            "receita_nome": TextInput(attrs={"style": "width:110em;"}),
+        }
