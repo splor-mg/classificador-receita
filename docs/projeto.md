@@ -288,7 +288,7 @@ Implementar sistema de gestão do Classificador de Natureza de Receita do Estado
 **Objetivo:** Construir estrutura lógica das entidades e seus relacionamentos.
 
 **Atividades:**
-- Definir entidades principais, tais como `classificacao_receita`, `nivel_hierarquico`, `versao_classificacao`.
+- Definir entidades principais, tais como `classificacao`, `nivel_hierarquico`, `versao_classificacao`.
 - Definir atributos essenciais de cada entidade (conforme GSIM).
 - Estruturar relacionamentos, PKs, FKs e cardinalidade.
 - Aplicar normalização (3FN).

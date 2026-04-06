@@ -1,0 +1,447 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block title %}Confirmar bloqueio{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+  .strategy-section { margin: 1.5em 0; padding: 1em; background: #f9f9f9; border-radius: 4px; }
+  .strategy-option { display: flex; align-items: center; gap: 0.5em; cursor: pointer; }
+  .strategy-option input[type="radio"] { cursor: pointer; }
+  .strategy-option label { cursor: pointer; font-weight: 500; }
+  .preview-table { border-collapse: collapse; margin-top: 1em; table-layout: fixed; }
+  .preview-table th, .preview-table td { padding: 8px; border: 1px solid #ddd; text-align: left; }
+  .preview-table th { background-color: #e8e8e8; }
+  .preview-table th.col-registros { width: 120px; }
+  .preview-table th.col-data { width: 340px; min-width: 340px; }
+  .preview-table td.preview-date-cell { white-space: nowrap; }
+  .preview-table td.preview-date-cell .bitemporal-preview-shortcuts { display: inline; margin-left: 0.5rem; }
+  .bitemporal-preview-shortcuts .date-icon {
+    position: relative;
+    display: inline-block;
+    vertical-align: middle;
+    height: 24px;
+    width: 24px;
+    overflow: hidden;
+    background: url("{% static 'admin/img/icon-calendar.svg' %}") 0 0 no-repeat;
+    background-size: 24px auto;
+    top: -1px;
+  }
+  .bitemporal-preview-shortcuts a:focus .date-icon,
+  .bitemporal-preview-shortcuts a:hover .date-icon { background-position: 0 -24px; }
+  .preview-table input[type="text"].date-input,
+  .preview-table input[type="text"].date-input-readonly {
+    padding: 4px 6px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    width: 100px;
+    text-align: center;
+  }
+  .preview-table input[type="text"].date-input:focus {
+    border-color: #417690;
+    outline: none;
+  }
+  .preview-table input[type="text"].date-input.invalid {
+    border-color: #c00;
+    background-color: #fff0f0;
+  }
+  .date-hint { font-size: 0.8em; color: #666; font-weight: normal; margin-left: 0.5em; }
+  .strikethrough { text-decoration: line-through; color: #999; }
+  .strikethrough input { text-decoration: line-through; color: #999; }
+  .record-summary {
+    margin: 0.5em 0 2.25em 0;
+    padding: 0.4em 0.8em;
+    border-radius: 3px;
+    background-color: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    font-size: 0.9em;
+    color: #555;
+  }
+  .record-summary strong:first-child { color: #417690; }
+  .block-explicativo {
+    margin-top: 1.25em;
+    margin-bottom: 0.75em;
+    margin-left: 1.25em;
+    padding: 0.6em 0.9em;
+    background: #f8f9fa;
+    border-radius: 4px;
+    border-left: 3px solid #b0bcc4;
+    font-size: 0.875em;
+    line-height: 1.5;
+    color: #5c6266;
+  }
+  .block-explicativo p { margin: 0 0 0.4em 0; }
+  .block-explicativo p:last-child { margin-bottom: 0; }
+  .block-explicativo strong { color: #333; font-weight: 600; }
+  .block-submit-row { margin-top: 2.50em; display: flex; gap: 0.75em; }
+  .block-submit-row .btn {
+    border-radius: 4px;
+    padding: 6px 14px;
+    font-size: 0.9em;
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .block-submit-row a.btn { text-decoration: none !important; }
+  .block-submit-row .btn-primary { background-color: #417690; border-color: #355f73; color: #fff; }
+  .block-submit-row .btn-secondary { background-color: #f5f5f5; border-color: #d4d4d4; color: #333; }
+  .block-submit-row .btn-secondary:hover { background-color: #e5e5e5; }
+  .bitemporal-alerta {
+    margin-top: 0.5em;
+    padding: 0.4em 0.6em;
+    background: #fff8e6;
+    border-radius: 3px;
+    border-left: 3px solid #d4a017;
+    color: #856404;
+    font-size: 0.85em;
+  }
+  .block-subtitle {
+    margin: 0 0 1em 0;
+    font-size: 0.9em;
+    color: #666;
+  }
+  /* Popup do calendário (compartilhado com bitemporal_confirm) */
+  .bitemporal-calendar-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+  .bitemporal-calendar-box {
+    background: #fff;
+    padding: 1.5em;
+    border-radius: 6px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75em;
+  }
+  .bitemporal-calendar-grid { min-width: 19em; text-align: center; }
+  .bitemporal-calendar-grid .bitemporal-cal-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    background: var(--accent, #ffc);
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: #333;
+  }
+  .bitemporal-calendar-grid .bitemporal-cal-nav a {
+    text-decoration: none;
+    color: #333;
+    padding: 2px 6px;
+  }
+  .bitemporal-calendar-grid .bitemporal-cal-nav a:hover { color: #417690; }
+  .bitemporal-calendar-grid .bitemporal-cal-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.75rem;
+    margin: 0;
+  }
+  .bitemporal-calendar-grid .bitemporal-cal-table th {
+    padding: 6px 4px;
+    background: var(--darkened-bg, #e8e8e8);
+    border-bottom: 1px solid #ddd;
+    font-weight: 400;
+    color: #666;
+  }
+  .bitemporal-calendar-grid .bitemporal-cal-table td { padding: 0; border: none; }
+  .bitemporal-calendar-grid .bitemporal-cal-table td a {
+    display: block;
+    padding: 6px;
+    text-decoration: none;
+    color: #333;
+  }
+  .bitemporal-calendar-grid .bitemporal-cal-table td a:hover {
+    background: #417690;
+    color: #fff;
+  }
+  .bitemporal-calendar-grid .bitemporal-cal-table td.bitemporal-cal-today a {
+    font-weight: 700;
+    border: 1px solid #417690;
+  }
+  .bitemporal-calendar-grid .bitemporal-cal-table td.bitemporal-cal-noday {
+    color: #ccc;
+  }
+  .bitemporal-calendar-grid .bitemporal-cal-cancel {
+    margin: 0;
+    padding: 6px;
+    font-size: 0.75rem;
+    background: #f0f0f0;
+    border-top: 1px solid #ddd;
+  }
+  .bitemporal-calendar-grid .bitemporal-cal-cancel a {
+    color: #333;
+    text-decoration: none;
+  }
+  .bitemporal-calendar-grid .bitemporal-cal-cancel a:hover { text-decoration: underline; }
+</style>
+<script src="{% static 'core/admin_bitemporal_confirm_validations.js' %}"></script>
+<link rel="stylesheet" href="{% static 'admin/css/widgets.css' %}">
+<script src="{% static 'core/admin_bitemporal_date_shortcuts.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<h1 style="margin:0 0 0.25em 0;font-size:1.5em;font-weight:400;">Confirmar <span style="color:#f0ad4e;font-weight:600">bloqueio</span></h1>
+<form method="post" action="" id="block-form" data-block-confirm="1">
+  {% csrf_token %}
+  <input type="hidden" name="_block_confirm" value="1">
+  <input type="hidden" name="_save" value="1">
+  <input type="hidden" name="edit_vig_fim_1" id="edit_vig_fim_1" value="{{ nova_vigencia_fim_iso }}">
+  <input type="hidden" name="orig_field_data_vigencia_inicio" value="{{ vigencia_inicio_iso }}">
+  <input type="hidden" name="orig_field_data_vigencia_fim" value="{{ vigencia_fim_iso }}">
+
+  {% if resource_id_value or resource_name_value %}
+  <div class="record-summary">
+    <strong>Em edição</strong> |
+    {% if resource_id_value %}
+      <span class="record-id"><strong>{{ resource_id_label }}:</strong> {{ resource_id_value }}</span>
+    {% endif %}
+    {% if resource_name_value %}
+      {% if resource_id_value %} — {% endif %}
+      <span class="record-name"><strong>{{ resource_name_label }}:</strong> {{ resource_name_value }}</span>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <p>Essa operação encerra a vigência do respectivo registro ao definir uma data específica para o campo 'Data do Fim da Vigência'.</p>
+  <p>O registro permanece vigente para o período compreendido entre a data de início e fim informados, mas não produz efeitos após a data-fim estabelecida.</p>
+  <p>Caso queira "desbloquear" o registro para um determinado período, basta editar o registro e ajustar o período de vigência.</p>
+  
+  <br>
+  <h3>Vigência</h3>
+
+  <div class="strategy-section">
+    <div class="strategy-options">
+      <div class="strategy-option">
+        <input type="radio" id="strategy-sobrescrever" name="edit_strategy" value="sobrescrever" checked>
+        <label for="strategy-sobrescrever">Sobrescrever/ajustar vigência atual</label>
+      </div>
+    </div>
+
+    <div id="preview-container">
+      <table class="preview-table">
+        <thead>
+          <tr>
+            <th class="col-registros">Registros</th>
+            <th class="col-data">Data de início de vigência <span class="date-hint">(dd/mm/aaaa)</span></th>
+            <th class="col-data">Data de fim de vigência <span class="date-hint">(dd/mm/aaaa)</span></th>
+          </tr>
+        </thead>
+        <tbody id="preview-body">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="block-explicativo" class="block-explicativo" aria-live="polite"></div>
+
+  <div class="block-submit-row">
+    <button type="button" class="btn btn-primary" id="block-confirm-btn">{% translate "Confirmar" %}</button>
+    <a href="{{ change_url }}" class="btn btn-secondary">{% translate "Voltar" %}</a>
+    {% url opts|admin_urlname:'changelist' as changelist_url %}
+    <a href="{% add_preserved_filters changelist_url %}" class="btn btn-secondary" id="block-cancel-link">{% translate "Cancelar" %}</a>
+  </div>
+</form>
+
+<script type="text/javascript">
+(function() {
+  var blockPreview = JSON.parse('{{ block_preview_json|escapejs }}');
+
+  function formatDateToDMY(isoDate) {
+    if (!isoDate) return '';
+    var parts = isoDate.split('-');
+    if (parts.length !== 3) return isoDate;
+    return parts[2] + '/' + parts[1] + '/' + parts[0];
+  }
+
+  function parseDMYtoISO(dmyDate) {
+    if (!dmyDate) return '';
+    var parts = dmyDate.split('/');
+    if (parts.length !== 3) return dmyDate;
+    return parts[2] + '-' + parts[1] + '-' + parts[0];
+  }
+
+  function isValidDateDMY(value) {
+    if (!value) return true;
+    var regex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+    var match = value.match(regex);
+    if (!match) return false;
+    var day = parseInt(match[1], 10);
+    var month = parseInt(match[2], 10);
+    var year = parseInt(match[3], 10);
+    if (month < 1 || month > 12) return false;
+    if (day < 1 || day > 31) return false;
+    var date = new Date(year, month - 1, day);
+    return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+  }
+
+  function validateDateInput(e) {
+    var input = e.target;
+    if (isValidDateDMY(input.value)) {
+      input.classList.remove('invalid');
+    } else {
+      input.classList.add('invalid');
+    }
+  }
+
+  function syncHiddenFim() {
+    var visible = document.getElementById('edit_vig_fim_1_visible');
+    var hidden = document.getElementById('edit_vig_fim_1');
+    if (visible && hidden && isValidDateDMY(visible.value)) {
+      hidden.value = parseDMYtoISO(visible.value);
+    }
+  }
+
+  function renderPreview() {
+    var tbody = document.getElementById('preview-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    var versionLabels = { 'Versão 1': 'Versão atual', 'Versão 2': 'Nova versão' };
+
+    blockPreview.forEach(function(rec, index) {
+      var tr = document.createElement('tr');
+      var displayVersion = versionLabels[rec.version] || rec.version;
+      var isEditable = !rec.strikethrough;
+      var isNovaVersao = displayVersion === 'Nova versão';
+
+      var tdVersion = document.createElement('td');
+      tdVersion.textContent = displayVersion;
+
+      var tdInicio = document.createElement('td');
+      if (isNovaVersao) {
+        tdInicio.classList.add('preview-date-cell');
+        var inputInicioRo = document.createElement('input');
+        inputInicioRo.type = 'text';
+        inputInicioRo.className = 'vDateField date-input-readonly';
+        inputInicioRo.value = formatDateToDMY(rec.vig_inicio);
+        inputInicioRo.readOnly = true;
+        inputInicioRo.tabIndex = -1;
+        tdInicio.appendChild(inputInicioRo);
+      } else {
+        tdInicio.textContent = formatDateToDMY(rec.vig_inicio) || '-';
+      }
+
+      var tdFim = document.createElement('td');
+      if (isEditable) {
+        tdFim.classList.add('preview-date-cell');
+        var inputFim = document.createElement('input');
+        inputFim.type = 'text';
+        inputFim.className = 'vDateField date-input';
+        inputFim.id = 'edit_vig_fim_1_visible';
+        inputFim.name = 'edit_vig_fim_1_visible';
+        inputFim.value = formatDateToDMY(rec.vig_fim);
+        inputFim.placeholder = 'dd/mm/aaaa';
+        inputFim.addEventListener('blur', validateDateInput);
+        inputFim.addEventListener('input', syncHiddenFim);
+        inputFim.addEventListener('change', syncHiddenFim);
+        tdFim.appendChild(inputFim);
+      } else {
+        if (isNovaVersao && !rec.strikethrough) {
+          tdFim.classList.add('preview-date-cell');
+          var inputFimRo = document.createElement('input');
+          inputFimRo.type = 'text';
+          inputFimRo.className = 'vDateField date-input-readonly';
+          inputFimRo.value = formatDateToDMY(rec.vig_fim);
+          inputFimRo.readOnly = true;
+          inputFimRo.tabIndex = -1;
+          tdFim.appendChild(inputFimRo);
+        } else {
+          tdFim.textContent = formatDateToDMY(rec.vig_fim) || '-';
+        }
+      }
+
+      if (rec.strikethrough) {
+        tdVersion.classList.add('strikethrough');
+        tdInicio.classList.add('strikethrough');
+        tdFim.classList.add('strikethrough');
+      }
+
+      tr.appendChild(tdVersion);
+      tr.appendChild(tdInicio);
+      tr.appendChild(tdFim);
+      tbody.appendChild(tr);
+    });
+
+    if (window.bitemporalEnhanceConfirmVigencia) {
+      window.bitemporalEnhanceConfirmVigencia();
+    }
+    syncHiddenFim();
+    updateBlockMessage();
+  }
+
+  function isSentinelDate(val) {
+    if (!val) return false;
+    var v = String(val).trim();
+    return v === '31/12/9999' || v === '9999-12-31';
+  }
+
+  function updateBlockMessage() {
+    var container = document.getElementById('block-explicativo');
+    if (!container) return;
+
+    var novaInicio = '';
+    var novaFim = '';
+    var rows = document.querySelectorAll('#preview-body tr');
+    rows.forEach(function(tr) {
+      var cells = tr.querySelectorAll('td');
+      if (cells.length < 3) return;
+      var label = (cells[0].textContent || '').trim();
+      if (label === 'Nova versão') {
+        var inpInicio = cells[1].querySelector('input');
+        var inpFim = cells[2].querySelector('input');
+        novaInicio = inpInicio ? inpInicio.value.trim() : (cells[1].textContent || '').trim();
+        novaFim = inpFim ? inpFim.value.trim() : (cells[2].textContent || '').trim();
+      }
+    });
+
+    var html = '';
+    var alertas = [];
+
+    if (novaFim && !isValidDateDMY(novaFim)) {
+      alertas.push('Data inválida. Use o formato dd/mm/aaaa.');
+    } else if (novaFim && isSentinelDate(novaFim)) {
+      alertas.push('Para registrar um bloqueio de um registro, a Data de Fim de Vigência deve ser diferente do valor sentinela (31/12/9999).');
+    } else if (novaInicio && novaFim) {
+      html = '<p>Com esse bloqueio, a vigência atual será encerrada em <strong>' + novaFim + '</strong>, permanecendo válida de <strong>' + novaInicio + '</strong> a <strong>' + novaFim + '</strong>.</p>';
+    }
+
+    if (alertas.length) {
+      html += '<div class="bitemporal-alerta">' + alertas.join(' ') + '</div>';
+    }
+    container.innerHTML = html || '';
+  }
+
+  var confirmBtn = document.getElementById('block-confirm-btn');
+  var blockForm = document.getElementById('block-form');
+  if (confirmBtn && blockForm) {
+    confirmBtn.addEventListener('click', function() {
+      syncHiddenFim();
+      blockForm.submit();
+    });
+  }
+
+  var previewBody = document.getElementById('preview-body');
+  if (previewBody) {
+    previewBody.addEventListener('change', function(e) {
+      if (e.target && e.target.matches('input.date-input')) {
+        updateBlockMessage();
+      }
+    });
+    previewBody.addEventListener('input', function(e) {
+      if (e.target && e.target.matches('input.date-input')) {
+        updateBlockMessage();
+      }
+    });
+  }
+
+  renderPreview();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,606 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls %}
+
+{% block submit_buttons_bottom %}
+<style>
+  .submit-row.submit-row-unified input[type="submit"],
+  .submit-row.submit-row-unified a.closelink,
+  .submit-row.submit-row-unified a.button,
+  .submit-row.submit-row-unified a.deletelink {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    min-height: 28px;
+    padding: 4px 15px;
+    box-sizing: border-box;
+    font-size: 13px;
+    line-height: 1;
+    text-decoration: none !important;
+    margin: 0 5px 0 0;
+  }
+  .submit-row.submit-row-unified a.button:hover,
+  .submit-row.submit-row-unified a.button:focus,
+  .submit-row.submit-row-unified a.button:visited,
+  .submit-row.submit-row-unified a.deletelink:hover,
+  .submit-row.submit-row-unified a.deletelink:focus,
+  .submit-row.submit-row-unified a.deletelink:visited {
+    text-decoration: none !important;
+  }
+  .submit-row.submit-row-unified .submit-row-right a {
+    margin: 0 0 0 5px;
+  }
+  .submit-row.submit-row-unified .submit-row-right a:first-child {
+    margin-left: 0;
+  }
+</style>
+<div class="submit-row submit-row-unified" style="display: flex; justify-content: space-between; align-items: center;">
+{% if not is_popup %}
+  {% if is_inactive_record %}
+  <div style="display: flex; align-items: center;">
+    {% url opts|admin_urlname:'changelist' as changelist_url %}
+    <a role="button" href="{% add_preserved_filters changelist_url %}" class="closelink">Voltar</a>
+  </div>
+  <div class="submit-row-right" style="display: flex; align-items: center; gap: 5px;">
+    {% if reactivate_url %}
+    <a
+      href="{{ reactivate_url }}"
+      id="core-reactivate-button"
+      class="button"
+      style="background-color: #7e57c2; border-color: #6c3fb5; color: #fff;"
+      title="Cria uma nova versão ativa do registro a partir dos dados do registro inativo. O registro inativo original permanece inalterado no histórico."
+    >
+      Reativar
+    </a>
+    {% else %}
+    <a
+      href="javascript:void(0);"
+      id="core-reactivate-button"
+      class="button"
+      style="background-color: #7e57c2; border-color: #6c3fb5; color: #fff; pointer-events: none; opacity: 0.6;"
+      title="Reativar não disponível para este modelo."
+    >
+      Reativar
+    </a>
+    {% endif %}
+  </div>
+  {% else %}
+  <div style="display: flex; align-items: center;">
+    {% if has_change_permission and change or has_add_permission and add or has_editable_inline_admin_formsets %}<input type="submit" value="{% translate 'Save' %}" class="default" name="_save">{% endif %}
+    <a role="button" href="{{ request.get_full_path }}" class="closelink">Limpar</a>
+    {% url opts|admin_urlname:'changelist' as changelist_url %}
+    <a role="button" href="{% add_preserved_filters changelist_url %}" class="closelink" id="core-cancel-link">Cancelar</a>
+  </div>
+  {% if change %}
+  <div class="submit-row-right" style="display: flex; align-items: center; gap: 5px;">
+    {% if block_url %}
+    <a
+      href="{{ block_url }}"
+      id="core-block-button"
+      class="button"
+      style="background-color: #f0ad4e; border-color: #eea236; color: #fff;"
+      title="Encerra a vigência do respectivo registro ao definir uma data específica para o campo 'Data do Fim da Vigência'. O registro permanece vigente no período entre a data de início e fim informados, mas não produz efeitos após a data fim estabelecida."
+    >
+      Bloquear
+    </a>
+    {% else %}
+    <a
+      href="javascript:void(0);"
+      id="core-block-button"
+      class="button"
+      style="background-color: #f0ad4e; border-color: #eea236; color: #fff; pointer-events: none; opacity: 0.6;"
+      title="Bloquear não disponível para este modelo."
+    >
+      Bloquear
+    </a>
+    {% endif %}
+    {% if delete_url %}
+    <a
+      href="{{ delete_url }}"
+      id="core-delete-button"
+      class="deletelink"
+      title="Remove integralmente a vigência do respectivo registro, fazendo com que ele deixe de produzir efeitos em qualquer período e passe a ser tratado como inexistente no histórico de vigências. Não há exclusão física do registro, apenas lógica."
+    >
+      Excluir
+    </a>
+    {% else %}
+    <a
+      href="javascript:void(0);"
+      id="core-delete-button"
+      class="deletelink"
+      style="pointer-events: none; opacity: 0.6;"
+      title="Excluir não disponível para este modelo."
+    >
+      Excluir
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% endif %}
+{% endif %}
+{% if orig_field_items %}
+  {% for k, v in orig_field_items %}
+  <input type="hidden" name="{{ k }}" value="{{ v|escape }}">
+  {% endfor %}
+{% endif %}
+</div>
+<script type="text/javascript">
+(function() {
+  function normalizeIdentifierValue(raw) {
+    var v = raw.trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .replace(/[\s_]+/g, '-');
+    v = v.replace(/-+/g, '-');       // colapsa múltiplos traços
+    v = v.replace(/^-+/, '').replace(/-+$/, ''); // remove traços nas extremidades
+    return v;
+  }
+
+  function setupIdentifierNormalization() {
+    var checkIdUrl = '{{ check_id_url|default:"" }}';
+    var idFieldName = '{{ id_field_name|default:"" }}';
+    var itemReceitaCodMasks = JSON.parse('{{ item_receita_cod_masks_json|default:"[]"|escapejs }}');
+    var itemParentLookupUrl = '{{ item_parent_lookup_url|default:"" }}';
+
+    function parseDateValue(value) {
+      if (!value) {
+        return null;
+      }
+      var raw = String(value).trim();
+      var isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (isoMatch) {
+        return {
+          year: parseInt(isoMatch[1], 10),
+          month: parseInt(isoMatch[2], 10),
+          day: parseInt(isoMatch[3], 10)
+        };
+      }
+
+      var brMatch = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (brMatch) {
+        return {
+          year: parseInt(brMatch[3], 10),
+          month: parseInt(brMatch[2], 10),
+          day: parseInt(brMatch[1], 10)
+        };
+      }
+
+      return null;
+    }
+
+    function compareIsoDates(a, b) {
+      if (!a || !b) {
+        return null;
+      }
+      if (a.year !== b.year) return a.year - b.year;
+      if (a.month !== b.month) return a.month - b.month;
+      return a.day - b.day;
+    }
+
+    function getMaskForCurrentVigencia() {
+      var vigInicioInput = document.querySelector('input[name="data_vigencia_inicio"]');
+      var vigFimInput = document.querySelector('input[name="data_vigencia_fim"]');
+      var vigInicio = parseDateValue(vigInicioInput && vigInicioInput.value);
+      var vigFim = parseDateValue(vigFimInput && vigFimInput.value);
+      if (!vigInicio || !vigFim) {
+        return null;
+      }
+
+      for (var i = 0; i < itemReceitaCodMasks.length; i++) {
+        var mask = itemReceitaCodMasks[i];
+        var maskInicio = parseDateValue(mask.vigencia_inicio);
+        var maskFim = parseDateValue(mask.vigencia_fim);
+        if (!maskInicio || !maskFim) {
+          continue;
+        }
+        if (compareIsoDates(maskInicio, vigInicio) <= 0 && compareIsoDates(maskFim, vigFim) >= 0) {
+          return mask || null;
+        }
+      }
+      return null;
+    }
+
+    function stripReceitaCodFormatting(value) {
+      return String(value || '').replace(/\./g, '').trim();
+    }
+
+    function buildItemSemanticId(rawReceitaCod) {
+      var codigo = stripReceitaCodFormatting(rawReceitaCod);
+      return codigo ? ('IT-' + codigo) : '';
+    }
+
+    function formatReceitaCodValue(rawValue) {
+      var codigo = stripReceitaCodFormatting(rawValue);
+      var mask = getMaskForCurrentVigencia();
+      var digitMask = mask && mask.digit_mask;
+      if (!codigo || !digitMask || !digitMask.length) {
+        return codigo;
+      }
+      for (var i = 0; i < digitMask.length; i++) {
+        if (!digitMask[i]) {
+          return codigo;
+        }
+      }
+      var totalDigits = digitMask.reduce(function(sum, current) { return sum + current; }, 0);
+      if (totalDigits !== codigo.length) {
+        return codigo;
+      }
+
+      var parts = [];
+      var pos = 0;
+      digitMask.forEach(function(size) {
+        parts.push(codigo.slice(pos, pos + size));
+        pos += size;
+      });
+      return parts.join('.');
+    }
+
+    function getCurrentVigenciaIsoValues() {
+      var vigInicioInput = document.querySelector('input[name="data_vigencia_inicio"]');
+      var vigFimInput = document.querySelector('input[name="data_vigencia_fim"]');
+      function toIso(raw) {
+        var parsed = parseDateValue(raw);
+        if (!parsed) {
+          return '';
+        }
+        var mm = String(parsed.month).padStart(2, '0');
+        var dd = String(parsed.day).padStart(2, '0');
+        return parsed.year + '-' + mm + '-' + dd;
+      }
+      return {
+        vigenciaInicio: toIso(vigInicioInput && vigInicioInput.value),
+        vigenciaFim: toIso(vigFimInput && vigFimInput.value)
+      };
+    }
+
+    function deriveParentReceitaCod(rawValue, currentLevelPk) {
+      var codigo = stripReceitaCodFormatting(rawValue);
+      var mask = getMaskForCurrentVigencia();
+      var digitMask = mask && mask.digit_mask;
+      var levelPks = mask && mask.level_pks;
+      if (!codigo || !digitMask || !levelPks || !digitMask.length || !levelPks.length) {
+        return '';
+      }
+      var levelPkStr = String(currentLevelPk || '');
+      var levelIndex = levelPks.map(String).indexOf(levelPkStr);
+      if (levelIndex <= 0) {
+        return '';
+      }
+      var totalDigits = digitMask.reduce(function(sum, current) { return sum + current; }, 0);
+      if (totalDigits !== codigo.length) {
+        return '';
+      }
+
+      var segments = [];
+      var pos = 0;
+      digitMask.forEach(function(size) {
+        segments.push(codigo.slice(pos, pos + size));
+        pos += size;
+      });
+      for (var i = levelIndex; i < segments.length; i++) {
+        segments[i] = '0'.repeat(digitMask[i]);
+      }
+      return segments.join('');
+    }
+
+    var idFields = document.querySelectorAll(
+      'input[name$="_id"][type="text"]'
+    );
+    idFields.forEach(function(input) {
+      input.addEventListener('blur', function() {
+        var v = normalizeIdentifierValue(input.value);
+        if (v !== input.value) {
+          input.value = v;
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        var fieldRow = input.closest('.form-row') || input.closest('div');
+        var formatMsg = fieldRow.querySelector('.id-format-warning');
+        if (formatMsg) formatMsg.remove();
+
+        var idPattern = /^[A-Z0-9]+(-[A-Z0-9]+)*$/;
+        if (v && !idPattern.test(v)) {
+          var ulFormat = document.createElement('ul');
+          ulFormat.className = 'errorlist id-format-warning';
+          var liFormat = document.createElement('li');
+          liFormat.textContent = 'Use apenas letras maiúsculas e números, separados por traço (-). Não utilize caracteres especiais.';
+          ulFormat.appendChild(liFormat);
+          fieldRow.insertBefore(ulFormat, fieldRow.firstChild);
+          return;
+        }
+
+        if (!checkIdUrl || !v || input.name !== idFieldName) return;
+
+        var existingMsg = fieldRow.querySelector('.id-duplicate-warning');
+        if (existingMsg) existingMsg.remove();
+
+        var serverError = fieldRow.querySelector('ul.errorlist:not(.id-duplicate-warning):not(.id-format-warning)');
+        if (serverError) return;
+
+        fetch(checkIdUrl + '?value=' + encodeURIComponent(v), {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.exists) {
+            var ul = document.createElement('ul');
+            ul.className = 'errorlist id-duplicate-warning';
+            var li = document.createElement('li');
+            var linkHtml = data.change_url
+              ? ' <a href="' + data.change_url + '" target="_blank" style="text-decoration:underline;">Abrir registro</a>'
+              : '';
+            li.innerHTML = 'Já existe um registro ativo com o identificador "' + v + '".' + linkHtml;
+            ul.appendChild(li);
+            fieldRow.insertBefore(ul, fieldRow.firstChild);
+          }
+        })
+        .catch(function() {});
+      });
+    });
+
+    var receitaCodInput = document.querySelector('input[name="receita_cod"][type="text"]');
+    var itemIdInput = document.querySelector('input[name="item_id"][type="text"]');
+    var nivelIdInput = document.getElementById('id_nivel_id');
+    var parentItemIdInput = document.getElementById('id_parent_item_id');
+    if (receitaCodInput) {
+      function syncItemIdPreview() {
+        if (itemIdInput) {
+          itemIdInput.value = buildItemSemanticId(receitaCodInput.value);
+        }
+      }
+
+      function maybeSuggestParentItem() {
+        if (!itemParentLookupUrl || !parentItemIdInput || !nivelIdInput) {
+          return;
+        }
+        if (parentItemIdInput.dataset.readonlyRoot === '1') {
+          return;
+        }
+        if ((parentItemIdInput.value || '').trim()) {
+          return;
+        }
+        var parentReceitaCod = deriveParentReceitaCod(receitaCodInput.value, nivelIdInput.value);
+        if (!parentReceitaCod) {
+          return;
+        }
+        var vigencia = getCurrentVigenciaIsoValues();
+        if (!vigencia.vigenciaInicio || !vigencia.vigenciaFim) {
+          return;
+        }
+        var url = itemParentLookupUrl
+          + '?code=' + encodeURIComponent(parentReceitaCod)
+          + '&vigencia_inicio=' + encodeURIComponent(vigencia.vigenciaInicio)
+          + '&vigencia_fim=' + encodeURIComponent(vigencia.vigenciaFim);
+        fetch(url, {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!data || !data.pk || (parentItemIdInput.value || '').trim()) {
+            return;
+          }
+          parentItemIdInput.value = data.pk;
+          parentItemIdInput.dispatchEvent(new Event('change', { bubbles: true }));
+        })
+        .catch(function() {});
+      }
+
+      receitaCodInput.addEventListener('focus', function() {
+        var raw = stripReceitaCodFormatting(receitaCodInput.value);
+        if (raw !== receitaCodInput.value) {
+          receitaCodInput.value = raw;
+        }
+        syncItemIdPreview();
+      });
+
+      receitaCodInput.addEventListener('blur', function() {
+        var formatted = formatReceitaCodValue(receitaCodInput.value);
+        if (formatted !== receitaCodInput.value) {
+          receitaCodInput.value = formatted;
+          receitaCodInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        syncItemIdPreview();
+        maybeSuggestParentItem();
+      });
+
+      receitaCodInput.addEventListener('input', syncItemIdPreview);
+      receitaCodInput.addEventListener('change', syncItemIdPreview);
+
+      if (receitaCodInput.value && itemReceitaCodMasks.length) {
+        receitaCodInput.value = formatReceitaCodValue(receitaCodInput.value);
+      }
+      syncItemIdPreview();
+      maybeSuggestParentItem();
+
+      var adminForm = receitaCodInput.form;
+      if (adminForm) {
+        adminForm.addEventListener('submit', function() {
+          receitaCodInput.value = stripReceitaCodFormatting(receitaCodInput.value);
+          syncItemIdPreview();
+        });
+      }
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupIdentifierNormalization);
+  } else {
+    setupIdentifierNormalization();
+  }
+
+  function setupUnsavedChangesWarning() {
+    var isSubmitting = false;
+    var isDirty = false;
+    var formHasErrorsOnLoad = !!document.querySelector('form .errorlist');
+
+    function parseDateToIso(raw) {
+      if (raw == null) {
+        return '';
+      }
+      var v = String(raw).trim();
+      if (!v) {
+        return '';
+      }
+
+      // ISO: YYYY-MM-DD
+      var isoMatch = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (isoMatch) {
+        return isoMatch[1] + '-' + isoMatch[2] + '-' + isoMatch[3];
+      }
+
+      // BR: DD/MM/YYYY
+      var brMatch = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (brMatch) {
+        return brMatch[3] + '-' + brMatch[2] + '-' + brMatch[1];
+      }
+
+      return null;
+    }
+
+    function normalizeNumber(raw) {
+      if (raw == null) {
+        return '';
+      }
+      var v = String(raw).trim();
+      if (!v) {
+        return '';
+      }
+      var n = Number(v);
+      return Number.isNaN(n) ? v : String(n);
+    }
+
+    function normalizeCanonicalForField(field, rawValue) {
+      if (rawValue == null) {
+        return '';
+      }
+
+      if (field.type === 'checkbox' || field.type === 'radio') {
+        var boolRaw = String(rawValue).toLowerCase();
+        var truthy = ['true', '1', 'on', 'yes'];
+        return truthy.indexOf(boolRaw) !== -1 ? '1' : '0';
+      }
+
+      var rawString = String(rawValue).trim();
+      if (!rawString) {
+        return '';
+      }
+
+      // Date semantics first: treat DD/MM/YYYY and YYYY-MM-DD as equivalent.
+      var asIsoDate = parseDateToIso(rawString);
+      if (asIsoDate !== null && (field.classList.contains('vDateField') || asIsoDate !== null)) {
+        return asIsoDate;
+      }
+
+      // Number semantics for numeric inputs.
+      if (field.type === 'number') {
+        return normalizeNumber(rawString);
+      }
+
+      // Text/select semantics: trimmed string comparison.
+      return rawString;
+    }
+
+    function getFieldState(field) {
+      if (field.type === 'checkbox' || field.type === 'radio') {
+        return field.checked ? '1' : '0';
+      }
+      return normalizeCanonicalForField(field, field.value);
+    }
+
+    function normalizeSnapshotForField(field, rawValue) {
+      return normalizeCanonicalForField(field, rawValue);
+    }
+
+    function getBaselineState(field) {
+      if (field.dataset.originalState !== undefined) {
+        return field.dataset.originalState;
+      }
+      return field.dataset.initialState;
+    }
+
+    // Considera qualquer alteração em campos de formulário na página
+    var fields = Array.prototype.slice.call(
+      document.querySelectorAll('form input, form textarea, form select')
+    );
+
+    // Mapa com snapshot original vindo do backend (orig_field_*)
+    var origSnapshotByName = {};
+    Array.prototype.slice.call(
+      document.querySelectorAll('input[name^="orig_field_"]')
+    ).forEach(function(input) {
+      var baseName = input.name.substring('orig_field_'.length);
+      origSnapshotByName[baseName] = input.value;
+    });
+
+    // Captura o estado inicial de cada campo
+    fields.forEach(function(field) {
+      if (field.type === 'hidden') {
+        return;
+      }
+      field.dataset.initialState = getFieldState(field);
+      var origRaw = origSnapshotByName[field.name];
+      if (origRaw !== undefined) {
+        field.dataset.originalState = normalizeSnapshotForField(field, origRaw);
+      }
+    });
+
+    function recomputeDirty() {
+      isDirty = fields.some(function(field) {
+        if (field.type === 'hidden') {
+          return false;
+        }
+        return getFieldState(field) !== getBaselineState(field);
+      });
+    }
+
+    fields.forEach(function(field) {
+      if (field.type === 'hidden') {
+        return;
+      }
+      field.addEventListener('change', recomputeDirty);
+      field.addEventListener('input', recomputeDirty);
+    });
+
+    // Garante que isDirty reflita imediatamente diferenças em relação
+    // ao snapshot original (orig_field_*), mesmo antes de qualquer
+    // interação do usuário após o carregamento da página.
+    recomputeDirty();
+
+    // Marca submissão para não mostrar alerta ao salvar
+    document.addEventListener('submit', function() {
+      isSubmitting = true;
+    }, true);
+
+    function confirmNavigationWithUnsavedChanges(event) {
+      if ((!isDirty && !formHasErrorsOnLoad) || isSubmitting) {
+        return;
+      }
+      var message = 'Há alterações não salvas. Se continuar, as alterações serão perdidas. Deseja realmente sair sem salvar?';
+      if (!window.confirm(message)) {
+        event.preventDefault();
+      }
+    }
+
+    var guardedLinks = [
+      document.getElementById('core-cancel-link'),
+      document.getElementById('core-block-button'),
+      document.getElementById('core-delete-button')
+    ];
+
+    guardedLinks.forEach(function(link) {
+      if (!link) {
+        return;
+      }
+      link.addEventListener('click', confirmNavigationWithUnsavedChanges);
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupUnsavedChangesWarning);
+  } else {
+    setupUnsavedChangesWarning();
+  }
+})();
+</script>
+{% endblock %}

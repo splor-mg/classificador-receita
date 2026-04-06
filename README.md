@@ -16,26 +16,53 @@ Sistema de gestão voltado para organização, classificação e versionamento h
 
 ## Instalação
 
-Este projeto usa [Poetry](https://python-poetry.org/) para gerenciamento de dependências.
+Pré-requisitos: Python 3.12+ e [Poetry](https://python-poetry.org/docs/#installation). O sistema foi construído para operar com **PostgreSQL**; em versão Beta, sem servidor de banco definido, é possível usar **SQLite3** (vem com o Django): crie um `.env` com `USE_SQLITE=1` (veja `.env.example`) ou defina `USE_SQLITE=1` no terminal. Para instalar e configurar o PostgreSQL, ver [docs/instalacao/configurar-postgresql.md](docs/instalacao/configurar-postgresql.md).
 
-### Pré-requisitos
-
-- Python 3.11 ou superior.
-- Poetry instalado ([instruções de instalação](https://python-poetry.org/docs/#installation)).
-
-### Configuração
-
+1. **Instale as dependências:**
 ```bash
-# Instalar dependências
 poetry install
-
-# Ativar ambiente virtual
-poetry shell
 ```
+
+2. **Execute as migrações:**
+```bash
+poetry run task migrate
+```
+
+3. **Crie um superusuário:**
+```bash
+poetry run task superuser-create
+```
+
+3. **Carregue os dados iniciais (seeds):**
+```bash
+poetry run task carregar
+```
+(Opcional: `poetry run task carregar -- --dry-run` para apenas conferir; `-- --clear` para limpar as tabelas antes de recarregar.)
+
+4. **Inicie o servidor de desenvolvimento:**
+```bash
+poetry run task dev-server
+```
+Aplicação em [http://localhost:8000](http://localhost:8000).
 
 ## Documentação
 
 Documentação completa disponível em [`docs/projeto.md`](docs/projeto.md).
+
+- **Aplicação Django (sistema):** `poetry run task dev-server` → [http://localhost:8000](http://localhost:8000) — página inicial do classificador e admin.
+- **Site da documentação (Zensical):** `poetry run task serve` → [http://localhost:8001](http://localhost:8001) — apresentação, projeto, ERD, ADRs e referências com navegação lateral.
+
+### Modelo de Dados
+
+O **modelo conceitual de dados** do classificador é definido primariamente pelos **Table Schemas Frictionless**, registrados na pasta `schemas`, e pelo **Data Package**, em `datapackage.yaml`:
+
+
+Os **models Django** (`apps/core/models.py`) e as migrations são a implementação dessa especificação no banco PostgreSQL, e devem ser mantidos alinhados a esses schemas. Sempre que o modelo de dados evoluir, a ordem esperada é:
+
+1. Atualizar o(s) `schemas/*.yaml` e o `datapackage.yaml` correspondentes.
+2. Ajustar os models Django e gerar novas migrations para refletir essas mudanças.
+3. Rodar os scripts de validação ( antes de aplicar as migrations em ambientes compartilhados.
+
 
 ## Scripts de Validação e Geração
 
@@ -46,7 +73,7 @@ O projeto inclui scripts utilitários para validação de schemas Frictionless e
 Valida todos os schemas Frictionless e o datapackage.yaml principal.
 
 ```bash
-poetry run task validar-schemas
+poetry run task validar-datapackage
 ```
 
 **O que faz:**
@@ -74,13 +101,5 @@ poetry run task gerar-erd
 - `docs/erd/erd.dot` - Diagrama em formato Graphviz DOT.
 - `docs/erd/erd.png` - Diagrama em formato PNG (se graphviz estiver instalado).
 
-### Integração com CI/CD
-
-Estes scripts podem ser integrados em pipelines CI/CD (ex: GitHub Actions) para validação automática dos schemas.
-
-**Exemplo de uso no CI:**
-```yaml
-- name: Validar schemas
-  run: poetry run task validar-schemas
 ```
 

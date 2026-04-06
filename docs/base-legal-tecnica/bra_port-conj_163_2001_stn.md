@@ -1,0 +1,12 @@
+- base_legal_tecnica_id: PORT-CONJ-163-BRA
+- base_legal_tecnica_ref: 4
+- esfera_federativa: BRA
+- tipo_legal: port-conj
+- numero_codigo: 163
+- data_edicao: 2001-05-04
+- orgao_responsavel: stn
+- titulo_norma: Normas Gerais das Contas Públicas
+- ementa: Dispõe sobre normas gerais de consolidação das Contas Públicas no âmbito da União, Estados, Distrito Federal e Municípios, e dá outras providências.
+- url_fonte: https://pesquisa.in.gov.br/imprensa/jsp/visualiza/index.jsp?jornal=1&pagina=15&data=07/05/2001
+- data_vigencia_inicio: 2001-05-07
+- data_vigencia_fim: 9999-12-31

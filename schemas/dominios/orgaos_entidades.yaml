@@ -1,0 +1,68 @@
+# Domínio compartilhado: órgãos e entidades (serie_classificacao, base_legal_tecnica).
+#
+# Este arquivo é a TABELA-VERDADE de códigos de órgãos/entidades responsáveis.
+# É usado como catálogo de domínio (enum compartilhado) referenciado via custom.domainRef
+# nos schemas principais (ex.: base_legal_tecnica.yaml, serie_classificacao.yaml).
+
+identifier: orgaos_entidades
+title: Órgãos e Entidades
+description: |
+  Códigos de órgãos e entidades responsáveis.
+  Usado em:
+  - serie_classificacao.orgao_responsavel
+  - base_legal_tecnica.orgao_responsavel
+
+values:
+  # Federal – Legislativo e Executivo
+  - Camara-BRA
+  - Congresso-BRA
+  - Planalto-BRA
+  - Senado-BRA
+  # Federal – Justiça e Controle
+  - AGU-BRA
+  - CGU-BRA
+  - STF-BRA
+  - STJ-BRA
+  - TCU-BRA
+  - TRF-BRA
+  # Federal – Orçamento e Finanças
+  - BACEN-BRA
+  - RFB-BRA
+  - SOF-BRA
+  - STN-BRA
+  # Estadual – Minas Gerais
+  - AGE-MG
+  - AL-MG
+  - CGE-MG
+  - SEF-MG
+  - SEPLAG-MG
+  - TCE-MG
+  - TJ-MG
+
+labels:
+  # Federal – Legislativo e Executivo
+  Camara-BRA: Câmara dos Deputados
+  Congresso-BRA: Congresso Nacional
+  Planalto-BRA: Presidência da República / Planalto
+  Senado-BRA: Senado Federal
+  # Federal – Justiça e Controle
+  AGU-BRA: Advocacia-Geral da União
+  CGU-BRA: Controladoria-Geral da União
+  STF-BRA: Supremo Tribunal Federal
+  STJ-BRA: Superior Tribunal de Justiça
+  TCU-BRA: Tribunal de Contas da União
+  TRF-BRA: Tribunal Regional Federal
+  # Federal – Orçamento e Finanças
+  BACEN-BRA: Banco Central do Brasil
+  RFB-BRA: Receita Federal do Brasil
+  SOF-BRA: Secretaria de Orçamento Federal
+  STN-BRA: Secretaria do Tesouro Nacional
+  # Estadual – Minas Gerais
+  AGE-MG: Advocacia-Geral do Estado de Minas Gerais
+  AL-MG: Assembleia Legislativa de Minas Gerais
+  CGE-MG: Controladoria-Geral do Estado de Minas Gerais
+  SEF-MG: Secretaria de Estado da Fazenda de Minas Gerais
+  SEPLAG-MG: Secretaria de Estado de Planejamento e Gestão de Minas Gerais
+  TCE-MG: Tribunal de Contas do Estado de Minas Gerais
+  TJ-MG: Tribunal de Justiça de Minas Gerais
+

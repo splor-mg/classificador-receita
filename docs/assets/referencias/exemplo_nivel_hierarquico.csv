@@ -1,0 +1,10 @@
+nivel_id,classificacao_id,nivel_numero,nivel_nome,descricao,estrutura_codigo,tipo_codigo,data_vigencia_inicio,data_vigencia_fim,data_registro_inicio,data_registro_fim
+NIVEL-MG2023-1,CLASS-RECEITA-MG-2023,1,Categoria Econômica,Primeiro dígito do código. Distingue receitas correntes (1) de capital (2).,C,numérico,2023-01-01,9999-12-31,2023-01-01,9999-12-31
+NIVEL-MG2023-2,CLASS-RECEITA-MG-2023,2,Origem,Segundo dígito. Classifica a origem da receita (ex.: ordinária vinculada).,C.O,numérico,2023-01-01,9999-12-31,2023-01-01,9999-12-31
+NIVEL-MG2023-3,CLASS-RECEITA-MG-2023,3,Espécie,Terceiro dígito. Detalha a espécie (impostos taxas contribuições etc.).,C.O.E,numérico,2023-01-01,9999-12-31,2023-01-01,9999-12-31
+NIVEL-MG2023-4,CLASS-RECEITA-MG-2023,4,Desdobramento 1,Quarto dígito. Primeiro desdobramento da espécie.,C.O.E.D,numérico,2023-01-01,9999-12-31,2023-01-01,9999-12-31
+NIVEL-MG2023-5,CLASS-RECEITA-MG-2023,5,Desdobramento 2,Quinto e sexto dígitos. Segundo desdobramento.,C.O.E.D.DD,numérico,2023-01-01,9999-12-31,2023-01-01,9999-12-31
+NIVEL-MG2023-6,CLASS-RECEITA-MG-2023,6,Desdobramento 3,Sexto dígito. Terceiro desdobramento.,C.O.E.D.DD.D,numérico,2023-01-01,9999-12-31,2023-01-01,9999-12-31
+NIVEL-MG2023-7,CLASS-RECEITA-MG-2023,7,Tipo da Receita,Sétimo dígito. Tipo da receita conforme ementário.,C.O.E.D.DD.D.T,numérico,2023-01-01,9999-12-31,2023-01-01,2024-05-01
+NIVEL-MG2023-8,CLASS-RECEITA-MG-2023,8,Item da Receita,Oitavo e nono dígitos. Item da receita (exclusivo MG).,C.O.E.D.DD.D.T.II,numérico,2023-01-01,9999-12-31,2023-01-01,9999-12-31
+NIVEL-MG2023-9,CLASS-RECEITA-MG-2023,9,Subitem da Receita,Décimo ao décimo terceiro dígitos. Subitem da receita (exclusivo MG).,C.O.E.D.DD.D.T.II.SSS,numérico,2023-01-01,9999-12-31,2023-01-01,9999-12-31

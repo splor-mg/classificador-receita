@@ -6,28 +6,58 @@ authors = [
     {name = "SPLOR-MG", email = "aid@planejamento.mg.gov.br"}
 ]
 readme = "README.md"
-requires-python = ">=3.11,<4.0"
+requires-python = ">=3.12,<4.0"
 dependencies = [
     "frictionless>=5.18.0,<6.0.0",
+    "pyyaml>=6.0,<7.0",
     "taskipy>=1.12.0,<2.0.0",
     "zensical (>=0.0.15,<0.0.16)",
+    "psycopg2-binary>=2.9,<3.0",
+    "django (>=6.0,<7.0)",
 ]
 
 [project.optional-dependencies]
+# Para instalar extras: poetry install --extras <nome_do_extra>  (ou: poetry install -E <nome_do_extra>)
 dev = [
     "pytest>=8.0.0,<9.0.0",
     "black>=24.0.0,<25.0.0",
     "ruff>=0.1.0,<0.2.0",
+]
+pdf = [
+    "marker-pdf>=1.0,<2.0",
+]
+# ERD: para gerar PNG além do .dot é necessário o Graphviz no sistema (ex.: sudo apt-get install graphviz)
+erd = [
+    "graphviz>=0.20.0,<1.0",
 ]
 
 [tool.poetry]
 package-mode = false
 
 [tool.taskipy.tasks]
-validar-schemas = "python scripts/validate_schemas.py"
-gerar-erd = "python scripts/generate_erd.py"
-build-docs = "zensical build --clean" # Gera a documentação estática com Zensical removendo antes qualquer build antigo (--clean garante atualização e evita arquivos obsoletos)
-serve = "zensical serve" # Inicia o servidor de preview local para visualização da documentação em tempo real
+# Django
+makemigrations = { cmd = "python manage.py makemigrations", help = "Gera migrações para banco de dados." }
+migrate = { cmd = "python manage.py migrate", help = "Migra mudanças para banco de dados." }
+carregar = { cmd = "python manage.py carregar_classificador", help = "Carrega dados iniciais a partir do datapackage.yaml (docs/assets/seed_*.csv). Opções: --datapackage=<caminho>, --resource=<nome>, --dry-run, --clear (limpa tabelas antes de recarregar). Exemplo: `poetry run task carregar -- --clear`, mantendo -- após a task para repassar argumentos ao script." }
+# Django Development
+dev-server = { cmd = "python manage.py runserver", help = "Liga servidor de desenvolvimento." }
+initial-migration = { cmd = "python manage.py makemigrations --name initial", help = "Gera migrações com nome 'initial' para todos os apps que tiverem alterações. Para aplicar ao banco, rode em seguida: poetry run task migrate." }
+recreate-db = { cmd = "echo \"DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO postgres; GRANT ALL ON SCHEMA public TO public;\" | python manage.py dbshell && python manage.py migrate && python manage.py carregar_classificador && python manage.py createsuperuser", help = "Dropa e recria o schema public do banco, aplica migrações, carrega seeds e cria superusuário. Use para resetar o banco em desenvolvimento." }
+showmigrations = { cmd = "python manage.py showmigrations", help = "Mostra todas as migrações de todos os apps." }
+superuser-create = { cmd = "python manage.py createsuperuser", help = "Cria um superusuário." }
+superuser-list = { cmd = "python manage.py superuser_list", help = "Lista superusers (username, email). Restrito a DEBUG, no setting.py, ou ALLOW_ADMIN_LIST=1 no .env." }
+
+# Documentation
+build-docs = { cmd = "zensical build --clean", help = "Gera a documentação estática com Zensical removendo antes qualquer build antigo (--clean garante atualização e evita arquivos obsoletos)" }
+serve = { cmd = "zensical serve -a localhost:8001", help = "Inicia o servidor de preview da documentação em http://localhost:8001 (porta 8001 para não conflitar com o Django em 8000)." }
+
+# Utils
+validar-tudo = { cmd = "python scripts/validate_datapackage.py && python scripts/validate_code.py && python scripts/validate_domains.py && python scripts/validate_quality.py", help = "Executa validar-datapackage, validar-codigos, validar-dominios e validar-qualidade em sequência." }
+validar-datapackage = { cmd = "python scripts/validate_datapackage.py", help = "Valida os schemas Frictionless e o datapackage.yaml principal. Rode com <resource-name/nome_do_recurso> para validar apenas um recurso específico. i.e. `task validar-datapackage serie_classificacao`." }
+validar-codigos = { cmd = "python scripts/validate_code.py", help = "Valida a quantidade de dígitos de receita_cod conforme a classificação (registro e vigência, SCD-2)." }
+validar-dominios = { cmd = "python scripts/validate_domains.py", help = "Valida domínios compartilhados (custom.domainRef) e a presença de 'values' nos arquivos de domínio em schemas/dominios/." }
+validar-qualidade = { cmd = "python scripts/validate_quality.py", help = "Aplica as regras de qualityDimensions (quality_rules.yaml) aos dados dos recursos." }
+gerar-erd = { cmd = "python scripts/generate_erd.py", help = "Gera o diagrama de entidade-relacionamento (ERD) do banco de dados." }
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -35,9 +65,9 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 line-length = 100
-target-version = ['py311']
+target-version = ['py312']
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py312"
 

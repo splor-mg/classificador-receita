@@ -1,0 +1,132 @@
+fields:
+  - name: classificacao_id
+    type: string
+    title: Identificador Único da Classificação Estatística
+    description: |
+      Identificador único da classificação estatística (chave semântica).
+    gsim: StatisticalClassification.identifier
+    constraints:
+      required: true
+  - name: classificacao_ref
+    type: integer
+    title: Referência Numérica da Classificação
+    description: |
+      Identificador numérico estável da classificação estatística, usado na chave primária da linha (bitemporal).
+      Mesmo valor para todas as linhas que pertencem à mesma entidade (mesmo classificacao_id).
+    gsim: StatisticalClassification.reference
+    constraints:
+      required: true
+  - name: serie_id
+    type: string
+    title: Identificador da Série de Classificações
+    description: |
+      Referência à série de classificações à qual a classificação estatística pertence.
+    gsim: StatisticalClassification.belongsToClassificationSeries
+    constraints:
+      required: true
+  - name: classificacao_nome
+    type: string
+    title: Nome da Classificação Estatística
+    description: |
+      Nome oficial da classificação estatística.
+    gsim: StatisticalClassification.name
+    constraints:
+      required: true
+  - name: classificacao_descricao
+    type: string
+    title: Descrição da Classificação Estatística
+    description: |
+      Descrição detalhada da classificação, seu propósito e escopo.
+    gsim: StatisticalClassification.description
+    constraints:
+      required: false
+  - name: tipo_classificacao
+    type: string
+    title: Tipo de Classificação Estatística
+    description: |
+      Tipo da classificação (ex: "hierárquica", "linear"). Para o Classificador de Receita MG, o valor é "hierárquica".
+    gsim: StatisticalClassification.classificationType
+    constraints:
+      required: true
+      enum: ["hierárquica", "linear"]
+  - name: numero_niveis
+    type: integer
+    title: Número de Níveis Hierárquicos
+    description: |
+      Número de níveis hierárquicos da classificação.
+    gsim: StatisticalClassification.numberOfLevels
+    constraints:
+      required: true
+      minimum: 1
+      maximum: 9
+  - name: numero_digitos
+    type: integer
+    title: Número de Dígitos do Código
+    description: |
+      Quantidade total de dígitos do código na classificação (ex.: 8 para a base União, 10 ou 13 para MG conforme a edição).
+    constraints:
+      required: false
+      minimum: 1
+      maximum: 20
+  - name: base_legal_tecnica_id
+    type: string
+    title: Identificador da Base Legal e Técnica de Referência
+    description: |
+      Identificador da norma ou ato que institui ou altera esta classificação, quando aplicável. Referência à tabela base_legal_tecnica. Opcional; pode ficar em branco quando a classificação decorre de múltiplas normas ou de convenção interna.
+    constraints:
+      required: false
+  - name: data_vigencia_inicio
+    type: date
+    title: Data de Início da Vigência da Classificação Estatística
+    description: |
+      Data de início da vigência da classificação no domínio orçamentário.
+    gsim: StatisticalClassification.validFrom
+    constraints:
+      required: true
+  - name: data_vigencia_fim
+    type: date
+    title: Data do Fim da Vigência da Classificação Estatística
+    description: |
+      Data de fim da vigência da classificação. Valor sentinela 9999-12-31 indica vigência ativa no momento corrente e futuro.
+    gsim: StatisticalClassification.validTo
+    constraints:
+      required: true
+  - name: data_registro_inicio
+    type: datetime
+    title: Data de Início do Registro
+    description: |
+      Data e hora em que o sistema registrou esta informação.
+    gsim: StatisticalClassification.transactionTimeStart
+    constraints:
+      required: true
+  - name: data_registro_fim
+    type: datetime
+    title: Data do Fim do Registro da Classificação Estatística
+    description: |
+      Data e hora em que esta informação deixou de ser considerada verdadeira pelo sistema. Valor sentinela 9999-12-31 00:00:00 indica registro ativo no momento corrente e futuro.
+    gsim: StatisticalClassification.transactionTimeEnd
+    constraints:
+      required: true
+primaryKey:
+  - classificacao_ref
+  - data_vigencia_inicio
+  - data_registro_inicio
+foreignKeys:
+  - fields:
+      - serie_id
+    reference:
+      resource: serie_classificacao
+      fields:
+        - serie_id
+  - fields:
+      - base_legal_tecnica_id
+    reference:
+      resource: base_legal_tecnica
+      fields:
+        - base_legal_tecnica_id
+missingValues: ["", "NA", "-"]
+custom:
+  qualityDimensions:
+    rulesRef: quality/quality_rules.yaml
+    ruleSets:
+      - temporal_consistency_bitemporal

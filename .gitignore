@@ -1,10 +1,15 @@
 # ============================================================================
-# Projeto Específico - Classificador de Receita
+# Projeto Classificador de Receita
 # ============================================================================
 
 # ERD generated files
-docs/erd/*.dot
-docs/erd/*.png
+# docs/erd/*.dot
+# docs/erd/*.png
+
+# Assets
+~$*.xlsx
+~$*.xls
+~$*.csv
 
 # ============================================================================
 # Python
@@ -93,6 +98,9 @@ venv.bak/
 # pdm
 .pdm.toml
 
+# uv (projeto usa Poetry)
+uv.lock
+
 # PEP 582
 __pypackages__/
 
@@ -119,6 +127,10 @@ media_root/
 # Django cache
 *.pot
 *.mo
+.django_cache/
+
+# Django sessions (file-based)
+django_session/
 
 # ============================================================================
 # PostgreSQL
@@ -278,11 +290,11 @@ temp/
 tmp/
 
 # Data files (CSV, Excel, etc.)
-data/
-*.csv
-*.xlsx
-*.xls
-*.xlsm
+#data/
+#*.csv
+#*.xlsx
+#*.xls
+#*.xlsm
 
 # ============================================================================
 # Other frameworks (não usados, mas mantidos para referência)

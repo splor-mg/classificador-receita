@@ -1,0 +1,170 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block title %}Confirmar exclusão{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+  .strategy-section { margin: 1.5em 0; padding: 1em; background: #f9f9f9; border-radius: 4px; }
+  .strategy-option { display: flex; align-items: center; gap: 0.5em; cursor: pointer; }
+  .strategy-option input[type="radio"] { cursor: pointer; }
+  .strategy-option label { cursor: pointer; font-weight: 500; }
+  .preview-table { border-collapse: collapse; margin-top: 1em; table-layout: fixed; }
+  .preview-table th, .preview-table td { padding: 8px; border: 1px solid #ddd; text-align: left; }
+  .preview-table th { background-color: #e8e8e8; }
+  .preview-table th.col-registros { width: 120px; }
+  .preview-table th.col-data { width: 340px; min-width: 340px; }
+  .date-hint { font-size: 0.8em; color: #666; font-weight: normal; margin-left: 0.5em; }
+  .strikethrough { text-decoration: line-through; color: #999; }
+  .record-summary {
+    margin: 0.5em 0 2.25em 0;
+    padding: 0.4em 0.8em;
+    border-radius: 3px;
+    background-color: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    font-size: 0.9em;
+    color: #555;
+  }
+  .record-summary strong:first-child { color: #417690; }
+  .block-explicativo {
+    margin-top: 1.25em;
+    margin-bottom: 0.75em;
+    margin-left: 1.25em;
+    padding: 0.6em 0.9em;
+    background: #f8f9fa;
+    border-radius: 4px;
+    border-left: 3px solid #b0bcc4;
+    font-size: 0.875em;
+    line-height: 1.5;
+    color: #5c6266;
+  }
+  .block-explicativo p { margin: 0; }
+  .block-explicativo strong { color: #333; font-weight: 600; }
+  .block-submit-row { margin-top: 2.50em; display: flex; gap: 0.75em; }
+  .block-submit-row .btn {
+    border-radius: 4px;
+    padding: 6px 14px;
+    font-size: 0.9em;
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .block-submit-row a.btn { text-decoration: none !important; }
+  .block-submit-row .btn-primary { background-color: #417690; border-color: #355f73; color: #fff; }
+  .block-submit-row .btn-secondary { background-color: #f5f5f5; border-color: #d4d4d4; color: #333; }
+  .block-submit-row .btn-secondary:hover { background-color: #e5e5e5; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 style="margin:0 0 0.25em 0;font-size:1.5em;font-weight:400;">Confirmar <span style="color:#c00;font-weight:600">exclusão</span></h1>
+<form method="post" action="" id="delete-form" data-delete-confirm="1">
+  {% csrf_token %}
+  <input type="hidden" name="_delete_confirm" value="1">
+  <input type="hidden" name="_save" value="1">
+
+  {% if resource_id_value or resource_name_value %}
+  <div class="record-summary">
+    <strong>Em edição</strong> |
+    {% if resource_id_value %}
+      <span class="record-id"><strong>{{ resource_id_label }}:</strong> {{ resource_id_value }}</span>
+    {% endif %}
+    {% if resource_name_value %}
+      {% if resource_id_value %} — {% endif %}
+      <span class="record-name"><strong>{{ resource_name_label }}:</strong> {{ resource_name_value }}</span>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <p>Remove integralmente a vigência do respectivo registro, fazendo com que ele deixe de produzir efeitos em qualquer período e passe a ser tratado como inexistente no histórico de vigências.</p>
+  <p>Não há exclusão física do registro, apenas lógica, sendo que a 'Data do Fim do Registro' passa a ser igual à data e hora da confirmação de exclusão.</p>
+
+  <br>
+  <h3>Vigência</h3>
+
+  <div class="strategy-section">
+    <div class="strategy-options">
+      <div class="strategy-option">
+        <input type="radio" id="strategy-sobrescrever" name="edit_strategy" value="sobrescrever" checked>
+        <label for="strategy-sobrescrever">Sobrescrever/ajustar vigência atual</label>
+      </div>
+    </div>
+
+    <div id="preview-container">
+      <table class="preview-table">
+        <thead>
+          <tr>
+            <th class="col-registros">Registros</th>
+            <th class="col-data">Data de início de vigência <span class="date-hint">(dd/mm/aaaa)</span></th>
+            <th class="col-data">Data de fim de vigência <span class="date-hint">(dd/mm/aaaa)</span></th>
+          </tr>
+        </thead>
+        <tbody id="preview-body">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="block-explicativo">
+    <p>Com essa exclusão, a "Data de Fim do Registro" deixa de ter o valor sentinela (que caracteriza o registro como ativo) e passa a receber a data e hora da confirmação de exclusão, tornando-o inativo e sem capacidade de surtir efeitos no mundo orçamentário.</p>
+  </div>
+
+  <div class="block-submit-row">
+    <button type="button" class="btn btn-primary" id="delete-confirm-btn">{% translate "Confirmar" %}</button>
+    <a href="{{ change_url }}" class="btn btn-secondary">{% translate "Voltar" %}</a>
+    {% url opts|admin_urlname:'changelist' as changelist_url %}
+    <a href="{% add_preserved_filters changelist_url %}" class="btn btn-secondary" id="delete-cancel-link">{% translate "Cancelar" %}</a>
+  </div>
+</form>
+
+<script type="text/javascript">
+(function() {
+  var deletePreview = JSON.parse('{{ delete_preview_json|escapejs }}');
+
+  function formatDateToDMY(isoDate) {
+    if (!isoDate) return '';
+    var parts = isoDate.split('-');
+    if (parts.length !== 3) return isoDate;
+    return parts[2] + '/' + parts[1] + '/' + parts[0];
+  }
+
+  function renderPreview() {
+    var tbody = document.getElementById('preview-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    deletePreview.forEach(function(rec) {
+      var tr = document.createElement('tr');
+      var tdVersion = document.createElement('td');
+      tdVersion.textContent = 'Versão atual';
+      var tdInicio = document.createElement('td');
+      tdInicio.textContent = formatDateToDMY(rec.vig_inicio) || '-';
+      var tdFim = document.createElement('td');
+      tdFim.textContent = formatDateToDMY(rec.vig_fim) || '-';
+
+      if (rec.strikethrough) {
+        tdVersion.classList.add('strikethrough');
+        tdInicio.classList.add('strikethrough');
+        tdFim.classList.add('strikethrough');
+      }
+
+      tr.appendChild(tdVersion);
+      tr.appendChild(tdInicio);
+      tr.appendChild(tdFim);
+      tbody.appendChild(tr);
+    });
+  }
+
+  var confirmBtn = document.getElementById('delete-confirm-btn');
+  var deleteForm = document.getElementById('delete-form');
+  if (confirmBtn && deleteForm) {
+    confirmBtn.addEventListener('click', function() {
+      deleteForm.submit();
+    });
+  }
+
+  renderPreview();
+})();
+</script>
+{% endblock %}

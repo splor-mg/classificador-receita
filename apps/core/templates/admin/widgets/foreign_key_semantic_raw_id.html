@@ -1,0 +1,119 @@
+{% if related_url or widget.attrs.data_readonly_root == '1' %}<div>{% endif %}
+
+{# Hidden field keeps the real value (PK) for form validation #}
+<input
+  type="hidden"
+  name="{{ widget.name }}"
+  value="{% if widget.attrs.data_readonly_root == '1' %}{% else %}{{ widget.value|default_if_none:'' }}{% endif %}"
+  id="{{ widget.attrs.id }}"
+  {% if widget.attrs.data_readonly_root == '1' %}data-readonly-root="1"{% endif %}
+/>
+
+{# Visible semantic display: not submitted #}
+<input
+  type="text"
+  value="{% if widget.attrs.data_readonly_root == '1' %}{{ widget.attrs.data_empty_display|default:'Sem item pai' }}{% else %}{{ widget.semantic_value }}{% endif %}"
+  disabled
+  id="{{ widget.attrs.id }}_display"
+  class="vTextField {{ widget.attrs.class|default:'' }}"
+  style="{% if widget.attrs.data_readonly_root == '1' %}width: 37ch; background: repeating-linear-gradient(135deg, #f4f4f4, #f4f4f4 8px, #ececec 8px, #ececec 16px); color:#666; border-color:#d7d7d7;{% else %}width: 37ch;{% endif %}"
+  {% if widget.attrs.data_readonly_root == '1' %}data-readonly-root="1"{% endif %}
+/>{% if related_url and widget.attrs.data_readonly_root != '1' %}
+
+<a
+  href="{{ related_url }}"
+  class="related-lookup"
+  id="lookup_id_{{ widget.name }}"
+  title="{{ link_title }}"
+  style="display:inline-block; margin-right: 14px;"
+></a>
+{% endif %}
+
+{% if widget.attrs.data_readonly_root == '1' %}
+<span style="display:inline-block; margin-right:14px; color:#666; font-size:0.92em;">
+  {{ widget.attrs.data_root_message|default:'Item raiz, de nível 1, não possui item pai.' }}
+</span>
+{% endif %}
+
+{% if not widget.semantic_value or widget.attrs.data_readonly_root == '1' %}
+<strong id="{{ widget.attrs.id }}_label" style="display:none;">
+{% else %}
+<strong id="{{ widget.attrs.id }}_label">
+{% endif %}
+  <a
+    id="{{ widget.attrs.id }}_label_link"
+    href="{{ link_url|default:'' }}"
+  >
+    {{ link_label|default:widget.semantic_value }}
+  </a>
+</strong>
+{% if related_url or widget.attrs.data_readonly_root == '1' %}
+</div>
+{% endif %}
+
+{% if widget.semantic_lookup_url and widget.attrs.data_readonly_root != '1' %}
+<script>
+  (function () {
+    var hiddenId = "{{ widget.attrs.id }}";
+    var displayId = hiddenId + "_display";
+    var hidden = document.getElementById(hiddenId);
+    var display = document.getElementById(displayId);
+    if (!hidden || !display) return;
+
+    function updateDisplayFromSemanticPk(pk) {
+      var labelStrong = document.getElementById(hiddenId + "_label");
+      var labelLink = document.getElementById(hiddenId + "_label_link");
+
+      if (!pk) {
+        display.value = "";
+        if (labelStrong) labelStrong.style.display = "none";
+        if (labelLink) labelLink.textContent = "";
+        return;
+      }
+      var url = "{{ widget.semantic_lookup_url }}".replace("{pk}", pk);
+      fetch(url, { method: "GET", credentials: "same-origin" })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data && typeof data.semantic_value !== "undefined") {
+            display.value = data.semantic_value;
+          }
+          var resolvedText =
+            data && typeof data.display_label !== "undefined" && data.display_label !== null
+              ? data.display_label
+              : (data ? data.semantic_value : "");
+
+          if (labelLink) {
+            if (data && data.link_url) {
+              labelLink.href = data.link_url;
+            }
+            labelLink.textContent = resolvedText || "";
+          }
+
+          if (labelStrong) {
+            labelStrong.style.display = resolvedText ? "" : "none";
+          }
+        })
+        .catch(function () {});
+    }
+
+    var jq = null;
+    try {
+      jq = window.django && window.django.jQuery ? window.django.jQuery : window.jQuery;
+    } catch (e) {}
+
+    function onHiddenChanged() {
+      updateDisplayFromSemanticPk(hidden.value);
+    }
+
+    if (jq) {
+      jq(hidden).on("change", onHiddenChanged);
+    } else {
+      hidden.addEventListener("change", onHiddenChanged);
+    }
+
+    // Se já houver valor inicial, sincroniza o texto por consistência.
+    if (hidden.value) updateDisplayFromSemanticPk(hidden.value);
+  })();
+</script>
+{% endif %}
+

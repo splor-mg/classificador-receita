@@ -1,0 +1,64 @@
+from __future__ import annotations
+
+from typing import Any
+
+from django.contrib.admin.widgets import ForeignKeyRawIdWidget
+
+
+class ForeignKeySemanticDisplayRawIdWidget(ForeignKeyRawIdWidget):
+    """
+    Variante do ForeignKeyRawIdWidget que mantém o valor submetido como PK
+    (para o Django continuar conseguindo validar/limpar o form), mas exibe
+    ao usuário o identificador semântico do objeto relacionado (*_id).
+
+    Observação: a exibição é calculada no render do form (GET). Se o usuário
+    alterar via popup do "lookup", a exibição pode não atualizar automaticamente
+    (o valor submetido continuará correto pois o campo real (hidden) é o PK).
+    """
+
+    template_name = "admin/widgets/foreign_key_semantic_raw_id.html"
+
+    def __init__(
+        self,
+        rel,
+        admin_site,
+        *,
+        semantic_field: str,
+        semantic_lookup_url: str | None = None,
+        attrs: dict[str, Any] | None = None,
+        using: str | None = None,
+    ):
+        super().__init__(rel, admin_site, attrs=attrs, using=using)
+        self.semantic_field = semantic_field
+        self.semantic_lookup_url = semantic_lookup_url
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+
+        semantic_value = ""
+        link_label = None
+        if context["widget"].get("value"):
+            try:
+                key = self.rel.get_related_field().name
+                obj = (
+                    self.rel.model._default_manager.using(self.db).get(
+                        **{key: context["widget"]["value"]}
+                    )
+                )
+                semantic_value = getattr(obj, self.semantic_field, "") or ""
+
+                # Padroniza o texto exibido ao lado da lupa para "Série de Classificações"
+                # no mesmo estilo usado por BaseLegalTecnica: "<*_id> - <nome>".
+                if self.semantic_field == "serie_id":
+                    serie_nome = getattr(obj, "serie_nome", "") or ""
+                    serie_id = getattr(obj, "serie_id", "") or ""
+                    link_label = f"{serie_id} - {serie_nome}".strip(" -")
+            except Exception:
+                semantic_value = ""
+
+        context["widget"]["semantic_value"] = semantic_value
+        context["widget"]["semantic_lookup_url"] = self.semantic_lookup_url
+        if link_label is not None:
+            context["link_label"] = link_label
+        return context
+

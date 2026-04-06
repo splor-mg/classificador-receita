@@ -1,0 +1,195 @@
+# Arcabouço legal e técnico que pode afetar as tabelas de classificação.
+# Padrão: valor armazenado por sigla; descrição do campo traz o mapeamento para o nome por extenso.
+fields:
+  - name: base_legal_tecnica_id
+    type: string
+    title: Identificador Único da Norma (Base Legal)
+    description: |
+      Identificador único da entidade norma/ato (chave semântica). Sugestão de construção:
+      [{tipo_legal}-{numero}-{orgao_responsavel}], em que tipo_legal é a sigla (ex.: cr, lc),numero
+      é o número da norma e orgao_responsavel é o órgão ou entidade responsável pela promulgação do ato normativo ou instrumento jurídico. Exemplos: CR-88-PLANALTO (Constituição da República Federativa do Brasil de 1988);
+      LC-101-BRA (Lei Complementar 101 de 2000).
+    example: "LC-101-PLANALTO"
+    constraints:
+      required: true
+  - name: base_legal_tecnica_ref
+    type: integer
+    title: Referência Numérica da Base Legal
+    description: |
+      Identificador numérico estável da norma, usado na chave primária da linha.
+      Mesmo valor para todas as linhas que pertencem à mesma entidade (mesmo base_legal_tecnica_id).
+    constraints:
+      required: true
+  - name: esfera_federativa
+    type: string
+    title: Esfera Federativa que Promulgou Ato Normativo ou Instrumento Jurídico
+    description: |
+      Esfera federativa à qual a norma se aplica: União (BRA) ou sigla da UF (AC, AL, ..., TO).
+    constraints:
+      required: true
+      enum:
+        - BRA
+        - AC
+        - AL
+        - AM
+        - AP
+        - BA
+        - CE
+        - DF
+        - ES
+        - GO
+        - MA
+        - MG
+        - MS
+        - MT
+        - PA
+        - PB
+        - PE
+        - PI
+        - PR
+        - RJ
+        - RN
+        - RO
+        - RR
+        - RS
+        - SC
+        - SE
+        - SP
+        - TO
+  - name: tipo_legal
+    type: string
+    title: Tipo da Norma (sigla)
+    description: |
+      Tipo da norma jurídica ou técnica. Armazenado por sigla; equivalência por extenso:
+      - adct = atos das disposições constitucionais transitórias
+      - cr = constituição da república federativa
+      - ce = constituição do estado
+      - dec = decreto
+      - dec-lei = decreto-lei
+      - ec = emenda à constituição
+      - inst-norm = instrução/orientação normativa
+      - jrsp = jurisprudência
+      - lc = lei complementar federal
+      - ldo = lei de diretrizes orçamentárias
+      - lo = lei ordinária
+      - loa = lei orçamentária anual
+      - lom = lei orgânica municipal
+      - man = manual / orientações técnicas
+      - ntj = nota jurídica, promoção jurídica, parecer
+      - ntt = nota técnica
+      - parecer = parecer jurídico
+      - pec = proposta de emenda à constituição
+      - pl = projeto de lei
+      - port = portaria
+      - port-conj = portaria conjunta
+      - ppa = plano plurianual
+      - ppag = plano plurianual de ação governamental
+      - reg = regulamentação por resolução ou demais instrumentos infralegais
+      - sum = súmula
+      - sum-vinc = súmula vinculante
+    constraints:
+      required: true
+      enum:
+        - adct # Atos das disposições constitucionais transitórias
+        - cr # Constituição da república federativa
+        - ce # Constituição do estado
+        - dec # Decreto
+        - dec-lei # Decreto-lei
+        - ec # Emenda à constituição
+        - inst-norm # Instrução/orientação normativa
+        - jrsp # Jurisprudência
+        - lc # Lei complementar federal
+        - lce # Lei complementar estadual
+        - ldo # Lei de diretrizes orçamentárias
+        - lo # Lei ordinária federal
+        - loa # Lei orçamentária anual
+        - lom # Lei orgânica municipal
+        - loe # Lei ordinária estadual/lei estadual
+        - man # Manual/orientações técnicas
+        - ntj # Nota jurídica/promoção jurídica/parecer
+        - ntt # Nota técnica
+        - parecer # Parecer jurídico
+        - pec # Proposta de emenda à constituição
+        - pl # Projeto de lei
+        - port # Portaria
+        - port-conj # Portaria conjunta
+        - ppa # Plano plurianual
+        - ppag # Plano plurianual de ação governamental
+        - reg # Regulamentação por resolução ou demais instrumentos infralegais
+        - sum # Súmula
+        - sum-vinc # Súmula vinculante
+  - name: numero_codigo
+    type: string
+    title: Número ou Código da Norma, Ato Normativo ou Instrumento Jurídico
+    description: |
+      Número ou código identificador da norma (ex.: número da lei, do decreto, da portaria).
+    constraints:
+      required: true
+  - name: data_edicao
+    type: date
+    title: Data de Edição e ou Assinatura do Ato Normativo ou Instrumento Jurídico
+    description: |
+      Data em que a autoridade competente editou e/ou assinou o ato (ex.: Ministros, no caso de
+      portaria interministerial; Presidente, no caso de lei sancionada). Nesse momento o ato se torna
+      existente e válido dentro da administração, ainda que a publicação no diário oficial seja posterior.
+    constraints:
+      required: true
+  - name: orgao_responsavel
+    type: string
+    title: Órgão ou Entidade Responsável
+    description: |
+      Órgão ou entidade responsável pela promulgação do ato normativo ou instrumento jurídico.
+      Conjunto de valores válidos: ver dominios/orgaos_entidades.yaml (domínio compartilhado de órgãos/entidades).
+    constraints:
+      required: true
+    custom:
+      domainRef: "dominios/orgaos_entidades.yaml"
+  - name: titulo_norma
+    type: string
+    title: Título da Norma
+    description: |
+      Título oficial ou nome curto da norma.
+    constraints:
+      required: false
+  - name: ementa
+    type: string
+    title: Ementa
+    description: |
+      Ementa ou resumo da norma.
+    constraints:
+      required: false
+  - name: url_fonte
+    type: string
+    title: URL da Fonte / Onde Consultar a Norma
+    description: |
+      URL estável para consulta ao texto da norma (ex.: Planalto, Diário Oficial, portal da casa legislativa).
+      Permite rastreabilidade e verificação da base legal.
+    constraints:
+      required: false
+  - name: data_vigencia_inicio
+    type: date
+    title: Data de Início da Vigência
+    description: |
+      Data a partir da qual a norma passa a ter vigência, ou seja, capacidade de surtir efeitos e de ser
+      exigível. Regra geral (LINDB): a norma entra em vigor 45 dias após a publicação, salvo disposição
+      em sentido diverso na própria norma (vacatio legis).
+    constraints:
+      required: true
+  - name: data_vigencia_fim
+    type: date
+    title: Data do Fim da Vigência
+    description: |
+      Data até a qual a norma permanece vigente (capaz de surtir efeitos e de ser exigível). Valor
+      sentinela 9999-12-31 indica vigência ativa no momento corrente e futuro.
+    constraints:
+      required: true
+primaryKey:
+  - base_legal_tecnica_ref
+  - data_vigencia_inicio
+missingValues: ["", "NA", "-"]
+custom:
+  qualityDimensions:
+    rulesRef: quality/quality_rules.yaml
+    ruleSets:
+      - temporal_consistency_vigencia_only
+
