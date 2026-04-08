@@ -38,7 +38,7 @@ package-mode = false
 # Django
 makemigrations = { cmd = "python manage.py makemigrations", help = "Gera migrações para banco de dados." }
 migrate = { cmd = "python manage.py migrate", help = "Migra mudanças para banco de dados." }
-carregar = { cmd = "python manage.py carregar_classificador", help = "Carrega dados iniciais a partir do datapackage.yaml (docs/assets/seed_*.csv). Opções: --datapackage=<caminho>, --resource=<nome>, --dry-run, --clear (limpa tabelas antes de recarregar). Exemplo: `poetry run task carregar -- --clear`, mantendo -- após a task para repassar argumentos ao script." }
+carregar = { cmd = "python manage.py carregar_classificador", help = "Carrega dados iniciais a partir do datapackage.yaml (docs/assets/seed_*.csv). Opções: --datapackage=<caminho>, --resource=<nome>, --dry-run, --clear (limpa tabelas por ORM), --clear-hard (limpeza destrutiva; no prompt use 'db' ou passe --clear-hard --db para só tabelas do app core). Exemplo: `poetry run task carregar --clear-hard --db`." }
 # Django Development
 dev-server = { cmd = "python manage.py runserver", help = "Liga servidor de desenvolvimento." }
 initial-migration = { cmd = "python manage.py makemigrations --name initial", help = "Gera migrações com nome 'initial' para todos os apps que tiverem alterações. Para aplicar ao banco, rode em seguida: poetry run task migrate." }

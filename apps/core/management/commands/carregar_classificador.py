@@ -13,8 +13,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Iterable, Mapping, Any
 
-from django.core.management.base import BaseCommand, CommandParser
-from django.db import transaction
+from django.apps import apps
+from django.core.management.base import BaseCommand, CommandError, CommandParser
+from django.conf import settings
+from django.db import transaction, connections
 from django.utils import timezone
 
 from frictionless import Package, Resource
@@ -110,12 +112,186 @@ class Command(BaseCommand):
                 "Use com cuidado em ambientes com dados."
             ),
         )
+        parser.add_argument(
+            "--clear-hard",
+            action="store_true",
+            help=(
+                "Limpeza destrutiva interativa por tabelas (ignora relações PROTECT no banco). "
+                "Exibe bancos/tabelas, pede seleção e confirmação Y/N antes de executar. "
+                "Com --db, pula a seleção e usa só tabelas do app core."
+            ),
+        )
+        parser.add_argument(
+            "--db",
+            action="store_true",
+            help=(
+                "Somente com --clear-hard: pula a seleção interativa de tabelas e usa o preset "
+                "'tabelas do app core' (mesmo conjunto do atalho 'db' no prompt)."
+            ),
+        )
+
+    @staticmethod
+    def _parse_index_selection(raw: str, max_index: int) -> list[int]:
+        value = (raw or "").strip().lower()
+        if value == "all":
+            return list(range(1, max_index + 1))
+
+        picks: set[int] = set()
+        for chunk in [c.strip() for c in value.split(",") if c.strip()]:
+            if "-" in chunk:
+                left, right = [p.strip() for p in chunk.split("-", 1)]
+                if not left.isdigit() or not right.isdigit():
+                    raise ValueError(f"Faixa inválida: {chunk}")
+                start, end = int(left), int(right)
+                if start > end:
+                    start, end = end, start
+                if start < 1 or end > max_index:
+                    raise ValueError(f"Faixa fora do intervalo: {chunk}")
+                picks.update(range(start, end + 1))
+            else:
+                if not chunk.isdigit():
+                    raise ValueError(f"Valor inválido: {chunk}")
+                idx = int(chunk)
+                if idx < 1 or idx > max_index:
+                    raise ValueError(f"Índice fora do intervalo: {chunk}")
+                picks.add(idx)
+
+        if not picks:
+            raise ValueError("Nenhuma opção válida informada.")
+        return sorted(picks)
+
+    def _choose_database_alias(self) -> str:
+        aliases = list(settings.DATABASES.keys())
+        if not aliases:
+            raise RuntimeError("Nenhuma conexão de banco configurada em settings.DATABASES.")
+
+        if len(aliases) == 1:
+            alias = aliases[0]
+            cfg = settings.DATABASES.get(alias, {})
+            self.stdout.write(
+                "Banco alvo único detectado: "
+                f"{alias} | engine={cfg.get('ENGINE','')} | name={cfg.get('NAME','')} | host={cfg.get('HOST','')}"
+            )
+            return alias
+
+        self.stdout.write(self.style.WARNING("Selecione o banco (alias) alvo para --clear-hard:"))
+        for idx, alias in enumerate(aliases, 1):
+            cfg = settings.DATABASES.get(alias, {})
+            engine = cfg.get("ENGINE", "")
+            name = cfg.get("NAME", "")
+            host = cfg.get("HOST", "")
+            self.stdout.write(f"  {idx}. {alias} | engine={engine} | name={name} | host={host}")
+
+        while True:
+            choice = input("Digite o número do banco alvo: ").strip()
+            if not choice.isdigit():
+                self.stdout.write(self.style.ERROR("Entrada inválida. Informe um número."))
+                continue
+            pos = int(choice)
+            if 1 <= pos <= len(aliases):
+                return aliases[pos - 1]
+            self.stdout.write(self.style.ERROR("Número fora do intervalo listado."))
+
+    def _get_core_db_tables(self, alias: str) -> list[str]:
+        conn = connections[alias]
+        existing = set(conn.introspection.table_names())
+        core_tables = {
+            model._meta.db_table
+            for model in apps.get_app_config("core").get_models()
+            if model._meta.managed
+        }
+        return sorted(existing.intersection(core_tables))
+
+    def _choose_tables_with_shortcuts(self, alias: str) -> list[str]:
+        conn = connections[alias]
+        tables = sorted(conn.introspection.table_names())
+        if not tables:
+            raise RuntimeError(f"Nenhuma tabela encontrada no alias '{alias}'.")
+
+        self.stdout.write(self.style.WARNING(f"Tabelas existentes no banco '{alias}':"))
+        for idx, table_name in enumerate(tables, 1):
+            self.stdout.write(f"  {idx}. {table_name}")
+
+        self.stdout.write(
+            "Selecione uma ou mais tabelas por número (ex.: 1,3,5-7), "
+            "'db' para tabelas do app core, ou 'all':"
+        )
+        while True:
+            raw = input("Tabelas a limpar: ").strip().lower()
+            if raw == "db":
+                core_tables = self._get_core_db_tables(alias)
+                if not core_tables:
+                    self.stdout.write(
+                        self.style.ERROR(
+                            "Não foi possível determinar tabelas gerenciadas do app core neste banco."
+                        )
+                    )
+                    continue
+                self.stdout.write("Atalho 'db' selecionado. Tabelas do app core:")
+                for t in core_tables:
+                    self.stdout.write(f"  - {t}")
+                return core_tables
+            try:
+                picks = self._parse_index_selection(raw, len(tables))
+            except ValueError as e:
+                self.stdout.write(self.style.ERROR(str(e)))
+                continue
+            return [tables[i - 1] for i in picks]
+
+    def _confirm_hard_clear(self, alias: str, table_names: list[str]) -> bool:
+        cfg = settings.DATABASES.get(alias, {})
+        self.stdout.write("")
+        self.stdout.write(self.style.WARNING("ATENÇÃO: operação destrutiva solicitada (--clear-hard)."))
+        self.stdout.write("Banco alvo:")
+        self.stdout.write(
+            f"  alias={alias} | engine={cfg.get('ENGINE','')} | name={cfg.get('NAME','')} | host={cfg.get('HOST','')}"
+        )
+        self.stdout.write("Tabelas selecionadas para limpeza:")
+        for t in table_names:
+            self.stdout.write(f"  - {t}")
+        self.stdout.write(
+            self.style.WARNING(
+                "Esta operação pode corromper o banco se aplicada de forma indevida. Continuar? [y/N]"
+            )
+        )
+        answer = input("> ").strip().lower()
+        return answer in {"y", "yes", "s", "sim"}
+
+    def _clear_hard_tables(self, alias: str, table_names: list[str]) -> None:
+        conn = connections[alias]
+        quoted = [conn.ops.quote_name(t) for t in table_names]
+        vendor = conn.vendor
+
+        with transaction.atomic(using=alias):
+            with conn.cursor() as cursor:
+                if vendor == "postgresql":
+                    sql = f"TRUNCATE TABLE {', '.join(quoted)} RESTART IDENTITY CASCADE"
+                    cursor.execute(sql)
+                elif vendor == "sqlite":
+                    cursor.execute("PRAGMA foreign_keys=OFF")
+                    try:
+                        for table in quoted:
+                            cursor.execute(f"DELETE FROM {table}")
+                    finally:
+                        cursor.execute("PRAGMA foreign_keys=ON")
+                else:
+                    with conn.constraint_checks_disabled():
+                        for table in quoted:
+                            cursor.execute(f"DELETE FROM {table}")
 
     def handle(self, *args, **options) -> None:
         datapackage_path = Path(options["datapackage"])
         resource_filter = options.get("resource")
         dry_run: bool = options["dry_run"]
         clear: bool = options["clear"]
+        clear_hard: bool = options["clear_hard"]
+        clear_hard_db: bool = options["db"]
+
+        if clear_hard_db and not clear_hard:
+            raise CommandError(
+                "A opção --db só pode ser usada junto com --clear-hard. "
+                "Exemplo: python manage.py carregar_classificador --clear-hard --db"
+            )
 
         if not datapackage_path.exists():
             self.stderr.write(self.style.ERROR(f"datapackage.yaml não encontrado em {datapackage_path}"))
@@ -158,6 +334,14 @@ class Command(BaseCommand):
             "variante_classificacao": VarianteClassificacao,
         }
 
+        if clear and clear_hard:
+            self.stderr.write(self.style.ERROR("Use apenas uma opção de limpeza: --clear ou --clear-hard."))
+            return
+
+        if clear_hard and dry_run:
+            self.stderr.write(self.style.ERROR("--clear-hard não é compatível com --dry-run."))
+            return
+
         if clear and not dry_run:
             # Limpa tabelas na ordem inversa das dependências, apenas para os recursos selecionados
             self.stdout.write(self.style.WARNING("Limpando tabelas antes do carregamento (--clear)..."))
@@ -166,6 +350,34 @@ class Command(BaseCommand):
                     model = resource_model_map[name]
                     deleted, _ = model.objects.all().delete()
                     self.stdout.write(f"  - {name}: {deleted} registros apagados.")
+
+        if clear_hard:
+            alias = self._choose_database_alias()
+            if clear_hard_db:
+                table_names = self._get_core_db_tables(alias)
+                if not table_names:
+                    self.stderr.write(
+                        self.style.ERROR(
+                            "Preset --db: nenhuma tabela do app core encontrada neste banco "
+                            "(ou migrações ainda não criaram as tabelas)."
+                        )
+                    )
+                    return
+                self.stdout.write(
+                    self.style.NOTICE(
+                        "Preset --clear-hard --db: limpeza das tabelas gerenciadas pelo app core."
+                    )
+                )
+                for t in table_names:
+                    self.stdout.write(f"  - {t}")
+            else:
+                table_names = self._choose_tables_with_shortcuts(alias)
+            if not self._confirm_hard_clear(alias, table_names):
+                self.stdout.write(self.style.WARNING("Operação cancelada pelo usuário. Nenhuma tabela foi limpa."))
+                return
+            self.stdout.write(self.style.WARNING("Executando limpeza destrutiva (--clear-hard)..."))
+            self._clear_hard_tables(alias, table_names)
+            self.stdout.write(self.style.SUCCESS(f"Limpeza concluída para {len(table_names)} tabela(s)."))
 
         if dry_run:
             self.stdout.write(self.style.NOTICE("Executando em modo dry-run (sem gravação no banco)."))
