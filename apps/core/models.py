@@ -3,6 +3,7 @@ import datetime
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from apps.core.models_base_legal import BaseLegalTecnica, identifier_validator
 from apps.core.domain_choices import ORGAOS_ENTIDADES_CHOICES
@@ -68,7 +69,18 @@ class BitemporalModel(models.Model):
                     'data_vigencia_fim': 'Data de fim da vigência deve ser posterior à data de início.'
                 })
         if self.data_registro_inicio and self.data_registro_fim:
-            if self.data_registro_inicio > self.data_registro_fim:
+            reg_ini = self.data_registro_inicio
+            reg_fim = self.data_registro_fim
+
+            # Evita erro de comparação naive/aware durante validações de update
+            # (ex.: sentinela sem tz versus datetime aware vindo do request/model).
+            if isinstance(reg_ini, datetime.datetime) and isinstance(reg_fim, datetime.datetime):
+                if timezone.is_naive(reg_ini) and not timezone.is_naive(reg_fim):
+                    reg_ini = timezone.make_aware(reg_ini, timezone.get_current_timezone())
+                elif timezone.is_naive(reg_fim) and not timezone.is_naive(reg_ini):
+                    reg_fim = timezone.make_aware(reg_fim, timezone.get_current_timezone())
+
+            if reg_ini > reg_fim:
                 raise ValidationError({
                     'data_registro_fim': 'Data de fim do registro deve ser posterior à data de início.'
                 })

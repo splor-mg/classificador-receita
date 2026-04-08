@@ -4,6 +4,7 @@ import json
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import path, reverse
+from django.utils import timezone
 
 from apps.core.models import (
     SerieClassificacao,
@@ -381,9 +382,13 @@ class ItemClassificacaoAdmin(
         if not code or not vigencia_inicio or not vigencia_fim:
             return JsonResponse({"pk": "", "semantic_value": "", "display_label": "", "link_url": ""})
 
+        sentinel = TRANSACTION_TIME_SENTINEL
+        if timezone.is_naive(sentinel):
+            sentinel = timezone.make_aware(sentinel, timezone.get_current_timezone())
+
         qs = ItemClassificacao.objects.filter(
             receita_cod=code,
-            data_registro_fim=TRANSACTION_TIME_SENTINEL,
+            data_registro_fim=sentinel,
             data_vigencia_inicio__lte=vigencia_inicio,
             data_vigencia_fim__gte=vigencia_fim,
         ).order_by("pk")
