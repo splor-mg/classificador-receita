@@ -129,6 +129,32 @@ class BitemporalChangeHandler:
                 # Caso não identifiquemos o tipo com segurança, mantemos fallback `text`.
                 pass
 
+            # Matriz (ItemClassificacao): no admin o valor é escolhido como Matriz/Detalhe;
+            # cleaned_data e o modelo usam bool. Na confirmação, exibir rótulos — o select
+            # envia True/False como string e to_python do BooleanField persiste bool no banco.
+            if field == "matriz" and isinstance(field_meta, django_models.BooleanField):
+
+                def _matriz_snapshot_to_bool(val):
+                    if val is True or val is False:
+                        return bool(val)
+                    if val == "matriz":
+                        return True
+                    if val == "detalhe":
+                        return False
+                    if val in (None, ""):
+                        return False
+                    if isinstance(val, str):
+                        s = val.strip().lower()
+                        if s in ("true", "1", "yes", "on"):
+                            return True
+                        if s in ("false", "0", "no", "off"):
+                            return False
+                    return bool(val)
+
+                old = _matriz_snapshot_to_bool(old)
+                new = _matriz_snapshot_to_bool(new)
+                choices = [(True, "Matriz"), (False, "Detalhe")]
+
             # ForeignKey: renderizar pela chave semântica (*_id) e, se possível,
             # exibir como select (para não ficar "livre" como input texto).
             if getattr(field_meta, "is_relation", False) and getattr(field_meta, "many_to_one", False):
@@ -218,7 +244,7 @@ class BitemporalChangeHandler:
                 grouped_choices = None
 
             else:
-                if hasattr(field_meta, "choices") and field_meta.choices:
+                if choices is None and hasattr(field_meta, "choices") and field_meta.choices:
                     choices = list(field_meta.choices)
                     # Para orgao_responsavel, aproveitar metadado de agrupamento
                     # para exibir um select mais informativo na tela de confirmação.

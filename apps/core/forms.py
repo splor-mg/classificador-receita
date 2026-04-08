@@ -1,5 +1,5 @@
 from django import forms
-from django.forms import TextInput, Textarea
+from django.forms import RadioSelect, TextInput, Textarea
 
 from apps.core.models import (
     SerieClassificacao,
@@ -65,9 +65,35 @@ class ItemClassificacaoForm(forms.ModelForm):
         required=False,
         widget=TextInput(attrs={"style": "width:20em; background-color:#f4f4f4; color:#555;"}),
     )
+    matriz = forms.ChoiceField(
+        choices=[
+            ("matriz", "Matriz"),
+            ("detalhe", "Detalhe"),
+        ],
+        widget=RadioSelect,
+        required=True,
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        mf = ItemClassificacao._meta.get_field("matriz")
+        self.fields["matriz"].label = mf.verbose_name
+        self.fields["matriz"].help_text = mf.help_text or ""
+        # ModelForm preenche initial["matriz"] com bool da instância; ChoiceField exige "matriz"/"detalhe".
+        if not self.is_bound:
+            raw = self.initial.get("matriz")
+            if isinstance(raw, bool):
+                use_matriz = raw
+            elif raw == "matriz":
+                use_matriz = True
+            elif raw == "detalhe":
+                use_matriz = False
+            else:
+                use_matriz = bool(getattr(self.instance, "matriz", False))
+            key = "matriz" if use_matriz else "detalhe"
+            self.initial["matriz"] = key
+            self.fields["matriz"].initial = key
+
         receita_cod = ""
         if self.instance and getattr(self.instance, "pk", None):
             receita_cod = self.instance.receita_cod or ""
@@ -84,6 +110,9 @@ class ItemClassificacaoForm(forms.ModelForm):
             parent_field.widget.attrs["data_readonly_root"] = "1"
             parent_field.widget.attrs["data_empty_display"] = ""
             parent_field.widget.attrs["data_root_message"] = "Item raiz, de nível 1, não possui item pai."
+
+    def clean_matriz(self):
+        return self.cleaned_data["matriz"] == "matriz"
 
     class Meta:
         model = ItemClassificacao
