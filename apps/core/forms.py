@@ -76,6 +76,22 @@ class ItemClassificacaoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Em modo edição, valores literais de placeholder vindos de carga CSV
+        # ("NULL" e "-") devem aparecer em branco para o usuário.
+        if not self.is_bound:
+            placeholder_tokens = {"NULL", "-"}
+            for name, field in self.fields.items():
+                if name in {"item_id", "matriz"}:
+                    continue
+                if not isinstance(field, (forms.CharField, forms.TypedChoiceField)):
+                    continue
+                raw_val = self.initial.get(name, None)
+                if not isinstance(raw_val, str):
+                    continue
+                if raw_val.strip() in placeholder_tokens:
+                    self.initial[name] = ""
+                    field.initial = ""
+
         mf = ItemClassificacao._meta.get_field("matriz")
         self.fields["matriz"].label = mf.verbose_name
         self.fields["matriz"].help_text = mf.help_text or ""
