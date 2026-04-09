@@ -9,9 +9,41 @@ from apps.core.models import (
     item_semantic_id_from_receita_cod,
 )
 from apps.core.domain_choices import ORGAOS_ENTIDADES_GROUPED_CHOICES
+from apps.core.null_normalization import normalize_text_field_value
 
 
-class SerieClassificacaoForm(forms.ModelForm):
+class PlaceholderNullNormalizationFormMixin:
+    """
+    Normaliza placeholders textuais ("NULL"/"-") para ausência de dado.
+
+    - Na renderização inicial: exibe vazio no formulário.
+    - No clean: canoniza para None, evitando falso-positivo em comparação.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        model = getattr(getattr(self, "_meta", None), "model", None)
+        if not model:
+            return
+        for field_name in self.fields.keys():
+            if field_name not in self.initial:
+                continue
+            normalized = normalize_text_field_value(model, field_name, self.initial.get(field_name))
+            if normalized is None and self.initial.get(field_name) is not None:
+                self.initial[field_name] = ""
+                self.fields[field_name].initial = ""
+
+    def clean(self):
+        cleaned = super().clean()
+        model = getattr(getattr(self, "_meta", None), "model", None)
+        if not model:
+            return cleaned
+        for field_name in list(cleaned.keys()):
+            cleaned[field_name] = normalize_text_field_value(model, field_name, cleaned.get(field_name))
+        return cleaned
+
+
+class SerieClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelForm):
     """Formulário do Admin para SerieClassificacao com widgets ajustados."""
 
     orgao_responsavel = forms.ChoiceField(
@@ -35,7 +67,7 @@ class SerieClassificacaoForm(forms.ModelForm):
         }
 
 
-class ClassificacaoForm(forms.ModelForm):
+class ClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelForm):
     """Formulário do Admin para Classificacao com widgets ajustados."""
 
     class Meta:
@@ -49,7 +81,7 @@ class ClassificacaoForm(forms.ModelForm):
         }
 
 
-class NivelHierarquicoForm(forms.ModelForm):
+class NivelHierarquicoForm(PlaceholderNullNormalizationFormMixin, forms.ModelForm):
     """Formulário padrão do Admin para NivelHierarquico."""
 
     class Meta:
@@ -57,7 +89,7 @@ class NivelHierarquicoForm(forms.ModelForm):
         fields = "__all__"
 
 
-class ItemClassificacaoForm(forms.ModelForm):
+class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelForm):
     """Formulário do Admin para ItemClassificacao com widgets ajustados."""
 
     item_id = forms.CharField(
@@ -76,22 +108,6 @@ class ItemClassificacaoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Em modo edição, valores literais de placeholder vindos de carga CSV
-        # ("NULL" e "-") devem aparecer em branco para o usuário.
-        if not self.is_bound:
-            placeholder_tokens = {"NULL", "-"}
-            for name, field in self.fields.items():
-                if name in {"item_id", "matriz"}:
-                    continue
-                if not isinstance(field, (forms.CharField, forms.TypedChoiceField)):
-                    continue
-                raw_val = self.initial.get(name, None)
-                if not isinstance(raw_val, str):
-                    continue
-                if raw_val.strip() in placeholder_tokens:
-                    self.initial[name] = ""
-                    field.initial = ""
-
         mf = ItemClassificacao._meta.get_field("matriz")
         self.fields["matriz"].label = mf.verbose_name
         self.fields["matriz"].help_text = mf.help_text or ""

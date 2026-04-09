@@ -21,6 +21,7 @@ from django.utils import timezone
 
 from apps.core.bitemporal_registry import get_sentinela_date
 from apps.core.domain_choices import ORGAOS_ENTIDADES_GROUPED_CHOICES
+from apps.core.null_normalization import normalize_text_field_value
 
 VIGENCIA_FIELDS = {"data_vigencia_inicio", "data_vigencia_fim"}
 
@@ -844,8 +845,17 @@ class BitemporalChangeHandler:
                 old_val = original_values[field_name]
             else:
                 old_val = getattr(obj, field_name, None)
-            old_comp = getattr(old_val, "pk", old_val)
-            new_comp = getattr(new_val, "pk", new_val)
+            try:
+                field_obj = self.model._meta.get_field(field_name)
+            except Exception:
+                field_obj = None
+
+            if field_obj is not None and getattr(field_obj, "is_relation", False):
+                old_comp = getattr(old_val, "pk", old_val)
+                new_comp = getattr(new_val, "pk", new_val)
+            else:
+                old_comp = normalize_text_field_value(self.model, field_name, old_val)
+                new_comp = normalize_text_field_value(self.model, field_name, new_val)
             debug_snapshot["old_values"][field_name] = old_val
             if old_comp != new_comp:
                 attr_changes[field_name] = new_val
@@ -862,7 +872,13 @@ class BitemporalChangeHandler:
                 old_val = original_values[field_name]
             else:
                 old_val = getattr(obj, field_name, None)
-            if old_val != new_values[field_name]:
+            old_comp = normalize_text_field_value(self.model, field_name, old_val)
+            new_comp = normalize_text_field_value(
+                self.model,
+                field_name,
+                new_values[field_name],
+            )
+            if old_comp != new_comp:
                 vigencia_changed = True
                 break
 
