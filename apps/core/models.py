@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from apps.core.models_base_legal import BaseLegalTecnica, identifier_validator
 from apps.core.domain_choices import ORGAOS_ENTIDADES_CHOICES
+from apps.core.vigencia_fk_validation import validate_vigencia_contained_in_fk_targets
 
 
 # Constantes para valores sentinelas (conforme ADR-001)
@@ -283,6 +284,16 @@ class Classificacao(BitemporalModel):
     def __str__(self):
         return f"{self.classificacao_nome} ({self.classificacao_id})"
 
+    def clean(self):
+        super().clean()
+        validate_vigencia_contained_in_fk_targets(
+            self,
+            [
+                ("serie_id", "série de classificações"),
+                ("base_legal_tecnica_id", "base legal/técnica"),
+            ],
+        )
+
 
 class NivelHierarquico(BitemporalModel):
     """
@@ -396,6 +407,13 @@ class NivelHierarquico(BitemporalModel):
 
     def __str__(self):
         return f"Nível {self.nivel_numero}: {self.nivel_nome} ({self.nivel_id})"
+
+    def clean(self):
+        super().clean()
+        validate_vigencia_contained_in_fk_targets(
+            self,
+            [("classificacao_id", "classificação")],
+        )
 
 
 class ItemClassificacao(BitemporalModel):
@@ -591,6 +609,15 @@ class ItemClassificacao(BitemporalModel):
         - Itens de nível 2+ DEVEM ter parent_item_id preenchido.
         """
         super().clean()
+        validate_vigencia_contained_in_fk_targets(
+            self,
+            [
+                ("classificacao_id", "classificação"),
+                ("nivel_id", "nível hierárquico"),
+                ("parent_item_id", "item pai"),
+                ("base_legal_tecnica_id", "base legal/técnica"),
+            ],
+        )
 
         if self.receita_cod and self.item_id:
             expected = item_semantic_id_from_receita_cod(self.receita_cod)
@@ -706,6 +733,13 @@ class VersaoClassificacao(BitemporalModel):
     def __str__(self):
         return f"{self.versao_nome or self.versao_numero} ({self.versao_id})"
 
+    def clean(self):
+        super().clean()
+        validate_vigencia_contained_in_fk_targets(
+            self,
+            [("classificacao", "classificação")],
+        )
+
 
 class VarianteClassificacao(BitemporalModel):
     """
@@ -787,3 +821,13 @@ class VarianteClassificacao(BitemporalModel):
 
     def __str__(self):
         return f"{self.variante_nome} ({self.variante_id})"
+
+    def clean(self):
+        super().clean()
+        validate_vigencia_contained_in_fk_targets(
+            self,
+            [
+                ("classificacao", "classificação de origem"),
+                ("versao", "versão de origem"),
+            ],
+        )

@@ -1043,6 +1043,9 @@ class BitemporalChangeHandler:
                         vigencia_fields_changed.append(field_name)
 
             changed_fields_for_preview: List[str] = list(attr_changes.keys()) + vigencia_fields_changed
+            for fname in field_errors:
+                if fname not in changed_fields_for_preview:
+                    changed_fields_for_preview.append(fname)
 
             class _DiffFormLike:
                 def __init__(self, initial, cleaned_data):
