@@ -72,11 +72,24 @@ def export_resource(recurso: str, output: str | None = None, scope: str = "all",
                 sem_col = fk_semantic_attr
             select_parts.append(f'{alias}.{sem_col} AS "{col}"')
         else:
+            # Formatar campos booleanos como "True"/"False" em vez de "t"/"f"
+            # para manter consistência textual dos seeds exportados.
+            if fmeta and fmeta.get("type") == "boolean":
+                try:
+                    col_db = model._meta.get_field(col).column
+                except Exception:
+                    col_db = col
+                select_parts.append(
+                    f"CASE "
+                    f"WHEN {main_alias}.{col_db} IS TRUE THEN 'true' "
+                    f"WHEN {main_alias}.{col_db} IS FALSE THEN 'false' "
+                    f"ELSE NULL END AS \"{col}\""
+                )
             # Formatar campos datetime de registro no padrão
             # "YYYY-MM-DD HH:MM:SS" no timezone da aplicação, para
             # alinhar com o que é exibido no Admin (sem microsegundos
             # nem offset explícito).
-            if col in ("data_registro_inicio", "data_registro_fim"):
+            elif col in ("data_registro_inicio", "data_registro_fim"):
                 try:
                     col_db = model._meta.get_field(col).column
                 except Exception:
