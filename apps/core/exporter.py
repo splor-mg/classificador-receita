@@ -60,6 +60,7 @@ def export_resource(recurso: str, output: str | None = None, scope: str = "all",
     fields_by_name = {f["name"]: f for f in res["fields"]}
     for col in columns:
         fmeta = fields_by_name.get(col)
+        policy = (fmeta or {}).get("export_policy", "default")
         if fmeta and fmeta.get("type") == "fk":
             alias, ref_model, fk_semantic_attr = alias_map.get(
                 fmeta["name"], (None, None, None)
@@ -70,7 +71,23 @@ def export_resource(recurso: str, output: str | None = None, scope: str = "all",
                 sem_col = ref_model._meta.get_field(fk_semantic_attr).column
             except Exception:
                 sem_col = fk_semantic_attr
-            select_parts.append(f'{alias}.{sem_col} AS "{col}"')
+            sem_expr = f"{alias}.{sem_col}"
+            if policy == "fk_semantic_or_dash":
+                select_parts.append(
+                    f"CASE "
+                    f"WHEN {sem_expr} IS NULL THEN '-' "
+                    f"WHEN BTRIM(({sem_expr})::text) = '' THEN '-' "
+                    f"ELSE ({sem_expr})::text END AS \"{col}\""
+                )
+            elif policy == "fk_semantic_or_null_token":
+                select_parts.append(
+                    f"CASE "
+                    f"WHEN {sem_expr} IS NULL THEN 'NULL' "
+                    f"WHEN BTRIM(({sem_expr})::text) = '' THEN 'NULL' "
+                    f"ELSE ({sem_expr})::text END AS \"{col}\""
+                )
+            else:
+                select_parts.append(f'{sem_expr} AS "{col}"')
         else:
             # Formatar campos booleanos como "True"/"False" em vez de "t"/"f"
             # para manter consistência textual dos seeds exportados.
@@ -79,11 +96,42 @@ def export_resource(recurso: str, output: str | None = None, scope: str = "all",
                     col_db = model._meta.get_field(col).column
                 except Exception:
                     col_db = col
+                if policy in ("default", "bool_title"):
+                    select_parts.append(
+                        f"CASE "
+                        f"WHEN {main_alias}.{col_db} IS TRUE THEN 'True' "
+                        f"WHEN {main_alias}.{col_db} IS FALSE THEN 'False' "
+                        f"ELSE NULL END AS \"{col}\""
+                    )
+                elif policy == "bool_lower":
+                    select_parts.append(
+                        f"CASE "
+                        f"WHEN {main_alias}.{col_db} IS TRUE THEN 'true' "
+                        f"WHEN {main_alias}.{col_db} IS FALSE THEN 'false' "
+                        f"ELSE NULL END AS \"{col}\""
+                    )
+                else:
+                    select_parts.append(f'{main_alias}.{col_db} AS "{col}"')
+            # Para campos textuais opcionais (required=False), normalizar
+            # ausência de dado para o token "NULL" no CSV:
+            # - valor SQL NULL
+            # - string vazia (inclusive com espaços)
+            # - hífen isolado ("-")
+            elif (
+                fmeta
+                and fmeta.get("type") in ("string", "text")
+                and fmeta.get("required") is False
+                and policy in ("default", "null_token")
+            ):
+                try:
+                    col_db = model._meta.get_field(col).column
+                except Exception:
+                    col_db = col
                 select_parts.append(
                     f"CASE "
-                    f"WHEN {main_alias}.{col_db} IS TRUE THEN 'true' "
-                    f"WHEN {main_alias}.{col_db} IS FALSE THEN 'false' "
-                    f"ELSE NULL END AS \"{col}\""
+                    f"WHEN {main_alias}.{col_db} IS NULL THEN 'NULL' "
+                    f"WHEN BTRIM({main_alias}.{col_db}) IN ('', '-') THEN 'NULL' "
+                    f"ELSE {main_alias}.{col_db} END AS \"{col}\""
                 )
             # Formatar campos datetime de registro no padrão
             # "YYYY-MM-DD HH:MM:SS" no timezone da aplicação, para
