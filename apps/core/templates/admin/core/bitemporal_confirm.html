@@ -895,6 +895,20 @@
   updatePreview();
   attachGeneralDiffDirtyListeners();
 
+  function mapEditFieldValueToMainField(baseName, rawValue) {
+    var v = rawValue == null ? '' : String(rawValue);
+    // Options geradas a partir de bool Python no template saem como "True"/"False".
+    if (baseName === 'item_gerado') {
+      if (v === 'True' || v === 'true') return 'sim';
+      if (v === 'False' || v === 'false') return 'nao';
+    }
+    if (baseName === 'matriz') {
+      if (v === 'True' || v === 'true') return 'matriz';
+      if (v === 'False' || v === 'false') return 'detalhe';
+    }
+    return v;
+  }
+
   function syncCancelFormWithEdits() {
     var cancelForm = document.getElementById('cancel-form');
     if (!cancelForm) {
@@ -907,7 +921,7 @@
       var baseName = input.name.replace(/^edit_field_/, '');
       var target = cancelForm.querySelector('[name="' + baseName + '"]');
       if (target) {
-        target.value = input.value;
+        target.value = mapEditFieldValueToMainField(baseName, input.value);
       }
     });
   }

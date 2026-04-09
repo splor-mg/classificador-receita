@@ -115,6 +115,20 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
     )
 
     def __init__(self, *args, **kwargs):
+        # Voltar da confirmação bitemporal: syncCancelFormWithEdits copia o valor do
+        # <select> da confirmação, cujas options usam "True"/"False" (bool do Django),
+        # para os hiddens com o mesmo nome do form — incompatível com sim/nao e matriz/detalhe.
+        data = kwargs.get("data")
+        if data is not None and hasattr(data, "copy"):
+            data = data.copy()
+            _ig = data.get("item_gerado")
+            if _ig in ("True", "true", "False", "false"):
+                data["item_gerado"] = "sim" if str(_ig).lower() == "true" else "nao"
+            _mz = data.get("matriz")
+            if _mz in ("True", "true", "False", "false"):
+                data["matriz"] = "matriz" if str(_mz).lower() == "true" else "detalhe"
+            kwargs["data"] = data
+
         super().__init__(*args, **kwargs)
         mf = ItemClassificacao._meta.get_field("matriz")
         self.fields["matriz"].label = mf.verbose_name

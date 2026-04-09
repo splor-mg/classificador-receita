@@ -16,7 +16,11 @@
   disabled
   id="{{ widget.attrs.id }}_display"
   class="vTextField {{ widget.attrs.class|default:'' }}"
-  style="{% if widget.attrs.data_readonly_root == '1' %}width: 37ch; background: repeating-linear-gradient(135deg, #f4f4f4, #f4f4f4 8px, #ececec 8px, #ececec 16px); color:#666; border-color:#d7d7d7;{% else %}width: 37ch;{% endif %}"
+  {% if widget.attrs.data_readonly_root == '1' %}
+  style="width: 37ch; background: repeating-linear-gradient(135deg, #f4f4f4, #f4f4f4 8px, #ececec 8px, #ececec 16px); color:#666; border-color:#d7d7d7;"
+  {% else %}
+  style="width: 37ch;"
+  {% endif %}
   {% if widget.attrs.data_readonly_root == '1' %}data-readonly-root="1"{% endif %}
 />{% if related_url and widget.attrs.data_readonly_root != '1' %}
 
