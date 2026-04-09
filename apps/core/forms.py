@@ -105,26 +105,51 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
         widget=RadioSelect,
         required=True,
     )
+    item_gerado = forms.ChoiceField(
+        choices=[
+            ("sim", "Sim"),
+            ("nao", "Não"),
+        ],
+        widget=RadioSelect,
+        required=True,
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         mf = ItemClassificacao._meta.get_field("matriz")
         self.fields["matriz"].label = mf.verbose_name
         self.fields["matriz"].help_text = mf.help_text or ""
-        # ModelForm preenche initial["matriz"] com bool da instância; ChoiceField exige "matriz"/"detalhe".
-        if not self.is_bound:
-            raw = self.initial.get("matriz")
-            if isinstance(raw, bool):
-                use_matriz = raw
-            elif raw == "matriz":
-                use_matriz = True
-            elif raw == "detalhe":
-                use_matriz = False
-            else:
-                use_matriz = bool(getattr(self.instance, "matriz", False))
-            key = "matriz" if use_matriz else "detalhe"
-            self.initial["matriz"] = key
-            self.fields["matriz"].initial = key
+        # ModelForm pode manter initial["matriz"] como bool da instância, enquanto
+        # o ChoiceField trafega strings ("matriz"/"detalhe"). Normalizamos sempre
+        # para evitar falso positivo de alteração em POST sem mudanças.
+        raw = self.initial.get("matriz")
+        if isinstance(raw, bool):
+            use_matriz = raw
+        elif raw == "matriz":
+            use_matriz = True
+        elif raw == "detalhe":
+            use_matriz = False
+        else:
+            use_matriz = bool(getattr(self.instance, "matriz", False))
+        key = "matriz" if use_matriz else "detalhe"
+        self.initial["matriz"] = key
+        self.fields["matriz"].initial = key
+
+        ig = ItemClassificacao._meta.get_field("item_gerado")
+        self.fields["item_gerado"].label = ig.verbose_name
+        self.fields["item_gerado"].help_text = ig.help_text or ""
+        raw_ig = self.initial.get("item_gerado")
+        if isinstance(raw_ig, bool):
+            use_gerado = raw_ig
+        elif raw_ig == "sim":
+            use_gerado = True
+        elif raw_ig == "nao":
+            use_gerado = False
+        else:
+            use_gerado = bool(getattr(self.instance, "item_gerado", False))
+        ig_key = "sim" if use_gerado else "nao"
+        self.initial["item_gerado"] = ig_key
+        self.fields["item_gerado"].initial = ig_key
 
         receita_cod = ""
         if self.instance and getattr(self.instance, "pk", None):
@@ -145,6 +170,9 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
 
     def clean_matriz(self):
         return self.cleaned_data["matriz"] == "matriz"
+
+    def clean_item_gerado(self):
+        return self.cleaned_data["item_gerado"] == "sim"
 
     class Meta:
         model = ItemClassificacao

@@ -156,6 +156,31 @@ class BitemporalChangeHandler:
                 new = _matriz_snapshot_to_bool(new)
                 choices = [(True, "Matriz"), (False, "Detalhe")]
 
+            # item_gerado (ItemClassificacao): no admin o valor é Sim/Não (radio);
+            # cleaned_data e o modelo usam bool.
+            if field == "item_gerado" and isinstance(field_meta, django_models.BooleanField):
+
+                def _item_gerado_snapshot_to_bool(val):
+                    if val is True or val is False:
+                        return bool(val)
+                    if val == "sim":
+                        return True
+                    if val == "nao":
+                        return False
+                    if val in (None, ""):
+                        return False
+                    if isinstance(val, str):
+                        s = val.strip().lower()
+                        if s in ("true", "1", "yes", "on"):
+                            return True
+                        if s in ("false", "0", "no", "off"):
+                            return False
+                    return bool(val)
+
+                old = _item_gerado_snapshot_to_bool(old)
+                new = _item_gerado_snapshot_to_bool(new)
+                choices = [(True, "Sim"), (False, "Não")]
+
             # ForeignKey: renderizar pela chave semântica (*_id) e, se possível,
             # exibir como select (para não ficar "livre" como input texto).
             if getattr(field_meta, "is_relation", False) and getattr(field_meta, "many_to_one", False):
