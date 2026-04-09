@@ -27,7 +27,57 @@ from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
 from apps.core.admin_widgets import ForeignKeySemanticDisplayRawIdWidget
 from apps.core.exporter import export_resource
 from apps.core.bitemporal_registry import get_resource_for_model
-from apps.core.models import TRANSACTION_TIME_SENTINEL, VALID_TIME_SENTINEL
+from apps.core.models import (
+    BitemporalModel,
+    TRANSACTION_TIME_SENTINEL,
+    VALID_TIME_SENTINEL,
+)
+
+
+def transaction_time_sentinel_for_query():
+    """
+    Valor de data_registro_fim para registro ativo, alinhado ao uso em queries ORM
+    (mesma convenção de timezone que em admin.py / modelo).
+    """
+    s = TRANSACTION_TIME_SENTINEL
+    if timezone.is_naive(s):
+        return timezone.make_aware(s, timezone.get_current_timezone())
+    return s
+
+
+class BitemporalForeignKeyLookupActiveOnlyMixin:
+    """
+    Restringe FKs cujo modelo relacionado é bitemporal a linhas com registo ativo
+    (data_registro_fim = sentinela de transaction time).
+
+    - formfield_for_foreignkey: queryset do ModelChoiceField (validação + coerência com a lupa).
+    - get_queryset na changelist com ``_popup=1``: lista do popup da raw id mostra só ativos.
+    """
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if str(request.GET.get("_popup")) != "1":
+            return qs
+        if not issubclass(self.model, BitemporalModel):
+            return qs
+        return qs.filter(data_registro_fim=transaction_time_sentinel_for_query())
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        formfield = super().formfield_for_foreignkey(db_field, request, **kwargs)
+        if formfield is None:
+            return None
+        rel_model = db_field.remote_field.model
+        if isinstance(rel_model, str):
+            return formfield
+        try:
+            if not (isinstance(rel_model, type) and issubclass(rel_model, BitemporalModel)):
+                return formfield
+        except TypeError:
+            return formfield
+        formfield.queryset = formfield.queryset.filter(
+            data_registro_fim=transaction_time_sentinel_for_query()
+        )
+        return formfield
 
 ID_HELP_EXAMPLES = {
     "serieclassificacao": "SERIE-RECEITA-UNIAO",
@@ -380,7 +430,14 @@ class SemanticForeignKeyAdminMixin:
             return JsonResponse({"semantic_value": "", "display_label": "", "link_url": ""})
 
         try:
-            obj = model.objects.get(pk=pk)
+            qs = model.objects.filter(pk=pk)
+            if isinstance(model, type) and issubclass(model, BitemporalModel):
+                qs = qs.filter(data_registro_fim=transaction_time_sentinel_for_query())
+            obj = qs.first()
+            if obj is None:
+                return JsonResponse(
+                    {"semantic_value": "", "display_label": "", "link_url": ""}
+                )
             link_url = reverse(
                 f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change",
                 args=[obj.pk],

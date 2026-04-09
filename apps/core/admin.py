@@ -47,6 +47,7 @@ from apps.core.admin_mixins import (
     AutoExportAdminMixin,
     SemanticForeignKeyAdminMixin,
     BitemporalObjectActionsMixin,
+    BitemporalForeignKeyLookupActiveOnlyMixin,
 )
 
 
@@ -58,6 +59,7 @@ class SerieClassificacaoAdmin(
     BitemporalDateFormatMixin,
     CoreChangeSaveFormSubmitMixin,
     AutoExportAdminMixin,
+    BitemporalForeignKeyLookupActiveOnlyMixin,
     admin.ModelAdmin,
 ):
     list_display = [
@@ -129,6 +131,7 @@ class ClassificacaoAdmin(
     BitemporalDateFormatMixin,
     CoreChangeSaveFormSubmitMixin,
     AutoExportAdminMixin,
+    BitemporalForeignKeyLookupActiveOnlyMixin,
     admin.ModelAdmin,
 ):
     model = Classificacao
@@ -205,6 +208,7 @@ class NivelHierarquicoAdmin(
     BitemporalDateFormatMixin,
     CoreChangeSaveFormSubmitMixin,
     AutoExportAdminMixin,
+    BitemporalForeignKeyLookupActiveOnlyMixin,
     admin.ModelAdmin,
 ):
     model = NivelHierarquico
@@ -271,6 +275,7 @@ class ItemClassificacaoAdmin(
     BitemporalDateFormatMixin,
     CoreChangeSaveFormSubmitMixin,
     AutoExportAdminMixin,
+    BitemporalForeignKeyLookupActiveOnlyMixin,
     admin.ModelAdmin,
 ):
     model = ItemClassificacao
@@ -433,7 +438,13 @@ class ItemClassificacaoAdmin(
 
 
 @admin.register(VersaoClassificacao)
-class VersaoClassificacaoAdmin(CoreChangeSaveFormSubmitMixin, BitemporalInactiveReadOnlyMixin, AutoExportAdminMixin, admin.ModelAdmin):
+class VersaoClassificacaoAdmin(
+    CoreChangeSaveFormSubmitMixin,
+    BitemporalInactiveReadOnlyMixin,
+    AutoExportAdminMixin,
+    BitemporalForeignKeyLookupActiveOnlyMixin,
+    admin.ModelAdmin,
+):
     list_display = ['versao_id', 'versao_numero', 'versao_nome', 'classificacao', 'data_lancamento', 'data_vigencia_inicio']
     list_filter = [RegistroAtivoFilter, VersaoIdFilter, 'classificacao', 'data_lancamento', 'data_vigencia_inicio']
     search_fields = ['versao_id', 'versao_numero', 'versao_nome', 'versao_descricao']
@@ -443,7 +454,13 @@ class VersaoClassificacaoAdmin(CoreChangeSaveFormSubmitMixin, BitemporalInactive
 
 
 @admin.register(VarianteClassificacao)
-class VarianteClassificacaoAdmin(CoreChangeSaveFormSubmitMixin, BitemporalInactiveReadOnlyMixin, AutoExportAdminMixin, admin.ModelAdmin):
+class VarianteClassificacaoAdmin(
+    CoreChangeSaveFormSubmitMixin,
+    BitemporalInactiveReadOnlyMixin,
+    AutoExportAdminMixin,
+    BitemporalForeignKeyLookupActiveOnlyMixin,
+    admin.ModelAdmin,
+):
     list_display = ['variante_id', 'variante_nome', 'tipo_variante', 'classificacao', 'versao', 'data_vigencia_inicio']
     list_filter = [RegistroAtivoFilter, VarianteIdFilter, 'tipo_variante', 'classificacao', 'versao', 'data_vigencia_inicio']
     search_fields = ['variante_id', 'variante_nome', 'variante_descricao', 'proposito']
