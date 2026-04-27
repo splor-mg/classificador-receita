@@ -296,10 +296,9 @@ class ItemClassificacaoAdmin(
     list_filter = [
         RegistroAtivoFilter,
         ItemIdFilter,
-        'classificacao_id',
+        'matriz',
         'nivel_id',
         'base_legal_tecnica_id',
-        'matriz',
         'item_gerado',
         'data_vigencia_inicio',
         'data_registro_inicio',

@@ -432,8 +432,12 @@ class SemanticForeignKeyAdminMixin:
         try:
             qs = model.objects.filter(pk=pk)
             if isinstance(model, type) and issubclass(model, BitemporalModel):
-                qs = qs.filter(data_registro_fim=transaction_time_sentinel_for_query())
-            obj = qs.first()
+                # Para visualização de valor já persistido no formulário, não
+                # escondemos FK inativa/histórica. Mantemos a regra de seleção
+                # de apenas ativos no queryset do campo/popup.
+                obj = qs.first()
+            else:
+                obj = qs.first()
             if obj is None:
                 return JsonResponse(
                     {"semantic_value": "", "display_label": "", "link_url": ""}
