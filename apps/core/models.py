@@ -619,9 +619,11 @@ class ItemClassificacao(BitemporalModel):
             ],
         )
 
-        if self.receita_cod and self.item_id:
+        if self.receita_cod:
             expected = item_semantic_id_from_receita_cod(self.receita_cod)
-            if self.item_id != expected:
+            if not self.item_id:
+                self.item_id = expected
+            elif self.item_id != expected:
                 raise ValidationError(
                     {
                         "item_id": (
@@ -647,6 +649,11 @@ class ItemClassificacao(BitemporalModel):
             raise ValidationError(
                 {'parent_item_id': 'Itens de nível superior a 1 devem possuir um item pai.'}
             )
+
+        if nivel.nivel_numero > 1 and self.parent_item_id is not None:
+            from apps.core.parent_item_validation import validate_item_parent_item_rules
+
+            validate_item_parent_item_rules(self)
 
     def save(self, *args, _skip_validation: bool = False, **kwargs):
         """
