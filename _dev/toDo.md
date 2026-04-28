@@ -2,7 +2,12 @@
 # lista 
 
 - verificar consistência de não permitir a criação de item sem que exista matriz anterior existente?. Seria pelo campo `item_pai`?
-- avaliar estrutura de booleano para edição. Por exemplo, matriz seria "Sim/Não", assim como item gerado
+      - pré-preenchimento de códigos até chegar a 13 dígitos e erro se houver mais dígitos que o máximo
+      - não permitir FK de Nivel tenha classificacao_id diferente da Classificacao_id do registro
+      - Nivel 1 tem sempre que ser Matriz
+      - Filtro por categoria
+      - investigar o porquê a FK de associação está 
+
 - avaliar a "justificativa de alteração" não apenas como parâmetro de registro, mas como parâmetro de documentação 
 - criar protocolo de incorporação/importação de bases
   - tratamento Excel/csv por ano
@@ -24,6 +29,7 @@
 
 -------- feito
 
+x avaliar estrutura de booleano para edição. Por exemplo, matriz seria "Sim/Não", assim como item gerado
 x garantir protocolo de normalização/padronização de campo id para quando editar/reativar registro
 x verificar comportamento para reativar receita já bloqueada/inativada
 x na página de edição, implementar protocolo de exclusão e bloqueio
