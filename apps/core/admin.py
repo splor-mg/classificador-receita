@@ -356,6 +356,27 @@ class ItemClassificacaoAdmin(
         },
     }
 
+    def get_fields(self, request, obj=None):
+        # Aplica ordem específica apenas na tela de criação (add view).
+        if obj is None:
+            return [
+                ('receita_cod', 'item_ref', 'item_id'),
+                'classificacao_id',
+                'parent_item_id',
+                'nivel_id',
+                'matriz',
+                'receita_nome',
+                'receita_descricao',
+                'base_legal_tecnica_id',
+                'base_legal_tecnica_referencia',
+                'destinacao_legal',
+                'informacoes_gerenciais',
+                'item_gerado',
+                'data_vigencia_inicio',
+                'data_vigencia_fim',
+            ]
+        return super().get_fields(request, obj)
+
     def get_urls(self):
         urls = super().get_urls()
         custom = [
