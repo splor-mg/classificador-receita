@@ -96,6 +96,116 @@ def split_receita_cod_segments_tolerant(
     return parts
 
 
+def validate_item_receita_cod_level_consistency(instance) -> None:
+    """
+    Regra mínima para fechar o buraco de validação do nível 1.
+
+    Para item de nível 1, o segmento do próprio nível deve estar discriminado
+    (não apenas zeros) e todos os níveis posteriores (2...fim) devem estar
+    zerados.
+    """
+    nivel = getattr(instance, "nivel_id", None)
+    if nivel is None:
+        return
+
+    nivel_n = getattr(nivel, "nivel_numero", None)
+    if nivel_n is None:
+        return
+
+    # Esta validação é propositalmente restrita ao nível 1.
+    if nivel_n != 1:
+        return
+
+    c_cod = (getattr(instance, "receita_cod", None) or "").strip()
+    if not c_cod:
+        return
+
+    child_class = getattr(instance, "classificacao_id", None)
+    class_pk = getattr(child_class, "pk", None) if child_class is not None else None
+    vig_ini = getattr(instance, "data_vigencia_inicio", None)
+    vig_fim = getattr(instance, "data_vigencia_fim", None)
+
+    mask = digit_mask_for_classificacao_vigencia(class_pk, vig_ini, vig_fim)
+    if mask is None:
+        raise ValidationError(
+            {
+                "receita_cod": (
+                    "Não foi possível determinar a máscara de dígitos por nível "
+                    "para esta classificação e vigência; verifique `nivel_hierarquico`."
+                )
+            }
+        )
+
+    if nivel_n > len(mask):
+        raise ValidationError(
+            {
+                "nivel_id": (
+                    f"O nível do item ({nivel_n}) não é compatível com a máscara "
+                    f"da classificação ({len(mask)} níveis)."
+                )
+            }
+        )
+
+    child_parts = split_receita_cod_segments_tolerant(c_cod, mask)
+    if child_parts is None:
+        raise ValidationError(
+            {
+                "receita_cod": (
+                    "Não foi possível segmentar o código canônico pela máscara de níveis "
+                    "desta classificação e vigência."
+                )
+            }
+        )
+
+    idx = nivel_n - 1  # nível N => índice N-1
+    child_level_seg = child_parts[idx]
+    if child_level_seg is None:
+        raise ValidationError(
+            {
+                "receita_cod": (
+                    f"Código canônico insuficiente para validar o segmento do nível {nivel_n}."
+                )
+            }
+        )
+
+    if _canonical_zero_segment(child_level_seg):
+        raise ValidationError(
+            {
+                "receita_cod": (
+                    f"No nível {nivel_n}, o segmento do código deve estar discriminado "
+                    "(não pode ser apenas zeros)."
+                )
+            }
+        )
+
+    for i in range(idx + 1, len(mask)):
+        seg = child_parts[i]
+        if seg is None:
+            continue
+        if not _canonical_zero_segment(seg):
+            raise ValidationError(
+                {
+                    "receita_cod": (
+                        "O código informado apresenta detalhamento (dígitos diferentes "
+                        f"de zero) em níveis subsequentes ao nível {nivel_n}, que é o "
+                        "nível definido para esta codificação."
+                    )
+                }
+            )
+
+    child_tail = _extra_tail_after_mask(c_cod, mask)
+    if child_tail and not _canonical_zero_segment(child_tail):
+        raise ValidationError(
+            {
+                "receita_cod": (
+                    "O código informado apresenta detalhamento (dígitos diferentes "
+                    f"de zero) em níveis subsequentes ao nível {nivel_n}, que é o "
+                    "nível definido para esta codificação."
+                )
+            }
+        )
+
+
 def validate_item_parent_item_rules(instance) -> None:
     """
     Aplica regras de `_dev/spec_parent_item_id.md` (exceto contenção de vigência,

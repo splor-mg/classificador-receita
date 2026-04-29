@@ -638,11 +638,19 @@ class ItemClassificacao(BitemporalModel):
 
         nivel = self.nivel_id
 
+        from apps.core.parent_item_validation import (
+            validate_item_parent_item_rules,
+            validate_item_receita_cod_level_consistency,
+        )
+
         # Nível 1: não pode ter pai
         if nivel.nivel_numero == 1 and self.parent_item_id is not None:
             raise ValidationError(
                 {'parent_item_id': 'Itens de nível 1 (raiz) não devem possuir item pai.'}
             )
+
+        if nivel.nivel_numero == 1:
+            validate_item_receita_cod_level_consistency(self)
 
         # Níveis acima de 1: precisam ter pai
         if nivel.nivel_numero > 1 and self.parent_item_id is None:
@@ -651,8 +659,6 @@ class ItemClassificacao(BitemporalModel):
             )
 
         if nivel.nivel_numero > 1 and self.parent_item_id is not None:
-            from apps.core.parent_item_validation import validate_item_parent_item_rules
-
             validate_item_parent_item_rules(self)
 
     def save(self, *args, _skip_validation: bool = False, **kwargs):

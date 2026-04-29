@@ -140,21 +140,27 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
         mf = ItemClassificacao._meta.get_field("matriz")
         self.fields["matriz"].label = mf.verbose_name
         self.fields["matriz"].help_text = mf.help_text or ""
-        # ModelForm pode manter initial["matriz"] como bool da instância, enquanto
-        # o ChoiceField trafega strings ("matriz"/"detalhe"). Normalizamos sempre
-        # para evitar falso positivo de alteração em POST sem mudanças.
-        raw = self.initial.get("matriz")
-        if isinstance(raw, bool):
-            use_matriz = raw
-        elif raw == "matriz":
-            use_matriz = True
-        elif raw == "detalhe":
-            use_matriz = False
+        is_change_form = bool(self.instance and getattr(self.instance, "pk", None))
+        if is_change_form:
+            # ModelForm pode manter initial["matriz"] como bool da instância, enquanto
+            # o ChoiceField trafega strings ("matriz"/"detalhe"). Normalizamos sempre
+            # para evitar falso positivo de alteração em POST sem mudanças.
+            raw = self.initial.get("matriz")
+            if isinstance(raw, bool):
+                use_matriz = raw
+            elif raw == "matriz":
+                use_matriz = True
+            elif raw == "detalhe":
+                use_matriz = False
+            else:
+                use_matriz = bool(getattr(self.instance, "matriz", False))
+            key = "matriz" if use_matriz else "detalhe"
+            self.initial["matriz"] = key
+            self.fields["matriz"].initial = key
         else:
-            use_matriz = bool(getattr(self.instance, "matriz", False))
-        key = "matriz" if use_matriz else "detalhe"
-        self.initial["matriz"] = key
-        self.fields["matriz"].initial = key
+            # No add, não pré-seleciona Matriz/Detalhe.
+            self.initial.pop("matriz", None)
+            self.fields["matriz"].initial = None
 
         ig = ItemClassificacao._meta.get_field("item_gerado")
         self.fields["item_gerado"].label = ig.verbose_name
@@ -204,6 +210,14 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
 
     def clean(self):
         cleaned = super().clean()
+
+        nivel = cleaned.get("nivel_id")
+        is_matriz = cleaned.get("matriz")
+        if nivel is not None and getattr(nivel, "nivel_numero", None) == 1 and is_matriz is False:
+            self.add_error(
+                "matriz",
+                "Itens de nível 1 só podem ser salvos como Matriz.",
+            )
 
         receita_cod = (cleaned.get("receita_cod") or "").strip().replace(".", "")
         classificacao = cleaned.get("classificacao_id")
