@@ -8,7 +8,7 @@ instanciadas para este domínio (IDs de negócio e FKs com rótulo semântico).
 from django.contrib import admin
 
 from apps.core.admin_mixins import make_filter_fk_id, make_filter_local_id
-from apps.core.models import Classificacao, ItemClassificacao, NivelHierarquico, TRANSACTION_TIME_SENTINEL
+from apps.core.models import BaseLegalTecnica, Classificacao, ItemClassificacao, NivelHierarquico, TRANSACTION_TIME_SENTINEL
 
 
 #---------------------------------------------------------------------------------------------------
@@ -126,4 +126,27 @@ class NivelHierarquicoRecenteFilter(admin.SimpleListFilter):
             except (TypeError, ValueError):
                 return queryset
             return queryset.filter(nivel_id__nivel_numero=nivel_num)
+        return queryset
+
+
+class BaseLegalTecnicaSemanticFilter(admin.SimpleListFilter):
+    """
+    Filtro deduplicado por identificador semântico de base legal/técnica.
+
+    Evita repetição por edições/títulos distintos do mesmo identificador.
+    """
+
+    title = "Por Base Legal/Técnica de Referência"
+    parameter_name = "base_legal_tecnica_semantic_id"
+
+    def lookups(self, request, model_admin):
+        values = BaseLegalTecnica.objects.exclude(base_legal_tecnica_id__isnull=True).exclude(
+            base_legal_tecnica_id__exact=""
+        ).values_list("base_legal_tecnica_id", flat=True).distinct().order_by("base_legal_tecnica_id")
+        return [(v, v) for v in values if v not in (None, "")]
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value:
+            return queryset.filter(base_legal_tecnica_id__base_legal_tecnica_id=value)
         return queryset

@@ -32,6 +32,7 @@ from apps.core.code_mask import (
 
 from apps.core.admin_filters import (
     BaseLegalTecnicaIdFilter,
+    BaseLegalTecnicaSemanticFilter,
     CategoriaOrigemPrefixFilter,
     CategoriaPrefixFilter,
     NivelHierarquicoRecenteFilter,
@@ -306,7 +307,7 @@ class ItemClassificacaoAdmin(
         CategoriaOrigemPrefixFilter,
         'matriz',
         ItemIdFilter,
-        'base_legal_tecnica_id',
+        BaseLegalTecnicaSemanticFilter,
         'item_gerado',
         'data_vigencia_inicio',
         'data_registro_inicio',
