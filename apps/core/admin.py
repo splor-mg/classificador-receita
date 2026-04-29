@@ -34,6 +34,7 @@ from apps.core.admin_filters import (
     BaseLegalTecnicaIdFilter,
     CategoriaOrigemPrefixFilter,
     CategoriaPrefixFilter,
+    NivelHierarquicoRecenteFilter,
     SerieIdFilter,
     SerieIdFKFilter,
     ClassificacaoIdFilter,
@@ -300,11 +301,11 @@ class ItemClassificacaoAdmin(
     ]
     list_filter = [
         RegistroAtivoFilter,
+        NivelHierarquicoRecenteFilter,
         CategoriaPrefixFilter,
         CategoriaOrigemPrefixFilter,
-        ItemIdFilter,
         'matriz',
-        'nivel_id',
+        ItemIdFilter,
         'base_legal_tecnica_id',
         'item_gerado',
         'data_vigencia_inicio',

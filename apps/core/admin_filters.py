@@ -91,3 +91,39 @@ CategoriaOrigemPrefixFilter = make_item_prefix_filter(
     prefix_len=2,
     nivel_numero=2,
 )
+
+
+class NivelHierarquicoRecenteFilter(admin.SimpleListFilter):
+    """
+    Filtro deduplicado por número do nível hierárquico.
+
+    Exibe apenas a descrição mais recente por `nivel_numero`, evitando repetição
+    de versões históricas no painel lateral.
+    """
+
+    title = "Por Nível Hierárquico"
+    parameter_name = "nivel_numero_recente"
+
+    def lookups(self, request, model_admin):
+        qs = (
+            NivelHierarquico.objects.filter(data_registro_fim=TRANSACTION_TIME_SENTINEL)
+            .order_by("-data_vigencia_inicio", "-data_registro_inicio", "-pk")
+            .values_list("nivel_numero", "nivel_nome")
+        )
+        by_nivel = {}
+        for nivel_numero, nivel_nome in qs:
+            if nivel_numero in by_nivel:
+                continue
+            label = f"Nível {nivel_numero}: {(nivel_nome or '').strip()}".strip()
+            by_nivel[nivel_numero] = label
+        return [(str(n), by_nivel[n]) for n in sorted(by_nivel.keys())]
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value:
+            try:
+                nivel_num = int(value)
+            except (TypeError, ValueError):
+                return queryset
+            return queryset.filter(nivel_id__nivel_numero=nivel_num)
+        return queryset
