@@ -30,12 +30,19 @@ NivelIdFKFilter = make_filter_fk_id(NivelHierarquico, "classificacao_id"
 )
 
 
-def make_item_prefix_filter(*, title: str, prefix_len: int, nivel_numero: int):
+def make_item_prefix_filter(
+    *,
+    title: str,
+    prefix_len: int,
+    nivel_numero: int,
+    collect_prefixes_from_all_levels: bool = False,
+):
     """
     Filtro lateral para ItemClassificacao baseado em prefixo de `receita_cod`.
 
-    - opções: itens ativos (`data_registro_fim` sentinela) no nível informado;
-    - rótulo: `receita_nome` mais recente por prefixo (opção B).
+    - opções: por padrão, itens ativos no nível informado;
+    - quando `collect_prefixes_from_all_levels=True`, inclui qualquer prefixo ativo;
+    - rótulo: prefere `receita_nome` mais recente no nível informado.
     """
     if prefix_len <= 0:
         raise ValueError("prefix_len deve ser maior que zero")
@@ -45,25 +52,44 @@ def make_item_prefix_filter(*, title: str, prefix_len: int, nivel_numero: int):
         parameter_name = ""
 
         def lookups(self, request, model_admin):
-            qs = (
-                ItemClassificacao.objects.filter(
-                    data_registro_fim=TRANSACTION_TIME_SENTINEL,
-                    nivel_id__nivel_numero=nivel_numero,
-                )
+            base_qs = ItemClassificacao.objects.filter(
+                data_registro_fim=TRANSACTION_TIME_SENTINEL,
+            )
+            prefix_qs = base_qs
+            if not collect_prefixes_from_all_levels:
+                prefix_qs = prefix_qs.filter(nivel_id__nivel_numero=nivel_numero)
+
+            all_prefix_rows = (
+                prefix_qs
                 .exclude(receita_cod__isnull=True)
                 .exclude(receita_cod__exact="")
                 .order_by("-data_vigencia_inicio", "-data_registro_inicio", "-pk")
                 .values_list("receita_cod", "receita_nome")
             )
-            by_prefix = {}
-            for receita_cod, receita_nome in qs:
+            level_label_rows = (
+                base_qs
+                .filter(nivel_id__nivel_numero=nivel_numero)
+                .exclude(receita_cod__isnull=True)
+                .exclude(receita_cod__exact="")
+                .order_by("-data_vigencia_inicio", "-data_registro_inicio", "-pk")
+                .values_list("receita_cod", "receita_nome")
+            )
+
+            labels_by_prefix = {}
+            for receita_cod, receita_nome in level_label_rows:
                 prefix = str(receita_cod)[:prefix_len]
-                if len(prefix) < prefix_len:
+                if len(prefix) < prefix_len or prefix in labels_by_prefix:
                     continue
-                if prefix in by_prefix:
+                labels_by_prefix[prefix] = (receita_nome or "").strip() or prefix
+
+            by_prefix = {}
+            for receita_cod, receita_nome in all_prefix_rows:
+                prefix = str(receita_cod)[:prefix_len]
+                if len(prefix) < prefix_len or prefix in by_prefix:
                     continue
-                label = (receita_nome or "").strip() or prefix
-                by_prefix[prefix] = label
+                fallback = (receita_nome or "").strip() or prefix
+                by_prefix[prefix] = labels_by_prefix.get(prefix, fallback)
+
             return [(p, f"{p} - {by_prefix[p]}") for p in sorted(by_prefix.keys())]
 
         def queryset(self, request, queryset):
@@ -81,15 +107,16 @@ def make_item_prefix_filter(*, title: str, prefix_len: int, nivel_numero: int):
 
 
 CategoriaPrefixFilter = make_item_prefix_filter(
-    title="Por Categoria",
+    title="Categoria",
     prefix_len=1,
     nivel_numero=1,
 )
 
 CategoriaOrigemPrefixFilter = make_item_prefix_filter(
-    title="Por Categoria-Origem",
+    title="Categoria-Origem",
     prefix_len=2,
     nivel_numero=2,
+    collect_prefixes_from_all_levels=True,
 )
 
 
@@ -101,7 +128,7 @@ class NivelHierarquicoRecenteFilter(admin.SimpleListFilter):
     de versões históricas no painel lateral.
     """
 
-    title = "Por Nível Hierárquico"
+    title = "Nível Hierárquico"
     parameter_name = "nivel_numero_recente"
 
     def lookups(self, request, model_admin):
