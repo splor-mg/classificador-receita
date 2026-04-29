@@ -142,6 +142,8 @@
     var idFieldName = '{{ id_field_name|default:"" }}';
     var itemReceitaCodMasks = JSON.parse('{{ item_receita_cod_masks_json|default:"[]"|escapejs }}');
     var itemParentLookupUrl = '{{ item_parent_lookup_url|default:"" }}';
+    var itemClassificacaoDigitLimitLookupUrl = '{{ item_classificacao_digit_limit_lookup_url|default:"" }}';
+    var receitaCodDigitLimitCache = {};
 
     function parseDateValue(value) {
       if (!value) {
@@ -236,6 +238,24 @@
       return parts.join('.');
     }
 
+    function formatReceitaCodByMask(rawValue, digitMask) {
+      var codigo = stripReceitaCodFormatting(rawValue);
+      if (!codigo || !digitMask || !digitMask.length) {
+        return codigo;
+      }
+      var totalDigits = digitMask.reduce(function(sum, current) { return sum + current; }, 0);
+      if (totalDigits !== codigo.length) {
+        return codigo;
+      }
+      var parts = [];
+      var pos = 0;
+      digitMask.forEach(function(size) {
+        parts.push(codigo.slice(pos, pos + size));
+        pos += size;
+      });
+      return parts.join('.');
+    }
+
     function getCurrentVigenciaIsoValues() {
       var vigInicioInput = document.querySelector('input[name="data_vigencia_inicio"]');
       var vigFimInput = document.querySelector('input[name="data_vigencia_fim"]');
@@ -282,6 +302,87 @@
         segments[i] = '0'.repeat(digitMask[i]);
       }
       return segments.join('');
+    }
+
+    function getCurrentClassificacaoPk() {
+      var input = document.getElementById('id_classificacao_id');
+      return ((input && input.value) || '').trim();
+    }
+
+    function getReceitaCodFieldRow(input) {
+      return input ? (input.closest('.form-row') || input.closest('div')) : null;
+    }
+
+    function clearReceitaCodMessages(fieldRow) {
+      if (!fieldRow) return;
+      var info = fieldRow.querySelector('.receita-cod-autofill-info');
+      if (info) info.remove();
+      var err = fieldRow.querySelector('.receita-cod-length-error');
+      if (err) err.remove();
+    }
+
+    function showReceitaCodInfo(fieldRow, text) {
+      if (!fieldRow || !text) return;
+      var ul = document.createElement('ul');
+      ul.className = 'messagelist';
+      ul.style.marginTop = '6px';
+      var li = document.createElement('li');
+      li.className = 'info receita-cod-autofill-info';
+      li.textContent = text;
+      ul.appendChild(li);
+      fieldRow.appendChild(ul);
+    }
+
+    function showReceitaCodWarning(fieldRow, text) {
+      if (!fieldRow || !text) return;
+      var ul = document.createElement('ul');
+      ul.className = 'messagelist';
+      ul.style.marginTop = '6px';
+      var li = document.createElement('li');
+      li.className = 'warning receita-cod-autofill-info';
+      li.textContent = text;
+      ul.appendChild(li);
+      fieldRow.appendChild(ul);
+    }
+
+    function showReceitaCodError(fieldRow, text) {
+      if (!fieldRow || !text) return;
+      var ul = document.createElement('ul');
+      ul.className = 'errorlist receita-cod-length-error';
+      var li = document.createElement('li');
+      li.textContent = text;
+      ul.appendChild(li);
+      fieldRow.insertBefore(ul, fieldRow.firstChild);
+    }
+
+    function fetchReceitaCodDigitLimit(classificacaoPk, inputLength) {
+      if (!itemClassificacaoDigitLimitLookupUrl) {
+        return Promise.resolve({ numero_digitos: null });
+      }
+      var cacheKey = (classificacaoPk || '__fallback__') + '::' + String(inputLength || '');
+      if (Object.prototype.hasOwnProperty.call(receitaCodDigitLimitCache, cacheKey)) {
+        return Promise.resolve(receitaCodDigitLimitCache[cacheKey]);
+      }
+      var url = itemClassificacaoDigitLimitLookupUrl;
+      var q = [];
+      if (classificacaoPk) {
+        q.push('classificacao_pk=' + encodeURIComponent(classificacaoPk));
+      }
+      if (inputLength) {
+        q.push('input_length=' + encodeURIComponent(String(inputLength)));
+      }
+      if (q.length) {
+        url += '?' + q.join('&');
+      }
+      return fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          receitaCodDigitLimitCache[cacheKey] = data || { numero_digitos: null };
+          return receitaCodDigitLimitCache[cacheKey];
+        })
+        .catch(function() {
+          return { numero_digitos: null };
+        });
     }
 
     var idFields = document.querySelectorAll(
@@ -344,6 +445,82 @@
     var nivelIdInput = document.getElementById('id_nivel_id');
     var parentItemIdInput = document.getElementById('id_parent_item_id');
     if (receitaCodInput) {
+      var hasAutoAdjustedOnce = false;
+      var disableFutureAutoAdjust = false;
+
+      function applyReceitaCodDigitRules(triggerName) {
+        var fieldRow = getReceitaCodFieldRow(receitaCodInput);
+        clearReceitaCodMessages(fieldRow);
+
+        var rawCodigo = stripReceitaCodFormatting(receitaCodInput.value);
+        if (!rawCodigo) {
+          receitaCodInput.setCustomValidity('');
+          return Promise.resolve({ isValid: true });
+        }
+
+        return fetchReceitaCodDigitLimit(getCurrentClassificacaoPk(), rawCodigo.length).then(function(payload) {
+          var limit = payload && payload.numero_digitos ? Number(payload.numero_digitos) : null;
+          var maskFromClassificacao = payload && payload.digit_mask ? payload.digit_mask : null;
+          var source = payload && payload.source ? payload.source : '';
+          var normalized = rawCodigo;
+
+          if (limit && normalized.length > limit) {
+            var msg;
+            if (source === 'fallback_default_latest_active_today') {
+              msg = 'Código informado tem ' + normalized.length + ' dígitos, mas a estrutura mais recente da classificação é de ' + limit + ' dígitos.';
+            } else {
+              msg = 'Código informado tem ' + normalized.length + ' dígitos, mas o limite da classificação é ' + limit + '.';
+            }
+            receitaCodInput.setCustomValidity(msg);
+            showReceitaCodError(fieldRow, msg);
+            return { isValid: false };
+          }
+
+          receitaCodInput.setCustomValidity('');
+
+          if (limit && normalized.length < limit) {
+            // Após edição manual, evitamos autocorreção em blur/input comum.
+            // Exceção: quando a classificação muda, aplicamos autocorreção para
+            // alinhar o código ao tamanho exigido pela classificação selecionada.
+            if (disableFutureAutoAdjust && triggerName !== 'classificacao_change') {
+              var mismatchMsg;
+              if (source === 'fallback_default_latest_active_today') {
+                mismatchMsg = 'Código informado tem ' + normalized.length + ' dígitos, mas a estrutura mais recente da classificação é de ' + limit + ' dígitos.';
+              } else {
+                mismatchMsg = 'Código informado tem ' + normalized.length + ' dígitos, mas o limite da classificação é ' + limit + '.';
+              }
+              receitaCodInput.setCustomValidity(mismatchMsg);
+              showReceitaCodError(fieldRow, mismatchMsg);
+              return { isValid: false };
+            }
+            normalized = normalized.padEnd(limit, '0');
+            hasAutoAdjustedOnce = true;
+            showReceitaCodInfo(
+              fieldRow,
+              triggerName === 'classificacao_change'
+                ? 'Código ajustado com zeros canônicos para atender a classificação selecionada (' + limit + ' dígitos).'
+                : 'Código completado com zeros à direita até ' + limit + ' dígitos canônicos.'
+            );
+          }
+
+          var formatted = formatReceitaCodByMask(normalized, maskFromClassificacao);
+          if (formatted === normalized) {
+            formatted = formatReceitaCodValue(normalized);
+          }
+          if (payload && payload.warning) {
+            showReceitaCodWarning(fieldRow, payload.warning);
+          }
+          if (receitaCodInput.value !== formatted) {
+            receitaCodInput.value = formatted;
+            receitaCodInput.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+          if (triggerName === 'submit' && receitaCodInput.reportValidity) {
+            receitaCodInput.reportValidity();
+          }
+          return { isValid: true };
+        });
+      }
+
       function syncItemIdPreview() {
         if (itemIdInput) {
           itemIdInput.value = buildItemSemanticId(receitaCodInput.value);
@@ -395,29 +572,78 @@
       });
 
       receitaCodInput.addEventListener('blur', function() {
-        var formatted = formatReceitaCodValue(receitaCodInput.value);
-        if (formatted !== receitaCodInput.value) {
-          receitaCodInput.value = formatted;
-          receitaCodInput.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-        syncItemIdPreview();
-        maybeSuggestParentItem();
+        applyReceitaCodDigitRules('blur').then(function(result) {
+          syncItemIdPreview();
+          if (result && result.isValid) {
+            maybeSuggestParentItem();
+          }
+        });
       });
 
-      receitaCodInput.addEventListener('input', syncItemIdPreview);
+      receitaCodInput.addEventListener('input', function() {
+        if (hasAutoAdjustedOnce) {
+          disableFutureAutoAdjust = true;
+        }
+        syncItemIdPreview();
+      });
       receitaCodInput.addEventListener('change', syncItemIdPreview);
 
-      if (receitaCodInput.value && itemReceitaCodMasks.length) {
-        receitaCodInput.value = formatReceitaCodValue(receitaCodInput.value);
+      var classificacaoIdInput = document.getElementById('id_classificacao_id');
+      var lastClassificacaoPk = (classificacaoIdInput && classificacaoIdInput.value) || '';
+      function handleClassificacaoChange() {
+        applyReceitaCodDigitRules('classificacao_change').then(function(result) {
+          syncItemIdPreview();
+          if (result && result.isValid) {
+            maybeSuggestParentItem();
+          }
+        });
       }
-      syncItemIdPreview();
-      maybeSuggestParentItem();
+      if (classificacaoIdInput) {
+        classificacaoIdInput.addEventListener('change', function() {
+          lastClassificacaoPk = classificacaoIdInput.value || '';
+          handleClassificacaoChange();
+        });
+        // Raw-id popup nem sempre dispara `change`; monitoramos o valor efetivo.
+        window.setInterval(function() {
+          var currentPk = classificacaoIdInput.value || '';
+          if (currentPk !== lastClassificacaoPk) {
+            lastClassificacaoPk = currentPk;
+            handleClassificacaoChange();
+          }
+        }, 350);
+      }
+
+      applyReceitaCodDigitRules('init').then(function(result) {
+        syncItemIdPreview();
+        if (result && result.isValid) {
+          maybeSuggestParentItem();
+        }
+      });
 
       var adminForm = receitaCodInput.form;
       if (adminForm) {
-        adminForm.addEventListener('submit', function() {
-          receitaCodInput.value = stripReceitaCodFormatting(receitaCodInput.value);
-          syncItemIdPreview();
+        var allowNativeSubmit = false;
+        adminForm.addEventListener('submit', function(event) {
+          if (allowNativeSubmit) {
+            return;
+          }
+          event.preventDefault();
+          applyReceitaCodDigitRules('submit').then(function(result) {
+            if (!result || !result.isValid) {
+              if (receitaCodInput.reportValidity) {
+                receitaCodInput.reportValidity();
+              }
+              return;
+            }
+            receitaCodInput.value = stripReceitaCodFormatting(receitaCodInput.value);
+            syncItemIdPreview();
+            allowNativeSubmit = true;
+            if (adminForm.requestSubmit) {
+              adminForm.requestSubmit();
+            } else {
+              adminForm.submit();
+            }
+          });
         });
       }
     }

@@ -1,3 +1,5 @@
+from datetime import date
+
 from django import forms
 from django.forms import RadioSelect, TextInput, Textarea
 
@@ -6,7 +8,12 @@ from apps.core.models import (
     Classificacao,
     NivelHierarquico,
     ItemClassificacao,
+    TRANSACTION_TIME_SENTINEL,
     item_semantic_id_from_receita_cod,
+)
+from apps.core.code_mask import (
+    get_latest_active_vigente_classificacao,
+    get_mask_from_classificacao_estrutura,
 )
 from apps.core.domain_choices import ORGAOS_ENTIDADES_GROUPED_CHOICES
 from apps.core.null_normalization import normalize_text_field_value
@@ -187,6 +194,50 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
 
     def clean_item_gerado(self):
         return self.cleaned_data["item_gerado"] == "sim"
+
+    def _get_receita_cod_digit_rule(self, classificacao):
+        if classificacao is None:
+            classificacao = get_latest_active_vigente_classificacao(date.today())
+        mask, estrutura = get_mask_from_classificacao_estrutura(classificacao, date.today())
+        expected_digits = sum(mask) if mask else None
+        return expected_digits, estrutura
+
+    def clean(self):
+        cleaned = super().clean()
+
+        receita_cod = (cleaned.get("receita_cod") or "").strip().replace(".", "")
+        classificacao = cleaned.get("classificacao_id")
+        expected_digits, estrutura = self._get_receita_cod_digit_rule(classificacao)
+
+        if receita_cod and not expected_digits:
+            self.add_error(
+                "receita_cod",
+                (
+                    "Não foi possível determinar a estrutura ativa da classificação "
+                    "(`estrutura_codigo`) para validar o código canônico."
+                ),
+            )
+            return cleaned
+
+        if receita_cod and expected_digits:
+            current_len = len(receita_cod)
+            if current_len > expected_digits:
+                self.add_error(
+                    "receita_cod",
+                    (
+                        f"Código informado tem {current_len} dígitos, mas a classificação "
+                        f"selecionada exige {expected_digits} dígitos pela estrutura "
+                        f"{estrutura or 'vigente'}. Ajuste o código para continuar."
+                    ),
+                )
+            elif current_len < expected_digits:
+                # Submit resiliente: completa com zeros canônicos para manter consistência
+                # com o limite vigente/selecionado.
+                receita_cod = receita_cod.ljust(expected_digits, "0")
+
+            cleaned["receita_cod"] = receita_cod
+
+        return cleaned
 
     class Meta:
         model = ItemClassificacao

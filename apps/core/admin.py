@@ -26,6 +26,9 @@ from apps.core.admin_formatters import (
     format_receita_cod_by_vigencia,
     get_active_vigencia_masks,
 )
+from apps.core.code_mask import (
+    resolve_receita_cod_mask_context,
+)
 
 from apps.core.admin_filters import (
     BaseLegalTecnicaIdFilter,
@@ -381,6 +384,11 @@ class ItemClassificacaoAdmin(
         urls = super().get_urls()
         custom = [
             path(
+                "lookup-classificacao-digit-limit/",
+                self.admin_site.admin_view(self.lookup_classificacao_digit_limit_view),
+                name=f"{self.model._meta.app_label}_{self.model._meta.model_name}_lookup_classificacao_digit_limit",
+            ),
+            path(
                 "lookup-parent-by-code/",
                 self.admin_site.admin_view(self.lookup_parent_by_code_view),
                 name=f"{self.model._meta.app_label}_{self.model._meta.model_name}_lookup_parent_by_code",
@@ -398,7 +406,31 @@ class ItemClassificacaoAdmin(
         context["item_parent_lookup_url"] = reverse(
             f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_lookup_parent_by_code"
         )
+        context["item_classificacao_digit_limit_lookup_url"] = reverse(
+            f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_lookup_classificacao_digit_limit"
+        )
         return super().render_change_form(request, context, add, change, form_url, obj)
+
+    def lookup_classificacao_digit_limit_view(self, request):
+        classificacao_pk = (request.GET.get("classificacao_pk") or "").strip()
+        input_length_raw = (request.GET.get("input_length") or "").strip()
+        input_length = int(input_length_raw) if input_length_raw.isdigit() else None
+        target = None
+
+        if classificacao_pk:
+            target = Classificacao.objects.filter(pk=classificacao_pk).only("pk", "numero_digitos").first()
+        ctx = resolve_receita_cod_mask_context(target, input_length=input_length, on_date=date.today())
+
+        return JsonResponse(
+            {
+                "numero_digitos": ctx["numero_digitos"],
+                "digit_mask": ctx["digit_mask"],
+                "estrutura_codigo": ctx["estrutura_codigo"],
+                "source": ctx["source"],
+                "warning": ctx["warning"],
+                "match_count": ctx["match_count"],
+            }
+        )
 
     def lookup_parent_by_code_view(self, request):
         code = (request.GET.get("code") or "").replace(".", "").strip()
