@@ -32,6 +32,8 @@ from apps.core.code_mask import (
 
 from apps.core.admin_filters import (
     BaseLegalTecnicaIdFilter,
+    CategoriaOrigemPrefixFilter,
+    CategoriaPrefixFilter,
     SerieIdFilter,
     SerieIdFKFilter,
     ClassificacaoIdFilter,
@@ -298,6 +300,8 @@ class ItemClassificacaoAdmin(
     ]
     list_filter = [
         RegistroAtivoFilter,
+        CategoriaPrefixFilter,
+        CategoriaOrigemPrefixFilter,
         ItemIdFilter,
         'matriz',
         'nivel_id',

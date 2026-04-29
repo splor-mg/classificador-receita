@@ -5,8 +5,10 @@ As fábricas genéricas ficam em ``admin_mixins``; aqui ficam apenas as classes
 instanciadas para este domínio (IDs de negócio e FKs com rótulo semântico).
 """
 
+from django.contrib import admin
+
 from apps.core.admin_mixins import make_filter_fk_id, make_filter_local_id
-from apps.core.models import Classificacao, NivelHierarquico
+from apps.core.models import Classificacao, ItemClassificacao, NivelHierarquico, TRANSACTION_TIME_SENTINEL
 
 
 #---------------------------------------------------------------------------------------------------
@@ -25,4 +27,67 @@ BaseLegalTecnicaIdFilter = make_filter_local_id("base_legal_tecnica_id", title="
 
 SerieIdFKFilter = make_filter_fk_id(Classificacao, "serie_id")
 NivelIdFKFilter = make_filter_fk_id(NivelHierarquico, "classificacao_id"
+)
+
+
+def make_item_prefix_filter(*, title: str, prefix_len: int, nivel_numero: int):
+    """
+    Filtro lateral para ItemClassificacao baseado em prefixo de `receita_cod`.
+
+    - opções: itens ativos (`data_registro_fim` sentinela) no nível informado;
+    - rótulo: `receita_nome` mais recente por prefixo (opção B).
+    """
+    if prefix_len <= 0:
+        raise ValueError("prefix_len deve ser maior que zero")
+
+    class ItemPrefixFilter(admin.SimpleListFilter):
+        title = ""
+        parameter_name = ""
+
+        def lookups(self, request, model_admin):
+            qs = (
+                ItemClassificacao.objects.filter(
+                    data_registro_fim=TRANSACTION_TIME_SENTINEL,
+                    nivel_id__nivel_numero=nivel_numero,
+                )
+                .exclude(receita_cod__isnull=True)
+                .exclude(receita_cod__exact="")
+                .order_by("-data_vigencia_inicio", "-data_registro_inicio", "-pk")
+                .values_list("receita_cod", "receita_nome")
+            )
+            by_prefix = {}
+            for receita_cod, receita_nome in qs:
+                prefix = str(receita_cod)[:prefix_len]
+                if len(prefix) < prefix_len:
+                    continue
+                if prefix in by_prefix:
+                    continue
+                label = (receita_nome or "").strip() or prefix
+                by_prefix[prefix] = label
+            return [(p, f"{p} - {by_prefix[p]}") for p in sorted(by_prefix.keys())]
+
+        def queryset(self, request, queryset):
+            value = self.value()
+            if value:
+                return queryset.filter(
+                    data_registro_fim=TRANSACTION_TIME_SENTINEL,
+                    receita_cod__startswith=value,
+                )
+            return queryset
+
+    ItemPrefixFilter.title = title
+    ItemPrefixFilter.parameter_name = f"prefix_{prefix_len}_nivel_{nivel_numero}"
+    return ItemPrefixFilter
+
+
+CategoriaPrefixFilter = make_item_prefix_filter(
+    title="Por Categoria",
+    prefix_len=1,
+    nivel_numero=1,
+)
+
+CategoriaOrigemPrefixFilter = make_item_prefix_filter(
+    title="Por Categoria-Origem",
+    prefix_len=2,
+    nivel_numero=2,
 )
