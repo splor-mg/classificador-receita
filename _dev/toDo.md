@@ -5,7 +5,7 @@
       x pré-preenchimento de códigos até chegar a 13 dígitos e erro se houver mais dígitos que o máximo
       - considerando que foi implementada máscara conforme última estrutura vigente, avaliar a adição de item de classificação vir com campo "Classificacao" pré preenchida com a última classificação vigente.
       - não permitir FK de Nivel tenha classificacao_id diferente da Classificacao_id do registro
-      - Nivel 1 tem sempre que ser Matriz
+      x Nivel 1 tem sempre que ser Matriz
       x Filtro por categoria e categoria-origem
       - investigar o porquê a FK Nivel está fazendo associação espúria com registro inativo
       - verificar a ordenação do db de ItemClassificação, já que as novas receitas criadas, independente do código, estão vindo por último
