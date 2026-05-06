@@ -13,7 +13,7 @@ from typing import List, Optional
 
 from django.core.exceptions import ValidationError
 
-from apps.core.models import NivelHierarquico
+from apps.core.models import Classificacao, NivelHierarquico
 
 
 def _canonical_zero_segment(segment: str) -> bool:
@@ -43,9 +43,26 @@ def digit_mask_for_classificacao_vigencia(
     if vig_inicio is None or vig_fim is None or classificacao_pk is None:
         return None
 
+    class_row = (
+        Classificacao.objects.filter(pk=classificacao_pk)
+        .values("classificacao_ref", "classificacao_id")
+        .first()
+    )
+    if not class_row:
+        return None
+    class_ref = class_row.get("classificacao_ref")
+    class_semantic = class_row.get("classificacao_id")
+    identity_filter = {}
+    if class_ref not in (None, ""):
+        identity_filter["classificacao_id__classificacao_ref"] = class_ref
+    elif class_semantic not in (None, ""):
+        identity_filter["classificacao_id__classificacao_id"] = class_semantic
+    else:
+        identity_filter["classificacao_id"] = classificacao_pk
+
     rows = (
         NivelHierarquico.objects.filter(
-            classificacao_id=classificacao_pk,
+            **identity_filter,
             data_vigencia_inicio__lte=vig_inicio,
             data_vigencia_fim__gte=vig_fim,
         )

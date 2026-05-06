@@ -44,9 +44,18 @@ def get_mask_from_classificacao_estrutura(
     if classificacao is None:
         return [], ""
     ref_date = on_date or date.today()
+    class_ref = getattr(classificacao, "classificacao_ref", None)
+    class_semantic = getattr(classificacao, "classificacao_id", None)
+    identity_filter = {}
+    if class_ref not in (None, ""):
+        identity_filter["classificacao_id__classificacao_ref"] = class_ref
+    elif class_semantic not in (None, ""):
+        identity_filter["classificacao_id__classificacao_id"] = class_semantic
+    else:
+        identity_filter["classificacao_id"] = classificacao
     nivel = (
         NivelHierarquico.objects.filter(
-            classificacao_id=classificacao,
+            **identity_filter,
             data_registro_fim=TRANSACTION_TIME_SENTINEL,
             data_vigencia_inicio__lte=ref_date,
             data_vigencia_fim__gte=ref_date,
@@ -62,7 +71,7 @@ def get_mask_from_classificacao_estrutura(
         # da vigência corrente.
         nivel = (
             NivelHierarquico.objects.filter(
-                classificacao_id=classificacao,
+                **identity_filter,
                 data_registro_fim=TRANSACTION_TIME_SENTINEL,
             )
             .exclude(estrutura_codigo__isnull=True)
