@@ -8,6 +8,7 @@ from django.utils import timezone
 from apps.core.models_base_legal import BaseLegalTecnica, identifier_validator
 from apps.core.domain_choices import ORGAOS_ENTIDADES_CHOICES
 from apps.core.vigencia_fk_validation import validate_vigencia_contained_in_fk_targets
+from apps.core.temporal_fk_resolution import apply_temporal_fk_resolution
 
 
 # Constantes para valores sentinelas (conforme ADR-001)
@@ -85,6 +86,7 @@ class BitemporalModel(models.Model):
                 raise ValidationError({
                     'data_registro_fim': 'Data de fim do registro deve ser posterior à data de início.'
                 })
+        apply_temporal_fk_resolution(self)
 
 
 class SerieClassificacao(BitemporalModel):

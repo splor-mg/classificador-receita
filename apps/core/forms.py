@@ -17,6 +17,10 @@ from apps.core.code_mask import (
 )
 from apps.core.domain_choices import ORGAOS_ENTIDADES_GROUPED_CHOICES
 from apps.core.null_normalization import normalize_text_field_value
+from apps.core.temporal_fk_resolution import (
+    get_temporal_fk_field_names,
+    resolve_active_compatible_fk,
+)
 
 
 class PlaceholderNullNormalizationFormMixin:
@@ -39,6 +43,23 @@ class PlaceholderNullNormalizationFormMixin:
             if normalized is None and self.initial.get(field_name) is not None:
                 self.initial[field_name] = ""
                 self.fields[field_name].initial = ""
+        self._align_temporal_fk_initials()
+
+    def _align_temporal_fk_initials(self):
+        """
+        Em formulários de edição, alinha FKs temporais para a versão ativa/vigente.
+        """
+        instance = getattr(self, "instance", None)
+        if not instance or not getattr(instance, "pk", None):
+            return
+        for field_name in get_temporal_fk_field_names(instance):
+            if field_name not in self.fields:
+                continue
+            resolved = resolve_active_compatible_fk(instance, field_name)
+            if resolved is None:
+                continue
+            self.initial[field_name] = resolved.pk
+            self.fields[field_name].initial = resolved.pk
 
     def clean(self):
         cleaned = super().clean()
@@ -210,6 +231,23 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
 
     def clean(self):
         cleaned = super().clean()
+
+        proxy = self.instance if self.instance is not None else ItemClassificacao()
+        proxy.data_vigencia_inicio = cleaned.get("data_vigencia_inicio")
+        proxy.data_vigencia_fim = cleaned.get("data_vigencia_fim")
+        for field_name in get_temporal_fk_field_names(proxy):
+            target = cleaned.get(field_name)
+            if target is None:
+                continue
+            setattr(proxy, field_name, target)
+            resolved = resolve_active_compatible_fk(proxy, field_name)
+            if resolved is None:
+                self.add_error(
+                    field_name,
+                    "Não foi possível localizar registro ativo e vigente compatível para a referência selecionada.",
+                )
+                continue
+            cleaned[field_name] = resolved
 
         nivel = cleaned.get("nivel_id")
         is_matriz = cleaned.get("matriz")
