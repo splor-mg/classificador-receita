@@ -448,17 +448,20 @@
       var hasAutoAdjustedOnce = false;
       var disableFutureAutoAdjust = false;
 
-      function applyReceitaCodDigitRules(triggerName) {
-        var fieldRow = getReceitaCodFieldRow(receitaCodInput);
-        clearReceitaCodMessages(fieldRow);
+      var pendingCodeValidationPromise = null;
 
-        var rawCodigo = stripReceitaCodFormatting(receitaCodInput.value);
-        if (!rawCodigo) {
-          receitaCodInput.setCustomValidity('');
-          return Promise.resolve({ isValid: true });
-        }
+      function runCodeDigitValidation(triggerName) {
+        var validationFlow = Promise.resolve().then(function() {
+          var fieldRow = getReceitaCodFieldRow(receitaCodInput);
+          clearReceitaCodMessages(fieldRow);
 
-        return fetchReceitaCodDigitLimit(getCurrentClassificacaoPk(), rawCodigo.length).then(function(payload) {
+          var rawCodigo = stripReceitaCodFormatting(receitaCodInput.value);
+          if (!rawCodigo) {
+            receitaCodInput.setCustomValidity('');
+            return { isValid: true };
+          }
+
+          return fetchReceitaCodDigitLimit(getCurrentClassificacaoPk(), rawCodigo.length).then(function(payload) {
           var limit = payload && payload.numero_digitos ? Number(payload.numero_digitos) : null;
           var maskFromClassificacao = payload && payload.digit_mask ? payload.digit_mask : null;
           var source = payload && payload.source ? payload.source : '';
@@ -519,6 +522,18 @@
           }
           return { isValid: true };
         });
+        });
+
+        if (triggerName === 'submit') {
+          if (pendingCodeValidationPromise) {
+            return pendingCodeValidationPromise;
+          }
+          pendingCodeValidationPromise = validationFlow.finally(function() {
+            pendingCodeValidationPromise = null;
+          });
+          return pendingCodeValidationPromise;
+        }
+        return validationFlow;
       }
 
       function syncItemIdPreview() {
@@ -572,7 +587,7 @@
       });
 
       receitaCodInput.addEventListener('blur', function() {
-        applyReceitaCodDigitRules('blur').then(function(result) {
+        runCodeDigitValidation('blur').then(function(result) {
           syncItemIdPreview();
           if (result && result.isValid) {
             maybeSuggestParentItem();
@@ -591,7 +606,7 @@
       var classificacaoIdInput = document.getElementById('id_classificacao_id');
       var lastClassificacaoPk = (classificacaoIdInput && classificacaoIdInput.value) || '';
       function handleClassificacaoChange() {
-        applyReceitaCodDigitRules('classificacao_change').then(function(result) {
+        runCodeDigitValidation('classificacao_change').then(function(result) {
           syncItemIdPreview();
           if (result && result.isValid) {
             maybeSuggestParentItem();
@@ -613,7 +628,7 @@
         }, 350);
       }
 
-      applyReceitaCodDigitRules('init').then(function(result) {
+      runCodeDigitValidation('init').then(function(result) {
         syncItemIdPreview();
         if (result && result.isValid) {
           maybeSuggestParentItem();
@@ -623,27 +638,59 @@
       var adminForm = receitaCodInput.form;
       if (adminForm) {
         var allowNativeSubmit = false;
+        var isSubmitValidationRunning = false;
+        var defaultSubmitButton = adminForm.querySelector('input[type="submit"][name="_save"]');
         adminForm.addEventListener('submit', function(event) {
           if (allowNativeSubmit) {
             return;
           }
+          var initialSubmitter = event.submitter || defaultSubmitButton;
           event.preventDefault();
-          applyReceitaCodDigitRules('submit').then(function(result) {
-            if (!result || !result.isValid) {
-              if (receitaCodInput.reportValidity) {
-                receitaCodInput.reportValidity();
+          if (isSubmitValidationRunning) {
+            return;
+          }
+          isSubmitValidationRunning = true;
+          if (defaultSubmitButton) {
+            defaultSubmitButton.disabled = true;
+          }
+          runCodeDigitValidation('submit')
+            .then(function(result) {
+              if (!result || !result.isValid) {
+                if (receitaCodInput.reportValidity) {
+                  receitaCodInput.reportValidity();
+                }
+                return;
               }
-              return;
-            }
-            receitaCodInput.value = stripReceitaCodFormatting(receitaCodInput.value);
-            syncItemIdPreview();
-            allowNativeSubmit = true;
-            if (adminForm.requestSubmit) {
-              adminForm.requestSubmit();
-            } else {
-              adminForm.submit();
-            }
-          });
+              receitaCodInput.value = stripReceitaCodFormatting(receitaCodInput.value);
+              syncItemIdPreview();
+              allowNativeSubmit = true;
+              if (defaultSubmitButton) {
+                defaultSubmitButton.disabled = false;
+              }
+              if (initialSubmitter && initialSubmitter.name) {
+                var submitterHidden = document.createElement('input');
+                submitterHidden.type = 'hidden';
+                submitterHidden.name = initialSubmitter.name;
+                submitterHidden.value = initialSubmitter.value || '1';
+                submitterHidden.setAttribute('data-temp-submitter', '1');
+                adminForm.appendChild(submitterHidden);
+              }
+              if (typeof HTMLFormElement !== 'undefined' && HTMLFormElement.prototype.submit) {
+                HTMLFormElement.prototype.submit.call(adminForm);
+              } else {
+                if (adminForm.requestSubmit) {
+                  adminForm.requestSubmit();
+                } else {
+                  adminForm.submit();
+                }
+              }
+            })
+            .finally(function() {
+              if (!allowNativeSubmit && defaultSubmitButton) {
+                defaultSubmitButton.disabled = false;
+              }
+              isSubmitValidationRunning = false;
+            });
         });
       }
     }
