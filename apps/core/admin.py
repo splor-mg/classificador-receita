@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 import json
 
 from django.contrib import admin
@@ -29,6 +29,7 @@ from apps.core.admin_formatters import (
 from apps.core.code_mask import (
     resolve_receita_cod_mask_context,
 )
+from apps.core.parent_item_validation import digit_mask_for_classificacao_vigencia
 
 from apps.core.admin_filters import (
     BaseLegalTecnicaIdFilter,
@@ -390,6 +391,11 @@ class ItemClassificacaoAdmin(
         urls = super().get_urls()
         custom = [
             path(
+                "lookup-hierarchy-by-code/",
+                self.admin_site.admin_view(self.lookup_hierarchy_by_code_view),
+                name=f"{self.model._meta.app_label}_{self.model._meta.model_name}_lookup_hierarchy_by_code",
+            ),
+            path(
                 "lookup-classificacao-digit-limit/",
                 self.admin_site.admin_view(self.lookup_classificacao_digit_limit_view),
                 name=f"{self.model._meta.app_label}_{self.model._meta.model_name}_lookup_classificacao_digit_limit",
@@ -411,6 +417,9 @@ class ItemClassificacaoAdmin(
         context["item_receita_cod_masks_json"] = json.dumps(get_active_vigencia_masks())
         context["item_parent_lookup_url"] = reverse(
             f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_lookup_parent_by_code"
+        )
+        context["item_hierarchy_lookup_url"] = reverse(
+            f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_lookup_hierarchy_by_code"
         )
         context["item_classificacao_digit_limit_lookup_url"] = reverse(
             f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_lookup_classificacao_digit_limit"
@@ -469,6 +478,228 @@ class ItemClassificacaoAdmin(
                 "semantic_value": obj.receita_cod or "",
                 "display_label": f"{obj.receita_cod} - {obj.receita_nome or obj.item_id or ''}".strip(" -"),
                 "link_url": link_url,
+            }
+        )
+
+    def lookup_hierarchy_by_code_view(self, request):
+        def parse_date(raw):
+            value = (raw or "").strip()
+            if not value:
+                return None
+            for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
+                try:
+                    return datetime.strptime(value, fmt).date()
+                except ValueError:
+                    continue
+            return None
+
+        raw_code = (request.GET.get("code") or "").replace(".", "").strip()
+        classificacao_pk = (request.GET.get("classificacao_pk") or "").strip()
+        vigencia_inicio = parse_date(request.GET.get("vigencia_inicio"))
+        vigencia_fim = parse_date(request.GET.get("vigencia_fim"))
+
+        if not raw_code:
+            return JsonResponse({"ok": False, "message": "Informe o código canônico."})
+        if not vigencia_inicio or not vigencia_fim:
+            return JsonResponse({"ok": False, "message": "Informe o período de vigência para derivar nível e item pai."})
+        if vigencia_fim < vigencia_inicio:
+            return JsonResponse({"ok": False, "message": "Período de vigência inválido: data fim anterior à data de início."})
+        if not raw_code.isdigit():
+            return JsonResponse({"ok": False, "message": "Código canônico inválido: utilize apenas dígitos."})
+
+        class_pk = None
+        class_identity_filters = None
+        class_obj = None
+        effective_vigencia_inicio = vigencia_inicio
+        effective_vigencia_fim = vigencia_fim
+        vigencia_overridden = False
+        if classificacao_pk:
+            try:
+                class_pk = int(classificacao_pk)
+            except ValueError:
+                return JsonResponse({"ok": False, "message": "Classificação inválida."})
+            class_obj = Classificacao.objects.filter(pk=class_pk).only(
+                "pk", "classificacao_ref", "classificacao_id", "data_vigencia_inicio", "data_vigencia_fim"
+            ).first()
+            if not class_obj:
+                return JsonResponse({"ok": False, "message": "Classificação inválida."})
+            class_ref = getattr(class_obj, "classificacao_ref", None)
+            class_semantic = getattr(class_obj, "classificacao_id", None)
+            class_identity_filters = {}
+            if class_ref not in (None, ""):
+                class_identity_filters["classificacao_id__classificacao_ref"] = class_ref
+            elif class_semantic not in (None, ""):
+                class_identity_filters["classificacao_id__classificacao_id"] = class_semantic
+            else:
+                class_identity_filters["classificacao_id"] = class_pk
+            class_vig_inicio = getattr(class_obj, "data_vigencia_inicio", None)
+            class_vig_fim = getattr(class_obj, "data_vigencia_fim", None)
+            if class_vig_inicio and class_vig_fim:
+                if not (class_vig_inicio <= vigencia_inicio and class_vig_fim >= vigencia_fim):
+                    effective_vigencia_inicio = class_vig_inicio
+                    effective_vigencia_fim = class_vig_fim
+                    vigencia_overridden = True
+
+        mask = None
+        if class_pk is not None:
+            mask = digit_mask_for_classificacao_vigencia(
+                class_pk, effective_vigencia_inicio, effective_vigencia_fim
+            )
+        if not mask:
+            # Fallback default: estrutura vigente mais recente no contexto atual.
+            ctx = resolve_receita_cod_mask_context(None, input_length=len(raw_code), on_date=date.today())
+            mask = ctx.get("digit_mask") if ctx else None
+        if not mask:
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "message": (
+                        "Não foi possível determinar a estrutura de níveis para o contexto informado."
+                    ),
+                }
+            )
+
+        total_digits = sum(mask)
+        normalized_code = raw_code
+        if len(normalized_code) < total_digits:
+            normalized_code = normalized_code.ljust(total_digits, "0")
+        elif len(normalized_code) > total_digits:
+            extra_tail = normalized_code[total_digits:]
+            if extra_tail and set(extra_tail) != {"0"}:
+                return JsonResponse(
+                    {
+                        "ok": False,
+                        "message": (
+                            f"Código canônico com {len(normalized_code)} dígitos excede o limite "
+                            f"de {total_digits} para a classificação e vigência informadas."
+                        ),
+                    }
+                )
+            normalized_code = normalized_code[:total_digits]
+
+        segments = []
+        pos = 0
+        for width in mask:
+            segments.append(normalized_code[pos : pos + width])
+            pos += width
+
+        def is_zero_segment(seg):
+            return bool(seg) and set(seg) == {"0"}
+
+        deepest_index = -1
+        for idx, seg in enumerate(segments):
+            if not is_zero_segment(seg):
+                deepest_index = idx
+        if deepest_index < 0:
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "message": "Código canônico inválido: não há nível detalhado diferente de zero.",
+                }
+            )
+
+        for idx in range(deepest_index + 1, len(segments)):
+            if not is_zero_segment(segments[idx]):
+                return JsonResponse(
+                    {
+                        "ok": False,
+                        "message": (
+                            "Código canônico inválido: há detalhamento após o nível derivado. "
+                            "Ajuste os zeros canônicos."
+                        ),
+                    }
+                )
+
+        derived_level_number = deepest_index + 1
+
+        level_filters = {
+            "nivel_numero": derived_level_number,
+            "data_vigencia_inicio__lte": effective_vigencia_fim,
+            "data_vigencia_fim__gte": effective_vigencia_inicio,
+        }
+        if class_identity_filters:
+            level_filters.update(class_identity_filters)
+        level_obj = (
+            NivelHierarquico.objects.filter(**level_filters)
+            .order_by("-data_vigencia_inicio", "-data_registro_inicio", "-pk")
+            .first()
+        )
+        if not level_obj:
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "message": (
+                        f"Não existe nível hierárquico vigente para o nível {derived_level_number} "
+                        "na classificação informada."
+                    ),
+                    "effective_vigencia": {
+                        "inicio": effective_vigencia_inicio.isoformat() if effective_vigencia_inicio else "",
+                        "fim": effective_vigencia_fim.isoformat() if effective_vigencia_fim else "",
+                        "overridden": vigencia_overridden,
+                    },
+                }
+            )
+
+        parent_payload = {
+            "required": derived_level_number > 1,
+            "found": False,
+            "pk": "",
+            "code": "",
+            "display_label": "",
+            "link_url": "",
+        }
+
+        if derived_level_number > 1:
+            parent_segments = list(segments)
+            for idx in range(deepest_index, len(parent_segments)):
+                parent_segments[idx] = "0" * mask[idx]
+            parent_code = "".join(parent_segments)
+            parent_payload["code"] = parent_code
+
+            parent_filters = {
+                "receita_cod": parent_code,
+                "matriz": True,
+                "nivel_id__nivel_numero": derived_level_number - 1,
+                "data_vigencia_inicio__lte": effective_vigencia_fim,
+                "data_vigencia_fim__gte": effective_vigencia_inicio,
+            }
+            if class_identity_filters:
+                parent_filters.update(class_identity_filters)
+            elif level_obj and getattr(level_obj, "classificacao_id_id", None):
+                parent_filters["classificacao_id"] = level_obj.classificacao_id_id
+
+            parent_obj = (
+                ItemClassificacao.objects.filter(**parent_filters)
+                .order_by("-data_vigencia_inicio", "-data_registro_inicio", "-pk")
+                .first()
+            )
+
+            if parent_obj:
+                parent_payload["found"] = True
+                parent_payload["pk"] = str(parent_obj.pk)
+                parent_payload["display_label"] = (
+                    f"{parent_obj.receita_cod} - {parent_obj.receita_nome or parent_obj.item_id or ''}".strip(" -")
+                )
+                parent_payload["link_url"] = reverse(
+                    f"admin:{parent_obj._meta.app_label}_{parent_obj._meta.model_name}_change",
+                    args=[parent_obj.pk],
+                )
+
+        return JsonResponse(
+            {
+                "ok": True,
+                "normalized_code": normalized_code,
+                "effective_vigencia": {
+                    "inicio": effective_vigencia_inicio.isoformat() if effective_vigencia_inicio else "",
+                    "fim": effective_vigencia_fim.isoformat() if effective_vigencia_fim else "",
+                    "overridden": vigencia_overridden,
+                },
+                "derived_level": {
+                    "number": derived_level_number,
+                    "pk": str(level_obj.pk),
+                    "display_label": f"{level_obj.nivel_id} - {level_obj.nivel_nome}",
+                },
+                "parent": parent_payload,
             }
         )
 

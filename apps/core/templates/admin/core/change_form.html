@@ -140,8 +140,10 @@
   function setupIdentifierNormalization() {
     var checkIdUrl = '{{ check_id_url|default:"" }}';
     var idFieldName = '{{ id_field_name|default:"" }}';
+    var isAddMode = "{{ add|yesno:'true,false' }}" === "true";
     var itemReceitaCodMasks = JSON.parse('{{ item_receita_cod_masks_json|default:"[]"|escapejs }}');
     var itemParentLookupUrl = '{{ item_parent_lookup_url|default:"" }}';
+    var itemHierarchyLookupUrl = '{{ item_hierarchy_lookup_url|default:"" }}';
     var itemClassificacaoDigitLimitLookupUrl = '{{ item_classificacao_digit_limit_lookup_url|default:"" }}';
     var receitaCodDigitLimitCache = {};
 
@@ -274,36 +276,6 @@
       };
     }
 
-    function deriveParentReceitaCod(rawValue, currentLevelPk) {
-      var codigo = stripReceitaCodFormatting(rawValue);
-      var mask = getMaskForCurrentVigencia();
-      var digitMask = mask && mask.digit_mask;
-      var levelPks = mask && mask.level_pks;
-      if (!codigo || !digitMask || !levelPks || !digitMask.length || !levelPks.length) {
-        return '';
-      }
-      var levelPkStr = String(currentLevelPk || '');
-      var levelIndex = levelPks.map(String).indexOf(levelPkStr);
-      if (levelIndex <= 0) {
-        return '';
-      }
-      var totalDigits = digitMask.reduce(function(sum, current) { return sum + current; }, 0);
-      if (totalDigits !== codigo.length) {
-        return '';
-      }
-
-      var segments = [];
-      var pos = 0;
-      digitMask.forEach(function(size) {
-        segments.push(codigo.slice(pos, pos + size));
-        pos += size;
-      });
-      for (var i = levelIndex; i < segments.length; i++) {
-        segments[i] = '0'.repeat(digitMask[i]);
-      }
-      return segments.join('');
-    }
-
     function getCurrentClassificacaoPk() {
       var input = document.getElementById('id_classificacao_id');
       return ((input && input.value) || '').trim();
@@ -328,6 +300,25 @@
       ul.style.marginTop = '6px';
       var li = document.createElement('li');
       li.className = 'info receita-cod-autofill-info';
+      li.textContent = text;
+      ul.appendChild(li);
+      fieldRow.appendChild(ul);
+    }
+
+    function clearFieldInfoMessages(fieldRow) {
+      if (!fieldRow) return;
+      var existing = fieldRow.querySelectorAll('.autofill-info-message');
+      existing.forEach(function(node) { node.remove(); });
+    }
+
+    function showFieldInfoMessage(fieldRow, text) {
+      if (!fieldRow || !text) return;
+      clearFieldInfoMessages(fieldRow);
+      var ul = document.createElement('ul');
+      ul.className = 'messagelist';
+      ul.style.marginTop = '6px';
+      var li = document.createElement('li');
+      li.className = 'info autofill-info-message';
       li.textContent = text;
       ul.appendChild(li);
       fieldRow.appendChild(ul);
@@ -542,40 +533,184 @@
         }
       }
 
-      function maybeSuggestParentItem() {
-        if (!itemParentLookupUrl || !parentItemIdInput || !nivelIdInput) {
-          return;
+      function getFieldRow(input) {
+        return input ? (input.closest('.form-row') || input.closest('div')) : null;
+      }
+
+      function clearHierarchyMessages(fieldRow) {
+        if (!fieldRow) return;
+        var err = fieldRow.querySelector('.hierarchy-autofill-error');
+        if (err) err.remove();
+      }
+
+      function showHierarchyError(fieldRow, text) {
+        if (!fieldRow || !text) return;
+        clearHierarchyMessages(fieldRow);
+        var ul = document.createElement('ul');
+        ul.className = 'errorlist hierarchy-autofill-error';
+        var li = document.createElement('li');
+        li.textContent = text;
+        ul.appendChild(li);
+        fieldRow.insertBefore(ul, fieldRow.firstChild);
+      }
+
+      function clearParentValidationState() {
+        if (!parentItemIdInput) return;
+        parentItemIdInput.setCustomValidity('');
+        clearHierarchyMessages(getFieldRow(parentItemIdInput));
+      }
+
+      function clearDerivedHierarchyValues() {
+        if (nivelIdInput && (nivelIdInput.value || '').trim()) {
+          nivelIdInput.value = '';
+          nivelIdInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        if (parentItemIdInput && (parentItemIdInput.value || '').trim()) {
+          parentItemIdInput.value = '';
+          parentItemIdInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }
+
+      function syncHierarchyFromCode(triggerName) {
+        if (!isAddMode || !itemHierarchyLookupUrl || !nivelIdInput || !parentItemIdInput) {
+          return Promise.resolve({ isValid: true });
         }
         if (parentItemIdInput.dataset.readonlyRoot === '1') {
-          return;
+          return Promise.resolve({ isValid: true });
         }
-        if ((parentItemIdInput.value || '').trim()) {
-          return;
-        }
-        var parentReceitaCod = deriveParentReceitaCod(receitaCodInput.value, nivelIdInput.value);
-        if (!parentReceitaCod) {
-          return;
-        }
+        var codeValue = stripReceitaCodFormatting(receitaCodInput.value);
+        var classificacaoPk = getCurrentClassificacaoPk();
         var vigencia = getCurrentVigenciaIsoValues();
-        if (!vigencia.vigenciaInicio || !vigencia.vigenciaFim) {
-          return;
+
+        if (!codeValue || !vigencia.vigenciaInicio || !vigencia.vigenciaFim) {
+          clearParentValidationState();
+          return Promise.resolve({ isValid: true });
         }
-        var url = itemParentLookupUrl
-          + '?code=' + encodeURIComponent(parentReceitaCod)
+
+        var url = itemHierarchyLookupUrl
+          + '?code=' + encodeURIComponent(codeValue)
           + '&vigencia_inicio=' + encodeURIComponent(vigencia.vigenciaInicio)
           + '&vigencia_fim=' + encodeURIComponent(vigencia.vigenciaFim);
-        fetch(url, {
-          headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (!data || !data.pk || (parentItemIdInput.value || '').trim()) {
-            return;
-          }
-          parentItemIdInput.value = data.pk;
-          parentItemIdInput.dispatchEvent(new Event('change', { bubbles: true }));
-        })
-        .catch(function() {});
+        if (classificacaoPk) {
+          url += '&classificacao_pk=' + encodeURIComponent(classificacaoPk);
+        }
+
+        return fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            var vigInicioInput = document.querySelector('input[name="data_vigencia_inicio"]');
+            var vigFimInput = document.querySelector('input[name="data_vigencia_fim"]');
+            var effectiveVig = data && data.effective_vigencia ? data.effective_vigencia : {};
+            if (
+              effectiveVig.overridden &&
+              vigInicioInput &&
+              vigFimInput &&
+              effectiveVig.inicio &&
+              effectiveVig.fim
+            ) {
+              var currentVigInicio = getCurrentVigenciaIsoValues().vigenciaInicio;
+              var currentVigFim = getCurrentVigenciaIsoValues().vigenciaFim;
+              if (currentVigInicio !== effectiveVig.inicio || currentVigFim !== effectiveVig.fim) {
+                vigInicioInput.value = effectiveVig.inicio;
+                vigFimInput.value = effectiveVig.fim;
+                vigInicioInput.dispatchEvent(new Event('change', { bubbles: true }));
+                vigFimInput.dispatchEvent(new Event('change', { bubbles: true }));
+                showFieldInfoMessage(
+                  getFieldRow(vigInicioInput),
+                  'Vigência ajustada automaticamente para corresponder à classificação selecionada.'
+                );
+              }
+            }
+
+            if (!data || !data.ok) {
+              clearDerivedHierarchyValues();
+              clearParentValidationState();
+              if (data && data.message) {
+                showReceitaCodWarning(getReceitaCodFieldRow(receitaCodInput), data.message);
+              }
+              return { isValid: true };
+            }
+
+            if (data.normalized_code) {
+              var formattedFromDerived = formatReceitaCodValue(data.normalized_code);
+              if (formattedFromDerived && receitaCodInput.value !== formattedFromDerived) {
+                receitaCodInput.value = formattedFromDerived;
+                receitaCodInput.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+            }
+
+            if (data.derived_level && data.derived_level.pk) {
+              if (nivelIdInput.value !== data.derived_level.pk) {
+                nivelIdInput.value = data.derived_level.pk;
+                nivelIdInput.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+            }
+
+            clearParentValidationState();
+            var parent = data.parent || {};
+            if (!parent.required) {
+              if ((parentItemIdInput.value || '').trim()) {
+                parentItemIdInput.value = '';
+                parentItemIdInput.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+              return { isValid: true };
+            }
+
+            if (parent.found && parent.pk) {
+              if (parentItemIdInput.value !== parent.pk) {
+                parentItemIdInput.value = parent.pk;
+                parentItemIdInput.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+              return { isValid: true };
+            }
+
+            if ((parentItemIdInput.value || '').trim()) {
+              parentItemIdInput.value = '';
+              parentItemIdInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            var parentMissingMsg = 'Não existe item pai ativo e vigente para o código informado. Cadastre o item pai antes de salvar este registro.';
+            parentItemIdInput.setCustomValidity(parentMissingMsg);
+            showHierarchyError(getFieldRow(parentItemIdInput), parentMissingMsg);
+            if (triggerName === 'submit' && parentItemIdInput.reportValidity) {
+              parentItemIdInput.reportValidity();
+            }
+            return { isValid: false };
+          })
+          .catch(function() {
+            clearParentValidationState();
+            return { isValid: true };
+          });
+      }
+
+      if (parentItemIdInput) {
+        parentItemIdInput.addEventListener('input', function() {
+          clearParentValidationState();
+        });
+        parentItemIdInput.addEventListener('change', function() {
+          clearParentValidationState();
+        });
+      }
+
+      if (nivelIdInput) {
+        nivelIdInput.addEventListener('input', function() {
+          clearHierarchyMessages(getFieldRow(nivelIdInput));
+        });
+        nivelIdInput.addEventListener('change', function() {
+          clearHierarchyMessages(getFieldRow(nivelIdInput));
+        });
+      }
+
+      var vigenciaInicioInput = document.querySelector('input[name="data_vigencia_inicio"]');
+      var vigenciaFimInput = document.querySelector('input[name="data_vigencia_fim"]');
+      if (vigenciaInicioInput) {
+        vigenciaInicioInput.addEventListener('input', function() {
+          clearFieldInfoMessages(getFieldRow(vigenciaInicioInput));
+        });
+      }
+      if (vigenciaFimInput) {
+        vigenciaFimInput.addEventListener('input', function() {
+          clearFieldInfoMessages(getFieldRow(vigenciaInicioInput || vigenciaFimInput));
+        });
       }
 
       receitaCodInput.addEventListener('focus', function() {
@@ -590,7 +725,7 @@
         runCodeDigitValidation('blur').then(function(result) {
           syncItemIdPreview();
           if (result && result.isValid) {
-            maybeSuggestParentItem();
+            syncHierarchyFromCode('code_blur');
           }
         });
       });
@@ -608,9 +743,7 @@
       function handleClassificacaoChange() {
         runCodeDigitValidation('classificacao_change').then(function(result) {
           syncItemIdPreview();
-          if (result && result.isValid) {
-            maybeSuggestParentItem();
-          }
+          syncHierarchyFromCode('classificacao_change');
         });
       }
       if (classificacaoIdInput) {
@@ -631,7 +764,7 @@
       runCodeDigitValidation('init').then(function(result) {
         syncItemIdPreview();
         if (result && result.isValid) {
-          maybeSuggestParentItem();
+          syncHierarchyFromCode('init');
         }
       });
 
@@ -661,29 +794,34 @@
                 }
                 return;
               }
-              receitaCodInput.value = stripReceitaCodFormatting(receitaCodInput.value);
-              syncItemIdPreview();
-              allowNativeSubmit = true;
-              if (defaultSubmitButton) {
-                defaultSubmitButton.disabled = false;
-              }
-              if (initialSubmitter && initialSubmitter.name) {
-                var submitterHidden = document.createElement('input');
-                submitterHidden.type = 'hidden';
-                submitterHidden.name = initialSubmitter.name;
-                submitterHidden.value = initialSubmitter.value || '1';
-                submitterHidden.setAttribute('data-temp-submitter', '1');
-                adminForm.appendChild(submitterHidden);
-              }
-              if (typeof HTMLFormElement !== 'undefined' && HTMLFormElement.prototype.submit) {
-                HTMLFormElement.prototype.submit.call(adminForm);
-              } else {
-                if (adminForm.requestSubmit) {
-                  adminForm.requestSubmit();
-                } else {
-                  adminForm.submit();
+              return syncHierarchyFromCode('submit').then(function(hierarchyResult) {
+                if (!hierarchyResult || !hierarchyResult.isValid) {
+                  return;
                 }
-              }
+                receitaCodInput.value = stripReceitaCodFormatting(receitaCodInput.value);
+                syncItemIdPreview();
+                allowNativeSubmit = true;
+                if (defaultSubmitButton) {
+                  defaultSubmitButton.disabled = false;
+                }
+                if (initialSubmitter && initialSubmitter.name) {
+                  var submitterHidden = document.createElement('input');
+                  submitterHidden.type = 'hidden';
+                  submitterHidden.name = initialSubmitter.name;
+                  submitterHidden.value = initialSubmitter.value || '1';
+                  submitterHidden.setAttribute('data-temp-submitter', '1');
+                  adminForm.appendChild(submitterHidden);
+                }
+                if (typeof HTMLFormElement !== 'undefined' && HTMLFormElement.prototype.submit) {
+                  HTMLFormElement.prototype.submit.call(adminForm);
+                } else {
+                  if (adminForm.requestSubmit) {
+                    adminForm.requestSubmit();
+                  } else {
+                    adminForm.submit();
+                  }
+                }
+              });
             })
             .finally(function() {
               if (!allowNativeSubmit && defaultSubmitButton) {
