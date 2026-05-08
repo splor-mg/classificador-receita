@@ -85,6 +85,30 @@ def get_mask_from_classificacao_estrutura(
     return parse_estrutura_codigo_mask(estrutura), estrutura
 
 
+def get_mask_for_classificacao_pk_vigencia(
+    classificacao_pk: int | None,
+    vig_inicio: date | None,
+    vig_fim: date | None,
+) -> List[int]:
+    """
+    Resolve a máscara canônica de uma classificação para uma janela de vigência.
+
+    Fonte única de verdade: ``estrutura_codigo`` do nível mais detalhado.
+    """
+    if classificacao_pk is None:
+        return []
+    classificacao = (
+        Classificacao.objects.filter(pk=classificacao_pk)
+        .only("pk", "classificacao_ref", "classificacao_id")
+        .first()
+    )
+    if classificacao is None:
+        return []
+    ref_date = vig_inicio or vig_fim or date.today()
+    mask, _ = get_mask_from_classificacao_estrutura(classificacao, ref_date)
+    return mask or []
+
+
 def resolve_receita_cod_mask_context(
     classificacao: Classificacao | None,
     *,

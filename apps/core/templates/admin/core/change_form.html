@@ -146,6 +146,8 @@
     var itemHierarchyLookupUrl = '{{ item_hierarchy_lookup_url|default:"" }}';
     var itemClassificacaoDigitLimitLookupUrl = '{{ item_classificacao_digit_limit_lookup_url|default:"" }}';
     var receitaCodDigitLimitCache = {};
+    var receitaCodResolvedDigitMask = null;
+    var addDefaultVigencia = getCurrentVigenciaIsoValues();
 
     function parseDateValue(value) {
       if (!value) {
@@ -258,6 +260,32 @@
       return parts.join('.');
     }
 
+    function normalizeDigitMask(rawMask) {
+      if (!rawMask || !Array.isArray(rawMask) || !rawMask.length) {
+        return null;
+      }
+      var normalized = rawMask.map(function(value) { return Number(value); });
+      for (var i = 0; i < normalized.length; i++) {
+        if (!Number.isFinite(normalized[i]) || normalized[i] <= 0) {
+          return null;
+        }
+      }
+      return normalized;
+    }
+
+    function getEffectiveReceitaCodMask(maskFromPayload) {
+      var payloadMask = normalizeDigitMask(maskFromPayload);
+      if (payloadMask) {
+        receitaCodResolvedDigitMask = payloadMask;
+        return payloadMask;
+      }
+      var resolvedMask = normalizeDigitMask(receitaCodResolvedDigitMask);
+      if (resolvedMask) {
+        return resolvedMask;
+      }
+      return getMaskForCurrentVigencia();
+    }
+
     function getCurrentVigenciaIsoValues() {
       var vigInicioInput = document.querySelector('input[name="data_vigencia_inicio"]');
       var vigFimInput = document.querySelector('input[name="data_vigencia_fim"]');
@@ -274,6 +302,20 @@
         vigenciaInicio: toIso(vigInicioInput && vigInicioInput.value),
         vigenciaFim: toIso(vigFimInput && vigFimInput.value)
       };
+    }
+
+    function getTodayIsoDate() {
+      var now = new Date();
+      var mm = String(now.getMonth() + 1).padStart(2, '0');
+      var dd = String(now.getDate()).padStart(2, '0');
+      return now.getFullYear() + '-' + mm + '-' + dd;
+    }
+
+    function isoInRange(valueIso, inicioIso, fimIso) {
+      if (!valueIso || !inicioIso || !fimIso) {
+        return false;
+      }
+      return inicioIso <= valueIso && valueIso <= fimIso;
     }
 
     function getCurrentClassificacaoPk() {
@@ -459,6 +501,19 @@
           var normalized = rawCodigo;
 
           if (limit && normalized.length > limit) {
+            var extraTail = normalized.slice(limit);
+            var canAutoTrimCanonicalTail =
+              triggerName === 'classificacao_change' &&
+              extraTail &&
+              /^0+$/.test(extraTail);
+            if (canAutoTrimCanonicalTail) {
+              normalized = normalized.slice(0, limit);
+              hasAutoAdjustedOnce = true;
+              showReceitaCodInfo(
+                fieldRow,
+                'Código ajustado para a classificação selecionada (' + limit + ' dígitos), com remoção de zeros canônicos excedentes.'
+              );
+            } else {
             var msg;
             if (source === 'fallback_default_latest_active_today') {
               msg = 'Código informado tem ' + normalized.length + ' dígitos, mas a estrutura mais recente da classificação é de ' + limit + ' dígitos.';
@@ -468,6 +523,7 @@
             receitaCodInput.setCustomValidity(msg);
             showReceitaCodError(fieldRow, msg);
             return { isValid: false };
+            }
           }
 
           receitaCodInput.setCustomValidity('');
@@ -497,7 +553,7 @@
             );
           }
 
-          var formatted = formatReceitaCodByMask(normalized, maskFromClassificacao);
+          var formatted = formatReceitaCodByMask(normalized, getEffectiveReceitaCodMask(maskFromClassificacao));
           if (formatted === normalized) {
             formatted = formatReceitaCodValue(normalized);
           }
@@ -539,8 +595,8 @@
 
       function clearHierarchyMessages(fieldRow) {
         if (!fieldRow) return;
-        var err = fieldRow.querySelector('.hierarchy-autofill-error');
-        if (err) err.remove();
+        var messages = fieldRow.querySelectorAll('.hierarchy-autofill-error, .hierarchy-autofill-warning');
+        messages.forEach(function(node) { node.remove(); });
       }
 
       function showHierarchyError(fieldRow, text) {
@@ -554,10 +610,58 @@
         fieldRow.insertBefore(ul, fieldRow.firstChild);
       }
 
+      function showHierarchyWarning(fieldRow, text) {
+        if (!fieldRow || !text) return;
+        clearHierarchyMessages(fieldRow);
+        var ul = document.createElement('ul');
+        ul.className = 'messagelist hierarchy-autofill-warning';
+        ul.style.marginTop = '6px';
+        var li = document.createElement('li');
+        li.className = 'warning';
+        li.textContent = text;
+        ul.appendChild(li);
+        fieldRow.appendChild(ul);
+      }
+
+      function showHierarchyWarningHtml(fieldRow, html) {
+        if (!fieldRow || !html) return;
+        clearHierarchyMessages(fieldRow);
+        var ul = document.createElement('ul');
+        ul.className = 'messagelist hierarchy-autofill-warning';
+        ul.style.marginTop = '6px';
+        var li = document.createElement('li');
+        li.className = 'warning';
+        li.innerHTML = html;
+        ul.appendChild(li);
+        fieldRow.appendChild(ul);
+      }
+
+      function buildAlternativeMessageHtml(statusObj) {
+        var alternative = statusObj && statusObj.alternative ? statusObj.alternative : null;
+        if (!alternative) return '';
+        var message = alternative.message || '';
+        var classData = alternative.classificacao || null;
+        if (!classData || !classData.link_url) {
+          return message;
+        }
+        var classLabel = classData.classificacao_id || classData.display_label || 'classificação alternativa';
+        var escapedLabel = String(classLabel).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return message.replace(
+          classLabel,
+          '<a href="' + classData.link_url + '" target="_blank" style="text-decoration:underline;">' + escapedLabel + '</a>'
+        );
+      }
+
       function clearParentValidationState() {
         if (!parentItemIdInput) return;
         parentItemIdInput.setCustomValidity('');
         clearHierarchyMessages(getFieldRow(parentItemIdInput));
+      }
+
+      function clearLevelValidationState() {
+        if (!nivelIdInput) return;
+        nivelIdInput.setCustomValidity('');
+        clearHierarchyMessages(getFieldRow(nivelIdInput));
       }
 
       function clearDerivedHierarchyValues() {
@@ -584,6 +688,7 @@
 
         if (!codeValue || !vigencia.vigenciaInicio || !vigencia.vigenciaFim) {
           clearParentValidationState();
+          clearLevelValidationState();
           return Promise.resolve({ isValid: true });
         }
 
@@ -601,38 +706,73 @@
             var vigInicioInput = document.querySelector('input[name="data_vigencia_inicio"]');
             var vigFimInput = document.querySelector('input[name="data_vigencia_fim"]');
             var effectiveVig = data && data.effective_vigencia ? data.effective_vigencia : {};
-            if (
-              effectiveVig.overridden &&
-              vigInicioInput &&
-              vigFimInput &&
-              effectiveVig.inicio &&
-              effectiveVig.fim
-            ) {
+            if (vigInicioInput && vigFimInput) {
+              var desiredVigencia = null;
+              var todayIso = getTodayIsoDate();
+              var classCoversToday = isoInRange(todayIso, effectiveVig.inicio, effectiveVig.fim);
+
+              if (
+                isAddMode &&
+                classCoversToday &&
+                addDefaultVigencia &&
+                addDefaultVigencia.vigenciaInicio &&
+                addDefaultVigencia.vigenciaFim
+              ) {
+                desiredVigencia = {
+                  inicio: addDefaultVigencia.vigenciaInicio,
+                  fim: addDefaultVigencia.vigenciaFim,
+                  reason: 'default_add'
+                };
+              } else if (effectiveVig.overridden && effectiveVig.inicio && effectiveVig.fim) {
+                desiredVigencia = {
+                  inicio: effectiveVig.inicio,
+                  fim: effectiveVig.fim,
+                  reason: 'classificacao_range'
+                };
+              }
+
+              if (desiredVigencia) {
               var currentVigInicio = getCurrentVigenciaIsoValues().vigenciaInicio;
               var currentVigFim = getCurrentVigenciaIsoValues().vigenciaFim;
-              if (currentVigInicio !== effectiveVig.inicio || currentVigFim !== effectiveVig.fim) {
-                vigInicioInput.value = effectiveVig.inicio;
-                vigFimInput.value = effectiveVig.fim;
+                if (currentVigInicio !== desiredVigencia.inicio || currentVigFim !== desiredVigencia.fim) {
+                vigInicioInput.value = desiredVigencia.inicio;
+                vigFimInput.value = desiredVigencia.fim;
                 vigInicioInput.dispatchEvent(new Event('change', { bubbles: true }));
                 vigFimInput.dispatchEvent(new Event('change', { bubbles: true }));
                 showFieldInfoMessage(
                   getFieldRow(vigInicioInput),
-                  'Vigência ajustada automaticamente para corresponder à classificação selecionada.'
+                    desiredVigencia.reason === 'default_add'
+                      ? 'Vigência ajustada automaticamente para o padrão de inclusão (01/01 do ano corrente até sentinela), compatível com a classificação selecionada.'
+                      : 'Vigência ajustada automaticamente para corresponder à classificação selecionada.'
                 );
               }
+            }
             }
 
             if (!data || !data.ok) {
               clearDerivedHierarchyValues();
               clearParentValidationState();
+              clearLevelValidationState();
               if (data && data.message) {
-                showReceitaCodWarning(getReceitaCodFieldRow(receitaCodInput), data.message);
+                if (/n[íi]vel hier[áa]rquico/i.test(data.message)) {
+                  showHierarchyWarning(getFieldRow(nivelIdInput), data.message);
+                } else if (/item pai/i.test(data.message)) {
+                  showHierarchyWarning(getFieldRow(parentItemIdInput), data.message);
+                } else {
+                  showReceitaCodWarning(getReceitaCodFieldRow(receitaCodInput), data.message);
+                }
               }
               return { isValid: true };
             }
 
             if (data.normalized_code) {
-              var formattedFromDerived = formatReceitaCodValue(data.normalized_code);
+              var formattedFromDerived = formatReceitaCodByMask(
+                data.normalized_code,
+                getEffectiveReceitaCodMask(null)
+              );
+              if (formattedFromDerived === data.normalized_code) {
+                formattedFromDerived = formatReceitaCodValue(data.normalized_code);
+              }
               if (formattedFromDerived && receitaCodInput.value !== formattedFromDerived) {
                 receitaCodInput.value = formattedFromDerived;
                 receitaCodInput.dispatchEvent(new Event('change', { bubbles: true }));
@@ -640,10 +780,28 @@
             }
 
             if (data.derived_level && data.derived_level.pk) {
+              clearLevelValidationState();
               if (nivelIdInput.value !== data.derived_level.pk) {
                 nivelIdInput.value = data.derived_level.pk;
                 nivelIdInput.dispatchEvent(new Event('change', { bubbles: true }));
               }
+            }
+
+            var levelStatus = data.derived_level && data.derived_level.status ? data.derived_level.status : {};
+            if (levelStatus.severity === 'warning') {
+              clearLevelValidationState();
+              var levelHtml = buildAlternativeMessageHtml(levelStatus);
+              if (levelHtml) {
+                showHierarchyWarningHtml(getFieldRow(nivelIdInput), levelHtml);
+              } else if (levelStatus.message) {
+                showHierarchyWarning(getFieldRow(nivelIdInput), levelStatus.message);
+              }
+            } else if (levelStatus.severity === 'error') {
+              var levelMsg = levelStatus.message || 'Nível hierárquico inválido para o contexto informado.';
+              nivelIdInput.setCustomValidity(levelMsg);
+              showHierarchyError(getFieldRow(nivelIdInput), levelMsg);
+            } else {
+              clearLevelValidationState();
             }
 
             clearParentValidationState();
@@ -662,6 +820,31 @@
                 parentItemIdInput.dispatchEvent(new Event('change', { bubbles: true }));
               }
               return { isValid: true };
+            }
+
+            var parentStatus = parent.status || {};
+            if (parentStatus.severity === 'warning') {
+              clearParentValidationState();
+              var parentHtml = buildAlternativeMessageHtml(parentStatus);
+              if (parentHtml) {
+                showHierarchyWarningHtml(getFieldRow(parentItemIdInput), parentHtml);
+              } else if (parentStatus.message) {
+                showHierarchyWarning(getFieldRow(parentItemIdInput), parentStatus.message);
+              }
+              return { isValid: true };
+            }
+            if (parentStatus.severity === 'error') {
+              if ((parentItemIdInput.value || '').trim()) {
+                parentItemIdInput.value = '';
+                parentItemIdInput.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+              var parentErrorMsg = parentStatus.message || 'Não existe item pai ativo e vigente para o código informado.';
+              parentItemIdInput.setCustomValidity(parentErrorMsg);
+              showHierarchyError(getFieldRow(parentItemIdInput), parentErrorMsg);
+              if (triggerName === 'submit' && parentItemIdInput.reportValidity) {
+                parentItemIdInput.reportValidity();
+              }
+              return { isValid: false };
             }
 
             if ((parentItemIdInput.value || '').trim()) {
@@ -693,10 +876,10 @@
 
       if (nivelIdInput) {
         nivelIdInput.addEventListener('input', function() {
-          clearHierarchyMessages(getFieldRow(nivelIdInput));
+          clearLevelValidationState();
         });
         nivelIdInput.addEventListener('change', function() {
-          clearHierarchyMessages(getFieldRow(nivelIdInput));
+          clearLevelValidationState();
         });
       }
 
@@ -743,7 +926,14 @@
       function handleClassificacaoChange() {
         runCodeDigitValidation('classificacao_change').then(function(result) {
           syncItemIdPreview();
-          syncHierarchyFromCode('classificacao_change');
+          if (result && result.isValid) {
+            syncHierarchyFromCode('classificacao_change').then(function(hierarchyResult) {
+              if (!hierarchyResult || !hierarchyResult.isValid) {
+                return;
+              }
+              runCodeDigitValidation('classificacao_change');
+            });
+          }
         });
       }
       if (classificacaoIdInput) {

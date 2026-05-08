@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
-Valida a quantidade de dígitos de receita_cod conforme a classificação vigente (SCD-2 / bitemporal).
+Valida a quantidade de dígitos de receita_cod conforme a máscara canônica
+(`estrutura_codigo`) vigente (SCD-2 / bitemporal).
 
-Critério: para cada item, resolve classificação(s) cujo período de REGISTRO compreenda o período
-de registro do item; em seguida filtra por vigência (a vigência da classificação deve compreender
-a vigência do item). Se houver mais de uma linha de classificação, todas devem ter o mesmo
-numero_digitos e len(receita_cod) deve igualar esse valor. Caso contrário o teste falha.
+Critério: para cada item, resolve níveis hierárquicos da mesma classificação cujo
+período de REGISTRO compreenda o período de registro do item e cuja VIGÊNCIA
+compreenda a vigência do item. A máscara canônica é derivada de
+`estrutura_codigo`; len(receita_cod) deve igualar a soma dessa máscara.
 
 Uso:
     poetry run task validar-codigos
-    python scripts/validate_code.py --items data/item_classificacao.csv --classificacao docs/assets/seed_classificacao.csv
+    python scripts/validate_code.py --items data/item_classificacao.csv --niveis docs/assets/seed_nivel_hierarquico.csv
 """
 
 from __future__ import annotations
@@ -68,8 +69,16 @@ def _vigencia_item_contida_em_vigencia_class(
     return class_vi_d <= item_vi_d and item_vf_d <= class_vf_d
 
 
-def load_classificacao(path: Path) -> list[dict]:
-    """Carrega linhas do CSV de classificação; normaliza nomes e datas."""
+def parse_estrutura_codigo_mask(estrutura_codigo: str | None) -> list[int]:
+    """Converte estrutura textual (ex.: X.X.0.0.00.000) em máscara numérica."""
+    if not estrutura_codigo:
+        return []
+    parts = [p.strip() for p in str(estrutura_codigo).split(".") if p and p.strip()]
+    return [len(p) for p in parts]
+
+
+def load_niveis(path: Path) -> list[dict]:
+    """Carrega linhas do CSV de níveis hierárquicos; normaliza datas."""
     rows = []
     with path.open(encoding="utf-8", newline="") as f:
         reader = csv.DictReader(f)
@@ -83,8 +92,6 @@ def load_classificacao(path: Path) -> list[dict]:
             ):
                 if key in r and r[key]:
                     r[key] = _parse_date(r[key])
-            if "numero_digitos" in r and r["numero_digitos"]:
-                r["numero_digitos"] = int(r["numero_digitos"])
             rows.append(r)
     return rows
 
@@ -108,12 +115,12 @@ def load_items(path: Path) -> list[dict]:
     return rows
 
 
-def find_classificacoes_for_item(
+def find_niveis_for_item(
     item: dict,
-    classificacoes: list[dict],
+    niveis: list[dict],
 ) -> list[dict]:
     """
-    Retorna as linhas de classificação que:
+    Retorna as linhas de nível que:
     1) têm o mesmo classificacao_id do item;
     2) cujo período de REGISTRO compreende o período de registro do item;
     3) cuja VIGÊNCIA compreende a vigência do item.
@@ -127,20 +134,20 @@ def find_classificacoes_for_item(
         return []
 
     out = []
-    for c in classificacoes:
-        if c.get("classificacao_id") != cid:
+    for n in niveis:
+        if n.get("classificacao_id") != cid:
             continue
-        c_ri = c.get("data_registro_inicio")
-        c_rf = c.get("data_registro_fim")
-        c_vi = c.get("data_vigencia_inicio")
-        c_vf = c.get("data_vigencia_fim")
+        c_ri = n.get("data_registro_inicio")
+        c_rf = n.get("data_registro_fim")
+        c_vi = n.get("data_vigencia_inicio")
+        c_vf = n.get("data_vigencia_fim")
         if not all([c_ri, c_rf, c_vi, c_vf]):
             continue
         if not _registro_item_contido_em_registro_class(item_ri, item_rf, c_ri, c_rf):
             continue
         if not _vigencia_item_contida_em_vigencia_class(item_vi, item_vf, c_vi, c_vf):
             continue
-        out.append(c)
+        out.append(n)
     return out
 
 
@@ -164,22 +171,28 @@ def validate_item_semantic_id(item: dict) -> tuple[bool, str | None]:
 
 def validate_item(
     item: dict,
-    classificacoes: list[dict],
+    niveis: list[dict],
 ) -> tuple[bool, str | None]:
     """
     Valida um item. Retorna (True, None) se ok; (False, mensagem) se falha.
-    Falha se: nenhuma classificação encontrada; múltiplas com numero_digitos diferentes; len(cod) != numero_digitos.
+    Falha se: nenhum nível compatível encontrado; máscaras canônicas divergentes;
+    len(cod) diferente do total de dígitos da máscara.
     """
     cod = (item.get("receita_cod") or "").strip()
-    classes = find_classificacoes_for_item(item, classificacoes)
-    if not classes:
-        return False, "nenhuma linha de classificação com registro e vigência compatíveis"
-    numeros = {c.get("numero_digitos") for c in classes if c.get("numero_digitos") is not None}
-    if not numeros:
-        return False, "classificação(ões) sem numero_digitos"
-    if len(numeros) > 1:
-        return False, f"classificação com numero_digitos distintos nas linhas vigentes: {sorted(numeros)}"
-    esperado = next(iter(numeros))
+    levels = find_niveis_for_item(item, niveis)
+    if not levels:
+        return False, "nenhuma linha de nível com registro e vigência compatíveis"
+    estruturas = {(l.get("estrutura_codigo") or "").strip() for l in levels if (l.get("estrutura_codigo") or "").strip()}
+    if not estruturas:
+        return False, "nível(is) sem estrutura_codigo para derivar máscara"
+    masks = {tuple(parse_estrutura_codigo_mask(e)) for e in estruturas}
+    masks = {m for m in masks if m}
+    if not masks:
+        return False, "estrutura_codigo inválida para derivar máscara"
+    if len(masks) > 1:
+        readable = sorted(".".join(str(x) for x in m) for m in masks)
+        return False, f"máscaras canônicas divergentes para o contexto do item: {readable}"
+    esperado = sum(next(iter(masks)))
     if len(cod) != esperado:
         return False, f"len(receita_cod)={len(cod)}, esperado {esperado}"
     return True, None
@@ -195,27 +208,27 @@ def main() -> int:
         help="CSV de itens (item_classificacao)",
     )
     parser.add_argument(
-        "--classificacao",
+        "--niveis",
         type=Path,
-        default=root / "docs" / "assets" / "seed_classificacao.csv",
-        help="CSV de classificação",
+        default=root / "docs" / "assets" / "seed_nivel_hierarquico.csv",
+        help="CSV de níveis hierárquicos",
     )
     args = parser.parse_args()
 
-    if not args.classificacao.exists():
-        print(f"❌ Arquivo de classificação não encontrado: {args.classificacao}", file=sys.stderr)
+    if not args.niveis.exists():
+        print(f"❌ Arquivo de níveis não encontrado: {args.niveis}", file=sys.stderr)
         return 1
     if not args.items.exists():
         print(f"⚠️ Arquivo de itens não encontrado: {args.items}. Nada a validar.", file=sys.stderr)
         return 0
 
-    classificacoes = load_classificacao(args.classificacao)
+    niveis = load_niveis(args.niveis)
     items = load_items(args.items)
 
     print("=" * 60)
     print("Validação: item_id = IT-{receita_cod}; quantidade de dígitos (receita_cod)")
     print("=" * 60)
-    print(f"Classificação: {args.classificacao} ({len(classificacoes)} linhas)")
+    print(f"Níveis: {args.niveis} ({len(niveis)} linhas)")
     print(f"Itens: {args.items} ({len(items)} linhas)\n")
 
     errors = []
@@ -225,7 +238,7 @@ def main() -> int:
             item_id = item.get("item_id", "?")
             item_ref = item.get("item_ref", "?")
             errors.append((i + 1, item_id, item_ref, msg_sid))
-        ok, msg = validate_item(item, classificacoes)
+        ok, msg = validate_item(item, niveis)
         if not ok:
             item_id = item.get("item_id", "?")
             item_ref = item.get("item_ref", "?")

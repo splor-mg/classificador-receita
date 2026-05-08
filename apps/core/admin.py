@@ -433,7 +433,9 @@ class ItemClassificacaoAdmin(
         target = None
 
         if classificacao_pk:
-            target = Classificacao.objects.filter(pk=classificacao_pk).only("pk", "numero_digitos").first()
+            target = Classificacao.objects.filter(pk=classificacao_pk).only(
+                "pk", "classificacao_ref", "classificacao_id"
+            ).first()
         ctx = resolve_receita_cod_mask_context(target, input_length=input_length, on_date=date.today())
 
         return JsonResponse(
@@ -493,6 +495,38 @@ class ItemClassificacaoAdmin(
                     continue
             return None
 
+        def classificacao_identity_filters(class_obj, fallback_pk=None):
+            identity = {}
+            class_ref = getattr(class_obj, "classificacao_ref", None) if class_obj else None
+            class_semantic = getattr(class_obj, "classificacao_id", None) if class_obj else None
+            if class_ref not in (None, ""):
+                identity["classificacao_id__classificacao_ref"] = class_ref
+            elif class_semantic not in (None, ""):
+                identity["classificacao_id__classificacao_id"] = class_semantic
+            elif fallback_pk is not None:
+                identity["classificacao_id"] = fallback_pk
+            return identity
+
+        def classificacao_payload_from_obj(class_obj):
+            if not class_obj:
+                return None
+            try:
+                link_url = reverse(
+                    f"admin:{class_obj._meta.app_label}_{class_obj._meta.model_name}_change",
+                    args=[class_obj.pk],
+                )
+            except Exception:
+                link_url = ""
+            return {
+                "pk": str(class_obj.pk),
+                "classificacao_id": getattr(class_obj, "classificacao_id", "") or "",
+                "display_label": (
+                    f"{getattr(class_obj, 'classificacao_id', '')} - "
+                    f"{getattr(class_obj, 'classificacao_nome', '')}"
+                ).strip(" -"),
+                "link_url": link_url,
+            }
+
         raw_code = (request.GET.get("code") or "").replace(".", "").strip()
         classificacao_pk = (request.GET.get("classificacao_pk") or "").strip()
         vigencia_inicio = parse_date(request.GET.get("vigencia_inicio"))
@@ -519,19 +553,16 @@ class ItemClassificacaoAdmin(
             except ValueError:
                 return JsonResponse({"ok": False, "message": "Classificação inválida."})
             class_obj = Classificacao.objects.filter(pk=class_pk).only(
-                "pk", "classificacao_ref", "classificacao_id", "data_vigencia_inicio", "data_vigencia_fim"
+                "pk",
+                "classificacao_ref",
+                "classificacao_id",
+                "classificacao_nome",
+                "data_vigencia_inicio",
+                "data_vigencia_fim",
             ).first()
             if not class_obj:
                 return JsonResponse({"ok": False, "message": "Classificação inválida."})
-            class_ref = getattr(class_obj, "classificacao_ref", None)
-            class_semantic = getattr(class_obj, "classificacao_id", None)
-            class_identity_filters = {}
-            if class_ref not in (None, ""):
-                class_identity_filters["classificacao_id__classificacao_ref"] = class_ref
-            elif class_semantic not in (None, ""):
-                class_identity_filters["classificacao_id__classificacao_id"] = class_semantic
-            else:
-                class_identity_filters["classificacao_id"] = class_pk
+            class_identity_filters = classificacao_identity_filters(class_obj, fallback_pk=class_pk)
             class_vig_inicio = getattr(class_obj, "data_vigencia_inicio", None)
             class_vig_fim = getattr(class_obj, "data_vigencia_fim", None)
             if class_vig_inicio and class_vig_fim:
@@ -611,34 +642,70 @@ class ItemClassificacaoAdmin(
                 )
 
         derived_level_number = deepest_index + 1
-
-        level_filters = {
+        level_base_filters = {
             "nivel_numero": derived_level_number,
             "data_vigencia_inicio__lte": effective_vigencia_fim,
             "data_vigencia_fim__gte": effective_vigencia_inicio,
         }
+        level_selected_filters = dict(level_base_filters)
         if class_identity_filters:
-            level_filters.update(class_identity_filters)
+            level_selected_filters.update(class_identity_filters)
         level_obj = (
-            NivelHierarquico.objects.filter(**level_filters)
+            NivelHierarquico.objects.select_related("classificacao_id")
+            .filter(**level_selected_filters)
             .order_by("-data_vigencia_inicio", "-data_registro_inicio", "-pk")
             .first()
         )
+        alt_level_obj = None
         if not level_obj:
-            return JsonResponse(
-                {
-                    "ok": False,
+            alt_qs = (
+                NivelHierarquico.objects.select_related("classificacao_id")
+                .filter(**level_base_filters)
+                .order_by("-data_vigencia_inicio", "-data_registro_inicio", "-pk")
+            )
+            if class_obj is not None:
+                alt_qs = alt_qs.exclude(classificacao_id_id=class_obj.pk)
+            alt_level_obj = alt_qs.first()
+
+        derived_level_payload = {
+            "number": derived_level_number,
+            "pk": str(level_obj.pk) if level_obj else "",
+            "display_label": (
+                f"{level_obj.nivel_id} - {level_obj.nivel_nome}" if level_obj else ""
+            ),
+            "status": {"severity": "ok", "message": "", "alternative": None},
+        }
+        if not level_obj:
+            if alt_level_obj:
+                alt_class = getattr(alt_level_obj, "classificacao_id", None)
+                alt_class_payload = classificacao_payload_from_obj(alt_class)
+                alt_class_id = (
+                    alt_class_payload.get("classificacao_id", "") if alt_class_payload else ""
+                )
+                derived_level_payload["status"] = {
+                    "severity": "warning",
                     "message": (
                         f"Não existe nível hierárquico vigente para o nível {derived_level_number} "
-                        "na classificação informada."
+                        "na classificação informada, porém existe para outra classificação compatível."
                     ),
-                    "effective_vigencia": {
-                        "inicio": effective_vigencia_inicio.isoformat() if effective_vigencia_inicio else "",
-                        "fim": effective_vigencia_fim.isoformat() if effective_vigencia_fim else "",
-                        "overridden": vigencia_overridden,
+                    "alternative": {
+                        "classificacao": alt_class_payload,
+                        "message": (
+                            "Não existe nível hierárquico vigente para a classificação selecionada, "
+                            f"porém existe para {alt_class_id}. "
+                            "Certifique-se de que a classificação selecionada está correta."
+                        ),
                     },
                 }
-            )
+            else:
+                derived_level_payload["status"] = {
+                    "severity": "error",
+                    "message": (
+                        f"Não existe nível hierárquico vigente para o nível {derived_level_number} "
+                        "na classificação informada nem em classificações alternativas compatíveis."
+                    ),
+                    "alternative": None,
+                }
 
         parent_payload = {
             "required": derived_level_number > 1,
@@ -647,6 +714,7 @@ class ItemClassificacaoAdmin(
             "code": "",
             "display_label": "",
             "link_url": "",
+            "status": {"severity": "ok", "message": "", "alternative": None},
         }
 
         if derived_level_number > 1:
@@ -669,7 +737,7 @@ class ItemClassificacaoAdmin(
                 parent_filters["classificacao_id"] = level_obj.classificacao_id_id
 
             parent_obj = (
-                ItemClassificacao.objects.filter(**parent_filters)
+                ItemClassificacao.objects.select_related("classificacao_id").filter(**parent_filters)
                 .order_by("-data_vigencia_inicio", "-data_registro_inicio", "-pk")
                 .first()
             )
@@ -684,6 +752,62 @@ class ItemClassificacaoAdmin(
                     f"admin:{parent_obj._meta.app_label}_{parent_obj._meta.model_name}_change",
                     args=[parent_obj.pk],
                 )
+            else:
+                parent_alt_filters = {
+                    "receita_cod": parent_code,
+                    "matriz": True,
+                    "nivel_id__nivel_numero": derived_level_number - 1,
+                    "data_vigencia_inicio__lte": effective_vigencia_fim,
+                    "data_vigencia_fim__gte": effective_vigencia_inicio,
+                }
+                parent_alt_qs = ItemClassificacao.objects.select_related("classificacao_id").filter(
+                    **parent_alt_filters
+                ).order_by("-data_vigencia_inicio", "-data_registro_inicio", "-pk")
+                if class_obj is not None:
+                    parent_alt_qs = parent_alt_qs.exclude(classificacao_id_id=class_obj.pk)
+                parent_alt_obj = parent_alt_qs.first()
+                if parent_alt_obj:
+                    alt_class_payload = classificacao_payload_from_obj(
+                        getattr(parent_alt_obj, "classificacao_id", None)
+                    )
+                    alt_class_id = (
+                        alt_class_payload.get("classificacao_id", "") if alt_class_payload else ""
+                    )
+                    parent_payload["status"] = {
+                        "severity": "warning",
+                        "message": (
+                            "Não existe item pai ativo e vigente para o código informado na "
+                            "classificação selecionada, porém existe em outra classificação compatível."
+                        ),
+                        "alternative": {
+                            "classificacao": alt_class_payload,
+                            "item": {
+                                "pk": str(parent_alt_obj.pk),
+                                "display_label": (
+                                    f"{parent_alt_obj.receita_cod} - "
+                                    f"{parent_alt_obj.receita_nome or parent_alt_obj.item_id or ''}"
+                                ).strip(" -"),
+                                "link_url": reverse(
+                                    f"admin:{parent_alt_obj._meta.app_label}_{parent_alt_obj._meta.model_name}_change",
+                                    args=[parent_alt_obj.pk],
+                                ),
+                            },
+                            "message": (
+                                "Não existe item pai vigente para a classificação selecionada, "
+                                f"porém existe para {alt_class_id}. "
+                                "Certifique-se de que a classificação selecionada está correta."
+                            ),
+                        },
+                    }
+                else:
+                    parent_payload["status"] = {
+                        "severity": "error",
+                        "message": (
+                            "Não existe item pai ativo e vigente para o código informado na "
+                            "classificação selecionada nem em classificações alternativas compatíveis."
+                        ),
+                        "alternative": None,
+                    }
 
         return JsonResponse(
             {
@@ -694,11 +818,7 @@ class ItemClassificacaoAdmin(
                     "fim": effective_vigencia_fim.isoformat() if effective_vigencia_fim else "",
                     "overridden": vigencia_overridden,
                 },
-                "derived_level": {
-                    "number": derived_level_number,
-                    "pk": str(level_obj.pk),
-                    "display_label": f"{level_obj.nivel_id} - {level_obj.nivel_nome}",
-                },
+                "derived_level": derived_level_payload,
                 "parent": parent_payload,
             }
         )

@@ -13,7 +13,7 @@ from typing import List, Optional
 
 from django.core.exceptions import ValidationError
 
-from apps.core.models import Classificacao, NivelHierarquico
+from apps.core.code_mask import get_mask_for_classificacao_pk_vigencia
 
 
 def _canonical_zero_segment(segment: str) -> bool:
@@ -34,57 +34,12 @@ def digit_mask_for_classificacao_vigencia(
     classificacao_pk: int, vig_inicio, vig_fim
 ) -> Optional[List[int]]:
     """
-    Lista de `numero_digitos` por nível (1..K), na ordem crescente de `nivel_numero`,
-    para a classificação e janela de vigência do item.
-
-    Para cada `nivel_numero`, usa a linha mais recente em `data_registro_inicio` entre
-    as que cobrem a vigência [vig_inicio, vig_fim] em tempo válido.
+    Resolve máscara canônica (via `estrutura_codigo`) para a classificação e vigência.
     """
     if vig_inicio is None or vig_fim is None or classificacao_pk is None:
         return None
-
-    class_row = (
-        Classificacao.objects.filter(pk=classificacao_pk)
-        .values("classificacao_ref", "classificacao_id")
-        .first()
-    )
-    if not class_row:
-        return None
-    class_ref = class_row.get("classificacao_ref")
-    class_semantic = class_row.get("classificacao_id")
-    identity_filter = {}
-    if class_ref not in (None, ""):
-        identity_filter["classificacao_id__classificacao_ref"] = class_ref
-    elif class_semantic not in (None, ""):
-        identity_filter["classificacao_id__classificacao_id"] = class_semantic
-    else:
-        identity_filter["classificacao_id"] = classificacao_pk
-
-    rows = (
-        NivelHierarquico.objects.filter(
-            **identity_filter,
-            data_vigencia_inicio__lte=vig_inicio,
-            data_vigencia_fim__gte=vig_fim,
-        )
-        .order_by("nivel_numero", "-data_registro_inicio")
-        .values_list("nivel_numero", "numero_digitos", named=True)
-    )
-
-    by_level: dict[int, int] = {}
-    for row in rows:
-        if row.nivel_numero not in by_level:
-            by_level[row.nivel_numero] = row.numero_digitos
-
-    if not by_level:
-        return None
-
-    max_level = max(by_level)
-    mask: List[int] = []
-    for lvl in range(1, max_level + 1):
-        if lvl not in by_level:
-            return None
-        mask.append(by_level[lvl])
-    return mask
+    mask = get_mask_for_classificacao_pk_vigencia(classificacao_pk, vig_inicio, vig_fim)
+    return mask or None
 
 
 def split_receita_cod_segments_tolerant(
