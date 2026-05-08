@@ -425,6 +425,7 @@ class SemanticForeignKeyAdminMixin:
         model = cfg.get("model")
         semantic_field = cfg.get("semantic_field")
         display_label_cfg = cfg.get("display_label")
+        semantic_value_resolver = cfg.get("semantic_value_resolver")
 
         if not model or not semantic_field:
             return JsonResponse({"semantic_value": "", "display_label": "", "link_url": ""})
@@ -447,7 +448,10 @@ class SemanticForeignKeyAdminMixin:
                 args=[obj.pk],
             )
 
-            semantic_value = getattr(obj, semantic_field, "") or ""
+            if callable(semantic_value_resolver):
+                semantic_value = semantic_value_resolver(obj) or ""
+            else:
+                semantic_value = getattr(obj, semantic_field, "") or ""
 
             if callable(display_label_cfg):
                 display_label = display_label_cfg(obj)

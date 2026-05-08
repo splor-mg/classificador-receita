@@ -360,6 +360,12 @@ class ItemClassificacaoAdmin(
             "kind": "item",
             "model": ItemClassificacao,
             "semantic_field": "receita_cod",
+            "semantic_value_resolver": lambda obj: format_receita_cod_by_vigencia(
+                obj.receita_cod or "",
+                getattr(obj, "data_vigencia_inicio", None),
+                getattr(obj, "data_vigencia_fim", None),
+                {},
+            ),
             "display_label": lambda obj: f"{obj.receita_cod} - {obj.receita_nome or obj.item_id or ''}".strip(
                 " -"
             ),
@@ -424,6 +430,15 @@ class ItemClassificacaoAdmin(
         context["item_classificacao_digit_limit_lookup_url"] = reverse(
             f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_lookup_classificacao_digit_limit"
         )
+        if obj is not None:
+            masked_codigo = format_receita_cod_by_vigencia(
+                obj.receita_cod or "",
+                getattr(obj, "data_vigencia_inicio", None),
+                getattr(obj, "data_vigencia_fim", None),
+                {},
+            )
+            nome = obj.receita_nome or obj.item_id or ""
+            context["subtitle"] = f"{masked_codigo} - {nome}".strip(" -")
         return super().render_change_form(request, context, add, change, form_url, obj)
 
     def lookup_classificacao_digit_limit_view(self, request):
@@ -477,7 +492,12 @@ class ItemClassificacaoAdmin(
         return JsonResponse(
             {
                 "pk": str(obj.pk),
-                "semantic_value": obj.receita_cod or "",
+                "semantic_value": format_receita_cod_by_vigencia(
+                    obj.receita_cod or "",
+                    getattr(obj, "data_vigencia_inicio", None),
+                    getattr(obj, "data_vigencia_fim", None),
+                    {},
+                ),
                 "display_label": f"{obj.receita_cod} - {obj.receita_nome or obj.item_id or ''}".strip(" -"),
                 "link_url": link_url,
             }
