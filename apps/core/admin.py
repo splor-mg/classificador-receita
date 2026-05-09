@@ -30,6 +30,7 @@ from apps.core.code_mask import (
     resolve_receita_cod_mask_context,
 )
 from apps.core.parent_item_validation import digit_mask_for_classificacao_vigencia
+from apps.core.classification_naming_messages import classification_naming_messages_dict
 
 from apps.core.admin_filters import (
     BaseLegalTecnicaIdFilter,
@@ -439,6 +440,8 @@ class ItemClassificacaoAdmin(
             )
             nome = obj.receita_nome or obj.item_id or ""
             context["subtitle"] = f"{masked_codigo} - {nome}".strip(" -")
+        else:
+            context["classification_naming_messages"] = classification_naming_messages_dict()
         return super().render_change_form(request, context, add, change, form_url, obj)
 
     def lookup_classificacao_digit_limit_view(self, request):
@@ -732,6 +735,7 @@ class ItemClassificacaoAdmin(
             "found": False,
             "pk": "",
             "code": "",
+            "name": "",
             "display_label": "",
             "link_url": "",
             "status": {"severity": "ok", "message": "", "alternative": None},
@@ -765,6 +769,7 @@ class ItemClassificacaoAdmin(
             if parent_obj:
                 parent_payload["found"] = True
                 parent_payload["pk"] = str(parent_obj.pk)
+                parent_payload["name"] = parent_obj.receita_nome or ""
                 parent_payload["display_label"] = (
                     f"{parent_obj.receita_cod} - {parent_obj.receita_nome or parent_obj.item_id or ''}".strip(" -")
                 )
@@ -863,7 +868,10 @@ class ItemClassificacaoAdmin(
         return "Matriz" if obj.matriz else "Detalhe"
 
     class Media:
-        js = ("core/admin_bitemporal_date_shortcuts.js",)
+        js = (
+            "core/admin_bitemporal_date_shortcuts.js",
+            "core/js/classification_naming.js",
+        )
 
 
 @admin.register(VersaoClassificacao)

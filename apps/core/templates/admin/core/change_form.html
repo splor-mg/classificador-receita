@@ -123,7 +123,13 @@
   <input type="hidden" name="{{ k }}" value="{{ v|escape }}">
   {% endfor %}
 {% endif %}
+{% if adminform and adminform.form.receita_nome_base_mode %}
+  {{ adminform.form.receita_nome_base_mode }}
+{% endif %}
 </div>
+{% if classification_naming_messages %}
+{{ classification_naming_messages|json_script:"classification-naming-config" }}
+{% endif %}
 <script type="text/javascript">
 (function() {
   function normalizeIdentifierValue(raw) {
@@ -874,6 +880,17 @@
         });
       }
 
+      function runClassificationNamingInit() {
+        if (typeof window.initClassificationNaming === 'function') {
+          window.initClassificationNaming(isAddMode);
+        }
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', runClassificationNamingInit);
+      } else {
+        window.setTimeout(runClassificationNamingInit, 0);
+      }
+
       if (nivelIdInput) {
         nivelIdInput.addEventListener('input', function() {
           clearLevelValidationState();
@@ -987,6 +1004,12 @@
               return syncHierarchyFromCode('submit').then(function(hierarchyResult) {
                 if (!hierarchyResult || !hierarchyResult.isValid) {
                   return;
+                }
+                if (typeof window.validateClassificationNamingOnSubmit === 'function') {
+                  var namingOk = window.validateClassificationNamingOnSubmit();
+                  if (!namingOk) {
+                    return;
+                  }
                 }
                 receitaCodInput.value = stripReceitaCodFormatting(receitaCodInput.value);
                 syncItemIdPreview();

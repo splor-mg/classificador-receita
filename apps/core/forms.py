@@ -1,7 +1,7 @@
 from datetime import date
 
 from django import forms
-from django.forms import RadioSelect, TextInput, Textarea
+from django.forms import HiddenInput, RadioSelect, TextInput, Textarea
 
 from apps.core.models import (
     SerieClassificacao,
@@ -140,6 +140,14 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
         ],
         widget=RadioSelect,
         required=True,
+    )
+    receita_nome_base_mode = forms.ChoiceField(
+        choices=[
+            ("base_pai", "Radical Baseado no Item Pai"),
+            ("sem_base", "Sem Nome Base"),
+        ],
+        required=False,
+        widget=HiddenInput(),
     )
 
     def __init__(self, *args, **kwargs):
