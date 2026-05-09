@@ -251,15 +251,6 @@ def validate_item_parent_item_rules(instance) -> None:
     if child_class is None or parent_class is None:
         return
 
-    if getattr(child_class, "pk", None) != getattr(parent_class, "pk", None):
-        raise ValidationError(
-            {
-                "parent_item_id": (
-                    "O item pai deve pertencer à mesma classificação que o item filho."
-                )
-            }
-        )
-
     c_cod = (getattr(instance, "receita_cod", None) or "").strip()
     p_cod = (getattr(parent, "receita_cod", None) or "").strip()
     vig_ini = getattr(instance, "data_vigencia_inicio", None)
