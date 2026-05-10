@@ -18,9 +18,13 @@ existir no seed nem tiver sido inferido nesta execução (não sobrescreve linha
 Para criar o CSV inicial vazio (só cabeçalho), crie o arquivo manualmente ou com uma primeira linha;
 na primeira execução todas as inferências válidas serão acrescentadas.
 
-Pais considerados: **NIVEL-1, NIVEL-2, NIVEL-5, NIVEL-6, NIVEL-7, NIVEL-8** (exclui NIVEL-3 e NIVEL-4).
-Inclui NIVEL-1→2 para ``Dedução das Receitas`` → ``Dedução Rec.``; mantém NIVEL-7 para IPVA/DA/Princ.;
-NIVEL-6→7 para IR; NIVEL-5→7 para ``Tx. Insp. …``.
+Para cada linha **ativa em registro** (``data_registro_fim`` sentinela) com ``parent_item_id`` definido,
+resolve-se o pai na própria tabela de itens: entre linhas com ``item_id`` igual ao pai, ficam só as **ativas
+em registro**; exige-se **vigência compatível** com o filho (intervalo do filho contido no do pai,
+``data_vigencia_*``), espelhando ``resolve_active_compatible_fk`` / ``temporal_fk_resolution.py``. Se nenhuma
+linha encaixa na vigência, usa-se fallback: mesma ``item_id``, ativa em registro, escolhendo a mais recente
+por ``data_vigencia_inicio``, ``data_registro_inicio``, ``item_ref``. Depois aplicam-se as regras abaixo
+entre ``receita_nome`` do pai resolvido e do filho.
 
 Regras (por ordem de tentativa):
 
@@ -66,6 +70,7 @@ import argparse
 import csv
 import re
 from collections import defaultdict
+from datetime import date, datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -117,8 +122,13 @@ def _merge_manual_seed_entries(
     return n
 
 
-_ALLOWED_PARENT_NIVEIS = frozenset(
-    {"NIVEL-1", "NIVEL-2", "NIVEL-5", "NIVEL-6", "NIVEL-7", "NIVEL-8"}
+# Valores aceitos para registro ainda válido (alinhar a imports/carregamento do projeto).
+_REGISTRO_FIM_SENTINELS = frozenset(
+    {
+        "9999-12-31 00:00:00",
+        "9999-12-31T00:00:00",
+        "9999-12-31 00:00:00.000000",
+    }
 )
 
 _CONNECTIVES = frozenset(
@@ -178,6 +188,84 @@ def _norm_name(raw: str | None) -> str | None:
     if not s or s.upper() == "NULL":
         return None
     return s
+
+
+def _norm_parent_item_id(raw: str | None) -> str | None:
+    s = (raw or "").strip()
+    if not s or s.upper() == "NULL" or s == "-":
+        return None
+    return s
+
+
+def _parse_iso_date(value: str | None) -> date | None:
+    s = (value or "").strip()
+    if not s or s.upper() == "NULL":
+        return None
+    try:
+        return datetime.strptime(s[:10], "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def _parse_iso_datetime(value: str | None) -> datetime | None:
+    s = (value or "").strip()
+    if not s or s.upper() == "NULL":
+        return None
+    s = s.replace("T", " ", 1)
+    if len(s) == 10:
+        s += " 00:00:00"
+    try:
+        return datetime.strptime(s[:19], "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        return None
+
+
+def _is_transaction_active_row(row: dict) -> bool:
+    fin = (row.get("data_registro_fim") or "").strip()
+    return fin in _REGISTRO_FIM_SENTINELS
+
+
+def _vigencia_compatible_parent_child(parent: dict, child: dict) -> bool:
+    """Filho contido no pai: pai_ini <= filho_ini e filho_fim <= pai_fim (como no ORM)."""
+    pi = _parse_iso_date(parent.get("data_vigencia_inicio"))
+    pf = _parse_iso_date(parent.get("data_vigencia_fim"))
+    ci = _parse_iso_date(child.get("data_vigencia_inicio"))
+    cf = _parse_iso_date(child.get("data_vigencia_fim"))
+    if pi and pf and ci and cf:
+        return pi <= ci and cf <= pf
+    return True
+
+
+def _pick_latest_parent_row(candidates: list[dict]) -> dict | None:
+    """Desempate igual a ``order_by('-data_vigencia_inicio', '-data_registro_inicio', '-pk')``."""
+
+    def sort_key(r: dict) -> tuple[date, datetime, int]:
+        vd = _parse_iso_date(r.get("data_vigencia_inicio")) or date.min
+        rd = _parse_iso_datetime(r.get("data_registro_inicio")) or datetime.min
+        try:
+            ref = int((r.get("item_ref") or "0").strip() or "0")
+        except ValueError:
+            ref = 0
+        return (vd, rd, ref)
+
+    if not candidates:
+        return None
+    return max(candidates, key=sort_key)
+
+
+def _resolve_parent_row(child: dict, rows_by_item_id: dict[str, list[dict]]) -> dict | None:
+    pid = _norm_parent_item_id(child.get("parent_item_id"))
+    if not pid:
+        return None
+    bucket = rows_by_item_id.get(pid)
+    if not bucket:
+        return None
+    active = [r for r in bucket if _is_transaction_active_row(r)]
+    if not active:
+        return None
+    compatible = [r for r in active if _vigencia_compatible_parent_child(r, child)]
+    pool = compatible if compatible else active
+    return _pick_latest_parent_row(pool)
 
 
 def _significant_words_ordered(text: str) -> list[str]:
@@ -398,31 +486,29 @@ _RULE_FUNCS = (
 
 
 def _infer_pairs(rows: list[dict]) -> tuple[dict[str, str], list[tuple[str, set[str]]]]:
-    children_by_parent: dict[str, list[dict]] = defaultdict(list)
+    rows_by_item_id: dict[str, list[dict]] = defaultdict(list)
     for r in rows:
-        pid = (r.get("parent_item_id") or "").strip()
-        if pid and pid != "-":
-            children_by_parent[pid].append(r)
+        iid = (r.get("item_id") or "").strip()
+        if iid:
+            rows_by_item_id[iid].append(r)
 
     cand: dict[str, set[str]] = defaultdict(set)
-    for r in rows:
-        nivel = (r.get("nivel_id") or "").strip()
-        if nivel not in _ALLOWED_PARENT_NIVEIS:
+    for ch in rows:
+        if not _is_transaction_active_row(ch):
             continue
-        iid = (r.get("item_id") or "").strip()
-        pname = _norm_name(r.get("receita_nome"))
-        if not pname or not iid:
+        parent_row = _resolve_parent_row(ch, rows_by_item_id)
+        if parent_row is None:
             continue
-        for ch in children_by_parent.get(iid, []):
-            cname = _norm_name(ch.get("receita_nome"))
-            if not cname:
-                continue
-            for rule_fn in _RULE_FUNCS:
-                got = rule_fn(pname, cname)
-                if got:
-                    termo, abrev = got
-                    cand[termo].add(abrev)
-                    break
+        pname = _norm_name(parent_row.get("receita_nome"))
+        cname = _norm_name(ch.get("receita_nome"))
+        if not pname or not cname:
+            continue
+        for rule_fn in _RULE_FUNCS:
+            got = rule_fn(pname, cname)
+            if got:
+                termo, abrev = got
+                cand[termo].add(abrev)
+                break
 
     good: dict[str, str] = {}
     conflicts: list[tuple[str, set[str]]] = []
