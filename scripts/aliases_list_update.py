@@ -63,7 +63,9 @@ Regras (por ordem de tentativa):
   o mapeamento **exato** ``palavra → token`` que reproduz a abreviação ao juntar os tokens com espaço.
 
 Conflitos (na inferência): mesmo ``termo_nome`` com mais de uma ``abreviacao`` candidata → esse termo não
-entra nas novidades.
+entra nas novidades. Use ``--print-conflicts`` para listar. Use ``--print-conflicts-resolve`` após gravar o
+restante: para cada conflito cujo ``termo_nome`` ainda não existir no CSV, pergunta qual abreviação registrar
+(``n`` pula).
 
 Uso:
   python scripts/aliases_list_update.py
@@ -75,6 +77,7 @@ from __future__ import annotations
 import argparse
 import csv
 import re
+import sys
 from collections import defaultdict
 from datetime import date, datetime
 from pathlib import Path
@@ -629,6 +632,38 @@ def _assign_refs_to_new_rows(new_rows: list[dict[str, str]], max_existing_ref: i
     return next_ref
 
 
+def _write_sorted_seed(path: Path, rows: list[dict[str, str]]) -> None:
+    sorted_rows = _sort_rows_lista_abreviacoes_registry(rows)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(_SEED_FIELDNAMES), **_SEED_WRITER_KW)
+        w.writeheader()
+        for row in sorted_rows:
+            w.writerow({k: row[k] for k in _SEED_FIELDNAMES})
+
+
+def _interactive_pick_conflict_abbrev(termo: str, abbrev_options: list[str]) -> str | None:
+    """
+    Exibe opções numeradas; retorna a abreviação escolhida ou None se o usuário pular (``n``).
+    """
+    print()
+    print(f"Termo em conflito: {termo!r}")
+    for i, ab in enumerate(abbrev_options, start=1):
+        print(f"  {i}) {ab}")
+    print("  n) Nenhuma — pular este termo")
+    while True:
+        raw = input("Escolha (número ou n): ").strip().lower()
+        if raw in ("n", "no", "nao", "não"):
+            return None
+        try:
+            k = int(raw)
+            if 1 <= k <= len(abbrev_options):
+                return abbrev_options[k - 1]
+        except ValueError:
+            pass
+        print(f"  Inválido. Digite de 1 a {len(abbrev_options)} ou n.")
+
+
 def _load_existing_seed(path: Path) -> tuple[list[dict[str, str]], set[str]]:
     """
     Lê o CSV existente. Retorna (linhas como dicts na ordem do arquivo), conjunto de ``termo_nome``.
@@ -685,6 +720,14 @@ def main() -> None:
         "--print-conflicts",
         action="store_true",
         help="Lista termos com mais de uma abreviação candidata (descartados).",
+    )
+    parser.add_argument(
+        "--print-conflicts-resolve",
+        action="store_true",
+        help=(
+            "Após gravar o CSV, pergunta termo a termo (só os sem linha no seed) qual abreviação registrar; "
+            "n pula. Exige terminal interativo."
+        ),
     )
     args = parser.parse_args()
 
@@ -756,13 +799,7 @@ def main() -> None:
     last_ref = _assign_refs_to_new_rows(new_row_dicts, max_ref)
 
     combined = existing_rows + new_row_dicts
-    sorted_rows = _sort_rows_lista_abreviacoes_registry(combined)
-
-    with out_path.open("w", encoding="utf-8", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=list(_SEED_FIELDNAMES), **_SEED_WRITER_KW)
-        w.writeheader()
-        for row in sorted_rows:
-            w.writerow({k: row[k] for k in _SEED_FIELDNAMES})
+    _write_sorted_seed(out_path, combined)
 
     n_derived = len(derived)
     n_new_rows = n_inferred_only + n_manual + n_derived
@@ -788,9 +825,62 @@ def main() -> None:
         print(f"  Omitidas por redundância composicional: {n_skip_comp}.")
     print()
     if conflicts:
-        print(f"Aviso: {len(conflicts)} termo(s) com conflito de abreviação — omitidos.")
+        print(
+            f"Aviso: {len(conflicts)} termo(s) com conflito de abreviação — "
+            "omitidos na inferência automática."
+        )
         print()
-        if args.print_conflicts:
+        if args.print_conflicts_resolve:
+            _, termos_after_write = _load_existing_seed(out_path)
+            eligible = sorted(
+                [(t, ab) for t, ab in conflicts if t not in termos_after_write],
+                key=lambda x: x[0].lower(),
+            )
+            n_already_seeded = len(conflicts) - len(eligible)
+            if n_already_seeded:
+                print(
+                    f"  {n_already_seeded} termo(s) já possuem linha no seed "
+                    "(após esta execução) — sem prompt interativo."
+                )
+            if eligible:
+                if not sys.stdin.isatty():
+                    print(
+                        "  Resolução interativa ignorada: stdin não é um terminal "
+                        "(use um terminal interativo para --print-conflicts-resolve)."
+                    )
+                else:
+                    print(
+                        f"  {len(eligible)} termo(s) sem linha no seed — "
+                        "escolha uma abreviação por termo (n = pular)."
+                    )
+                    resolved_pairs: list[tuple[str, str]] = []
+                    for termo_c, abrevs in eligible:
+                        opts = sorted(abrevs)
+                        picked = _interactive_pick_conflict_abbrev(termo_c, opts)
+                        if picked is not None:
+                            resolved_pairs.append((termo_c, picked))
+                    if resolved_pairs:
+                        existing_reload, _ = _load_existing_seed(out_path)
+                        extra_rows: list[dict[str, str]] = []
+                        for termo_c, abrev_c in resolved_pairs:
+                            extra_rows.append(
+                                {
+                                    "termo_nome": termo_c,
+                                    "alias_lexico_ref": "0",
+                                    "abreviacao": abrev_c,
+                                    "data_registro_inicio": args.registro_inicio,
+                                    "data_registro_fim": args.registro_fim,
+                                }
+                            )
+                        max_r = _max_alias_lexico_ref(existing_reload)
+                        _assign_refs_to_new_rows(extra_rows, max_r)
+                        _write_sorted_seed(out_path, existing_reload + extra_rows)
+                        print()
+                        print(
+                            f"  Resolução de conflitos: {len(resolved_pairs)} nova(s) linha(s) gravada(s)."
+                        )
+            print()
+        elif args.print_conflicts:
             for t, ab in conflicts[:80]:
                 print(f"  {t!r}: {sorted(ab)}")
             if len(conflicts) > 80:
