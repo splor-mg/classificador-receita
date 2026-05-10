@@ -107,3 +107,13 @@ resources:
     schema: schemas/base_legal_tecnica.yaml
     description: Base legal e técnica (normas, manuais, decisões judiciais, portarias e congêneres) que podem afetar as tabelas de classificação.
 
+  - name: lista_abreviacoes
+    type: table
+    path: docs/assets/seed_lista_abreviacoes.csv
+    scheme: file
+    format: csv
+    mediatype: text/csv
+    encoding: utf-8
+    schema: schemas/lista_abreviacoes.yaml
+    description: Lista curada de termos completos e abreviações (transaction time simples), para sugestão de radical abreviado na nomenclatura.
+

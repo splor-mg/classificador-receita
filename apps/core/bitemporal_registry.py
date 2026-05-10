@@ -238,6 +238,35 @@ RESOURCES: Dict[str, Dict[str, Any]] = {
         "select_related": [],
         "order_by": ["base_legal_tecnica_id"],
     },
+    # Transaction time apenas (sem data_vigencia_*); export/registry alinhados ao exporter.
+    # Não usar em cadastrar_bitemporal/editar_bitemporal (filtrados por presença de vigência).
+    "lista_abreviacoes": {
+        "model_name": "AliasLexico",
+        "entity_key": [
+            {"arg": "alias_lexico_ref", "lookup": "alias_lexico_ref"},
+        ],
+        "semantic_id_field": "termo",
+        "fields": [
+            {"name": "termo", "type": "string", "required": True},
+            {"name": "alias_lexico_ref", "type": "integer", "required": True},
+            {"name": "abreviacao", "type": "string", "required": True},
+            {"name": "data_registro_inicio", "type": "datetime", "required": True},
+            {"name": "data_registro_fim", "type": "datetime", "required": True},
+        ],
+        "export_columns": [
+            "termo",
+            "alias_lexico_ref",
+            "abreviacao",
+            "data_registro_inicio",
+            "data_registro_fim",
+        ],
+        "list_display": ["termo", "abreviacao", "alias_lexico_ref"],
+        "select_related": [],
+        "order_by_sql": [
+            "LOWER({main}.termo) ASC",
+            "{main}.data_registro_inicio ASC",
+        ],
+    },
 }
 
 
@@ -271,6 +300,22 @@ def get_model_for_resource(name: str):
         raise KeyError(f"Model '{model_name}' não encontrado para recurso '{name}'")
 
     return cls
+
+
+def resources_for_bitemporal_cli() -> List[str]:
+    """
+    Recursos cujo model possui ``data_vigencia_inicio`` (cadastrar_bitemporal / editar_bitemporal).
+    Exclui lista_abreviacoes (só transaction time) e qualquer futuro recurso sem vigência orçamentária.
+    """
+    out: List[str] = []
+    for rname in sorted(RESOURCES.keys()):
+        model = get_model_for_resource(rname)
+        try:
+            model._meta.get_field("data_vigencia_inicio")
+        except Exception:
+            continue
+        out.append(rname)
+    return out
 
 
 def get_resource_for_model(model_cls) -> Optional[str]:

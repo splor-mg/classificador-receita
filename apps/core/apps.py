@@ -25,6 +25,7 @@ class CoreConfig(AppConfig):
                     # Ordem desejada (use os nomes das classes dos models)
                     desired_order = [
                         "BaseLegalTecnica",
+                        "AliasLexico",
                         "SerieClassificacao",
                         "Classificacao",
                         "NivelHierarquico",

@@ -168,8 +168,12 @@ def export_resource(recurso: str, output: str | None = None, scope: str = "all",
     # Enforce deterministic ordering.
     order_sql_parts = []
 
+    order_sql_custom = res.get("order_by_sql")
+    if order_sql_custom:
+        order_sql_parts = [frag.format(main=main_alias) for frag in order_sql_custom]
+
     resource_order = res.get("order_by") or []
-    if resource_order:
+    if not order_sql_parts and resource_order:
         # Respeitar explicitamente a ordem definida no registry.
         for ob in resource_order:
             direction = "ASC"
@@ -199,7 +203,7 @@ def export_resource(recurso: str, output: str | None = None, scope: str = "all",
                 except Exception:
                     col_db = field_expr
                 order_sql_parts.append(f"{main_alias}.{col_db} {direction}")
-    else:
+    elif not order_sql_parts:
         # Fallback heurístico para recursos sem order_by explícito:
         # preferir campo *_ref, depois datas de vigência/registro.
         ref_field_name = None

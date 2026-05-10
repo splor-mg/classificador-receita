@@ -846,3 +846,6 @@ class VarianteClassificacao(BitemporalModel):
                 ("versao", "versão de origem"),
             ],
         )
+
+
+from apps.core.models_alias_lexico import AliasLexico  # noqa: E402, F401

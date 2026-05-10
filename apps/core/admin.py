@@ -1,8 +1,13 @@
 from datetime import date, datetime
 import json
+import logging
 
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.contrib.admin.utils import unquote
+from django.db.models import Max
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect
+from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils import timezone
 
@@ -16,11 +21,13 @@ from apps.core.models import (
     VarianteClassificacao,
 )
 from apps.core.models_base_legal import BaseLegalTecnica
+from apps.core.models_alias_lexico import AliasLexico
 from apps.core.forms import (
     SerieClassificacaoForm,
     ClassificacaoForm,
     NivelHierarquicoForm,
     ItemClassificacaoForm,
+    AliasLexicoAdminForm,
 )
 from apps.core.admin_formatters import (
     format_receita_cod_by_vigencia,
@@ -33,6 +40,7 @@ from apps.core.parent_item_validation import digit_mask_for_classificacao_vigenc
 from apps.core.classification_naming_messages import classification_naming_messages_dict
 
 from apps.core.admin_filters import (
+    AliasLexicoRegistroAtivoFilter,
     BaseLegalTecnicaIdFilter,
     BaseLegalTecnicaSemanticFilter,
     CategoriaOrigemPrefixFilter,
@@ -57,6 +65,7 @@ from apps.core.admin_mixins import (
     SemanticForeignKeyAdminMixin,
     BitemporalObjectActionsMixin,
     BitemporalForeignKeyLookupActiveOnlyMixin,
+    transaction_time_sentinel_for_query,
 )
 
 
@@ -912,3 +921,212 @@ class BaseLegalTecnicaAdmin(CoreChangeSaveFormSubmitMixin, AutoExportAdminMixin,
     list_filter = [BaseLegalTecnicaIdFilter, 'tipo_legal', 'esfera_federativa', 'data_edicao']
     search_fields = ['base_legal_tecnica_id', 'titulo_norma', 'ementa']
     date_hierarchy = 'data_edicao'
+
+
+def _alias_lexico_registro_ativo(obj: AliasLexico) -> bool:
+    if obj is None or getattr(obj, "pk", None) is None:
+        return True
+    fim = obj.data_registro_fim
+    sent = transaction_time_sentinel_for_query()
+    if fim is None:
+        return False
+    if timezone.is_naive(fim):
+        fim = timezone.make_aware(fim, timezone.get_current_timezone())
+    return fim == sent
+
+
+_ALIAS_LEXICO_SENTINEL_DISPLAY = "9999-12-31 00:00:00"
+
+
+def _alias_lexico_format_registro_dt(dt) -> str:
+    """Exibição no admin: YYYY-MM-DD HH:mm:ss no fuso local."""
+    if dt is None:
+        return "—"
+    if timezone.is_naive(dt):
+        dt = timezone.make_aware(dt, timezone.get_current_timezone())
+    return timezone.localtime(dt).strftime("%Y-%m-%d %H:%M:%S")
+
+
+@admin.register(AliasLexico)
+class AliasLexicoAdmin(
+    CoreChangeSaveFormSubmitMixin,
+    BitemporalDateFormatMixin,
+    AutoExportAdminMixin,
+    admin.ModelAdmin,
+):
+    form = AliasLexicoAdminForm
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    ("termo", "alias_lexico_ref"),
+                    "abreviacao",
+                    "data_registro_inicio_fmt",
+                    "data_registro_fim_fmt",
+                )
+            },
+        ),
+    )
+    readonly_fields = ("data_registro_inicio_fmt", "data_registro_fim_fmt")
+    list_display = ("termo", "abreviacao", "status_registro")
+    list_filter = (AliasLexicoRegistroAtivoFilter,)
+    search_fields = ("termo", "abreviacao")
+
+    @admin.display(description="Status")
+    def status_registro(self, obj):
+        return "Ativo" if _alias_lexico_registro_ativo(obj) else "Desativado"
+
+    def data_registro_inicio_fmt(self, obj):
+        if obj is None or not getattr(obj, "pk", None):
+            return _alias_lexico_format_registro_dt(timezone.now())
+        return super().data_registro_inicio_fmt(obj)
+
+    data_registro_inicio_fmt.short_description = "Data do Início do Registro"
+    data_registro_inicio_fmt.admin_order_field = "data_registro_inicio"
+
+    def data_registro_fim_fmt(self, obj):
+        if obj is None or not getattr(obj, "pk", None):
+            return _ALIAS_LEXICO_SENTINEL_DISPLAY
+        if _alias_lexico_registro_ativo(obj):
+            return _ALIAS_LEXICO_SENTINEL_DISPLAY
+        return super().data_registro_fim_fmt(obj)
+
+    data_registro_fim_fmt.short_description = "Data do Fim do Registro"
+    data_registro_fim_fmt.admin_order_field = "data_registro_fim"
+
+    def get_changeform_initial_data(self, request):
+        initial = super().get_changeform_initial_data(request)
+        mx = AliasLexico.objects.aggregate(m=Max("alias_lexico_ref"))["m"] or 0
+        initial.setdefault("alias_lexico_ref", mx + 1)
+        return initial
+
+    def get_urls(self):
+        info = self.model._meta.app_label, self.model._meta.model_name
+        return [
+            path(
+                "<path:object_id>/desativar/",
+                self.admin_site.admin_view(self.desativar_view),
+                name="%s_%s_desativar" % info,
+            ),
+            path(
+                "<path:object_id>/reativar/",
+                self.admin_site.admin_view(self.reativar_view),
+                name="%s_%s_reativar" % info,
+            ),
+        ] + super().get_urls()
+
+    def render_change_form(self, request, context, add=False, change=False, form_url="", obj=None):
+        if change and obj is not None:
+            context["alias_lexico_is_active"] = _alias_lexico_registro_ativo(obj)
+            context["alias_lexico_deactivate_url"] = reverse(
+                "admin:core_aliaslexico_desativar",
+                args=[obj.pk],
+            )
+            context["alias_lexico_reactivate_url"] = reverse(
+                "admin:core_aliaslexico_reativar",
+                args=[obj.pk],
+            )
+            context["alias_lexico_delete_url"] = reverse(
+                "admin:core_aliaslexico_delete",
+                args=[obj.pk],
+            )
+        return super().render_change_form(request, context, add, change, form_url, obj)
+
+    def desativar_view(self, request, object_id):
+        obj = get_object_or_404(self.model, pk=unquote(object_id))
+        if not self.has_change_permission(request, obj):
+            return redirect("admin:index")
+
+        change_url = reverse(
+            "admin:core_aliaslexico_change",
+            args=[obj.pk],
+        )
+
+        if not _alias_lexico_registro_ativo(obj):
+            self.message_user(request, "Este registro já está desativado.", level=messages.WARNING)
+            return redirect(change_url)
+
+        if request.method == "POST":
+            obj.data_registro_fim = timezone.now()
+            obj.save(update_fields=["data_registro_fim"])
+            self.trigger_export(request, self.model)
+            self.message_user(request, "Registro desativado (data de fim = agora).", level=messages.SUCCESS)
+            return redirect(change_url)
+
+        context = {
+            **self.admin_site.each_context(request),
+            "title": "Desativar abreviação léxica",
+            "subtitle": (
+                "A data de fim do registro passará a ser o instante atual. "
+                "O termo e a abreviação permanecem no histórico."
+            ),
+            "object": obj,
+            "cancel_url": change_url,
+            "opts": self.opts,
+        }
+        return TemplateResponse(
+            request,
+            "admin/core/alias_lexico_confirm.html",
+            context,
+        )
+
+    def reativar_view(self, request, object_id):
+        obj = get_object_or_404(self.model, pk=unquote(object_id))
+        if not self.has_change_permission(request, obj):
+            return redirect("admin:index")
+
+        change_url = reverse(
+            "admin:core_aliaslexico_change",
+            args=[obj.pk],
+        )
+
+        if _alias_lexico_registro_ativo(obj):
+            self.message_user(request, "Este registro já está ativo.", level=messages.WARNING)
+            return redirect(change_url)
+
+        if request.method == "POST":
+            obj.data_registro_fim = transaction_time_sentinel_for_query()
+            obj.save(update_fields=["data_registro_fim"])
+            self.trigger_export(request, self.model)
+            self.message_user(request, "Registro reativado (data de fim = sentinela).", level=messages.SUCCESS)
+            return redirect(change_url)
+
+        context = {
+            **self.admin_site.each_context(request),
+            "title": "Reativar abreviação léxica",
+            "subtitle": (
+                "A data de fim do registro voltará ao valor sentinela (registro ativo)."
+            ),
+            "object": obj,
+            "cancel_url": change_url,
+            "opts": self.opts,
+        }
+        return TemplateResponse(
+            request,
+            "admin/core/alias_lexico_confirm.html",
+            context,
+        )
+
+    def save_model(self, request, obj, form, change):
+        if change:
+            prev = (
+                self.model.objects.filter(pk=obj.pk)
+                .only(
+                    "data_registro_inicio",
+                    "data_registro_fim",
+                    "alias_lexico_ref",
+                )
+                .first()
+            )
+            if prev:
+                obj.data_registro_inicio = prev.data_registro_inicio
+                obj.alias_lexico_ref = prev.alias_lexico_ref
+                obj.data_registro_fim = prev.data_registro_fim
+        else:
+            obj.data_registro_inicio = timezone.now()
+            obj.data_registro_fim = transaction_time_sentinel_for_query()
+            mx = self.model.objects.aggregate(m=Max("alias_lexico_ref"))["m"] or 0
+            obj.alias_lexico_ref = mx + 1
+
+        super().save_model(request, obj, form, change)

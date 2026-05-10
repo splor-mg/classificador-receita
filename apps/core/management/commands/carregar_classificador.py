@@ -8,6 +8,8 @@ o carregamento apenas insere as linhas dos CSVs.
 
 base_legal_tecnica é modelo temporal simples (SCD-1, alteração in-place); as
 Regras 1 a 7 da ADR-004 não se aplicam ao seu carregamento nem à sua governança.
+
+lista_abreviacoes (tabela lista_abreviacoes): apenas transaction time (data_registro_*), sem vigência orçamentária.
 """
 from datetime import datetime
 from pathlib import Path
@@ -17,6 +19,7 @@ from django.apps import apps
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.conf import settings
 from django.db import transaction, connections
+from django.db.models import Max
 from django.utils import timezone
 
 from frictionless import Package, Resource
@@ -43,6 +46,7 @@ from apps.core.models import (
     ITEM_CLASSIFICACAO_SEMANTIC_PREFIX,
     item_semantic_id_from_receita_cod,
 )
+from apps.core.models_alias_lexico import AliasLexico
 from apps.core.bitemporal_registry import get_sentinela_datetime
 
 
@@ -303,6 +307,7 @@ class Command(BaseCommand):
         load_order = [
             "serie_classificacao",
             "base_legal_tecnica",
+            "lista_abreviacoes",
             "classificacao",
             "nivel_hierarquico",
             "versao_classificacao",
@@ -327,6 +332,7 @@ class Command(BaseCommand):
         resource_model_map = {
             "serie_classificacao": SerieClassificacao,
             "base_legal_tecnica": BaseLegalTecnica,
+            "lista_abreviacoes": AliasLexico,
             "classificacao": Classificacao,
             "nivel_hierarquico": NivelHierarquico,
             "item_classificacao": ItemClassificacao,
@@ -453,6 +459,8 @@ class Command(BaseCommand):
             self._load_serie_classificacao(rows)
         elif name == "base_legal_tecnica":
             self._load_base_legal_tecnica(rows)
+        elif name == "lista_abreviacoes":
+            self._load_lista_abreviacoes(rows)
         elif name == "classificacao":
             self._load_classificacao(rows)
         elif name == "nivel_hierarquico":
@@ -525,6 +533,51 @@ class Command(BaseCommand):
             BaseLegalTecnica.objects.create(**row)
             created += 1
         self.stdout.write(self.style.SUCCESS(f"base_legal_tecnica: {created} linhas carregadas."))
+
+    def _load_lista_abreviacoes(self, rows: Iterable[Mapping[str, Any]]) -> None:
+        if AliasLexico.objects.exists():
+            self.stdout.write(
+                self.style.WARNING(
+                    "Tabela 'lista_abreviacoes' já possui registros. Pule este recurso ou use --clear / --clear-hard."
+                )
+            )
+            return
+
+        created = 0
+        next_ref = 1
+        for row in rows:
+            termo = _strip_csv_empty(row.get("termo")) or _strip_csv_empty(row.get("termo_nome"))
+            abrev = _strip_csv_empty(row.get("abreviacao"))
+            if termo is None or abrev is None:
+                continue
+
+            ref_raw = _strip_csv_empty(row.get("alias_lexico_ref")) or _strip_csv_empty(
+                row.get("termo_nome_ref")
+            )
+            ref: int | None = None
+            if ref_raw is not None and str(ref_raw).strip().isdigit():
+                ref = int(str(ref_raw).strip())
+
+            payload = {
+                "termo": termo,
+                "abreviacao": abrev,
+                "alias_lexico_ref": ref,
+                "data_registro_inicio": row.get("data_registro_inicio"),
+                "data_registro_fim": row.get("data_registro_fim"),
+            }
+            prepared = self._prepare_registro_dates(payload)
+            if prepared.get("alias_lexico_ref") is None:
+                prepared["alias_lexico_ref"] = next_ref
+                next_ref += 1
+            else:
+                mx = prepared["alias_lexico_ref"]
+                if mx >= next_ref:
+                    next_ref = mx + 1
+
+            AliasLexico.objects.create(**prepared)
+            created += 1
+
+        self.stdout.write(self.style.SUCCESS(f"lista_abreviacoes: {created} linhas carregadas."))
 
     def _load_classificacao(self, rows: Iterable[Mapping[str, Any]]) -> None:
         if Classificacao.objects.exists():

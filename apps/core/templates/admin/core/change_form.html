@@ -1,6 +1,45 @@
 {% extends "admin/change_form.html" %}
 {% load i18n admin_urls %}
 
+{% block extrastyle %}
+{{ block.super }}
+{% if opts and opts.model_name == 'aliaslexico' %}
+<style id="core-aliaslexico-termo-width">
+  /*
+    O admin Django define .vTextField { width: 20em } em forms.css (acima deste bloco no cascade).
+    Sobrescrevemos só aqui com maior especificidade + !important e afrouxamos o flex da linha.
+  */
+  body.model-aliaslexico.change-form .flex-container.form-row .fieldBox.field-termo,
+  body.model-aliaslexico.change-form .form-row .fieldBox.field-termo,
+  body.model-aliaslexico.change-form .form-row .field-termo {
+    flex: 1 1 auto;
+    min-width: min(61.6vw, 54.6rem);
+    max-width: none;
+  }
+  body.model-aliaslexico.change-form .flex-container.form-row .fieldBox.field-alias_lexico_ref,
+  body.model-aliaslexico.change-form .form-row .fieldBox.field-alias_lexico_ref,
+  body.model-aliaslexico.change-form .form-row .field-alias_lexico_ref {
+    flex: 0 0 auto;
+    max-width: 11rem;
+  }
+  /* Largo em relação ao padrão 20em do admin; ~30% mais estreito que a versão anterior */
+  body.model-aliaslexico.change-form input#id_termo.vTextField,
+  body.model-aliaslexico.change-form .fieldBox.field-termo input.vTextField {
+    width: min(50.4rem, 67.2vw) !important;
+    max-width: none !important;
+    box-sizing: border-box;
+  }
+  /* Linha termo+ref em versões sem .flex-container na .form-row */
+  body.model-aliaslexico.change-form fieldset.module.aligned .form-row:has(.field-termo):has(.field-alias_lexico_ref) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+</style>
+{% endif %}
+{% endblock %}
+
 {% block submit_buttons_bottom %}
 <style>
   .submit-row.submit-row-unified input[type="submit"],
@@ -73,6 +112,39 @@
   </div>
   {% if change %}
   <div class="submit-row-right" style="display: flex; align-items: center; gap: 5px;">
+    {% if opts.model_name == 'aliaslexico' %}
+    {% if alias_lexico_is_active %}
+    <a
+      href="{{ alias_lexico_deactivate_url }}"
+      id="core-aliaslexico-desativar-button"
+      class="button"
+      style="background-color: #f0ad4e; border-color: #eea236; color: #fff;"
+      title="Define a data de fim do registro como o instante atual (registro desativado)."
+    >
+      Desativar
+    </a>
+    {% else %}
+    <a
+      href="{{ alias_lexico_reactivate_url }}"
+      id="core-aliaslexico-reativar-button"
+      class="button"
+      style="background-color: #7e57c2; border-color: #6c3fb5; color: #fff;"
+      title="Restaura a data de fim do registro para o valor sentinela (registro ativo)."
+    >
+      Reativar
+    </a>
+    {% endif %}
+    {% if alias_lexico_delete_url %}
+    <a
+      href="{{ alias_lexico_delete_url }}"
+      id="core-aliaslexico-delete-button"
+      class="deletelink"
+      title="Remove permanentemente esta linha do banco de dados."
+    >
+      Excluir
+    </a>
+    {% endif %}
+    {% else %}
     {% if block_url %}
     <a
       href="{{ block_url }}"
@@ -113,6 +185,7 @@
     >
       Excluir
     </a>
+    {% endif %}
     {% endif %}
   </div>
   {% endif %}

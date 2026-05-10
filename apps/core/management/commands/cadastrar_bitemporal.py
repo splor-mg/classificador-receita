@@ -16,12 +16,12 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.core.bitemporal_registry import (
-    RESOURCES,
     build_entity_filter,
     get_resource,
     get_model_for_resource,
     get_sentinela_datetime,
     resolve_fk,
+    resources_for_bitemporal_cli,
 )
 from apps.core.models import VALID_TIME_SENTINEL
 
@@ -42,7 +42,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "--recurso",
-            choices=sorted(RESOURCES.keys()),
+            choices=sorted(resources_for_bitemporal_cli()),
             required=True,
             help="Recurso bitemporal (ex.: nivel_hierarquico, serie_classificacao).",
         )

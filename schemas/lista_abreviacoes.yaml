@@ -1,0 +1,28 @@
+# Catálogo de abreviações léxicas para nomenclatura de receitas (AliasLexico).
+# Cabeçalhos do CSV alinhados aos nomes dos campos do model (export via exporter).
+fields:
+  - name: termo
+    type: string
+    title: Termo (forma completa)
+    constraints:
+      required: true
+  - name: alias_lexico_ref
+    type: integer
+    title: Referência numérica estável do termo
+    constraints:
+      required: false
+  - name: abreviacao
+    type: string
+    title: Abreviação sugerida
+    constraints:
+      required: true
+  - name: data_registro_inicio
+    type: datetime
+    title: Início do registro (transaction time)
+    constraints:
+      required: true
+  - name: data_registro_fim
+    type: datetime
+    title: Fim do registro (sentinela 9999-12-31 = ativo)
+    constraints:
+      required: true

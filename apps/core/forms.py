@@ -11,6 +11,7 @@ from apps.core.models import (
     TRANSACTION_TIME_SENTINEL,
     item_semantic_id_from_receita_cod,
 )
+from apps.core.models_alias_lexico import AliasLexico
 from apps.core.code_mask import (
     get_latest_active_vigente_classificacao,
     get_mask_from_classificacao_estrutura,
@@ -305,3 +306,44 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
         widgets = {
             "receita_nome": TextInput(attrs={"style": "width:110em;"}),
         }
+
+
+class AliasLexicoAdminForm(forms.ModelForm):
+    """
+    ``alias_lexico_ref`` permanece no ModelForm com ``disabled=True`` para o valor inicial
+    aparecer na inclusão (o Admin remove campos só em ``readonly_fields`` do form).
+    """
+
+    class Meta:
+        model = AliasLexico
+        fields = ("termo", "alias_lexico_ref", "abreviacao")
+        widgets = {
+            "termo": TextInput(
+                attrs={
+                    # Largura efetiva vem do CSS em change_form.html (#aliaslexico_form); aqui só preenche o field-box.
+                    "style": "width: 100%; box-sizing: border-box;",
+                }
+            ),
+            "alias_lexico_ref": TextInput(
+                attrs={
+                    "style": (
+                        "width: 8em; max-width: 40%; box-sizing: border-box; "
+                        "background-color: #f4f4f4; color: #555;"
+                    ),
+                }
+            ),
+            "abreviacao": TextInput(
+                attrs={
+                    "style": (
+                        "width: min(28em, 100%); max-width: 100%; box-sizing: border-box;"
+                    ),
+                }
+            ),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        ref = self.fields.get("alias_lexico_ref")
+        if ref is not None:
+            ref.disabled = True
+            ref.required = False

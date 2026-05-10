@@ -7,8 +7,18 @@ instanciadas para este domínio (IDs de negócio e FKs com rótulo semântico).
 
 from django.contrib import admin
 
-from apps.core.admin_mixins import make_filter_fk_id, make_filter_local_id
-from apps.core.models import BaseLegalTecnica, Classificacao, ItemClassificacao, NivelHierarquico, TRANSACTION_TIME_SENTINEL
+from apps.core.admin_mixins import (
+    make_filter_fk_id,
+    make_filter_local_id,
+    transaction_time_sentinel_for_query,
+)
+from apps.core.models import (
+    BaseLegalTecnica,
+    Classificacao,
+    ItemClassificacao,
+    NivelHierarquico,
+    TRANSACTION_TIME_SENTINEL,
+)
 
 
 #---------------------------------------------------------------------------------------------------
@@ -176,4 +186,25 @@ class BaseLegalTecnicaSemanticFilter(admin.SimpleListFilter):
         value = self.value()
         if value:
             return queryset.filter(base_legal_tecnica_id__base_legal_tecnica_id=value)
+        return queryset
+
+
+class AliasLexicoRegistroAtivoFilter(admin.SimpleListFilter):
+    """Filtro por transaction time em ``AliasLexico`` (sem vigência orçamentária)."""
+
+    title = "Status do registro"
+    parameter_name = "lista_abreviacoes_registro"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("ativo", "Registro ativo"),
+            ("inativo", "Registro encerrado"),
+        )
+
+    def queryset(self, request, queryset):
+        sent = transaction_time_sentinel_for_query()
+        if self.value() == "ativo":
+            return queryset.filter(data_registro_fim=sent)
+        if self.value() == "inativo":
+            return queryset.exclude(data_registro_fim=sent)
         return queryset
