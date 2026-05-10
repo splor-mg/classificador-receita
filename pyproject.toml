@@ -39,10 +39,12 @@ package-mode = false
 makemigrations = { cmd = "python manage.py makemigrations", help = "Gera migrações para banco de dados." }
 migrate = { cmd = "python manage.py migrate", help = "Migra mudanças para banco de dados." }
 carregar = { cmd = "python manage.py carregar_classificador", help = "Carrega dados iniciais a partir do datapackage.yaml (docs/assets/seed_*.csv). Opções: --datapackage=<caminho>, --resource=<nome>, --dry-run, --clear (limpa tabelas por ORM), --clear-hard (limpeza destrutiva; no prompt use 'db' ou passe --clear-hard --db para só tabelas do app core). Exemplo: `poetry run task carregar --clear-hard --db`." }
+
 # Django Development
 dev-server = { cmd = "python manage.py runserver", help = "Liga servidor de desenvolvimento." }
 initial-migration = { cmd = "python manage.py makemigrations --name initial", help = "Gera migrações com nome 'initial' para todos os apps que tiverem alterações. Para aplicar ao banco, rode em seguida: poetry run task migrate." }
 recreate-db = { cmd = "echo \"DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO postgres; GRANT ALL ON SCHEMA public TO public;\" | python manage.py dbshell && python manage.py migrate && python manage.py carregar_classificador && python manage.py createsuperuser", help = "Dropa e recria o schema public do banco, aplica migrações, carrega seeds e cria superusuário. Use para resetar o banco em desenvolvimento." }
+drop-core-tables = { cmd = "python manage.py drop_core_tables", help = "DROP CASCADE das tabelas gerenciadas do app core (e legado alias_lexico se existir), remove registros em django_migrations para core; em seguida rode migrate core. Confirmação interativa; em scripts use -- --noinput. Opcional: --database=<alias>." }
 showmigrations = { cmd = "python manage.py showmigrations", help = "Mostra todas as migrações de todos os apps." }
 superuser-create = { cmd = "python manage.py createsuperuser", help = "Cria um superusuário." }
 superuser-list = { cmd = "python manage.py superuser_list", help = "Lista superusers (username, email). Restrito a DEBUG, no setting.py, ou ALLOW_ADMIN_LIST=1 no .env." }
@@ -52,6 +54,7 @@ build-docs = { cmd = "zensical build --clean", help = "Gera a documentação est
 serve = { cmd = "zensical serve -a localhost:8001", help = "Inicia o servidor de preview da documentação em http://localhost:8001 (porta 8001 para não conflitar com o Django em 8000)." }
 
 # Utils
+atualizar-abreviacoes = { cmd = "python scripts/aliases_list_update.py", help = "Acrescenta ao docs/assets/seed_lista_abreviacoes.csv inferências e curadoria manual; reordena conforme lista_abreviacoes no bitemporal_registry; novos refs seguem max+1… Opções: --print-conflicts." }
 validar-tudo = { cmd = "python scripts/validate_datapackage.py && python scripts/validate_code.py && python scripts/validate_domains.py && python scripts/validate_quality.py", help = "Executa validar-datapackage, validar-codigos, validar-dominios e validar-qualidade em sequência." }
 validar-datapackage = { cmd = "python scripts/validate_datapackage.py", help = "Valida os schemas Frictionless e o datapackage.yaml principal. Rode com <resource-name/nome_do_recurso> para validar apenas um recurso específico. i.e. `task validar-datapackage serie_classificacao`." }
 validar-codigos = { cmd = "python scripts/validate_code.py", help = "Valida a quantidade de dígitos de receita_cod conforme a classificação (registro e vigência, SCD-2)." }

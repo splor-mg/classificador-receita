@@ -247,14 +247,14 @@ RESOURCES: Dict[str, Dict[str, Any]] = {
         ],
         "semantic_id_field": "termo",
         "fields": [
-            {"name": "termo", "type": "string", "required": True},
+            {"name": "termo", "type": "string", "required": True, "export_as": "termo_nome"},
             {"name": "alias_lexico_ref", "type": "integer", "required": True},
             {"name": "abreviacao", "type": "string", "required": True},
             {"name": "data_registro_inicio", "type": "datetime", "required": True},
             {"name": "data_registro_fim", "type": "datetime", "required": True},
         ],
         "export_columns": [
-            "termo",
+            "termo_nome",
             "alias_lexico_ref",
             "abreviacao",
             "data_registro_inicio",

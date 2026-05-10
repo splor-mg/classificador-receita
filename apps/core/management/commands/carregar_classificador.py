@@ -546,7 +546,7 @@ class Command(BaseCommand):
         created = 0
         next_ref = 1
         for row in rows:
-            termo = _strip_csv_empty(row.get("termo")) or _strip_csv_empty(row.get("termo_nome"))
+            termo = _strip_csv_empty(row.get("termo_nome")) or _strip_csv_empty(row.get("termo"))
             abrev = _strip_csv_empty(row.get("abreviacao"))
             if termo is None or abrev is None:
                 continue

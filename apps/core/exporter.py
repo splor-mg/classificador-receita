@@ -19,6 +19,19 @@ from apps.core.bitemporal_registry import (
 _resource_locks = {}
 
 
+def _resolve_export_column(col: str, fields: list) -> tuple[dict | None, str]:
+    """
+    Mapeia nome de coluna no CSV/export para (meta do campo, nome do atributo no model Django).
+    Suporta ``export_as`` no registry quando o cabeçalho CSV difere do campo do model.
+    """
+    for f in fields:
+        if f["name"] == col:
+            return f, f["name"]
+        if f.get("export_as") == col:
+            return f, f["name"]
+    return None, col
+
+
 def export_resource(recurso: str, output: str | None = None, scope: str = "all", do_backup: bool = False, backup_dir: str | None = None, dry_run: bool = False) -> dict:
     """
     Exporta recurso definido no registry para CSV usando COPY.
@@ -57,9 +70,8 @@ def export_resource(recurso: str, output: str | None = None, scope: str = "all",
 
     select_parts = []
     app_tz = getattr(settings, "TIME_ZONE", "UTC")
-    fields_by_name = {f["name"]: f for f in res["fields"]}
     for col in columns:
-        fmeta = fields_by_name.get(col)
+        fmeta, fname = _resolve_export_column(col, res["fields"])
         policy = (fmeta or {}).get("export_policy", "default")
         if fmeta and fmeta.get("type") == "fk":
             alias, ref_model, fk_semantic_attr = alias_map.get(
@@ -93,9 +105,9 @@ def export_resource(recurso: str, output: str | None = None, scope: str = "all",
             # para manter consistência textual dos seeds exportados.
             if fmeta and fmeta.get("type") == "boolean":
                 try:
-                    col_db = model._meta.get_field(col).column
+                    col_db = model._meta.get_field(fname).column
                 except Exception:
-                    col_db = col
+                    col_db = fname
                 if policy in ("default", "bool_title"):
                     select_parts.append(
                         f"CASE "
@@ -124,9 +136,9 @@ def export_resource(recurso: str, output: str | None = None, scope: str = "all",
                 and policy in ("default", "null_token")
             ):
                 try:
-                    col_db = model._meta.get_field(col).column
+                    col_db = model._meta.get_field(fname).column
                 except Exception:
-                    col_db = col
+                    col_db = fname
                 select_parts.append(
                     f"CASE "
                     f"WHEN {main_alias}.{col_db} IS NULL THEN 'NULL' "
@@ -137,20 +149,20 @@ def export_resource(recurso: str, output: str | None = None, scope: str = "all",
             # "YYYY-MM-DD HH:MM:SS" no timezone da aplicação, para
             # alinhar com o que é exibido no Admin (sem microsegundos
             # nem offset explícito).
-            elif col in ("data_registro_inicio", "data_registro_fim"):
+            elif fname in ("data_registro_inicio", "data_registro_fim"):
                 try:
-                    col_db = model._meta.get_field(col).column
+                    col_db = model._meta.get_field(fname).column
                 except Exception:
-                    col_db = col
+                    col_db = fname
                 select_parts.append(
                     f"to_char({main_alias}.{col_db} AT TIME ZONE '{app_tz}', "
                     f"'YYYY-MM-DD HH24:MI:SS') AS \"{col}\""
                 )
             else:
                 try:
-                    col_db = model._meta.get_field(col).column
+                    col_db = model._meta.get_field(fname).column
                 except Exception:
-                    col_db = col
+                    col_db = fname
                 select_parts.append(f'{main_alias}.{col_db} AS "{col}"')
 
     select_sql = f"SELECT {', '.join(select_parts)} FROM {main_table} AS {main_alias} "
@@ -234,7 +246,12 @@ def export_resource(recurso: str, output: str | None = None, scope: str = "all",
     if order_sql_parts:
         select_sql += " ORDER BY " + ", ".join(order_sql_parts)
 
-    copy_sql = f"COPY ({select_sql}) TO STDOUT WITH CSV HEADER"
+    csv_delim = res.get("export_csv_delimiter")
+    if csv_delim:
+        d = str(csv_delim).replace("'", "''")
+        copy_sql = f"COPY ({select_sql}) TO STDOUT WITH CSV HEADER DELIMITER '{d}'"
+    else:
+        copy_sql = f"COPY ({select_sql}) TO STDOUT WITH CSV HEADER"
 
     if dry_run:
         # Count approximate rows using the same WHERE if current

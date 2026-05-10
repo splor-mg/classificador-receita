@@ -1,7 +1,7 @@
 # Catálogo de abreviações léxicas para nomenclatura de receitas (AliasLexico).
-# Cabeçalhos do CSV alinhados aos nomes dos campos do model (export via exporter).
+# CSV usa vírgula (padrão); células com vírgula no texto são citadas (RFC 4180). Coluna ``termo_nome`` mapeia ao campo ``termo`` no model.
 fields:
-  - name: termo
+  - name: termo_nome
     type: string
     title: Termo (forma completa)
     constraints:
