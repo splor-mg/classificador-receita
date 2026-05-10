@@ -56,6 +56,12 @@ Regras (por ordem de tentativa):
   acrescenta ``palavra → token.`` **apenas** para tokens pontilhados; literais iguais ao pai não geram linha.
   Só quando ``palavra`` ainda não existe no seed. Frases de uma só palavra significativa não geram derivação.
 
+**Redundância composicional**  
+  Não registra um par frase → cabeça abreviada se houver **≥2** palavras significativas no termo, o mesmo número
+  de tokens na abreviação (separados por espaço) e, para cada palavra na ordem, já existir no mapa vigente
+  (seed + inferências/manuais aceitas antes nesta execução, atualizado com átomos da Regra A‴ ao aceitar um par)
+  o mapeamento **exato** ``palavra → token`` que reproduz a abreviação ao juntar os tokens com espaço.
+
 Conflitos (na inferência): mesmo ``termo_nome`` com mais de uma ``abreviacao`` candidata → esse termo não
 entra nas novidades.
 
@@ -109,17 +115,27 @@ _MANUAL_SEED_TERM_ABBREV: tuple[tuple[str, str], ...] = (
 def _merge_manual_seed_entries(
     additions: list[tuple[str, str]],
     existing_termos: set[str],
-) -> int:
-    """Acrescenta entradas manuais não colidentes. Retorna quantas foram acrescentadas."""
+    abbrev_by_termo: dict[str, str],
+) -> tuple[int, int]:
+    """
+    Acrescenta entradas manuais não colidentes e não redundantes composicionalmente.
+
+    Retorna (quantas acrescentadas, quantas omitidas só por redundância composicional).
+    """
     claimed = {t for t, _ in additions}
     n = 0
+    n_skip_comp = 0
     for termo, abrev in _MANUAL_SEED_TERM_ABBREV:
         if termo in existing_termos or termo in claimed:
             continue
+        if _is_compositional_redundant(termo, abrev, abbrev_by_termo):
+            n_skip_comp += 1
+            continue
         additions.append((termo, abrev))
         claimed.add(termo)
+        _merge_abbrev_map_from_pair(termo, abrev, abbrev_by_termo)
         n += 1
-    return n
+    return n, n_skip_comp
 
 
 # Valores aceitos para registro ainda válido (alinhar a imports/carregamento do projeto).
@@ -434,6 +450,46 @@ def _derive_atomic_from_dotted_phrase(termo: str, abreviacao: str) -> list[tuple
     return [(w, tok) for w, tok in aligned if _RE_DOTTED_TOKEN.match(tok)]
 
 
+def _phrase_sig_words(termo: str) -> list[str]:
+    phrase = re.sub(r",\s*", " ", (termo or "").strip())
+    return _significant_words_ordered(phrase)
+
+
+def _is_compositional_redundant(termo: str, abrev: str, abbrev_by_termo: dict[str, str]) -> bool:
+    """
+    Verdadeiro se o termo tem ≥2 palavras significativas e a abreviação coincide exatamente com a junção,
+    na mesma ordem, dos tokens já registrados para cada palavra em ``abbrev_by_termo``.
+    """
+    words = _phrase_sig_words(termo)
+    if len(words) < 2:
+        return False
+    ab = (abrev or "").strip()
+    if not ab:
+        return False
+    parts: list[str] = []
+    for w in words:
+        tok = abbrev_by_termo.get(w)
+        if tok is None:
+            return False
+        parts.append(tok)
+    return " ".join(parts) == ab
+
+
+def _merge_abbrev_map_from_pair(termo: str, abrev: str, abbrev_by_termo: dict[str, str]) -> None:
+    """Atualiza o mapa para checagens composicionais posteriores (frase inteira + átomos A‴)."""
+    abbrev_by_termo[termo] = abrev
+    atoms = _derive_atomic_from_dotted_phrase(termo, abrev)
+    if not atoms:
+        return
+    for w, tok in atoms:
+        abbrev_by_termo.setdefault(w, tok)
+
+
+def _infer_candidate_sort_key(kv: tuple[str, str]) -> tuple[int, int, str]:
+    termo, _ = kv
+    return (len(_phrase_sig_words(termo)), len(termo), termo.lower())
+
+
 def _atomic_derivations(
     phrase_pairs: list[tuple[str, str]],
     known_terms: set[str],
@@ -641,14 +697,28 @@ def main() -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     existing_rows, existing_termos = _load_existing_seed(out_path)
 
+    abbrev_by_termo: dict[str, str] = {r["termo_nome"]: r["abreviacao"] for r in existing_rows}
+
+    inferred_candidates = [
+        (t, a)
+        for t, a in sorted(good.items(), key=lambda kv: kv[0].lower())
+        if t not in existing_termos
+    ]
+    inferred_candidates.sort(key=_infer_candidate_sort_key)
+
     additions: list[tuple[str, str]] = []
-    for termo, abrev in sorted(good.items(), key=lambda kv: kv[0].lower()):
-        if termo in existing_termos:
+    n_skip_comp_inf = 0
+    for termo, abrev in inferred_candidates:
+        if _is_compositional_redundant(termo, abrev, abbrev_by_termo):
+            n_skip_comp_inf += 1
             continue
         additions.append((termo, abrev))
+        _merge_abbrev_map_from_pair(termo, abrev, abbrev_by_termo)
 
     n_inferred_only = len(additions)
-    n_manual = _merge_manual_seed_entries(additions, existing_termos)
+    n_manual, n_skip_comp_manual = _merge_manual_seed_entries(
+        additions, existing_termos, abbrev_by_termo
+    )
 
     known_after_inference = set(existing_termos)
     known_after_inference.update(t for t, _ in additions)
@@ -696,23 +766,36 @@ def main() -> None:
 
     n_derived = len(derived)
     n_new_rows = n_inferred_only + n_manual + n_derived
-    ref_note = (
-        f"refs novos {max_ref + 1}…{last_ref}"
-        if n_new_rows > 0
-        else "nenhum ref novo"
-    )
-    print(
-        f"Atualizado {out_path}: {len(existing_rows)} linha(s) preservada(s), "
-        f"{n_inferred_only} nova(s) por inferência, {n_manual} manual(is), {n_derived} por derivação atômica "
-        f"({n_new_rows} no total); ordenação alfabética; {ref_note}."
-    )
+    n_skip_comp = n_skip_comp_inf + n_skip_comp_manual
+
+    print()
+    print("Lista de abreviações atualizada.")
+    print()
+    print(f"  Linhas já existentes preservadas: {len(existing_rows)}")
+    print(f"  Novas por inferência: {n_inferred_only}")
+    print(f"  Novas entradas manuais: {n_manual}")
+    print(f"  Novas por derivação atômica: {n_derived}")
+    print(f"  Total de linhas novas nesta execução: {n_new_rows}")
+    print()
+    if n_new_rows > 0:
+        lo, hi = max_ref + 1, last_ref
+        ref_rng = f"{lo}" if lo == hi else f"{lo} a {hi}"
+        print(f"  Novos refs (alias_lexico_ref): {ref_rng}.")
+    else:
+        print("  Nenhuma nova abreviação encontrada!")
+    if n_skip_comp:
+        print()
+        print(f"  Omitidas por redundância composicional: {n_skip_comp}.")
+    print()
     if conflicts:
         print(f"Aviso: {len(conflicts)} termo(s) com conflito de abreviação — omitidos.")
+        print()
         if args.print_conflicts:
             for t, ab in conflicts[:80]:
                 print(f"  {t!r}: {sorted(ab)}")
             if len(conflicts) > 80:
                 print(f"  ... e mais {len(conflicts) - 80}")
+            print()
 
 
 if __name__ == "__main__":
