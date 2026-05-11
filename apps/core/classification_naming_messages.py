@@ -16,7 +16,7 @@ REMOVE_BASE_PREFIX_MISMATCH_WARNING = (
 
 RECEITA_NOME_SUBMIT_INCOMPLETO_ERROR = (
     "Atualize o nome da classificação após o traço para concluir o cadastro, "
-    "ou remova o traço para repetir nome do Item Pai."
+    "ou remova o traço para repetir nome do item pai."
 )
 
 

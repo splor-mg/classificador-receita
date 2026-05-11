@@ -9,7 +9,7 @@ A contenção de vigência do filho no pai já é coberta por
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from django.core.exceptions import ValidationError
 
@@ -18,6 +18,11 @@ from apps.core.code_mask import get_mask_for_classificacao_pk_vigencia
 
 def _canonical_zero_segment(segment: str) -> bool:
     return bool(segment) and set(segment) == {"0"}
+
+
+def _receita_cod_digits_only(canonical: str) -> str:
+    """Apenas dígitos do código canônico (sem máscara / pontuação)."""
+    return "".join(c for c in (canonical or "").strip() if c.isdigit())
 
 
 def _extra_tail_after_mask(receita_cod: str, mask: List[int]) -> str:
@@ -236,12 +241,15 @@ def validate_item_parent_item_rules(instance) -> None:
         raise ValidationError({"parent_item_id": "O item pai não possui nível hierárquico válido."})
 
     parent_n = getattr(parent_nivel, "nivel_numero", None)
-    if parent_n != nivel_n - 1:
+    if parent_n is None:
+        raise ValidationError({"parent_item_id": "O item pai não possui nível hierárquico válido."})
+
+    if parent_n >= nivel_n:
         raise ValidationError(
             {
                 "parent_item_id": (
-                    f"O item pai deve estar no nível imediatamente anterior "
-                    f"(esperado nível {nivel_n - 1}, obtido {parent_n})."
+                    "O item pai deve estar em nível hierárquico estritamente acima "
+                    f"(menor número de nível) do item filho (nível do filho: {nivel_n})."
                 )
             }
         )
@@ -281,6 +289,16 @@ def validate_item_parent_item_rules(instance) -> None:
             }
         )
 
+    if parent_n > len(mask):
+        raise ValidationError(
+            {
+                "parent_item_id": (
+                    f"O nível do item pai ({parent_n}) não é compatível com a máscara "
+                    f"da classificação ({len(mask)} níveis)."
+                )
+            }
+        )
+
     child_parts = split_receita_cod_segments_tolerant(c_cod, mask)
     parent_parts = split_receita_cod_segments_tolerant(p_cod, mask)
     if child_parts is None:
@@ -302,9 +320,10 @@ def validate_item_parent_item_rules(instance) -> None:
             }
         )
 
-    idx = nivel_n - 1  # nível N => índice N-1
+    idx = nivel_n - 1  # nível L => índice L-1
 
-    for i in range(0, idx):
+    # Prefixo comum: níveis 1..LP (índices 0..parent_n-1) iguais entre filho e pai.
+    for i in range(0, parent_n):
         child_seg = child_parts[i]
         parent_seg = parent_parts[i]
         if child_seg is None or parent_seg is None:
@@ -325,7 +344,7 @@ def validate_item_parent_item_rules(instance) -> None:
                 {
                     "parent_item_id": (
                         "O código do item pai deve coincidir com o do filho em todos os "
-                        f"níveis anteriores a {nivel_n}."
+                        f"níveis até {parent_n} (nível do pai)."
                     ),
                     "receita_cod": (
                         "Prefixo do código incompatível com o item pai indicado."
@@ -333,7 +352,8 @@ def validate_item_parent_item_rules(instance) -> None:
                 }
             )
 
-    for i in range(idx, len(mask)):
+    # Cauda do pai: a partir do nível LP+1, apenas zeros canônicos.
+    for i in range(parent_n, len(mask)):
         seg = parent_parts[i]
         if seg is None:
             continue
@@ -341,7 +361,7 @@ def validate_item_parent_item_rules(instance) -> None:
             raise ValidationError(
                 {
                     "parent_item_id": (
-                        f"A partir do nível {nivel_n}, o código do item pai deve usar "
+                        f"A partir do nível {parent_n + 1}, o código do item pai deve usar "
                         "apenas zeros canônicos nos segmentos correspondentes."
                     )
                 }
@@ -352,12 +372,41 @@ def validate_item_parent_item_rules(instance) -> None:
         raise ValidationError(
             {
                 "parent_item_id": (
-                    f"A partir do nível {nivel_n}, o código do item pai deve usar "
+                    f"A partir do nível {parent_n + 1}, o código do item pai deve usar "
                     "apenas zeros canônicos, inclusive em dígitos excedentes "
                     "além da máscara."
                 )
             }
         )
+
+    # Salto de nível: níveis LP+1 .. L-1 no filho devem ser zeros canônicos.
+    if parent_n < nivel_n - 1:
+        for i in range(parent_n, nivel_n - 1):
+            seg = child_parts[i]
+            if seg is None:
+                raise ValidationError(
+                    {
+                        "receita_cod": (
+                            f"Código canônico insuficiente para validar os níveis "
+                            f"{parent_n + 1} a {nivel_n - 1} (esperado zero canônico "
+                            "quando o pai não está no nível imediatamente anterior)."
+                        )
+                    }
+                )
+            if not _canonical_zero_segment(seg):
+                raise ValidationError(
+                    {
+                        "parent_item_id": (
+                            "O item pai não está no nível imediatamente anterior e o código "
+                            f"do filho apresenta detalhamento nos níveis {parent_n + 1} a "
+                            f"{nivel_n - 1}; esses níveis devem conter apenas zeros canônicos."
+                        ),
+                        "receita_cod": (
+                            "Para este item pai, os níveis entre o nível do pai e o nível do "
+                            "item devem estar apenas com zeros canônicos."
+                        ),
+                    }
+                )
 
     child_level_seg = child_parts[idx]
     if child_level_seg is None:
@@ -405,3 +454,160 @@ def validate_item_parent_item_rules(instance) -> None:
                 )
             }
         )
+
+
+def analyze_intermediate_items_for_level_jump(
+    *,
+    classificacao_pk: int,
+    parent_item,
+    child_nivel_numero: int,
+    vig_ini,
+    vig_fim,
+    reg_sent,
+    sample_limit: int = 5,
+    exclude_receita_cod: Optional[str] = None,
+) -> Dict[str, object]:
+    """
+    Conta e amostra itens intermediários para o aviso de salto de nível.
+
+    Critério (códigos no BD sem pontuação de máscara):
+
+    - radical numérico = primeiros dígitos do ``receita_cod`` do pai até ao fim
+      do nível do pai (soma das larguras ``mask[0:LP]``);
+    - ``classificacao_pk``: PK da classificação usada na query (no admin, o do
+      **formulário** de criação);
+    - registo ativo (``data_registro_fim`` sentinela);
+    - sobreposição de vigência com ``vig_ini``/``vig_fim`` (no admin: **só** as
+      datas do formulário);
+    - ``receita_cod__startswith=radical``;
+    - ``nivel_numero`` entre ``LP+1`` e ``L_filho-1`` (inclusive);
+    - segmento do código na posição do próprio nível do item não é zero canónico.
+
+    Se ``digit_mask_for_classificacao_vigencia`` com ``(classificacao_pk, vig_ini,
+    vig_fim)`` devolver máscara vazia, tenta-se de novo com a vigência do **pai**
+    apenas para resolver a máscara (não altera o filtro de vigência da query).
+    """
+    from django.urls import reverse
+
+    from apps.core.models import ItemClassificacao
+
+    parent_nivel = getattr(parent_item, "nivel_id", None)
+    parent_n = getattr(parent_nivel, "nivel_numero", None)
+    empty: Dict[str, object] = {
+        "count": 0,
+        "nivel_numeros": [],
+        "nivel_semantic_by_numero": {},
+        "samples": [],
+    }
+    if parent_n is None or child_nivel_numero is None:
+        return empty
+    if parent_n >= child_nivel_numero - 1:
+        return empty
+
+    mask = digit_mask_for_classificacao_vigencia(classificacao_pk, vig_ini, vig_fim)
+    if not mask:
+        pvi = getattr(parent_item, "data_vigencia_inicio", None)
+        pvf = getattr(parent_item, "data_vigencia_fim", None)
+        if pvi is not None and pvf is not None:
+            mask = digit_mask_for_classificacao_vigencia(classificacao_pk, pvi, pvf)
+    if not mask or parent_n > len(mask):
+        return empty
+
+    p_cod = (getattr(parent_item, "receita_cod", None) or "").strip()
+    p_digits = _receita_cod_digits_only(p_cod)
+    radical_len = int(sum(mask[:parent_n]))
+    if radical_len <= 0 or len(p_digits) < radical_len:
+        return empty
+    radical = p_digits[:radical_len]
+
+    exclude_digits = _receita_cod_digits_only(exclude_receita_cod) if exclude_receita_cod else ""
+
+    nivel_min = parent_n + 1
+    nivel_max = child_nivel_numero - 1
+
+    qs = (
+        ItemClassificacao.objects.filter(
+            classificacao_id_id=classificacao_pk,
+            data_registro_fim=reg_sent,
+            receita_cod__startswith=radical,
+            data_vigencia_inicio__lte=vig_fim,
+            data_vigencia_fim__gte=vig_ini,
+            nivel_id__nivel_numero__gte=nivel_min,
+            nivel_id__nivel_numero__lte=nivel_max,
+        )
+        .select_related("nivel_id")
+        .order_by("-data_vigencia_inicio", "-data_registro_inicio", "-pk")
+    )
+
+    count = 0
+    nivel_numeros: set = set()
+    nivel_semantic_by_numero: Dict[int, str] = {}
+    samples: List[Dict[str, str]] = []
+    for it in qs.iterator(chunk_size=100):
+        it_cod = (it.receita_cod or "").strip()
+        if exclude_digits and _receita_cod_digits_only(it_cod) == exclude_digits:
+            continue
+        parts = split_receita_cod_segments_tolerant(it_cod, mask)
+        if not parts:
+            continue
+        nn = getattr(it.nivel_id, "nivel_numero", None)
+        if nn is None or nn < nivel_min or nn > nivel_max:
+            continue
+        idx = nn - 1
+        if idx < 0 or idx >= len(parts):
+            continue
+        seg = parts[idx]
+        if seg is None or _canonical_zero_segment(seg):
+            continue
+        count += 1
+        nid_str = (getattr(it.nivel_id, "nivel_id", None) or "").strip()
+        nivel_numeros.add(nn)
+        if nid_str and nn not in nivel_semantic_by_numero:
+            nivel_semantic_by_numero[nn] = nid_str
+        if len(samples) < sample_limit:
+            link = reverse(
+                f"admin:{it._meta.app_label}_{it._meta.model_name}_change",
+                args=[it.pk],
+            )
+            samples.append(
+                {
+                    "pk": str(it.pk),
+                    "receita_cod": it.receita_cod or "",
+                    "display_label": (
+                        f"{it.receita_cod} - {it.receita_nome or it.item_id or ''}"
+                    ).strip(" -"),
+                    "admin_url": link,
+                    "nivel_numero": str(nn) if nn is not None else "",
+                }
+            )
+
+    return {
+        "count": count,
+        "nivel_numeros": sorted(nivel_numeros),
+        "nivel_semantic_by_numero": nivel_semantic_by_numero,
+        "samples": samples,
+    }
+
+
+def find_intermediate_items_for_level_jump(
+    *,
+    classificacao_pk: int,
+    parent_item,
+    child_nivel_numero: int,
+    vig_ini,
+    vig_fim,
+    reg_sent,
+    limit: int = 5,
+    exclude_receita_cod: Optional[str] = None,
+) -> List[Dict[str, str]]:
+    data = analyze_intermediate_items_for_level_jump(
+        classificacao_pk=classificacao_pk,
+        parent_item=parent_item,
+        child_nivel_numero=child_nivel_numero,
+        vig_ini=vig_ini,
+        vig_fim=vig_fim,
+        reg_sent=reg_sent,
+        sample_limit=limit,
+        exclude_receita_cod=exclude_receita_cod,
+    )
+    return data["samples"]  # type: ignore[return-value]

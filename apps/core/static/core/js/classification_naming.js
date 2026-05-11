@@ -1,5 +1,5 @@
 /**
- * Radical do nome a partir do Item Pai (admin — criação de ItemClassificacao).
+ * Radical do nome a partir do item pai (admin — criação de ItemClassificacao).
  * Mensagens vêm do elemento #classification-naming-config (json_script).
  */
 (function () {
@@ -302,7 +302,7 @@
       container.innerHTML =
         '<label style="display:inline-flex; align-items:center; margin:0;"><input style="margin-right:6px;" type="radio" name="' +
         radioUiName +
-        '" value="base_pai"> Radical Baseado no Item Pai</label>' +
+        '" value="base_pai"> Radical Baseado no item pai</label>' +
         '<label style="display:inline-flex; align-items:center; margin:0;"><input style="margin-right:6px;" type="radio" name="' +
         radioUiName +
         '" value="sem_base"> Sem Nome Base</label>';

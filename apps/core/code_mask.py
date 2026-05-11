@@ -6,6 +6,41 @@ from typing import Any, Dict, List, Optional, Tuple
 from apps.core.models import Classificacao, NivelHierarquico, TRANSACTION_TIME_SENTINEL
 
 
+def effective_vigencia_for_item_hierarchy_lookup(
+    vigencia_inicio: date,
+    vigencia_fim: date,
+    *,
+    classificacao: Optional[Classificacao] = None,
+) -> Tuple[date, date, bool, Optional[Classificacao]]:
+    """
+    Vigência efetiva para lookups de nível e item pai a partir do código canônico (admin).
+
+    - **Com classificação:** se o intervalo do formulário não estiver contido na
+      vigência da classificação, usa-se o intervalo de vigência da classificação
+      (``overridden`` True).
+    - **Sem classificação:** usa-se a vigência da classificação default ativa e
+      vigente em ``date.today()`` (mesma família de regras que
+      ``get_latest_active_vigente_classificacao`` / máscara por default), quando
+      existir; o quarto valor devolvido é essa instância para filtros por identidade.
+    - Caso contrário mantém-se o par do formulário (``overridden`` False).
+    """
+    if classificacao is not None:
+        c_ini = getattr(classificacao, "data_vigencia_inicio", None)
+        c_fim = getattr(classificacao, "data_vigencia_fim", None)
+        if c_ini and c_fim:
+            if not (c_ini <= vigencia_inicio and c_fim >= vigencia_fim):
+                return c_ini, c_fim, True, None
+        return vigencia_inicio, vigencia_fim, False, None
+
+    default_c = get_latest_active_vigente_classificacao(date.today())
+    if default_c is not None:
+        d_ini = getattr(default_c, "data_vigencia_inicio", None)
+        d_fim = getattr(default_c, "data_vigencia_fim", None)
+        if d_ini and d_fim:
+            return d_ini, d_fim, True, default_c
+    return vigencia_inicio, vigencia_fim, False, None
+
+
 def parse_estrutura_codigo_mask(estrutura_codigo: str | None) -> List[int]:
     """
     Converte estrutura textual (ex.: ``X.X.0.0.00.000``) em máscara numérica.

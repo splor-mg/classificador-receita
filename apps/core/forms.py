@@ -144,7 +144,7 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
     )
     receita_nome_base_mode = forms.ChoiceField(
         choices=[
-            ("base_pai", "Radical Baseado no Item Pai"),
+            ("base_pai", "Radical Baseado no item pai"),
             ("sem_base", "Sem Nome Base"),
         ],
         required=False,

@@ -1,22 +1,19 @@
 ----------------------------------------------------------------------------------------------------
 # lista 
 
-- verificar consistência de não permitir a criação de item sem que exista matriz anterior existente?. Seria pelo campo `item_pai`?
-      x pré-preenchimento de códigos até chegar a 13 dígitos e erro se houver mais dígitos que o máximo
-      - considerando que foi implementada máscara conforme última estrutura vigente, avaliar a adição de item de classificação vir com campo "Classificacao" pré preenchida com a última classificação vigente.
-      - não permitir FK de Nivel tenha classificacao_id diferente da Classificacao_id do registro
-      x Nivel 1 tem sempre que ser Matriz
-      x Filtro por categoria e categoria-origem
-      - investigar o porquê a FK Nivel está fazendo associação espúria com registro inativo
-      - verificar a ordenação do db de ItemClassificação, já que as novas receitas criadas, independente do código, estão vindo por último
 
-- avaliar a "justificativa de alteração" não apenas como parâmetro de registro, mas como parâmetro de documentação 
+- verificar a ordenação do db de ItemClassificação, já que as novas receitas criadas, independente do código, estão vindo por último
+
+- funcionalidade exportar para excel, csv, pdf
+
+
+
 - criar protocolo de incorporação/importação de bases
   - tratamento Excel/csv por ano
   - gerar script que vai considerar alteração nos metadados d
-- implementar schemas/correspondence-table
+
+- implementar schemas/correspondence-table (variant?)
 - revisar description de chave semântica de todas tabelas
-- funcionalidade exportar para excel, csv, pdf
 - revisar datapackage.yaml
   - avaliar menção à estrutura
 - garantir que, para cada entidade de negócio, haja um e somente um período de "ativo". Isto é, um mesmo código somente pode constar um registro ativo por
@@ -25,11 +22,21 @@
 - reorganizar issues - modelagem dados antigos etc, fechar issues antigos
 - criar oreintações para instalação do poetry e python e melhorar para wsl/windows
 
-- avaliar dicionário de palavras abreviadas, para poder serem reaproveitadas especialmente quando da criação do detalhamento - entendo que, a princípio, isso envolveria a implementação de uma tabela para manutenção dessas palavras abreviadas. Essa implementação, além de facilitar/agilizar a implementação
+- avaliar dicionário de palavras abreviadas, para poder serem reaproveitadas especialmente quando da criação do detalhamento - entendo que, a princípio, isso envolveria a implementação de uma tabela para manutenção dessas palavras abreviadas. Essa implementação, além de facilitar/agilizar a implementação -> feita a 
 
 - avaliar estratégia de documentação das áreas de intervenção que classificam as áreas dos convênios
 
+- avaliar a "justificativa de alteração" não apenas como parâmetro de registro, mas como parâmetro de documentação 
+
+
 -------- feito
+x verificar consistência de não permitir a criação de item sem que exista matriz anterior existente?. Seria pelo campo `item_pai`?
+      x pré-preenchimento de códigos até chegar a 13 dígitos e erro se houver mais dígitos que o máximo
+      x considerando que foi implementada máscara conforme última estrutura vigente, avaliar a adição de item de classificação vir com campo "Classificacao" pré preenchida com a última classificação vigente.
+      x não permitir FK de Nivel tenha classificacao_id diferente da Classificacao_id do registro -> revogado, já que, na interseção de dois classificadores, o primeiro nível de detalhamento da segunda necessariamente se referenciará na classificação anterior
+      x Nivel 1 tem sempre que ser Matriz
+      x Filtro por categoria e categoria-origem
+      x investigar o porquê a FK Nivel está fazendo associação espúria com registro inativo -> resolvido com vigencia_fk_validation.py, para revolver classificação ativa e vigente
 
 x avaliar estrutura de booleano para edição. Por exemplo, matriz seria "Sim/Não", assim como item gerado
 x garantir protocolo de normalização/padronização de campo id para quando editar/reativar registro

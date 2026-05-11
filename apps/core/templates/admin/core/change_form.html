@@ -3,6 +3,95 @@
 
 {% block extrastyle %}
 {{ block.super }}
+{% if opts and opts.model_name == 'itemclassificacao' %}
+<style id="core-itemclassificacao-level-jump-modal">
+  .core-level-jump-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100050;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    box-sizing: border-box;
+  }
+  .core-level-jump-modal-box {
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    max-width: 32rem;
+    width: 100%;
+    max-height: 90vh;
+    overflow: auto;
+    border: 1px solid #c9c9c9;
+  }
+  .core-level-jump-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 1.25rem 0.5rem;
+    border-bottom: 1px solid #e8e8e8;
+  }
+  .core-level-jump-modal-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+  .core-level-jump-modal-header h3 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+  .core-level-jump-modal-body {
+    padding: 1rem 1.25rem;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    color: #333;
+  }
+  .core-level-jump-modal-body p {
+    margin: 0 0 0.75em 0;
+  }
+  .core-level-jump-modal-body p:last-child {
+    margin-bottom: 0;
+  }
+  .core-level-jump-modal-body a {
+    color: #1f6feb;
+    text-decoration: underline;
+    word-break: break-all;
+  }
+  .core-level-jump-modal-body .core-level-jump-list {
+    margin: 0.5em 0 0 1.25em;
+    padding: 0;
+  }
+  .core-level-jump-modal-body .core-level-jump-list li {
+    margin-bottom: 0.35em;
+  }
+  .core-level-jump-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem 1rem;
+    border-top: 1px solid #e8e8e8;
+  }
+  .core-level-jump-modal-actions button {
+    padding: 0.45rem 1rem;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  .core-level-jump-modal-actions .core-level-jump-btn-cancel {
+    background: #f8f8f8;
+    border: 1px solid #ccc;
+    color: #333;
+  }
+  .core-level-jump-modal-actions .core-level-jump-btn-ok {
+    background: #417690;
+    border: 1px solid #417690;
+    color: #fff;
+  }
+</style>
+{% endif %}
 {% if opts and opts.model_name == 'aliaslexico' %}
 <style id="core-aliaslexico-termo-width">
   /*
@@ -223,6 +312,7 @@
     var itemReceitaCodMasks = JSON.parse('{{ item_receita_cod_masks_json|default:"[]"|escapejs }}');
     var itemParentLookupUrl = '{{ item_parent_lookup_url|default:"" }}';
     var itemHierarchyLookupUrl = '{{ item_hierarchy_lookup_url|default:"" }}';
+    var itemParentLevelJumpWarnUrl = '{{ item_parent_level_jump_warn_url|default:"" }}';
     var itemClassificacaoDigitLimitLookupUrl = '{{ item_classificacao_digit_limit_lookup_url|default:"" }}';
     var receitaCodDigitLimitCache = {};
     var receitaCodResolvedDigitMask = null;
@@ -689,6 +779,17 @@
         fieldRow.insertBefore(ul, fieldRow.firstChild);
       }
 
+      function showHierarchyErrorHtml(fieldRow, html) {
+        if (!fieldRow || !html) return;
+        clearHierarchyMessages(fieldRow);
+        var ul = document.createElement('ul');
+        ul.className = 'errorlist hierarchy-autofill-error';
+        var li = document.createElement('li');
+        li.innerHTML = html;
+        ul.appendChild(li);
+        fieldRow.insertBefore(ul, fieldRow.firstChild);
+      }
+
       function showHierarchyWarning(fieldRow, text) {
         if (!fieldRow || !text) return;
         clearHierarchyMessages(fieldRow);
@@ -898,6 +999,32 @@
                 parentItemIdInput.value = parent.pk;
                 parentItemIdInput.dispatchEvent(new Event('change', { bubbles: true }));
               }
+              var parentRow = getFieldRow(parentItemIdInput);
+              var parentFoundStatus = parent.status || {};
+              var parentAltHtml =
+                parentFoundStatus.severity === 'warning'
+                  ? buildAlternativeMessageHtml(parentFoundStatus)
+                  : '';
+              var parentNotes = parent.notices || [];
+              if (parentAltHtml || parentNotes.length) {
+                clearHierarchyMessages(parentRow);
+                var parentUl = document.createElement('ul');
+                parentUl.className = 'messagelist hierarchy-autofill-warning';
+                parentUl.style.marginTop = '6px';
+                if (parentAltHtml) {
+                  var parentLiAlt = document.createElement('li');
+                  parentLiAlt.className = 'warning';
+                  parentLiAlt.innerHTML = parentAltHtml;
+                  parentUl.appendChild(parentLiAlt);
+                }
+                parentNotes.forEach(function(note) {
+                  var parentLiNote = document.createElement('li');
+                  parentLiNote.className = 'warning';
+                  parentLiNote.textContent = note;
+                  parentUl.appendChild(parentLiNote);
+                });
+                parentRow.appendChild(parentUl);
+              }
               return { isValid: true };
             }
 
@@ -919,7 +1046,12 @@
               }
               var parentErrorMsg = parentStatus.message || 'Não existe item pai ativo e vigente para o código informado.';
               parentItemIdInput.setCustomValidity(parentErrorMsg);
-              showHierarchyError(getFieldRow(parentItemIdInput), parentErrorMsg);
+              var parentRow = getFieldRow(parentItemIdInput);
+              if (parentStatus.html) {
+                showHierarchyErrorHtml(parentRow, parentStatus.html);
+              } else {
+                showHierarchyError(parentRow, parentErrorMsg);
+              }
               if (triggerName === 'submit' && parentItemIdInput.reportValidity) {
                 parentItemIdInput.reportValidity();
               }
@@ -1048,6 +1180,201 @@
         }
       });
 
+      function showCoreLevelJumpModal(payload) {
+        return new Promise(function(resolve) {
+          var existing = document.getElementById('core-level-jump-modal-overlay');
+          if (existing) {
+            existing.remove();
+          }
+          function close(ok) {
+            document.removeEventListener('keydown', onKey);
+            overlay.remove();
+            resolve(ok);
+          }
+          function onKey(ev) {
+            if (ev.key === 'Escape') {
+              close(false);
+            }
+          }
+          var overlay = document.createElement('div');
+          overlay.id = 'core-level-jump-modal-overlay';
+          overlay.className = 'core-level-jump-modal-overlay';
+          overlay.setAttribute('role', 'dialog');
+          overlay.setAttribute('aria-modal', 'true');
+          overlay.setAttribute('aria-labelledby', 'core-level-jump-modal-title');
+
+          var box = document.createElement('div');
+          box.className = 'core-level-jump-modal-box';
+
+          var header = document.createElement('div');
+          header.className = 'core-level-jump-modal-header';
+          var icon = document.createElement('span');
+          icon.className = 'core-level-jump-modal-icon';
+          icon.setAttribute('aria-hidden', 'true');
+          icon.textContent = '⚠️';
+          var h = document.createElement('h3');
+          h.id = 'core-level-jump-modal-title';
+          h.textContent = 'Atenção!';
+          header.appendChild(icon);
+          header.appendChild(h);
+
+          var body = document.createElement('div');
+          body.className = 'core-level-jump-modal-body';
+
+          var par = document.createElement('p');
+          par.appendChild(document.createTextNode('O item pai, ('));
+          var parentData = (payload && payload.parent) ? payload.parent : {};
+          var parentCod = parentData.cod_masked || '';
+          var parentUrl = parentData.admin_absolute_url || '';
+          var parentNivel = parentData.nivel_semantic || '';
+          if (parentUrl && parentCod) {
+            var aP = document.createElement('a');
+            aP.href = parentUrl;
+            aP.target = '_blank';
+            aP.rel = 'noopener noreferrer';
+            aP.textContent = parentCod;
+            par.appendChild(aP);
+          } else {
+            par.appendChild(document.createTextNode(parentCod || '(código do pai)'));
+          }
+          par.appendChild(document.createTextNode(' - ' + parentNivel + ')'));
+          par.appendChild(
+            document.createTextNode(
+              ' não está no nível imediatamente anterior ao do item que está sendo criado ('
+            )
+          );
+          var childData = (payload && payload.child) ? payload.child : {};
+          var childCod = childData.cod_masked || '';
+          var childNivel = childData.nivel_semantic || '';
+          par.appendChild(document.createTextNode(childCod + ' - ' + childNivel + ').'));
+          body.appendChild(par);
+
+          var icount = payload && typeof payload.intermediate_count === 'number'
+            ? payload.intermediate_count
+            : 0;
+          var rows = (payload && payload.intermediate_rows) ? payload.intermediate_rows : [];
+          var hasInterm = icount > 0 || rows.length > 0;
+          var niveisLblRaw = (payload && payload.intermediate_niveis_label) || '';
+          if (hasInterm) {
+            var niveisLbl = niveisLblRaw || 'nos níveis intermediários';
+            var noOuNos = niveisLbl.indexOf(' e ') !== -1 ? 'nos ' : 'no ';
+            var p2 = document.createElement('p');
+            p2.appendChild(
+              document.createTextNode(
+                'Além disso, existe ' +
+                  (payload.intermediate_count_display || String(icount || 0)) +
+                  ' código(s) discriminado(s) ' +
+                  noOuNos +
+                  niveisLbl +
+                  ':'
+              )
+            );
+            body.appendChild(p2);
+            if (rows.length) {
+              var ul = document.createElement('ul');
+              ul.className = 'core-level-jump-list';
+              for (var ri = 0; ri < rows.length; ri++) {
+                var li = document.createElement('li');
+                li.style.whiteSpace = 'pre-wrap';
+                li.style.wordBreak = 'break-word';
+                var r = rows[ri];
+                var codM = r.cod_masked || '';
+                var nomeM = r.nome || '';
+                var tabSep = '\t';
+                if (r.admin_absolute_url && (codM || nomeM)) {
+                  var aI = document.createElement('a');
+                  aI.href = r.admin_absolute_url;
+                  aI.target = '_blank';
+                  aI.rel = 'noopener noreferrer';
+                  aI.style.whiteSpace = 'pre-wrap';
+                  aI.textContent = codM + tabSep + nomeM;
+                  li.appendChild(aI);
+                } else {
+                  li.textContent = (r.list_line || '').trim();
+                }
+                ul.appendChild(li);
+              }
+              body.appendChild(ul);
+            }
+          }
+
+          var ask = document.createElement('p');
+          ask.appendChild(
+            document.createTextNode('Deseja continuar e gravar o registo?')
+          );
+          body.appendChild(ask);
+
+          var actions = document.createElement('div');
+          actions.className = 'core-level-jump-modal-actions';
+          var btnCancel = document.createElement('button');
+          btnCancel.type = 'button';
+          btnCancel.className = 'core-level-jump-btn-cancel';
+          btnCancel.textContent = 'Cancelar';
+          var btnOk = document.createElement('button');
+          btnOk.type = 'button';
+          btnOk.className = 'core-level-jump-btn-ok';
+          btnOk.textContent = 'OK';
+          btnCancel.addEventListener('click', function() { close(false); });
+          btnOk.addEventListener('click', function() { close(true); });
+          overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) {
+              close(false);
+            }
+          });
+          actions.appendChild(btnCancel);
+          actions.appendChild(btnOk);
+
+          box.appendChild(header);
+          box.appendChild(body);
+          box.appendChild(actions);
+          overlay.appendChild(box);
+          document.body.appendChild(overlay);
+          document.addEventListener('keydown', onKey);
+          btnOk.focus();
+        });
+      }
+
+      function requestParentLevelJumpConfirmation() {
+        if (!isAddMode || !itemParentLevelJumpWarnUrl || !parentItemIdInput || !nivelIdInput) {
+          return Promise.resolve(true);
+        }
+        if (parentItemIdInput.dataset.readonlyRoot === '1') {
+          return Promise.resolve(true);
+        }
+        var parentPk = (parentItemIdInput.value || '').trim();
+        var nivelPk = (nivelIdInput.value || '').trim();
+        var classPk = getCurrentClassificacaoPk() || '';
+        var vig = getCurrentVigenciaIsoValues();
+        if (!parentPk || !nivelPk || !classPk || !vig.vigenciaInicio || !vig.vigenciaFim) {
+          return Promise.resolve(true);
+        }
+        var params = new URLSearchParams({
+          parent_item_id: parentPk,
+          nivel_id: nivelPk,
+          classificacao_id: classPk,
+          vigencia_inicio: vig.vigenciaInicio,
+          vigencia_fim: vig.vigenciaFim
+        });
+        var childCodRaw = stripReceitaCodFormatting(receitaCodInput.value);
+        if (childCodRaw) {
+          params.set('receita_cod', childCodRaw);
+        }
+        return fetch(itemParentLevelJumpWarnUrl + '?' + params.toString(), {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          credentials: 'same-origin'
+        })
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (!data || !data.ok || !data.level_jump) {
+              return true;
+            }
+            return showCoreLevelJumpModal(data);
+          })
+          .catch(function() {
+            return true;
+          });
+      }
+
       var adminForm = receitaCodInput.form;
       if (adminForm) {
         var allowNativeSubmit = false;
@@ -1084,29 +1411,34 @@
                     return;
                   }
                 }
-                receitaCodInput.value = stripReceitaCodFormatting(receitaCodInput.value);
-                syncItemIdPreview();
-                allowNativeSubmit = true;
-                if (defaultSubmitButton) {
-                  defaultSubmitButton.disabled = false;
-                }
-                if (initialSubmitter && initialSubmitter.name) {
-                  var submitterHidden = document.createElement('input');
-                  submitterHidden.type = 'hidden';
-                  submitterHidden.name = initialSubmitter.name;
-                  submitterHidden.value = initialSubmitter.value || '1';
-                  submitterHidden.setAttribute('data-temp-submitter', '1');
-                  adminForm.appendChild(submitterHidden);
-                }
-                if (typeof HTMLFormElement !== 'undefined' && HTMLFormElement.prototype.submit) {
-                  HTMLFormElement.prototype.submit.call(adminForm);
-                } else {
-                  if (adminForm.requestSubmit) {
-                    adminForm.requestSubmit();
-                  } else {
-                    adminForm.submit();
+                return requestParentLevelJumpConfirmation().then(function(confirmed) {
+                  if (!confirmed) {
+                    return;
                   }
-                }
+                  receitaCodInput.value = stripReceitaCodFormatting(receitaCodInput.value);
+                  syncItemIdPreview();
+                  allowNativeSubmit = true;
+                  if (defaultSubmitButton) {
+                    defaultSubmitButton.disabled = false;
+                  }
+                  if (initialSubmitter && initialSubmitter.name) {
+                    var submitterHidden = document.createElement('input');
+                    submitterHidden.type = 'hidden';
+                    submitterHidden.name = initialSubmitter.name;
+                    submitterHidden.value = initialSubmitter.value || '1';
+                    submitterHidden.setAttribute('data-temp-submitter', '1');
+                    adminForm.appendChild(submitterHidden);
+                  }
+                  if (typeof HTMLFormElement !== 'undefined' && HTMLFormElement.prototype.submit) {
+                    HTMLFormElement.prototype.submit.call(adminForm);
+                  } else {
+                    if (adminForm.requestSubmit) {
+                      adminForm.requestSubmit();
+                    } else {
+                      adminForm.submit();
+                    }
+                  }
+                });
               });
             })
             .finally(function() {
