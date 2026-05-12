@@ -9,10 +9,13 @@ A contenção de vigência do filho no pai já é coberta por
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from django.core.exceptions import ValidationError
+from django.http import HttpRequest
+from django.urls import reverse
 
+from apps.core.admin_formatters import format_receita_cod_by_vigencia
 from apps.core.code_mask import get_mask_for_classificacao_pk_vigencia
 
 
@@ -611,3 +614,158 @@ def find_intermediate_items_for_level_jump(
         exclude_receita_cod=exclude_receita_cod,
     )
     return data["samples"]  # type: ignore[return-value]
+
+
+def _warn_modal_nivel_semantic_id(nobj: Any) -> str:
+    if not nobj:
+        return ""
+    nid = (getattr(nobj, "nivel_id", None) or "").strip()
+    num = getattr(nobj, "nivel_numero", None)
+    return nid or (f"n.º {num}" if num is not None else "")
+
+
+def _warn_modal_format_nivel_labels_pt(nums: List[int], sem_by_num: Dict[int, str]) -> str:
+    labels = []
+    for n in nums:
+        labels.append((sem_by_num.get(n) or "").strip() or f"n.º {n}")
+    if not labels:
+        return ""
+    if len(labels) == 1:
+        return labels[0]
+    if len(labels) == 2:
+        return f"{labels[0]} e {labels[1]}"
+    return ", ".join(labels[:-1]) + f" e {labels[-1]}"
+
+
+def warn_parent_level_jump_json_dict(
+    request: HttpRequest,
+    *,
+    parent_item: Any,
+    child_nivel: Any,
+    vig_inicio: Any,
+    vig_fim: Any,
+    classificacao_form_pk: int,
+    child_receita_cod_digits: str,
+    reg_sent: Any,
+) -> Dict[str, Any]:
+    """
+    Monta o dicionário JSON para o aviso de salto de nível no admin (antes do submit).
+
+    Retorna ``{"ok": true, "level_jump": false}`` quando não há salto estrutural
+    (pai já está em ``L_filho - 1``) ou dados insuficientes; caso contrário retorna
+    o payload completo com ``level_jump: true``, análise de intermediários e
+    códigos mascarados para o modal.
+    """
+    from apps.core.models import ItemClassificacao
+
+    child_n = getattr(child_nivel, "nivel_numero", None)
+    parent_nivel = getattr(parent_item, "nivel_id", None)
+    parent_n = getattr(parent_nivel, "nivel_numero", None) if parent_nivel else None
+
+    if child_n is None or child_n <= 1 or parent_n is None or parent_n >= child_n:
+        return {"ok": True, "level_jump": False}
+
+    if parent_n == child_n - 1:
+        return {"ok": True, "level_jump": False}
+
+    busca_intermediarios_class_pk = classificacao_form_pk
+    analysis = analyze_intermediate_items_for_level_jump(
+        classificacao_pk=busca_intermediarios_class_pk,
+        parent_item=parent_item,
+        child_nivel_numero=child_n,
+        vig_ini=vig_inicio,
+        vig_fim=vig_fim,
+        reg_sent=reg_sent,
+        sample_limit=3,
+        exclude_receita_cod=child_receita_cod_digits or None,
+    )
+    icount = int(analysis["count"])
+    level_nums = list(analysis["nivel_numeros"])
+    sem_by_num = analysis.get("nivel_semantic_by_numero") or {}
+    sem_by_num_int = {int(k): str(v) for k, v in sem_by_num.items()}
+
+    mask_cache: Dict[str, Any] = {}
+    parent_cod_masked = format_receita_cod_by_vigencia(
+        parent_item.receita_cod or "", vig_inicio, vig_fim, mask_cache
+    )
+    if parent_cod_masked == (parent_item.receita_cod or "") and parent_item.receita_cod:
+        parent_cod_masked = format_receita_cod_by_vigencia(
+            parent_item.receita_cod,
+            getattr(parent_item, "data_vigencia_inicio", None),
+            getattr(parent_item, "data_vigencia_fim", None),
+            mask_cache,
+        )
+
+    child_cod_masked = ""
+    if child_receita_cod_digits:
+        child_cod_masked = format_receita_cod_by_vigencia(
+            child_receita_cod_digits, vig_inicio, vig_fim, mask_cache
+        )
+        if child_cod_masked == child_receita_cod_digits:
+            child_cod_masked = format_receita_cod_by_vigencia(
+                child_receita_cod_digits, None, None, {}
+            )
+
+    parent_nivel_sem = _warn_modal_nivel_semantic_id(parent_nivel)
+    child_nivel_sem = _warn_modal_nivel_semantic_id(child_nivel)
+
+    parent_abs = request.build_absolute_uri(
+        reverse(
+            f"admin:{parent_item._meta.app_label}_{parent_item._meta.model_name}_change",
+            args=[parent_item.pk],
+        )
+    )
+
+    niveis_txt = _warn_modal_format_nivel_labels_pt(level_nums, sem_by_num_int)
+    if not niveis_txt and icount > 0:
+        niveis_txt = "nos níveis intermediários"
+    count_disp = f"{icount:02d}" if icount < 100 else str(icount)
+
+    ic_model = ItemClassificacao
+    intermediate_rows: List[Dict[str, Any]] = []
+    for row in list(analysis["samples"]):
+        rc = row.get("receita_cod") or ""
+        masked = format_receita_cod_by_vigencia(rc, vig_inicio, vig_fim, mask_cache)
+        if masked == rc and rc:
+            masked = format_receita_cod_by_vigencia(rc, None, None, mask_cache)
+        dl = (row.get("display_label") or "").strip()
+        nome_rest = ""
+        if rc and dl.startswith(rc):
+            nome_rest = dl[len(rc) :].lstrip(" -").strip()
+        else:
+            parts = dl.split(" - ", 1)
+            if len(parts) > 1:
+                nome_rest = parts[1].strip()
+        list_line = f"{masked} - {nome_rest}".strip(" -") if nome_rest else masked
+        intermediate_rows.append(
+            {
+                "cod_masked": masked,
+                "nome": nome_rest,
+                "list_line": list_line,
+                "admin_absolute_url": request.build_absolute_uri(
+                    reverse(
+                        f"admin:{ic_model._meta.app_label}_{ic_model._meta.model_name}_change",
+                        args=[int(row["pk"])],
+                    )
+                ),
+            }
+        )
+
+    return {
+        "ok": True,
+        "level_jump": True,
+        "parent": {
+            "cod_masked": parent_cod_masked,
+            "admin_absolute_url": parent_abs,
+            "nivel_semantic": parent_nivel_sem,
+        },
+        "child": {
+            "cod_masked": child_cod_masked or child_receita_cod_digits,
+            "nivel_semantic": child_nivel_sem,
+        },
+        "intermediate_count": icount,
+        "intermediate_count_display": count_disp,
+        "intermediate_niveis_label": niveis_txt,
+        "intermediate_rows": intermediate_rows,
+        "has_intermediate_codes": icount > 0,
+    }

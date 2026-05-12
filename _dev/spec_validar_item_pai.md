@@ -21,7 +21,7 @@ Esta especificação **não** substitui `spec_parent_item_id.md` nas regras de n
 
 ### A) Gatilho do aviso (`level_jump`) — **só níveis**
 
-**Onde:** `ItemClassificacaoAdmin.warn_parent_level_jump_view` (`apps/core/admin.py`).
+**Onde:** `ItemClassificacaoAdmin.warn_parent_level_jump_view` (`apps/core/admin.py`) apenas orquestra GET/ORM; a decisão e o payload JSON ficam em `warn_parent_level_jump_json_dict` (`apps/core/parent_item_validation.py`).
 
 **Condição para `level_jump: true`:** existem `parent_item_id`, `nivel_id`, `classificacao_id`, `vigencia_inicio`, `vigencia_fim` válidos no GET; o `ItemClassificacao` pai e o `NivelHierarquico` do filho existem; `child_n > 1`; `parent_n < child_n`; e **`parent_n != child_n − 1`**.
 
@@ -37,7 +37,7 @@ Este fluxo responde à pergunta “o **código digitado** do novo item é coeren
 
 ### C) Listagem de intermediários — **outros registos em `ItemClassificacao`**
 
-**Onde:** `analyze_intermediate_items_for_level_jump` (`apps/core/parent_item_validation.py`), chamada a partir de `warn_parent_level_jump_view`.
+**Onde:** `analyze_intermediate_items_for_level_jump` (`apps/core/parent_item_validation.py`), chamada a partir de `warn_parent_level_jump_json_dict` (mesmo módulo).
 
 Objetivo: montar `intermediate_count`, `intermediate_rows` e rótulos de nível para o texto “Além disso, existe …” no modal.
 
@@ -172,7 +172,7 @@ Variável de contexto: `item_parent_level_jump_warn_url` (definida no admin ao r
 | Peça | Arquivo / símbolo |
 |------|---------------------|
 | Rota customizada | `ItemClassificacaoAdmin.get_urls` → `warn-parent-level-jump/` |
-| View JSON | `warn_parent_level_jump_view` |
+| View JSON | `warn_parent_level_jump_view` (`admin.py`) → `warn_parent_level_jump_json_dict` (`parent_item_validation.py`) |
 | Análise intermediários | `analyze_intermediate_items_for_level_jump` |
 | Validação domínio pai/filho | `validate_item_parent_item_rules` |
 | Modal | `showCoreLevelJumpModal`, `requestParentLevelJumpConfirmation` em `change_form.html` |

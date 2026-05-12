@@ -39,8 +39,8 @@ from apps.core.code_mask import (
     resolve_receita_cod_mask_context,
 )
 from apps.core.parent_item_validation import (
-    analyze_intermediate_items_for_level_jump,
     digit_mask_for_classificacao_vigencia,
+    warn_parent_level_jump_json_dict,
 )
 from apps.core.classification_naming_messages import classification_naming_messages_dict
 
@@ -564,140 +564,18 @@ class ItemClassificacaoAdmin(
         if not parent or not nivel:
             return JsonResponse({"ok": True, "level_jump": False})
 
-        child_n = getattr(nivel, "nivel_numero", None)
-        parent_nivel = getattr(parent, "nivel_id", None)
-        parent_n = getattr(parent_nivel, "nivel_numero", None) if parent_nivel else None
-
-        if child_n is None or child_n <= 1 or parent_n is None or parent_n >= child_n:
-            return JsonResponse({"ok": True, "level_jump": False})
-
-        if parent_n == child_n - 1:
-            return JsonResponse({"ok": True, "level_jump": False})
-
         child_cod_raw = (request.GET.get("receita_cod") or "").replace(".", "").strip()
-
-        def nivel_semantic_id(nobj):
-            if not nobj:
-                return ""
-            nid = (getattr(nobj, "nivel_id", None) or "").strip()
-            num = getattr(nobj, "nivel_numero", None)
-            return nid or (f"n.º {num}" if num is not None else "")
-
-        def format_nivel_labels_pt(nums, sem_by_num):
-            labels = []
-            for n in nums:
-                labels.append((sem_by_num.get(n) or "").strip() or f"n.º {n}")
-            if not labels:
-                return ""
-            if len(labels) == 1:
-                return labels[0]
-            if len(labels) == 2:
-                return f"{labels[0]} e {labels[1]}"
-            return ", ".join(labels[:-1]) + f" e {labels[-1]}"
-
         reg_sent = transaction_time_sentinel_for_query()
-        # Itens intermediários: mesma classificação selecionada no formulário de criação
-        # (o pai pode referenciar outro PK em bases de teste; a lista segue o formulário).
-        busca_intermediarios_class_pk = class_id_int
-        analysis = analyze_intermediate_items_for_level_jump(
-            classificacao_pk=busca_intermediarios_class_pk,
+        payload = warn_parent_level_jump_json_dict(
+            request,
             parent_item=parent,
-            child_nivel_numero=child_n,
-            vig_ini=vig_inicio,
+            child_nivel=nivel,
+            vig_inicio=vig_inicio,
             vig_fim=vig_fim,
+            classificacao_form_pk=class_id_int,
+            child_receita_cod_digits=child_cod_raw,
             reg_sent=reg_sent,
-            sample_limit=3,
-            exclude_receita_cod=child_cod_raw or None,
         )
-        icount = int(analysis["count"])
-        level_nums = list(analysis["nivel_numeros"])
-        sem_by_num = analysis.get("nivel_semantic_by_numero") or {}
-        sem_by_num_int = {int(k): str(v) for k, v in sem_by_num.items()}
-
-        mask_cache: dict = {}
-        parent_cod_masked = format_receita_cod_by_vigencia(
-            parent.receita_cod or "", vig_inicio, vig_fim, mask_cache
-        )
-        if parent_cod_masked == (parent.receita_cod or "") and parent.receita_cod:
-            parent_cod_masked = format_receita_cod_by_vigencia(
-                parent.receita_cod,
-                getattr(parent, "data_vigencia_inicio", None),
-                getattr(parent, "data_vigencia_fim", None),
-                mask_cache,
-            )
-
-        child_cod_masked = ""
-        if child_cod_raw:
-            child_cod_masked = format_receita_cod_by_vigencia(
-                child_cod_raw, vig_inicio, vig_fim, mask_cache
-            )
-            if child_cod_masked == child_cod_raw:
-                child_cod_masked = format_receita_cod_by_vigencia(child_cod_raw, None, None, {})
-
-        parent_nivel_sem = nivel_semantic_id(parent_nivel)
-        child_nivel_sem = nivel_semantic_id(nivel)
-
-        parent_abs = request.build_absolute_uri(
-            reverse(
-                f"admin:{parent._meta.app_label}_{parent._meta.model_name}_change",
-                args=[parent.pk],
-            )
-        )
-
-        niveis_txt = format_nivel_labels_pt(level_nums, sem_by_num_int)
-        if not niveis_txt and icount > 0:
-            niveis_txt = "nos níveis intermediários"
-        count_disp = f"{icount:02d}" if icount < 100 else str(icount)
-
-        intermediate_rows = []
-        samples = list(analysis["samples"])
-        for row in samples:
-            rc = row.get("receita_cod") or ""
-            masked = format_receita_cod_by_vigencia(rc, vig_inicio, vig_fim, mask_cache)
-            if masked == rc and rc:
-                masked = format_receita_cod_by_vigencia(rc, None, None, mask_cache)
-            dl = (row.get("display_label") or "").strip()
-            nome_rest = ""
-            if rc and dl.startswith(rc):
-                nome_rest = dl[len(rc) :].lstrip(" -").strip()
-            else:
-                parts = dl.split(" - ", 1)
-                if len(parts) > 1:
-                    nome_rest = parts[1].strip()
-            list_line = f"{masked} - {nome_rest}".strip(" -") if nome_rest else masked
-            intermediate_rows.append(
-                {
-                    "cod_masked": masked,
-                    "nome": nome_rest,
-                    "list_line": list_line,
-                    "admin_absolute_url": request.build_absolute_uri(
-                        reverse(
-                            f"admin:{ItemClassificacao._meta.app_label}_{ItemClassificacao._meta.model_name}_change",
-                            args=[int(row["pk"])],
-                        )
-                    ),
-                }
-            )
-
-        payload = {
-            "ok": True,
-            "level_jump": True,
-            "parent": {
-                "cod_masked": parent_cod_masked,
-                "admin_absolute_url": parent_abs,
-                "nivel_semantic": parent_nivel_sem,
-            },
-            "child": {
-                "cod_masked": child_cod_masked or child_cod_raw,
-                "nivel_semantic": child_nivel_sem,
-            },
-            "intermediate_count": icount,
-            "intermediate_count_display": count_disp,
-            "intermediate_niveis_label": niveis_txt,
-            "intermediate_rows": intermediate_rows,
-            "has_intermediate_codes": icount > 0,
-        }
-
         return JsonResponse(payload)
 
     def lookup_hierarchy_by_code_view(self, request):
