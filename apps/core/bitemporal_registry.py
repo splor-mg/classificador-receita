@@ -198,7 +198,7 @@ RESOURCES: Dict[str, Dict[str, Any]] = {
         ],
         "list_display": ["item_id", "receita_cod", "data_registro_inicio", "data_vigencia_inicio", "data_vigencia_fim"],
         "select_related": ["classificacao_id", "nivel_id", "parent_item_id"],
-        "order_by": ["item_ref", "data_vigencia_inicio", "data_registro_inicio"],
+        "order_by": ["item_id", "data_vigencia_inicio", "data_registro_inicio"],
     },
     "base_legal_tecnica": {
         "model_name": "BaseLegalTecnica",

@@ -306,7 +306,7 @@ class ItemClassificacaoAdmin(
         'data_registro_fim_fmt',
     ]
     ordering = [
-        'item_ref',
+        'item_id',
         'data_vigencia_inicio',
         'data_registro_inicio',
     ]
