@@ -182,7 +182,11 @@ def validate_item(
     levels = find_niveis_for_item(item, niveis)
     if not levels:
         return False, "nenhuma linha de nível com registro e vigência compatíveis"
-    estruturas = {(l.get("estrutura_codigo") or "").strip() for l in levels if (l.get("estrutura_codigo") or "").strip()}
+    estruturas = {
+        (level.get("estrutura_codigo") or "").strip()
+        for level in levels
+        if (level.get("estrutura_codigo") or "").strip()
+    }
     if not estruturas:
         return False, "nível(is) sem estrutura_codigo para derivar máscara"
     masks = {tuple(parse_estrutura_codigo_mask(e)) for e in estruturas}

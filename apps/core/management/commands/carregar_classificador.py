@@ -19,21 +19,9 @@ from django.apps import apps
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.conf import settings
 from django.db import transaction, connections
-from django.db.models import Max
 from django.utils import timezone
 
 from frictionless import Package, Resource
-
-
-def make_datetime_aware(value):
-    """Converte datetime naive para aware no timezone local (settings.TIME_ZONE)."""
-    if value is None:
-        return None
-    if isinstance(value, datetime):
-        if timezone.is_naive(value):
-            return timezone.make_aware(value)
-        return value
-    return value
 
 from apps.core.models import (
     SerieClassificacao,
@@ -48,6 +36,17 @@ from apps.core.models import (
 )
 from apps.core.models_alias_lexico import AliasLexico
 from apps.core.bitemporal_registry import get_sentinela_datetime
+
+
+def make_datetime_aware(value):
+    """Converte datetime naive para aware no timezone local (settings.TIME_ZONE)."""
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        if timezone.is_naive(value):
+            return timezone.make_aware(value)
+        return value
+    return value
 
 
 def _strip_csv_empty(v: Any) -> str | None:
@@ -417,7 +416,7 @@ class Command(BaseCommand):
 
         try:
             rows: Iterable[Mapping[str, Any]] = list(resource.read_rows())
-        except Exception as e:
+        except Exception:
             # Log diagnostic info to help debug resource opening issues (encoding / path / format)
             import traceback as _traceback
             import sys as _sys

@@ -156,7 +156,7 @@ def main() -> int:
                         total_errors += 1
                         print(f"   ❌ Linha {i + 1} regra {rname}: {msg}")
         if resource_errors == 0 and rows:
-            print(f"   ✅ Regras aplicadas sem erros.")
+            print("   ✅ Regras aplicadas sem erros.")
 
     print("\n" + "=" * 60)
     if total_errors == 0:

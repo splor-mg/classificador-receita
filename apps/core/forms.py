@@ -8,7 +8,6 @@ from apps.core.models import (
     Classificacao,
     NivelHierarquico,
     ItemClassificacao,
-    TRANSACTION_TIME_SENTINEL,
     item_semantic_id_from_receita_cod,
 )
 from apps.core.models_alias_lexico import AliasLexico

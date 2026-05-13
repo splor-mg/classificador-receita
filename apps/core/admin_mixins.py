@@ -12,7 +12,7 @@ import logging
 import unicodedata
 from datetime import date
 from pathlib import Path
-from typing import Any, Callable, Dict
+from typing import Any, Dict
 
 from django.contrib import admin
 from django.contrib import messages
@@ -578,8 +578,6 @@ class BitemporalInactiveReadOnlyMixin:
 
         model = self.model
         sentinel = TRANSACTION_TIME_SENTINEL
-
-        admin_instance = self
 
         class FormWithIdValidation(FormClass):
             def clean(form_self):

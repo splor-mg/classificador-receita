@@ -15,7 +15,6 @@ OBS: Esta validação é estrutural (schema + domínios). A validação de dados
 
 from pathlib import Path
 import sys
-import textwrap
 
 import yaml
 from frictionless import Schema

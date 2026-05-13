@@ -570,8 +570,6 @@ class BitemporalChangeHandler:
             "new_vig_fim": new_vig_fim,
             "nova_vigencia_preview": nova_vigencia_preview,
             "sobrescrever_preview": sobrescrever_preview,
-            "current_vig_inicio": current_vig_inicio,
-            "current_vig_fim": current_vig_fim,
             # Estratégia padrão: Registrar nova vigência apenas quando
             # a versão atual começou em ano anterior ao corrente e
             # (fim é sentinela ou fim está no ano corrente). Em todos
@@ -1023,11 +1021,13 @@ class BitemporalChangeHandler:
         except ValidationError as exc:
             # Re-renderiza a própria tela de confirmação com mensagens por campo
             # para o usuário ajustar sem sair do fluxo.
-            details = None
             if hasattr(exc, "messages") and exc.messages:
-                details = "; ".join([str(m) for m in exc.messages])
+                exc_details = "; ".join(str(m) for m in exc.messages)
             else:
-                details = str(exc)
+                exc_details = str(exc)
+            self.logger.debug(
+                "ValidationError on confirm before bitemporal save: %s", exc_details
+            )
 
             field_errors = getattr(exc, "message_dict", None) or {}
 

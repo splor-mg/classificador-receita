@@ -13,7 +13,6 @@ from apps.core.bitemporal_registry import (
     get_resource,
     get_model_for_resource,
     get_sentinela_datetime,
-    RESOURCES,
 )
 # process-local locks to serialize exports per resource
 _resource_locks = {}

@@ -5,18 +5,12 @@ Suporta recursos SCD-2 (bitemporais) e SCD-1 (monotemporais) definidos no regist
 - Para SCD-2 (bitemporal): --scope all|current (default all)
 - Para SCD-1: exporta todas as linhas atuais.
 """
-import csv
-import sys
-from datetime import date
-from pathlib import Path
-
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
 from apps.core.bitemporal_registry import (
     get_resource,
     get_model_for_resource,
     get_sentinela_datetime,
-    get_export_value,
     RESOURCES,
 )
 

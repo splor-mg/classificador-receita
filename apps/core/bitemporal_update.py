@@ -31,8 +31,8 @@ FLUXO DE UMA EDIÇÃO BITEMPORAL:
     5. Serviço fecha registro anterior e cria novo registro
     6. AutoExportAdminMixin exporta CSV se houve mudança
 """
-from datetime import date, datetime, timedelta
-from typing import Any, Dict, Optional
+from datetime import date, timedelta
+from typing import Any, Dict
 
 from django.db import transaction
 from django.utils import timezone

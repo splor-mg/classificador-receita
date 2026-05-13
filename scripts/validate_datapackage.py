@@ -16,7 +16,7 @@ import subprocess
 import yaml
 from pathlib import Path
 from datetime import datetime
-from frictionless import validate, Package, Schema
+from frictionless import validate, Package
 
 
 def _log(line: str, buffer: list[str]) -> None:
@@ -135,7 +135,7 @@ def validate_datapackage(log_lines: list[str], resource_name: str | None = None)
             return False
 
     # Modo padrão: validar o datapackage inteiro, recurso por recurso (CSV+schema)
-    _log(f"\n📦 Validando datapackage.yaml (todos os recursos)...\n", log_lines)
+    _log("\n📦 Validando datapackage.yaml (todos os recursos)...\n", log_lines)
 
     try:
         dp_descriptor = yaml.safe_load(datapackage_file.read_text(encoding="utf-8")) or {}
