@@ -6,6 +6,8 @@ Documentar o comportamento **técnico** implementado em torno de `parent_item_id
 
 Esta especificação **não** substitui `spec_parent_item_id.md` nas regras de negócio gerais; complementa o que foi feito no **código** (`apps/core/parent_item_validation.py`, `apps/core/admin.py`, `apps/core/templates/admin/core/change_form.html`) para o fluxo de **confirmação antes do submit** e para a **análise de intermediários**.
 
+Lookups JSON de **código / hierarquia** no mesmo admin (lupa de pai por código exacto e derivação de nível + pai matriz): `_dev/spec_lookup_hierarquia_por_codigo_admin.md` (`apps/core/item_classificacao_code_lookup.py`).
+
 ## Glossário (implementação)
 
 | Termo | Significado no código |

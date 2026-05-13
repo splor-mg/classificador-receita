@@ -46,5 +46,5 @@ Para um filho no nível `N`:
 - Filho nível 7 com pai semanticamente correto e vigência compatível -> aceita.
 - Filho cujo pai não está com registro ativo no sistema hoje, mas cuja vigência ainda contém a vigência do filho -> aceita.
 
-Ver também: `_dev/spec_validar_item_pai.md` (admin: aviso de salto de nível e listagem de itens intermediários antes do submit).
+Ver também: `_dev/spec_validar_item_pai.md` (admin: aviso de salto de nível e listagem de itens intermediários antes do submit); `_dev/spec_lookup_hierarquia_por_codigo_admin.md` (endpoints JSON de lookup de código e hierarquia no admin).
 
