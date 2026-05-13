@@ -115,5 +115,5 @@ resources:
     mediatype: text/csv
     encoding: utf-8
     schema: schemas/lista_abreviacoes.yaml
-    description: Lista curada de termos completos e abreviações (transaction time simples), para sugestão de radical abreviado na nomenclatura.
+    description: Lista curada de termos completos e abreviações (transaction time simples), para sugestão de radical abreviado na nomenclatura. Cada valor de termo (coluna termo_nome no CSV / termo no modelo) é único no catálogo em sentido **case-insensitive** (constraint em LOWER(termo) no PostgreSQL).
 

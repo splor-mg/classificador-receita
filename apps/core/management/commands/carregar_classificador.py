@@ -36,6 +36,7 @@ from apps.core.models import (
 )
 from apps.core.models_alias_lexico import AliasLexico
 from apps.core.bitemporal_registry import get_sentinela_datetime
+from apps.core.alias_lexico_protocol import insert_alias_lexico_if_new
 
 
 def make_datetime_aware(value):
@@ -573,8 +574,9 @@ class Command(BaseCommand):
                 if mx >= next_ref:
                     next_ref = mx + 1
 
-            AliasLexico.objects.create(**prepared)
-            created += 1
+            inserted, _ = insert_alias_lexico_if_new(**prepared)
+            if inserted:
+                created += 1
 
         self.stdout.write(self.style.SUCCESS(f"lista_abreviacoes: {created} linhas carregadas."))
 

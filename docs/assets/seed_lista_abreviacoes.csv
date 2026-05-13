@@ -1,103 +1,93 @@
 termo_nome,alias_lexico_ref,abreviacao,data_registro_inicio,data_registro_fim
-Administrativas,1,Adm.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Administrativos,2,Adm.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Administração,3,Adm.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Alienação,4,Alien.,2018-01-01 00:00:00,9999-12-31 00:00:00
-"Alienação de Títulos, Valores Mobiliários e Aplicações Congêneres Permanentes",5,Alien. Títulos Valores Mobil. Aplic. Congên. Permanentes,2018-01-01 00:00:00,9999-12-31 00:00:00
-"Alienação de Títulos, Valores Mobiliários e Aplicações Congêneres Temporárias",6,Alien. Títulos Valores Mobil. Aplic. Congên. Temporárias,2018-01-01 00:00:00,9999-12-31 00:00:00
-Ambiental,7,Ambient.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Aplicações,8,Aplic.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Atendimento,9,Atend.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Autorização,10,Autor.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Certificação,11,Certif.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Comerciais,12,Comerc.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Concessão,13,Conc.,2018-01-01 00:00:00,9999-12-31 00:00:00
-"Concessão, Permissão, Autorização ou Cessão do Direito de Uso de Bens Imóveis Públicos",14,Conc. Perm. Autor. Cessão Dir. Uso Bens Imóv. Púb.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Congêneres,15,Congên.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Contribuição,16,Contrib.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Contribuição do Militar Ativo,17,Contrib. Militar Ativo,2018-01-01 00:00:00,9999-12-31 00:00:00
-Contribuição do Militar Inativo,18,Contrib. Militar Inativo,2018-01-01 00:00:00,9999-12-31 00:00:00
-Contribuição do Servidor Civil Ativo,19,Contrib. Serv. Civil Ativo,2018-01-01 00:00:00,9999-12-31 00:00:00
-Contribuição do Servidor Civil Inativo,20,Contrib. Serv. Civil Inativo,2018-01-01 00:00:00,9999-12-31 00:00:00
-Contribuição dos Pensionistas Militares,21,Contrib. Pensionistas Militares,2018-01-01 00:00:00,9999-12-31 00:00:00
-Contribuição para Financiamento da Seguridade Social,22,COFINS,2018-01-01 00:00:00,9999-12-31 00:00:00
-Contribuições,23,Contrib.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Controle,24,Contr.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Dedução das Receitas,25,Dedução Rec.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Delegação,26,Deleg.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Delegação para a Prestação dos Serviços de Transporte Rodoviário,27,Deleg. Prest. Serv. Transp. Rodoviário,2018-01-01 00:00:00,9999-12-31 00:00:00
-Delegação para Exploração da Infraestrutura Aeroportuária,28,Deleg. Exploração Infraest. Aeroportuária,2018-01-01 00:00:00,9999-12-31 00:00:00
-Delegação para Exploração da Infraestrutura de Transporte Rodoviário para o Setor Privado,29,Deleg. Explor. Infra. Transp. Rodoviário Setor Privado,2018-01-01 00:00:00,9999-12-31 00:00:00
-Delegações,30,Deleg.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Direito,31,Dir.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Direitos,32,Dir.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Dívida Ativa,33,DA,2018-01-01 00:00:00,9999-12-31 00:00:00
-Dívida Ativa - Multas e Juros de Mora,34,DA-MJM,2018-01-01 00:00:00,9999-12-31 00:00:00
-Encargos,35,Encarg.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Exploração,36,Explor.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Financeiras,37,Financ.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Fiscalização,38,Fisc.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Fundo de Erradicação da Miséria,39,FEM,2018-01-01 00:00:00,9999-12-31 00:00:00
-Fundo de Manutenção e Desenvolvimento da Educação Básica e de Valorização dos Profissionais da Educação,40,FUNDEB,2018-01-01 00:00:00,9999-12-31 00:00:00
-Fundo Estadual Combate Pobreza - Fundo de Erradicação da Miséria,41,FEM,2018-01-01 00:00:00,9999-12-31 00:00:00
-Gerais,42,Ger.,2018-01-01 00:00:00,2018-01-01 00:00:00
-Geral,43,G.,2018-01-01 00:00:00,2018-01-01 00:00:00
-Imposto de Renda Retido na Fonte,44,IRRF,2018-01-01 00:00:00,9999-12-31 00:00:00
-Imposto sobre a Propriedade de Veículos Automotores,45,IPVA,2018-01-01 00:00:00,9999-12-31 00:00:00
-Imposto sobre a Propriedade Territorial Rural,46,ITR,2018-01-01 00:00:00,9999-12-31 00:00:00
-Imposto sobre a Renda,47,IR,2018-01-01 00:00:00,9999-12-31 00:00:00
-Imposto sobre a Renda das Pessoas Físicas,48,IRPF,2018-01-01 00:00:00,9999-12-31 00:00:00
-Imposto sobre Operações Relativas à Circulação de Mercadorias e sobre Prestações de Serviços de Transporte Interestadual e Intermunicipal e de Comunicação,49,ICMS,2018-01-01 00:00:00,9999-12-31 00:00:00
-Imposto sobre Transmissão “Causa Mortis” e Doação de Bens e Direitos,50,ITCD,2018-01-01 00:00:00,9999-12-31 00:00:00
-Imóveis,51,Imóv.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Infraestrutura,52,Infraest.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Inspeção,53,Insp.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Instituições,54,Instit.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Intraorçamentária,55,Intra.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Mercadorias,56,Mercad.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Mobiliários,57,Mobil.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Multas Administrativas por Danos Ambientais,58,Multas Adm. Danos Ambientais,2018-01-01 00:00:00,9999-12-31 00:00:00
-Multas e Juros de Mora,59,MJM,2018-01-01 00:00:00,9999-12-31 00:00:00
-Operações,60,Op.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Operações de Crédito Internas para Programas de Modernização da Administração Pública,61,Op. Crédito Internas Programas Modernização Adm. Pública,2018-01-01 00:00:00,9999-12-31 00:00:00
-Outorga de Direitos de Uso de Recursos Hídricos,62,Outorga Dir. Uso Recursos Hídricos,2018-01-01 00:00:00,9999-12-31 00:00:00
-Outras Delegações de Serviços Públicos,63,Outras Deleg. Serv. Púb.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Outras Delegações para Exploração de Recursos Naturais,64,Outras Deleg. Exploração Recursos Naturais,2018-01-01 00:00:00,9999-12-31 00:00:00
-Outras Receitas Imobiliárias,65,Outras Rec. Imobiliárias,2018-01-01 00:00:00,9999-12-31 00:00:00
-Outras Receitas Patrimoniais,66,Outras Rec. Patrimoniais,2018-01-01 00:00:00,9999-12-31 00:00:00
-Outras Transferências de Instituições Privadas,67,Outras Transf. Instit. Privadas,2018-01-01 00:00:00,9999-12-31 00:00:00
-Outras Transferências de Pessoas Físicas,68,Outras Transf. Pessoas Físicas,2018-01-01 00:00:00,9999-12-31 00:00:00
-Outras Transferências do Exterior,69,Outras Transf. Exterior,2018-01-01 00:00:00,9999-12-31 00:00:00
-Outras Transferências dos Estados e DF,70,Outras Transf. Estados DF,2018-01-01 00:00:00,9999-12-31 00:00:00
-Outras Transferências dos Municípios,71,Outras Transf. Municípios,2018-01-01 00:00:00,9999-12-31 00:00:00
-Outras Transferências para Segurança Pública,72,Outras Transf. Segurança Pública,2018-01-01 00:00:00,9999-12-31 00:00:00
-Outros Serviços de Atendimento à Saúde,73,Outros Serv. Atend. Saúde,2018-01-01 00:00:00,9999-12-31 00:00:00
-Passageiros,74,Passag.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Permissão,75,Perm.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Prestação,76,Prest.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Principal,77,Princ.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Programa de Integração Social,78,PIS,2018-01-01 00:00:00,9999-12-31 00:00:00
-Públicos,79,Púb.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Receita,80,Rec.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Receita Agropecuária,81,Rec. Agropecuária,2018-01-01 00:00:00,9999-12-31 00:00:00
-Receita Industrial,82,Rec. Industrial,2018-01-01 00:00:00,9999-12-31 00:00:00
-Receita Intraorçamentária,83,Rec. Intra.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Receitas,84,Rec.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Regime Geral de Previdência Social,85,RGPS,2018-01-01 00:00:00,9999-12-31 00:00:00
-Registro,86,Reg.,2018-01-01 00:00:00,9999-12-31 00:00:00
-"Retorno de Operações, Juros e Encargos Financeiros",87,Retorno Oper. Juros Encarg. Financeiros,2018-01-01 00:00:00,9999-12-31 00:00:00
-Servidor,88,Serv.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Serviços,89,Serv.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Serviços Administrativos e Comerciais Gerais,90,Serviços Adm. Comerc. Ger.,2018-01-01 00:00:00,9999-12-31 00:00:00
-"Serviços de Registro, Certificação e Fiscalização",91,Serviços Reg. Certif. Fiscaliz.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Serviços de Transporte de Passageiros ou Mercadorias,92,Serviços Transp. Passag. Mercad.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Taxa,93,Tx.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Taxa de Controle e Fiscalização Ambiental,94,Tx. Contr. Fisc. Ambient.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Taxas,95,Tx.,2018-01-01 00:00:00,9999-12-31 00:00:00
-"Taxas de Inspeção, Controle e Fiscalização",96,Tx. Insp. Contr. Fisc.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Taxas pela Prestação de Serviços em Geral,97,Tx. Prest. Serv. G.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Transferência,98,Transf.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Transferência Especial da União,99,Transf. Especial União,2018-01-01 00:00:00,9999-12-31 00:00:00
-Transferências,100,Transf.,2018-01-01 00:00:00,9999-12-31 00:00:00
-Transferências de Recursos de Complementação da União ao FUNDEB,101,Transf. Complem. União FUNDEB,2018-01-01 00:00:00,9999-12-31 00:00:00
-Transporte,102,Transp.,2018-01-01 00:00:00,9999-12-31 00:00:00
+Administrativas,1,Adm.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Administrativos,2,Adm.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Administração,3,Adm.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Alienação,4,Alien.,2026-01-01 00:00:00,9999-12-31 00:00:00
+"Alienação de Títulos, Valores Mobiliários e Aplicações Congêneres Permanentes",5,Alien. Títulos Valores Mobil. Aplic. Congên. Permanentes,2026-01-01 00:00:00,9999-12-31 00:00:00
+"Alienação de Títulos, Valores Mobiliários e Aplicações Congêneres Temporárias",6,Alien. Títulos Valores Mobil. Aplic. Congên. Temporárias,2026-01-01 00:00:00,9999-12-31 00:00:00
+Ambiental,7,Ambient.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Aplicações,8,Aplic.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Atendimento,9,Atend.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Autorização,10,Autor.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Certificação,11,Certif.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Comerciais,12,Comerc.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Concessão,13,Conc.,2026-01-01 00:00:00,9999-12-31 00:00:00
+"Concessão, Permissão, Autorização ou Cessão do Direito de Uso de Bens Imóveis Públicos",14,Conc. Perm. Autor. Cessão Dir. Uso Bens Imóv. Púb.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Congêneres,15,Congên.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Contribuição,16,Contrib.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Contribuição do Militar Ativo,17,Contrib. Militar Ativo,2026-01-01 00:00:00,9999-12-31 00:00:00
+Contribuição do Militar Inativo,18,Contrib. Militar Inativo,2026-01-01 00:00:00,9999-12-31 00:00:00
+Contribuição do Servidor Civil Ativo,19,Contrib. Serv. Civil Ativo,2026-01-01 00:00:00,9999-12-31 00:00:00
+Contribuição do Servidor Civil Inativo,20,Contrib. Serv. Civil Inativo,2026-01-01 00:00:00,9999-12-31 00:00:00
+Contribuição dos Pensionistas Militares,21,Contrib. Pensionistas Militares,2026-01-01 00:00:00,9999-12-31 00:00:00
+Controle,22,Contr.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Dedução das Receitas,23,Dedução Rec.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Delegação,24,Deleg.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Delegação para a Prestação dos Serviços de Transporte Rodoviário,25,Deleg. Prest. Serv. Transp. Rodoviário,2026-01-01 00:00:00,9999-12-31 00:00:00
+Delegação para Exploração da Infraestrutura Aeroportuária,26,Deleg. Exploração Infraest. Aeroportuária,2026-01-01 00:00:00,9999-12-31 00:00:00
+Delegação para Exploração da Infraestrutura de Transporte Rodoviário para o Setor Privado,27,Deleg. Explor. Infra. Transp. Rodoviário Setor Privado,2026-01-01 00:00:00,9999-12-31 00:00:00
+Delegações,28,Deleg.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Direito,29,Dir.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Direitos,30,Dir.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Dívida Ativa,31,DA,2026-01-01 00:00:00,9999-12-31 00:00:00
+Dívida Ativa - Multas e Juros de Mora,32,DA-MJM,2026-01-01 00:00:00,9999-12-31 00:00:00
+Encargos,33,Encarg.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Exploração,34,Explor.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Fiscalização,35,Fisc.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Gerais,36,Ger.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Geral,37,G.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Imposto sobre a Propriedade de Veículos Automotores,38,IPVA,2026-01-01 00:00:00,9999-12-31 00:00:00
+Imposto sobre a Renda,39,IR,2026-01-01 00:00:00,9999-12-31 00:00:00
+Imposto sobre Operações Relativas à Circulação de Mercadorias e sobre Prestações de Serviços de Transporte Interestadual e Intermunicipal e de Comunicação,40,ICMS,2026-01-01 00:00:00,9999-12-31 00:00:00
+Imposto sobre Transmissão “Causa Mortis” e Doação de Bens e Direitos,41,ITCD,2026-01-01 00:00:00,9999-12-31 00:00:00
+Imposto sobre Vendas a Varejo de Combustíveis Líquidos e Gasosos,42,IVVC,2026-01-01 00:00:00,9999-12-31 00:00:00
+Imóveis,43,Imóv.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Infraestrutura,44,Infraest.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Inspeção,45,Insp.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Instituições,46,Instit.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Intraorçamentária,47,Intra.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Mercadorias,48,Mercad.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Mobiliários,49,Mobil.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Multas Administrativas por Danos Ambientais,50,Multas Adm. Danos Ambientais,2026-01-01 00:00:00,9999-12-31 00:00:00
+Multas e Juros de Mora,51,MJM,2026-01-01 00:00:00,9999-12-31 00:00:00
+Operações,52,Oper.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Operações de Crédito Internas para Programas de Modernização da Administração Pública,53,Op. Crédito Internas Programas Modernização Adm. Pública,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outorga de Direitos de Uso de Recursos Hídricos,54,Outorga Dir. Uso Recursos Hídricos,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outras Delegações de Serviços Públicos,55,Outras Deleg. Serv. Púb.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outras Delegações para Exploração de Recursos Naturais,56,Outras Deleg. Exploração Recursos Naturais,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outras Receitas Imobiliárias,57,Outras Rec. Imobiliárias,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outras Receitas Patrimoniais,58,Outras Rec. Patrimoniais,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outras Transferências de Instituições Privadas,59,Outras Transf. Instit. Privadas,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outras Transferências de Pessoas Físicas,60,Outras Transf. Pessoas Físicas,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outras Transferências do Exterior,61,Outras Transf. Exterior,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outras Transferências dos Estados e DF,62,Outras Transf. Estados DF,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outras Transferências dos Municípios,63,Outras Transf. Municípios,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outras Transferências para Segurança Pública,64,Outras Transf. Segurança Pública,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outros Serviços de Atendimento à Saúde,65,Outros Serv. Atend. Saúde,2026-01-01 00:00:00,9999-12-31 00:00:00
+Passageiros,66,Passag.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Permissão,67,Perm.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Prestação,68,Prest.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Principal,69,Princ.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Públicos,70,Púb.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Receita,71,Rec.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Receita Agropecuária,72,Rec. Agropecuária,2026-01-01 00:00:00,9999-12-31 00:00:00
+Receita Industrial,73,Rec. Industrial,2026-01-01 00:00:00,9999-12-31 00:00:00
+Receita Intraorçamentária,74,Rec. Intra.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Receitas,75,Rec.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Registro,76,Reg.,2026-01-01 00:00:00,9999-12-31 00:00:00
+"Retorno de Operações, Juros e Encargos Financeiros",77,Retorno Oper. Juros Encarg. Financeiros,2026-01-01 00:00:00,9999-12-31 00:00:00
+Servidor,78,Serv.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Serviços,79,Serv.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Serviços Administrativos e Comerciais Gerais,80,Serviços Adm. Comerc. Ger.,2026-01-01 00:00:00,9999-12-31 00:00:00
+"Serviços de Registro, Certificação e Fiscalização",81,Serviços Reg. Certif. Fiscaliz.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Serviços de Transporte de Passageiros ou Mercadorias,82,Serviços Transp. Passag. Mercad.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Taxa,83,Tx.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Taxa de Controle e Fiscalização Ambiental,84,Tx. Contr. Fisc. Ambient.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Taxa de Estudo de Impacto de Vizinhança,85,EIV,2026-01-01 00:00:00,9999-12-31 00:00:00
+Taxas,86,Tx.,2026-01-01 00:00:00,9999-12-31 00:00:00
+"Taxas de Inspeção, Controle e Fiscalização",87,Tx. Insp. Contr. Fisc.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Taxas pela Prestação de Serviços em Geral,88,Tx. Prest. Serv. G.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferência,89,Transf.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferência Especial da União,90,Transf. Especial União,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferências,91,Transf.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transporte,92,Transp.,2026-01-01 00:00:00,9999-12-31 00:00:00

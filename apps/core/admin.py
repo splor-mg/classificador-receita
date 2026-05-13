@@ -1,5 +1,6 @@
 from datetime import date, datetime
 import json
+import logging
 
 from django.contrib import admin, messages
 from django.contrib.admin.utils import unquote
@@ -557,6 +558,48 @@ class ItemClassificacaoAdmin(
     )
     def matriz_display(self, obj):
         return "Matriz" if obj.matriz else "Detalhe"
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        try:
+            if change and hasattr(form, "has_changed") and not form.has_changed():
+                return
+        except Exception:
+            pass
+        log = logging.getLogger(__name__)
+        try:
+            from apps.core.alias_lexico_run import (
+                maybe_export_seed_after_item_save_protocol,
+                run_alias_lexico_infer_persist,
+            )
+
+            res = run_alias_lexico_infer_persist(
+                t_instant=timezone.now(),
+                items_csv_fallback=False,
+                alias_seed_fallback=True,
+            )
+            try:
+                out = maybe_export_seed_after_item_save_protocol(res.n_inserted)
+                if out is not None:
+                    self.message_user(
+                        request,
+                        f"Lista de abreviações: {res.n_inserted} novo(s) registo(s). Seed exportado.",
+                        level=messages.SUCCESS,
+                    )
+            except Exception:
+                log.exception("Export seed lista_abreviacoes após inferência (ItemClassificacao)")
+                self.message_user(
+                    request,
+                    "Novas abreviações gravadas, mas o export do seed falhou (ver logs).",
+                    level=messages.WARNING,
+                )
+        except Exception:
+            log.exception("Inferência lista_abreviacoes após save de ItemClassificacao")
+            self.message_user(
+                request,
+                "Aviso: falhou a atualização automática da lista de abreviações (ver logs).",
+                level=messages.WARNING,
+            )
 
     class Media:
         js = (

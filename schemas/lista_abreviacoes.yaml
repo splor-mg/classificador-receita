@@ -4,8 +4,10 @@ fields:
   - name: termo_nome
     type: string
     title: Termo (forma completa)
+    description: Valores distintos ignorando diferença de capitalização (único no BD via LOWER(termo)).
     constraints:
       required: true
+      unique: true
   - name: alias_lexico_ref
     type: integer
     title: Referência numérica estável do termo

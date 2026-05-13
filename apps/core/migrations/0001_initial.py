@@ -5,6 +5,7 @@ import django.core.validators
 import django.db.models.deletion
 import django.utils.timezone
 from django.db import migrations, models
+from django.db.models.functions import Lower
 
 
 class Migration(migrations.Migration):
@@ -34,7 +35,10 @@ class Migration(migrations.Migration):
                 (
                     "termo",
                     models.CharField(
-                        help_text="Forma completa a partir da qual se deriva a abreviação.",
+                        help_text=(
+                            "Forma completa a partir da qual se deriva a abreviação. "
+                            "Único na tabela em sentido semântico (case-insensitive; ativa ou inativa em transaction time)."
+                        ),
                         max_length=512,
                         verbose_name="Termo",
                     ),
@@ -71,7 +75,12 @@ class Migration(migrations.Migration):
                 "ordering": ("termo", "data_registro_inicio"),
                 "indexes": [
                     models.Index(fields=["data_registro_fim"], name="idx_lista_abrev_reg_fim"),
-                    models.Index(fields=["termo"], name="idx_lista_abrev_termo"),
+                ],
+                "constraints": [
+                    models.UniqueConstraint(
+                        Lower("termo"),
+                        name="unique_lista_abrev_termo_ci",
+                    ),
                 ],
             },
         ),

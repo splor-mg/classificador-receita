@@ -9,6 +9,8 @@ import datetime
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import UniqueConstraint
+from django.db.models.functions import Lower
 from django.utils import timezone
 
 
@@ -28,7 +30,10 @@ class AliasLexico(models.Model):
     termo = models.CharField(
         max_length=512,
         verbose_name="Termo",
-        help_text="Forma completa a partir da qual se deriva a abreviação.",
+        help_text=(
+            "Forma completa a partir da qual se deriva a abreviação. "
+            "Único na tabela em sentido semântico (case-insensitive; ativa ou inativa em transaction time)."
+        ),
     )
     abreviacao = models.CharField(
         max_length=256,
@@ -53,9 +58,14 @@ class AliasLexico(models.Model):
         verbose_name = "Abreviação léxica"
         verbose_name_plural = "Lista de Abreviações"
         ordering = ("termo", "data_registro_inicio")
+        constraints = [
+            UniqueConstraint(
+                Lower("termo"),
+                name="unique_lista_abrev_termo_ci",
+            ),
+        ]
         indexes = [
             models.Index(fields=["data_registro_fim"], name="idx_lista_abrev_reg_fim"),
-            models.Index(fields=["termo"], name="idx_lista_abrev_termo"),
         ]
 
     def __str__(self):
@@ -71,6 +81,18 @@ class AliasLexico(models.Model):
             raise ValidationError({"termo": "Informe o termo completo."})
         if not a:
             raise ValidationError({"abreviacao": "Informe a abreviação."})
+        dup = AliasLexico.objects.filter(termo__iexact=t)
+        if self.pk:
+            dup = dup.exclude(pk=self.pk)
+        if dup.exists():
+            raise ValidationError(
+                {
+                    "termo": (
+                        "Já existe uma entrada com o mesmo termo (unicidade semântica, "
+                        "sem distinção de maiúsculas/minúsculas)."
+                    )
+                }
+            )
         ini = self.data_registro_inicio
         fim = self.data_registro_fim
         if ini and fim and ini > fim:

@@ -1,0 +1,602 @@
+"""
+Inferência conservadora de pares (termo, abreviação) a partir de linhas de item (dict compatível com CSV).
+
+Inclui Regra 3 (ND): nomes com um segmento ``' - '`` e sufixo ``(SIGLA)`` geram par base → sigla.
+
+Sem dependências Django: pode ser importado pelo script CSV na raiz do projeto (ver ``scripts/``).
+"""
+
+from __future__ import annotations
+
+import csv
+import re
+from collections import defaultdict
+from datetime import date, datetime
+
+_REGISTRO_FIM_SENTINELS = frozenset(
+    {
+        "9999-12-31 00:00:00",
+        "9999-12-31T00:00:00",
+        "9999-12-31 00:00:00.000000",
+    }
+)
+
+_CONNECTIVES = frozenset(
+    {
+        "a",
+        "o",
+        "as",
+        "os",
+        "e",
+        "ou",
+        "de",
+        "da",
+        "do",
+        "das",
+        "dos",
+        "em",
+        "na",
+        "no",
+        "nas",
+        "nos",
+        "por",
+        "para",
+        "com",
+        "sem",
+        "ao",
+        "aos",
+        "à",
+        "às",
+        "pelo",
+        "pela",
+        "pelos",
+        "pelas",
+        "um",
+        "uma",
+        "uns",
+        "umas",
+    }
+)
+
+_RE_HEAD_ASCII = re.compile(r"^[A-Z]{2,15}$")
+_RE_SHORT_SEG = re.compile(r"^[A-Z]{2,8}$")
+_RE_DOTTED_TOKEN = re.compile(r"^[A-Za-zÀ-ÿ]{1,8}\.$")
+_RE_HEAD_FIRST_ABBREV_DOT = re.compile(
+    r"^([A-Za-zÀ-ÿ]+)\s+([A-Za-zÀ-ÿ]{2,12})\.$"
+)
+_RE_RULE3_SUFFIX = re.compile(
+    r"^(?P<base>.*)\s*\(\s*(?P<sigla>[A-Z]{2,15})\s*\)\s*$"
+)
+
+
+def _split_segments(name: str) -> list[str]:
+    return [p.strip() for p in re.split(r"\s*-\s*", name.strip()) if p.strip()]
+
+
+def _split_segments_major(name: str) -> list[str]:
+    """
+    Segmentos para Regra 5 (PF): delimitador ``' - '`` (um ou mais espaços, traço, um ou mais espaços).
+
+    Evita partir siglas compostas com traço interno (ex.: ``DA-MJM``) como se fossem dois segmentos.
+    """
+    return [p.strip() for p in re.split(r"\s+-\s+", name.strip()) if p.strip()]
+
+
+def _norm_name(raw: str | None) -> str | None:
+    if raw is None:
+        return None
+    s = raw.strip()
+    if not s or s.upper() == "NULL":
+        return None
+    return s
+
+
+def _norm_parent_item_id(raw: str | None) -> str | None:
+    s = (raw or "").strip()
+    if not s or s.upper() == "NULL" or s == "-":
+        return None
+    return s
+
+
+def _parse_iso_date(value: str | None) -> date | None:
+    s = (value or "").strip()
+    if not s or s.upper() == "NULL":
+        return None
+    try:
+        return datetime.strptime(s[:10], "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def _parse_iso_datetime(value: str | None) -> datetime | None:
+    s = (value or "").strip()
+    if not s or s.upper() == "NULL":
+        return None
+    s = s.replace("T", " ", 1)
+    if len(s) == 10:
+        s += " 00:00:00"
+    try:
+        return datetime.strptime(s[:19], "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        return None
+
+
+def _is_transaction_active_row(row: dict) -> bool:
+    fin = (row.get("data_registro_fim") or "").strip()
+    return fin in _REGISTRO_FIM_SENTINELS
+
+
+def _budget_period_compatible_parent_child(parent: dict, child: dict) -> bool:
+    pi = _parse_iso_date(parent.get("data_vigencia_inicio"))
+    pf = _parse_iso_date(parent.get("data_vigencia_fim"))
+    ci = _parse_iso_date(child.get("data_vigencia_inicio"))
+    cf = _parse_iso_date(child.get("data_vigencia_fim"))
+    if pi and pf and ci and cf:
+        return pi <= ci and cf <= pf
+    return True
+
+
+def _pick_latest_parent_row(candidates: list[dict]) -> dict | None:
+    def sort_key(r: dict) -> tuple[date, datetime, int]:
+        vd = _parse_iso_date(r.get("data_vigencia_inicio")) or date.min
+        rd = _parse_iso_datetime(r.get("data_registro_inicio")) or datetime.min
+        try:
+            ref = int((r.get("item_ref") or "0").strip() or "0")
+        except ValueError:
+            ref = 0
+        return (vd, rd, ref)
+
+    if not candidates:
+        return None
+    return max(candidates, key=sort_key)
+
+
+def _resolve_parent_row(child: dict, rows_by_item_id: dict[str, list[dict]]) -> dict | None:
+    pid = _norm_parent_item_id(child.get("parent_item_id"))
+    if not pid:
+        return None
+    bucket = rows_by_item_id.get(pid)
+    if not bucket:
+        return None
+    active = [r for r in bucket if _is_transaction_active_row(r)]
+    if not active:
+        return None
+    compatible = [r for r in active if _budget_period_compatible_parent_child(r, child)]
+    pool = compatible if compatible else active
+    return _pick_latest_parent_row(pool)
+
+
+def _significant_words_ordered(text: str) -> list[str]:
+    words = re.findall(r"[A-Za-zÀ-ÿ]+", text)
+    return [w for w in words if w.lower() not in _CONNECTIVES]
+
+
+def _sig_word_set(text: str) -> set[str]:
+    return {w.lower() for w in _significant_words_ordered(text)}
+
+
+def _initials_acronym(phrase: str) -> str:
+    words = re.findall(r"[A-Za-zÀ-ÿ]+", phrase)
+    sig = [w for w in words if w.lower() not in _CONNECTIVES]
+    return "".join(w[0].upper() for w in sig)
+
+
+def _tail_child_covers_parent(parent_name: str, child_name: str) -> bool:
+    pp = _split_segments(parent_name)
+    pc = _split_segments(child_name)
+    if len(pp) < 2 or len(pc) < 2:
+        return False
+    tail_p = " ".join(pp[1:])
+    tail_c = " ".join(pc[1:])
+    sp = _sig_word_set(tail_p)
+    sc = _sig_word_set(tail_c)
+    if not sp:
+        return True
+    return sp <= sc
+
+
+def _abbr_matches_word(abbr: str, word: str) -> bool:
+    if not abbr or not word:
+        return False
+    wl = word.lower()
+    al = abbr.lower()
+    if len(abbr) == 1:
+        return wl.startswith(al)
+    if len(abbr) < 2 or len(word) < 2:
+        return False
+    if wl.startswith(al):
+        return True
+    if len(abbr) == 2 and len(word) >= 3:
+        return word[0].lower() == al[0] and word[2].lower() == al[1]
+    return False
+
+
+def _words_ordered_from_parent_phrase(segment: str) -> list[str]:
+    s = re.sub(r",\s*", " ", segment)
+    return _significant_words_ordered(s)
+
+
+def _token_matches_parent_word(token: str, word: str) -> bool:
+    if _RE_DOTTED_TOKEN.match(token):
+        return _abbr_matches_word(token[:-1], word)
+    return token.casefold() == word.casefold()
+
+
+def _align_parent_words_to_head_tokens(parent_segment: str, head: str) -> list[tuple[str, str]] | None:
+    tokens = head.split()
+    if len(tokens) < 2:
+        return None
+    words = _words_ordered_from_parent_phrase(parent_segment)
+    if len(words) < 2:
+        return None
+    if len(tokens) != len(words):
+        return None
+    if not any(_RE_DOTTED_TOKEN.match(t) for t in tokens):
+        return None
+    pairs: list[tuple[str, str]] = []
+    for tok, w in zip(tokens, words, strict=True):
+        if not _token_matches_parent_word(tok, w):
+            return None
+        pairs.append((w, tok))
+    return pairs
+
+
+def _try_rule_a(parent_name: str, child_name: str) -> tuple[str, str] | None:
+    pp = _split_segments(parent_name)
+    pc = _split_segments(child_name)
+    if len(pp) != 1 or len(pc) < 2:
+        return None
+    head = pc[0]
+    if not _RE_HEAD_ASCII.match(head):
+        return None
+    full = pp[0]
+    if len(full) <= len(head) + 15:
+        return None
+    return (full, head)
+
+
+def _try_rule_a_multi_first(parent_name: str, child_name: str) -> tuple[str, str] | None:
+    pp = _split_segments(parent_name)
+    pc = _split_segments(child_name)
+    if len(pp) < 2 or len(pc) < 2:
+        return None
+    head = pc[0]
+    if not _RE_HEAD_ASCII.match(head):
+        return None
+    termo = pp[0]
+    if len(termo) <= len(head) + 15:
+        return None
+    if not _tail_child_covers_parent(parent_name, child_name):
+        return None
+    return (termo, head)
+
+
+def _try_rule_a_first_word_dot_abbrev(parent_name: str, child_name: str) -> tuple[str, str] | None:
+    pp = _split_segments(parent_name)
+    pc = _split_segments(child_name)
+    if len(pp) != 1 or len(pc) < 2:
+        return None
+    head = pc[0].strip()
+    m = _RE_HEAD_FIRST_ABBREV_DOT.match(head)
+    if not m:
+        return None
+    first_w, abbrev_body = m.group(1), m.group(2)
+    words = _significant_words_ordered(pp[0])
+    if len(words) < 2:
+        return None
+    if words[0] != first_w:
+        return None
+    last_w = words[-1]
+    if len(abbrev_body) < 3:
+        return None
+    if not last_w.lower().startswith(abbrev_body.lower()):
+        return None
+    return (pp[0], head)
+
+
+def _try_rule_a_dotted_chain(parent_name: str, child_name: str) -> tuple[str, str] | None:
+    pp = _split_segments(parent_name)
+    pc = _split_segments(child_name)
+    if len(pp) != 1 or len(pc) < 2:
+        return None
+    head = pc[0].strip()
+    if _align_parent_words_to_head_tokens(pp[0], head) is None:
+        return None
+    return (pp[0], head)
+
+
+def _derive_atomic_from_dotted_phrase(termo: str, abreviacao: str) -> list[tuple[str, str]] | None:
+    ab = (abreviacao or "").strip()
+    if not ab:
+        return None
+    aligned = _align_parent_words_to_head_tokens(termo, ab)
+    if aligned is None:
+        return None
+    if all(_RE_DOTTED_TOKEN.match(tok) for _, tok in aligned):
+        return aligned
+    return [(w, tok) for w, tok in aligned if _RE_DOTTED_TOKEN.match(tok)]
+
+
+def _phrase_sig_words(termo: str) -> list[str]:
+    phrase = re.sub(r",\s*", " ", (termo or "").strip())
+    return _significant_words_ordered(phrase)
+
+
+def _is_compositional_redundant(termo: str, abrev: str, abbrev_by_termo: dict[str, str]) -> bool:
+    words = _phrase_sig_words(termo)
+    if len(words) < 2:
+        return False
+    ab = (abrev or "").strip()
+    if not ab:
+        return False
+    parts: list[str] = []
+    for w in words:
+        tok = abbrev_by_termo.get(w)
+        if tok is None:
+            return False
+        parts.append(tok)
+    return " ".join(parts) == ab
+
+
+def _merge_abbrev_map_from_pair(termo: str, abrev: str, abbrev_by_termo: dict[str, str]) -> None:
+    abbrev_by_termo[termo] = abrev
+    atoms = _derive_atomic_from_dotted_phrase(termo, abrev)
+    if not atoms:
+        return
+    for w, tok in atoms:
+        abbrev_by_termo.setdefault(w, tok)
+
+
+def _infer_candidate_sort_key(kv: tuple[str, str]) -> tuple[int, int, str]:
+    termo, _ = kv
+    return (len(_phrase_sig_words(termo)), len(termo), termo.lower())
+
+
+def _atomic_derivations(
+    phrase_pairs: list[tuple[str, str]],
+    known_terms_ci: set[str],
+) -> list[tuple[str, str]]:
+    out: list[tuple[str, str]] = []
+    seen = set(known_terms_ci)
+    for termo, abrev in phrase_pairs:
+        atoms = _derive_atomic_from_dotted_phrase(termo, abrev)
+        if not atoms:
+            continue
+        for w, abbrev_token in atoms:
+            wl = w.lower()
+            if wl in seen:
+                continue
+            seen.add(wl)
+            out.append((w, abbrev_token))
+    return out
+
+
+def _try_rule_nd_parenthetical_suffix(name: str) -> tuple[str, str] | None:
+    """
+    Regra 3 (ND): nome com **um** segmento major (``' - '``), terminado em ``(SIGLA)``;
+    a sigla é a abreviação do texto antes dos parêntesis finais.
+    """
+    s = (name or "").strip()
+    if not s:
+        return None
+    if len(_split_segments_major(s)) != 1:
+        return None
+    m = _RE_RULE3_SUFFIX.match(s)
+    if not m:
+        return None
+    base = m.group("base").strip()
+    sigla = m.group("sigla").strip()
+    if not base:
+        return None
+    return (base, sigla)
+
+
+def _try_rule_b(parent_name: str, child_name: str) -> tuple[str, str] | None:
+    pp = _split_segments(parent_name)
+    pc = _split_segments(child_name)
+    if len(pp) != 2 or len(pc) < 3:
+        return None
+    if pp[0] != pc[0]:
+        return None
+    long_seg, short_seg = pp[1], pc[1]
+    if long_seg == "Principal" and short_seg == "Princ.":
+        return (long_seg, short_seg)
+    if not _RE_SHORT_SEG.match(short_seg):
+        return None
+    if _initials_acronym(long_seg) != short_seg:
+        return None
+    return (long_seg, short_seg)
+
+
+def _join_two_parent_segments(seg_a: str, seg_b: str) -> str:
+    """Junção canónica A e B (Regra 5 / PF), alinhada a ``_split_segments`` com `` - ``."""
+    return f"{seg_a.strip()} - {seg_b.strip()}"
+
+
+def _try_rule_pf(
+    parent_name: str,
+    child_name: str,
+    abbrev_map: dict[str, str],
+) -> tuple[str, str] | None:
+    """
+    Regra 5 (PF): mesmo número de segmentos (≥ 2); um segmento Y do filho iguala a junção
+    (com ou sem traço) das abreviações já conhecidas de dois segmentos consecutivos A, B do pai;
+    regista ``(A - B, Y)`` com Y tal como no nome do filho.
+
+    Usa ``_split_segments_major`` para contar segmentos como na spec (``' - '``), não ``_split_segments``.
+    """
+    pp = _split_segments_major(parent_name)
+    pc = _split_segments_major(child_name)
+    if len(pp) != len(pc) or len(pp) < 2:
+        return None
+    for y in range(0, len(pp) - 1):
+        if any(pp[j].strip() != pc[j].strip() for j in range(y)):
+            continue
+        seg_a = pp[y].strip()
+        seg_b = pp[y + 1].strip()
+        ab_a = abbrev_map.get(seg_a)
+        ab_b = abbrev_map.get(seg_b)
+        if not ab_a or not ab_b:
+            continue
+        pc_y = pc[y].strip()
+        if pc_y.casefold() == seg_a.casefold() or pc_y.casefold() == seg_b.casefold():
+            continue
+        for glue in (f"{ab_a}-{ab_b}", f"{ab_a}{ab_b}"):
+            if glue.casefold() == pc_y.casefold():
+                return (_join_two_parent_segments(seg_a, seg_b), pc_y)
+    return None
+
+
+_RULE_FUNCS_PRIMARY = (
+    _try_rule_a,
+    _try_rule_a_multi_first,
+    _try_rule_a_first_word_dot_abbrev,
+    _try_rule_a_dotted_chain,
+    _try_rule_b,
+)
+
+
+def _unambiguous_abbrev_map(cand: dict[str, set[str]]) -> dict[str, str]:
+    return {t: next(iter(ab)) for t, ab in cand.items() if len(ab) == 1}
+
+
+def _infer_pairs(rows: list[dict]) -> tuple[dict[str, str], list[tuple[str, set[str]]]]:
+    rows_by_item_id: dict[str, list[dict]] = defaultdict(list)
+    for r in rows:
+        iid = (r.get("item_id") or "").strip()
+        if iid:
+            rows_by_item_id[iid].append(r)
+
+    cand: dict[str, set[str]] = defaultdict(set)
+    matched_item_ids: set[str] = set()
+
+    for r in rows:
+        if not _is_transaction_active_row(r):
+            continue
+        nm = _norm_name(r.get("receita_nome"))
+        if not nm:
+            continue
+        got_r3 = _try_rule_nd_parenthetical_suffix(nm)
+        if got_r3:
+            cand[got_r3[0]].add(got_r3[1])
+
+    for ch in rows:
+        if not _is_transaction_active_row(ch):
+            continue
+        parent_row = _resolve_parent_row(ch, rows_by_item_id)
+        if parent_row is None:
+            continue
+        pname = _norm_name(parent_row.get("receita_nome"))
+        cname = _norm_name(ch.get("receita_nome"))
+        if not pname or not cname:
+            continue
+        cid = (ch.get("item_id") or "").strip()
+        for rule_fn in _RULE_FUNCS_PRIMARY:
+            got = rule_fn(pname, cname)
+            if got:
+                termo, abrev = got
+                cand[termo].add(abrev)
+                if cid:
+                    matched_item_ids.add(cid)
+                break
+
+    abbrev_map = _unambiguous_abbrev_map(cand)
+    for ch in rows:
+        if not _is_transaction_active_row(ch):
+            continue
+        parent_row = _resolve_parent_row(ch, rows_by_item_id)
+        if parent_row is None:
+            continue
+        pname = _norm_name(parent_row.get("receita_nome"))
+        cname = _norm_name(ch.get("receita_nome"))
+        if not pname or not cname:
+            continue
+        cid = (ch.get("item_id") or "").strip()
+        if cid and cid in matched_item_ids:
+            continue
+        got_pf = _try_rule_pf(pname, cname, abbrev_map)
+        if got_pf:
+            termo, abrev = got_pf
+            cand[termo].add(abrev)
+
+    good: dict[str, str] = {}
+    conflicts: list[tuple[str, set[str]]] = []
+    for termo, abrevs in sorted(cand.items(), key=lambda x: x[0].lower()):
+        if len(abrevs) == 1:
+            good[termo] = next(iter(abrevs))
+        else:
+            conflicts.append((termo, abrevs))
+    return good, conflicts
+
+
+_SEED_WRITER_KW = {"quoting": csv.QUOTE_MINIMAL}
+
+
+def _sort_rows_alias_lexico_registry(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    def sort_key(r: dict[str, str]) -> tuple[str, str, str]:
+        termo_lower = (r.get("termo_nome") or "").lower()
+        dr_ini = (r.get("data_registro_inicio") or "").strip()
+        termo_raw = r.get("termo_nome") or ""
+        return (termo_lower, dr_ini, termo_raw)
+
+    return sorted(rows, key=sort_key)
+
+
+def sort_pairs_like_registry_order(
+    pairs: list[tuple[str, str]],
+    data_registro_inicio: str,
+    data_registro_fim: str,
+) -> list[tuple[str, str]]:
+    """Ordena pares como ``order_by_sql`` do recurso ``lista_abreviacoes`` (LOWER(termo), data_registro_inicio)."""
+    rows: list[dict[str, str]] = [
+        {
+            "termo_nome": t,
+            "alias_lexico_ref": "0",
+            "abreviacao": a,
+            "data_registro_inicio": data_registro_inicio,
+            "data_registro_fim": data_registro_fim,
+        }
+        for t, a in pairs
+    ]
+    sorted_rows = _sort_rows_alias_lexico_registry(rows)
+    return [(r["termo_nome"], r["abreviacao"]) for r in sorted_rows]
+
+
+def _max_alias_lexico_ref(rows: list[dict[str, str]]) -> int:
+    m = 0
+    for r in rows:
+        try:
+            m = max(m, int((r.get("alias_lexico_ref") or "").strip()))
+        except ValueError:
+            continue
+    return m
+
+
+def _assign_refs_to_new_rows(new_rows: list[dict[str, str]], max_existing_ref: int) -> int:
+    if not new_rows:
+        return max_existing_ref
+    ordered = _sort_rows_alias_lexico_registry(new_rows)
+    next_ref = max_existing_ref
+    for row in ordered:
+        next_ref += 1
+        row["alias_lexico_ref"] = str(next_ref)
+    return next_ref
+
+
+def _interactive_pick_conflict_abbrev(termo: str, abbrev_options: list[str]) -> str | None:
+    print()
+    print(f"Termo em conflito: {termo!r}")
+    for i, ab in enumerate(abbrev_options, start=1):
+        print(f"  {i}) {ab}")
+    print("  n) Nenhuma — pular este termo")
+    while True:
+        raw = input("Escolha (número ou n): ").strip().lower()
+        if raw in ("n", "no", "nao", "não"):
+            return None
+        try:
+            k = int(raw)
+            if 1 <= k <= len(abbrev_options):
+                return abbrev_options[k - 1]
+        except ValueError:
+            pass
+        print(f"  Inválido. Digite de 1 a {len(abbrev_options)} ou n.")
