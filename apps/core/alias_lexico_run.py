@@ -4,6 +4,11 @@ Orquestração da inferência da lista de abreviações (BD + opcional fallback 
 Usado pelo comando ``manage.py atualizar_lista_abreviacoes`` e pelo admin de
 ``ItemClassificacao`` (protocolo após save + export condicional).
 
+**Invariante (persistência automática):** ``run_alias_lexico_infer_persist`` apenas tenta
+``INSERT`` de novos ``AliasLexico``; **nunca** executa ``DELETE`` nem ``UPDATE`` em linhas já
+gravadas. A reescrita total da tabela ``lista_abreviacoes`` só pode resultar de outros fluxos
+(por exemplo ``carregar_classificador`` com ``--clear`` / ``--clear-hard``).
+
 **Export (ii)** — após save de item: ``maybe_export_seed_after_item_save_protocol`` usa
 ``AliasLexicoPersistResult.n_inserted`` (INSERTs reais do protocolo automático,
 alinhado a ``insert_alias_lexico_if_new``).
@@ -38,13 +43,14 @@ from apps.core.alias_lexico_infer import (
     _parse_iso_date,
     sort_pairs_like_registry_order,
 )
+from apps.core.alias_lexico_termo_policy import termo_nome_rejeitado_encurtamento_iv
 from apps.core.alias_lexico_protocol import (
     budget_period_contains_instant,
     insert_alias_lexico_if_new,
 )
 from apps.core.exporter import export_resource
 from apps.core.models import ItemClassificacao
-from apps.core.models_alias_lexico import AliasLexico
+from apps.core.models_alias_lexico import AliasLexico, lista_abreviacoes_registro_inicio_novo
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +74,7 @@ class AliasLexicoPersistResult:
     n_inferred_only: int
     n_derived: int
     n_skip_comp_inf: int
+    n_skip_termo_viii: int
     conflicts: list[tuple[str, set[str]]]
 
 
@@ -146,6 +153,8 @@ def load_seed_alias_terms_if_fallback(path: Path) -> tuple[dict[str, str], set[s
                 continue
             seen_ci.add(tl)
             blocked_ci.add(tl)
+            if termo_nome_rejeitado_encurtamento_iv(termo):
+                continue
             abbrev_by_termo[termo] = (raw.get("abreviacao") or "").strip()
     return abbrev_by_termo, blocked_ci
 
@@ -158,6 +167,8 @@ def run_alias_lexico_infer_persist(
 ) -> AliasLexicoPersistResult:
     """
     Carrega itens (BD e opcionalmente CSV), aplica inferência, grava novos ``AliasLexico``.
+
+    Apenas **INSERT** de pares candidatos; não altera nem apaga linhas já persistidas.
 
     O campo ``n_inserted`` do resultado é o critério oficial para *Export* **(ii)**.
     Não exporta CSV (quem chama usa ``maybe_export_*`` ou ``export_alias_lexico_seed``).
@@ -176,8 +187,6 @@ def run_alias_lexico_infer_persist(
 
     logger.info("%s: linhas item após filtro em T: %s", __name__, len(rows))
 
-    good, conflicts = _infer_pairs(rows)
-
     abbrev_by_termo: dict[str, str] = {}
     blocked_ci: set[str] = set()
     n_alias = AliasLexico.objects.count()
@@ -187,10 +196,18 @@ def run_alias_lexico_infer_persist(
             if not t:
                 continue
             blocked_ci.add(t.lower())
+            if termo_nome_rejeitado_encurtamento_iv(t):
+                continue
             abbrev_by_termo[t] = (al.abreviacao or "").strip()
     elif alias_seed_fallback and SEED_LISTA.is_file():
         logger.info("%s: lista_abreviacoes vazia — fallback %s", __name__, SEED_LISTA)
         abbrev_by_termo, blocked_ci = load_seed_alias_terms_if_fallback(SEED_LISTA)
+
+    abbrev_siglas_mapeadas_ci: set[str] = {
+        (a or "").strip().lower() for a in abbrev_by_termo.values() if (a or "").strip()
+    }
+
+    good, conflicts = _infer_pairs(rows, abbrev_siglas_mapeadas_ci=abbrev_siglas_mapeadas_ci)
 
     initial_blocked_ci = set(blocked_ci)
     initial_pairs: list[tuple[str, str]] = list(abbrev_by_termo.items())
@@ -204,7 +221,11 @@ def run_alias_lexico_infer_persist(
 
     additions: list[tuple[str, str]] = []
     n_skip_comp_inf = 0
+    n_skip_termo_viii = 0
     for termo, abrev in inferred_candidates:
+        if termo_nome_rejeitado_encurtamento_iv(termo):
+            n_skip_termo_viii += 1
+            continue
         if _is_compositional_redundant(termo, abrev, abbrev_by_termo):
             n_skip_comp_inf += 1
             continue
@@ -217,11 +238,19 @@ def run_alias_lexico_infer_persist(
     known_terms_ci = set(initial_blocked_ci)
     known_terms_ci.update(t.lower() for t, _ in additions)
 
-    phrase_pairs_for_atoms: list[tuple[str, str]] = list(initial_pairs)
+    phrase_pairs_for_atoms: list[tuple[str, str]] = [
+        (t, a) for t, a in initial_pairs if not termo_nome_rejeitado_encurtamento_iv(t)
+    ]
     phrase_pairs_for_atoms.extend(additions)
-    derived = _atomic_derivations(phrase_pairs_for_atoms, known_terms_ci.copy())
+    derived_raw = _atomic_derivations(phrase_pairs_for_atoms, known_terms_ci.copy())
+    derived: list[tuple[str, str]] = []
+    for t, a in derived_raw:
+        if termo_nome_rejeitado_encurtamento_iv(t):
+            n_skip_termo_viii += 1
+            continue
+        derived.append((t, a))
 
-    reg_ini = timezone.now()
+    reg_ini = lista_abreviacoes_registro_inicio_novo()
     reg_ini_s = timezone.localtime(reg_ini).strftime("%Y-%m-%d %H:%M:%S")
     reg_fim_s = "9999-12-31 00:00:00"
     sent_orm = transaction_time_sentinel_for_query()
@@ -230,6 +259,7 @@ def run_alias_lexico_infer_persist(
     all_new_pairs.extend(derived)
     ordered_pairs = sort_pairs_like_registry_order(all_new_pairs, reg_ini_s, reg_fim_s)
 
+    n_existing_before = AliasLexico.objects.count()
     n_inserted = 0
     n_skipped_dup = 0
     with transaction.atomic():
@@ -249,11 +279,24 @@ def run_alias_lexico_infer_persist(
             else:
                 n_skipped_dup += 1
 
+    n_existing_after = AliasLexico.objects.count()
+    if n_existing_after < n_existing_before:
+        logger.error(
+            "%s: inconsistência — contagem lista_abreviacoes diminuiu (%s -> %s); "
+            "o protocolo automático não deveria apagar linhas",
+            __name__,
+            n_existing_before,
+            n_existing_after,
+        )
     logger.info(
-        "%s: persistência — inseridos=%s duplicados=%s conflitos=%s",
+        "%s: persistência — existentes_antes=%s existentes_depois=%s inseridos=%s duplicados=%s "
+        "omitidos_termo_viii=%s conflitos=%s",
         __name__,
+        n_existing_before,
+        n_existing_after,
         n_inserted,
         n_skipped_dup,
+        n_skip_termo_viii,
         len(conflicts),
     )
 
@@ -264,17 +307,23 @@ def run_alias_lexico_infer_persist(
         n_inferred_only=n_inferred_only,
         n_derived=len(derived),
         n_skip_comp_inf=n_skip_comp_inf,
+        n_skip_termo_viii=n_skip_termo_viii,
         conflicts=conflicts,
     )
 
 
-def export_alias_lexico_seed() -> dict:
-    """Exporta recurso ``lista_abreviacoes`` para ``docs/assets/seed_lista_abreviacoes.csv``."""
+def export_alias_lexico_seed(*, do_backup: bool = False) -> dict:
+    """
+    Exporta recurso ``lista_abreviacoes`` para ``docs/assets/seed_lista_abreviacoes.csv``.
+
+    Com ``do_backup=True``, move o ficheiro anterior para ``*.backup.<UTC>`` no mesmo directório
+    antes de substituir. O export **não** altera a tabela na BD.
+    """
     return export_resource(
         "lista_abreviacoes",
         output=str(SEED_LISTA),
         scope="all",
-        do_backup=False,
+        do_backup=do_backup,
     )
 
 
@@ -307,7 +356,8 @@ def maybe_export_seed_after_management_batch(
     total = n_auto_insert + n_resolve_insert + n_resolve_update
     if total < 1:
         logger.info(
-            "%s: export (iii) omitido — auto_insert=%s resolve_insert=%s resolve_update=%s",
+            "%s: export (iii) omitido — auto_insert=%s resolve_insert=%s resolve_update=%s "
+            "(sem mutações nesta execução; use ``--export-seed`` no comando para gravar a BD no CSV)",
             __name__,
             n_auto_insert,
             n_resolve_insert,

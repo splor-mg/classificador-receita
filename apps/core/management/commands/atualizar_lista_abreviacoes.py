@@ -19,10 +19,12 @@ from apps.core.admin_mixins import transaction_time_sentinel_for_query
 from apps.core.alias_lexico_infer import _interactive_pick_conflict_abbrev
 from apps.core.alias_lexico_protocol import insert_alias_lexico_if_new
 from apps.core.alias_lexico_run import (
+    export_alias_lexico_seed,
     maybe_export_seed_after_management_batch,
     run_alias_lexico_infer_persist,
 )
-from apps.core.models_alias_lexico import AliasLexico
+from apps.core.alias_lexico_termo_policy import termo_nome_rejeitado_encurtamento_iv
+from apps.core.models_alias_lexico import AliasLexico, lista_abreviacoes_registro_inicio_novo
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +32,9 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     help = (
         "Atualiza lista_abreviacoes no BD por inferência a partir de ItemClassificacao (vigência em T); "
-        "fallback opcional aos CSVs de seed. Flags --print-conflicts / --print-conflicts-resolve conforme spec."
+        "apenas INSERTs novos na fase automática (nunca apaga linhas existentes). "
+        "fallback opcional aos CSVs de seed. Export do seed (iii) só após mutações na lista, salvo "
+        "--export-seed. Flags --print-conflicts / --print-conflicts-resolve conforme spec."
     )
 
     def add_arguments(self, parser):
@@ -57,12 +61,30 @@ class Command(BaseCommand):
         parser.add_argument(
             "--print-conflicts-resolve",
             action="store_true",
-            help="Modo interativo após gravação automática: INSERT ou UPDATE no BD (spec F).",
+            help=(
+                "Modo interativo após gravação automática: INSERT para termo novo ou UPDATE da "
+                "abreviação se o termo já existir (spec F), com confirmação [y/N] antes de substituir "
+                "linha existente."
+            ),
         )
         parser.add_argument(
             "--no-export",
             action="store_true",
             help="Não exportar seed_lista_abreviacoes.csv após mutações.",
+        )
+        parser.add_argument(
+            "--export-seed",
+            action="store_true",
+            help=(
+                "Exportar sempre docs/assets/seed_lista_abreviacoes.csv a partir da BD "
+                "(útil quando não houve INSERT/UPDATE nesta execução mas a tabela já foi alterada). "
+                "Por omissão cria cópia .backup.* do CSV anterior antes de substituir o ficheiro."
+            ),
+        )
+        parser.add_argument(
+            "--export-seed-no-backup",
+            action="store_true",
+            help="Com ``--export-seed``, não criar ficheiro ``.backup.*`` antes de substituir o CSV.",
         )
 
     def handle(self, *args, **options):
@@ -70,6 +92,10 @@ class Command(BaseCommand):
         print_conflicts: bool = options["print_conflicts"]
         print_resolve: bool = options["print_conflicts_resolve"]
         no_export: bool = options["no_export"]
+        export_seed: bool = options["export_seed"]
+        export_seed_no_backup: bool = options["export_seed_no_backup"]
+
+        n_lista_existing = AliasLexico.objects.count()
 
         if options["as_of"]:
             raw = options["as_of"].strip()
@@ -84,10 +110,12 @@ class Command(BaseCommand):
             t_instant = timezone.now()
 
         logger.info(
-            "atualizar_lista_abreviacoes: início T=%s print_conflicts=%s print_resolve=%s",
+            "atualizar_lista_abreviacoes: início T=%s print_conflicts=%s print_resolve=%s "
+            "lista_abreviacoes_existentes=%s",
             t_instant.isoformat(),
             print_conflicts,
             print_resolve,
+            n_lista_existing,
         )
 
         res = run_alias_lexico_infer_persist(
@@ -98,10 +126,12 @@ class Command(BaseCommand):
         conflicts = res.conflicts
 
         logger.info(
-            "atualizar_lista_abreviacoes: inferência — inferidos=%s omitidas_comp_inf=%s derivadas=%s",
+            "atualizar_lista_abreviacoes: inferência — inferidos=%s omitidas_comp_inf=%s derivadas=%s "
+            "omitidas_termo_viii=%s",
             res.n_inferred_only,
             res.n_skip_comp_inf,
             res.n_derived,
+            res.n_skip_termo_viii,
         )
         logger.info(
             "atualizar_lista_abreviacoes: inserts — inseridos=%s duplicados=%s itens_em_T=%s",
@@ -137,6 +167,32 @@ class Command(BaseCommand):
                             continue
                         existing = AliasLexico.objects.filter(termo__iexact=termo_c).first()
                         if existing:
+                            cur = (existing.abreviacao or "").strip()
+                            if cur == picked:
+                                logger.info(
+                                    "atualizar_lista_abreviacoes: resolve sem alteração termo=%r",
+                                    termo_c,
+                                )
+                                continue
+                            self.stdout.write(
+                                self.style.WARNING(
+                                    f"\nO termo {termo_c!r} já existe na lista de abreviações "
+                                    f"(abreviação actual: {cur!r}).\n"
+                                    f"Substituir por {picked!r}? [y/N]"
+                                )
+                            )
+                            resp = input("> ").strip().lower()
+                            if resp not in {"y", "yes", "s", "sim"}:
+                                logger.info(
+                                    "atualizar_lista_abreviacoes: resolve UPDATE recusado termo=%r",
+                                    termo_c,
+                                )
+                                self.stdout.write(
+                                    self.style.NOTICE(
+                                        f"Mantido registo existente para {termo_c!r} (abrev.: {cur!r})."
+                                    )
+                                )
+                                continue
                             existing.abreviacao = picked
                             existing.data_registro_fim = sent_orm
                             existing.save(update_fields=["abreviacao", "data_registro_fim"])
@@ -147,12 +203,23 @@ class Command(BaseCommand):
                                 picked,
                             )
                         else:
+                            if termo_nome_rejeitado_encurtamento_iv(termo_c):
+                                logger.warning(
+                                    "atualizar_lista_abreviacoes: resolve INSERT omitido (termo viii): %r",
+                                    termo_c,
+                                )
+                                self.stderr.write(
+                                    self.style.WARNING(
+                                        f"Resolução: INSERT omitido — termo inválido por (viii): {termo_c!r}"
+                                    )
+                                )
+                                continue
                             mx = AliasLexico.objects.aggregate(m=Max("alias_lexico_ref"))["m"] or 0
                             inserted, _ = insert_alias_lexico_if_new(
                                 termo=termo_c,
                                 abreviacao=picked,
                                 alias_lexico_ref=mx + 1,
-                                data_registro_inicio=timezone.now(),
+                                data_registro_inicio=lista_abreviacoes_registro_inicio_novo(),
                                 data_registro_fim=sent_orm,
                             )
                             if inserted:
@@ -175,24 +242,43 @@ class Command(BaseCommand):
 
         if not no_export:
             try:
-                result = maybe_export_seed_after_management_batch(
-                    n_auto_insert=res.n_inserted,
-                    n_resolve_insert=n_resolve_insert,
-                    n_resolve_update=n_resolve_update,
-                )
-                if result is not None:
+                if export_seed:
+                    result = export_alias_lexico_seed(
+                        do_backup=not export_seed_no_backup,
+                    )
                     logger.info(
-                        "atualizar_lista_abreviacoes: export (iii) lista_abreviacoes output=%s",
+                        "atualizar_lista_abreviacoes: export forçado (--export-seed) output=%s",
                         result.get("output"),
                     )
                     self.stdout.write(self.style.SUCCESS(f"Export seed: {result.get('output')}"))
+                else:
+                    result = maybe_export_seed_after_management_batch(
+                        n_auto_insert=res.n_inserted,
+                        n_resolve_insert=n_resolve_insert,
+                        n_resolve_update=n_resolve_update,
+                    )
+                    if result is not None:
+                        logger.info(
+                            "atualizar_lista_abreviacoes: export (iii) lista_abreviacoes output=%s",
+                            result.get("output"),
+                        )
+                        self.stdout.write(self.style.SUCCESS(f"Export seed: {result.get('output')}"))
+                    else:
+                        self.stdout.write(
+                            self.style.NOTICE(
+                                "Export do seed omitido (nenhuma mutação nesta execução). "
+                                "Para gravar a BD actual no CSV: "
+                                "``python manage.py atualizar_lista_abreviacoes --export-seed``."
+                            )
+                        )
             except Exception as exc:
                 logger.exception("atualizar_lista_abreviacoes: export falhou")
                 self.stderr.write(self.style.ERROR(f"Export falhou: {exc}"))
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Concluído: inseridos={res.n_inserted} resolve_insert={n_resolve_insert} "
-                f"resolve_update={n_resolve_update} conflitos_pendentes={len(conflicts)}"
+                f"Concluído: inseridos={res.n_inserted} omitidos_termo_viii={res.n_skip_termo_viii} "
+                f"resolve_insert={n_resolve_insert} resolve_update={n_resolve_update} "
+                f"conflitos_pendentes={len(conflicts)}"
             )
         )

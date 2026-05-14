@@ -37,6 +37,7 @@ from apps.core.models import (
 from apps.core.models_alias_lexico import AliasLexico
 from apps.core.bitemporal_registry import get_sentinela_datetime
 from apps.core.alias_lexico_protocol import insert_alias_lexico_if_new
+from apps.core.alias_lexico_termo_policy import termo_nome_rejeitado_encurtamento_iv
 
 
 def make_datetime_aware(value):
@@ -549,6 +550,15 @@ class Command(BaseCommand):
             termo = _strip_csv_empty(row.get("termo_nome")) or _strip_csv_empty(row.get("termo"))
             abrev = _strip_csv_empty(row.get("abreviacao"))
             if termo is None or abrev is None:
+                continue
+
+            if termo_nome_rejeitado_encurtamento_iv(termo):
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"lista_abreviacoes: linha omitida (termo com token de encurtamento (iv) no "
+                        f"termo_nome, spec viii): {termo!r}"
+                    )
+                )
                 continue
 
             ref_raw = _strip_csv_empty(row.get("alias_lexico_ref")) or _strip_csv_empty(

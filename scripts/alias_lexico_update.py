@@ -3,7 +3,8 @@
 Acrescenta registros em ``docs/assets/seed_lista_abreviacoes.csv`` por inferência **conservadora**
 a partir de ``docs/assets/seed_item_classificacao.csv`` (arestas **pai → filho direto**).
 
-A lógica de regras vive em ``apps/core/alias_lexico_infer.py`` (sem Django).
+A lógica de regras vive em ``apps/core/alias_lexico_infer.py`` (sem Django): Regras ND 2 e 3 sobre o
+nome do item, Regras PF 1 (``_try_rule_a*``), Regra 4 (``_try_rule_4_pf_pairs``) e Regra 5 (PF).
 
 Desempenho (**v1**): cada execução faz *full scan* das linhas relevantes do CSV de itens e do seed
 de abreviações; otimizações incrementais (watermark, ``updated_at``, filas de alterações) ficam para
@@ -46,6 +47,7 @@ from apps.core.alias_lexico_infer import (  # noqa: E402
     _merge_abbrev_map_from_pair,
     _sort_rows_alias_lexico_registry,
 )
+from apps.core.alias_lexico_termo_policy import termo_nome_rejeitado_encurtamento_iv  # noqa: E402
 
 ITEM_CSV = ROOT / "docs/assets/seed_item_classificacao.csv"
 OUT_CSV = ROOT / "docs/assets/seed_lista_abreviacoes.csv"
@@ -148,22 +150,31 @@ def main() -> None:
     args = parser.parse_args()
     registro_inicio = args.registro_inicio or _default_seed_registro_inicio()
 
+    out_path = args.output
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    existing_rows, existing_termos = _load_existing_seed(out_path)
+    abbrev_siglas_ci = {
+        (r.get("abreviacao") or "").strip().lower()
+        for r in existing_rows
+        if (r.get("abreviacao") or "").strip()
+    }
+
     with ITEM_CSV.open(encoding="utf-8", newline="") as f:
         rows = list(csv.DictReader(f))
 
-    good, conflicts = _infer_pairs(rows)
+    good, conflicts = _infer_pairs(rows, abbrev_siglas_mapeadas_ci=abbrev_siglas_ci)
     logger.info(
         "infer_csv: infer_pairs concluído — candidatos únicos=%s conflitos=%s",
         len(good),
         len(conflicts),
     )
 
-    out_path = args.output
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    existing_rows, existing_termos = _load_existing_seed(out_path)
+    valid_existing_rows = [
+        r for r in existing_rows if not termo_nome_rejeitado_encurtamento_iv(r["termo_nome"])
+    ]
     blocked_ci = {t.lower() for t in existing_termos}
 
-    abbrev_by_termo: dict[str, str] = {r["termo_nome"]: r["abreviacao"] for r in existing_rows}
+    abbrev_by_termo: dict[str, str] = {r["termo_nome"]: r["abreviacao"] for r in valid_existing_rows}
 
     inferred_candidates = [
         (t, a)
@@ -174,7 +185,11 @@ def main() -> None:
 
     additions: list[tuple[str, str]] = []
     n_skip_comp_inf = 0
+    n_skip_termo_viii = 0
     for termo, abrev in inferred_candidates:
+        if termo_nome_rejeitado_encurtamento_iv(termo):
+            n_skip_termo_viii += 1
+            continue
         if _is_compositional_redundant(termo, abrev, abbrev_by_termo):
             n_skip_comp_inf += 1
             continue
@@ -188,11 +203,17 @@ def main() -> None:
     known_terms_ci.update(t.lower() for t, _ in additions)
 
     phrase_pairs_for_atoms: list[tuple[str, str]] = [
-        (r["termo_nome"], r["abreviacao"]) for r in existing_rows
+        (r["termo_nome"], r["abreviacao"]) for r in valid_existing_rows
     ]
     phrase_pairs_for_atoms.extend(additions)
 
-    derived = _atomic_derivations(phrase_pairs_for_atoms, known_terms_ci.copy())
+    derived_raw = _atomic_derivations(phrase_pairs_for_atoms, known_terms_ci.copy())
+    derived: list[tuple[str, str]] = []
+    for t, a in derived_raw:
+        if termo_nome_rejeitado_encurtamento_iv(t):
+            n_skip_termo_viii += 1
+            continue
+        derived.append((t, a))
 
     new_row_dicts: list[dict[str, str]] = []
     for termo, abrev in additions:
@@ -227,11 +248,13 @@ def main() -> None:
     n_skip_comp = n_skip_comp_inf
 
     logger.info(
-        "infer_csv: gravado — existentes=%s novas_inferência=%s derivadas=%s omitidas_comp=%s",
+        "infer_csv: gravado — existentes=%s novas_inferência=%s derivadas=%s omitidas_comp=%s "
+        "omitidas_termo_viii=%s",
         len(existing_rows),
         n_inferred_only,
         n_derived,
         n_skip_comp,
+        n_skip_termo_viii,
     )
 
     print()
@@ -251,6 +274,12 @@ def main() -> None:
     if n_skip_comp:
         print()
         print(f"  Omitidas por redundância composicional: {n_skip_comp}.")
+    if n_skip_termo_viii:
+        print()
+        print(
+            f"  Omitidas por termo_nome com token de encurtamento (iv) no termo (spec viii): "
+            f"{n_skip_termo_viii}."
+        )
     print()
     if conflicts:
         logger.info("infer_csv: conflitos silenciosos=%s", len(conflicts))
@@ -293,6 +322,16 @@ def main() -> None:
                         existing_reload, _ = _load_existing_seed(out_path)
                         extra_rows: list[dict[str, str]] = []
                         for termo_c, abrev_c in resolved_pairs:
+                            if termo_nome_rejeitado_encurtamento_iv(termo_c):
+                                logger.warning(
+                                    "infer_csv: resolução interativa — termo omitido (viii): %r",
+                                    termo_c,
+                                )
+                                print(
+                                    f"  Aviso: termo {termo_c!r} não gravado — contém token de "
+                                    "encurtamento (iv) no termo_nome (spec viii)."
+                                )
+                                continue
                             extra_rows.append(
                                 {
                                     "termo_nome": termo_c,
@@ -307,11 +346,11 @@ def main() -> None:
                         _write_sorted_seed(out_path, existing_reload + extra_rows)
                         logger.info(
                             "infer_csv: resolução interativa — %s nova(s) linha(s) no CSV",
-                            len(resolved_pairs),
+                            len(extra_rows),
                         )
                         print()
                         print(
-                            f"  Resolução de conflitos: {len(resolved_pairs)} nova(s) linha(s) gravada(s)."
+                            f"  Resolução de conflitos: {len(extra_rows)} nova(s) linha(s) gravada(s)."
                         )
             print()
         elif args.print_conflicts:

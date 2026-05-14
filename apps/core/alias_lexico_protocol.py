@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone as dt_timezone
 
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.utils import timezone as django_timezone
 
@@ -44,11 +45,18 @@ def insert_alias_lexico_if_new(**kwargs) -> tuple[bool, AliasLexico | None]:
     Tenta ``INSERT`` de ``AliasLexico``. Duplicata de ``termo`` (unicidade **case-insensitive** no BD)
     resulta em ``(False, None)`` — equivalente a “não houve insert” para efeitos de export (ii).
 
+    ``ValidationError`` em ``full_clean()`` (incl. **(viii)** do termo) resulta em ``(False, None)``.
+
     Usa ``transaction.atomic`` interno para isolar ``IntegrityError`` sem abortar a transação exterior.
     """
+    obj = AliasLexico(**kwargs)
+    try:
+        obj.full_clean()
+    except ValidationError:
+        return False, None
     try:
         with transaction.atomic():
-            obj = AliasLexico.objects.create(**kwargs)
+            obj.save()
     except IntegrityError:
         return False, None
     return True, obj

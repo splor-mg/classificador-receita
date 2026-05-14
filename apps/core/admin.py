@@ -19,7 +19,7 @@ from apps.core.models import (
     VarianteClassificacao,
 )
 from apps.core.models_base_legal import BaseLegalTecnica
-from apps.core.models_alias_lexico import AliasLexico
+from apps.core.models_alias_lexico import AliasLexico, lista_abreviacoes_registro_inicio_novo
 from apps.core.forms import (
     SerieClassificacaoForm,
     ClassificacaoForm,
@@ -854,7 +854,7 @@ class AliasLexicoAdmin(
                 obj.alias_lexico_ref = prev.alias_lexico_ref
                 obj.data_registro_fim = prev.data_registro_fim
         else:
-            obj.data_registro_inicio = timezone.now()
+            obj.data_registro_inicio = lista_abreviacoes_registro_inicio_novo()
             obj.data_registro_fim = transaction_time_sentinel_for_query()
             mx = self.model.objects.aggregate(m=Max("alias_lexico_ref"))["m"] or 0
             obj.alias_lexico_ref = mx + 1

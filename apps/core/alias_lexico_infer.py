@@ -1,7 +1,13 @@
 """
 Inferência conservadora de pares (termo, abreviação) a partir de linhas de item (dict compatível com CSV).
 
-Inclui Regra 3 (ND): nomes com um segmento ``' - '`` e sufixo ``(SIGLA)`` geram par base → sigla.
+Inclui, por ordem da spec (*Regras ND* sobre o próprio ``receita_nome``):
+
+- **Regra 2 (ND):** exactamente dois segmentos (``' - '`` como em ``_split_segments``); o segundo é
+  sigla no sentido de ``_dev/spec_lista_abreviacoes.md`` (v), incluindo o padrão tipo ``IOF-Ouro``;
+  candidato ``(segmento_1, segmento_2)``. Se a sigla (texto do 2.º segmento) já existir como valor de
+  ``abreviacao`` noutra entrada do mapa vigente, o candidato **omite-se** (2.4 na spec).
+- **Regra 3 (ND):** um segmento major (``' - '``) e sufixo ``(SIGLA)`` → par base → sigla.
 
 Sem dependências Django: pode ser importado pelo script CSV na raiz do projeto (ver ``scripts/``).
 """
@@ -11,6 +17,7 @@ from __future__ import annotations
 import csv
 import re
 from collections import defaultdict
+from collections.abc import Set as AbstractSet
 from datetime import date, datetime
 
 _REGISTRO_FIM_SENTINELS = frozenset(
@@ -67,6 +74,29 @@ _RE_HEAD_FIRST_ABBREV_DOT = re.compile(
 _RE_RULE3_SUFFIX = re.compile(
     r"^(?P<base>.*)\s*\(\s*(?P<sigla>[A-Z]{2,15})\s*\)\s*$"
 )
+
+# Corpo de sigla só com maiúsculas/dígitos e separadores internos (spec (v): ICMS, DA-MJM, I.T.D.M, JF_ED).
+_RE_SIGLA_BODY_FULL = re.compile(r"^[A-Z0-9]+(?:[.\-_][A-Z0-9]+)*$")
+
+
+def _is_acronym_hyphen_title_word_tail(segment: str) -> bool:
+    """
+    Caso ``IOF-Ouro`` da Regra 2: ``<SIGLA>-<NomePróprio>`` com um único hífen,
+    cabeça só em maiúsculas (corpo sigla) e cauda com inicial maiúscula e resto em minúsculas.
+    """
+    s = (segment or "").strip()
+    if s.count("-") != 1:
+        return False
+    head, tail = s.split("-", 1)
+    if len(head) < 2 or not tail:
+        return False
+    if not _RE_SIGLA_BODY_FULL.match(head) or head != head.upper():
+        return False
+    if not tail[0].isalpha() or not tail[0].isupper():
+        return False
+    if len(tail) == 1:
+        return True
+    return all((not ch.isalpha()) or ch.islower() for ch in tail[1:])
 
 
 def _split_segments(name: str) -> list[str]:
@@ -169,6 +199,18 @@ def _resolve_parent_row(child: dict, rows_by_item_id: dict[str, list[dict]]) -> 
 def _significant_words_ordered(text: str) -> list[str]:
     words = re.findall(r"[A-Za-zÀ-ÿ]+", text)
     return [w for w in words if w.lower() not in _CONNECTIVES]
+
+
+def _is_simple_abbrev_connectives_only(long_seg: str, short_seg: str) -> bool:
+    """
+    Abreviação simples (spec (iii)): a única diferença é remoção de conectivos —
+    mesma sequência de palavras significativas nos dois segmentos.
+    """
+    wl = _significant_words_ordered(long_seg)
+    ws = _significant_words_ordered(short_seg)
+    if not wl or wl != ws:
+        return False
+    return long_seg.strip().casefold() != short_seg.strip().casefold()
 
 
 def _sig_word_set(text: str) -> set[str]:
@@ -371,6 +413,44 @@ def _atomic_derivations(
     return out
 
 
+def _is_sigla_second_segment_rule2(segment: str) -> bool:
+    """
+    Segundo segmento da Regra 2 (ND): sigla conforme spec (v), mais o caso ``IOF-Ouro`` da própria Regra 2.
+    """
+    s = (segment or "").strip()
+    if len(s) < 2:
+        return False
+    if any(ch.isspace() for ch in s):
+        return False
+    if "(" in s or ")" in s:
+        return False
+    if not any(ch.isalpha() for ch in s):
+        return False
+    if _RE_SIGLA_BODY_FULL.match(s) and s == s.upper():
+        return True
+    return _is_acronym_hyphen_title_word_tail(s)
+
+
+def _try_rule_nd_two_segment_sigla(name: str) -> tuple[str, str] | None:
+    """
+    Regra 2 (ND): nome com exactamente dois segmentos **major** (``_split_segments_major``,
+    alinhado à spec e à Regra 5: só separa em ``' - '`` com espaços, não parte ``IOF-Ouro``);
+    o segundo segmento é sigla; candidato ``(segmento_1, segmento_2)``.
+    """
+    s = (name or "").strip()
+    if not s:
+        return None
+    parts = _split_segments_major(s)
+    if len(parts) != 2:
+        return None
+    left, right = parts[0].strip(), parts[1].strip()
+    if not left or not right:
+        return None
+    if not _is_sigla_second_segment_rule2(right):
+        return None
+    return (left, right)
+
+
 def _try_rule_nd_parenthetical_suffix(name: str) -> tuple[str, str] | None:
     """
     Regra 3 (ND): nome com **um** segmento major (``' - '``), terminado em ``(SIGLA)``;
@@ -391,21 +471,46 @@ def _try_rule_nd_parenthetical_suffix(name: str) -> tuple[str, str] | None:
     return (base, sigla)
 
 
-def _try_rule_b(parent_name: str, child_name: str) -> tuple[str, str] | None:
-    pp = _split_segments(parent_name)
-    pc = _split_segments(child_name)
-    if len(pp) != 2 or len(pc) < 3:
-        return None
-    if pp[0] != pc[0]:
-        return None
-    long_seg, short_seg = pp[1], pc[1]
-    if long_seg == "Principal" and short_seg == "Princ.":
-        return (long_seg, short_seg)
-    if not _RE_SHORT_SEG.match(short_seg):
-        return None
-    if _initials_acronym(long_seg) != short_seg:
-        return None
-    return (long_seg, short_seg)
+def _is_segment_abbrev_rule4(parent_seg: str, child_seg: str) -> bool:
+    """
+    O segmento do filho é abreviação do segmento do pai (Regra 4 / PF), excluindo
+    igualdade literal e abreviação simples (tratadas antes).
+    """
+    p = parent_seg.strip()
+    c = child_seg.strip()
+    if p == "Principal" and c == "Princ.":
+        return True
+    if _RE_SHORT_SEG.match(c) and _initials_acronym(p) == c:
+        return True
+    if _align_parent_words_to_head_tokens(p, c) is not None:
+        return True
+    return False
+
+
+def _try_rule_4_pf_pairs(parent_name: str, child_name: str) -> list[tuple[str, str]]:
+    """
+    Regra 4 (PF): pai com X segmentos (``_split_segments_major``, X ≥ 2), filho com X+1;
+    para cada posição i < X, se o segmento do filho abrevia o do pai, não é igual nem
+    abreviação simples, candidato ``(segmento_pai_i, segmento_filho_i)``.
+    """
+    pp = _split_segments_major(parent_name)
+    pc = _split_segments_major(child_name)
+    if len(pp) < 2 or len(pc) != len(pp) + 1:
+        return []
+    out: list[tuple[str, str]] = []
+    for i in range(len(pp)):
+        p_seg = pp[i].strip()
+        c_seg = pc[i].strip()
+        if not p_seg or not c_seg:
+            return []
+        if p_seg.casefold() == c_seg.casefold():
+            continue
+        if _is_simple_abbrev_connectives_only(p_seg, c_seg):
+            continue
+        if not _is_segment_abbrev_rule4(p_seg, c_seg):
+            continue
+        out.append((p_seg, c_seg))
+    return out
 
 
 def _join_two_parent_segments(seg_a: str, seg_b: str) -> str:
@@ -452,7 +557,6 @@ _RULE_FUNCS_PRIMARY = (
     _try_rule_a_multi_first,
     _try_rule_a_first_word_dot_abbrev,
     _try_rule_a_dotted_chain,
-    _try_rule_b,
 )
 
 
@@ -460,7 +564,11 @@ def _unambiguous_abbrev_map(cand: dict[str, set[str]]) -> dict[str, str]:
     return {t: next(iter(ab)) for t, ab in cand.items() if len(ab) == 1}
 
 
-def _infer_pairs(rows: list[dict]) -> tuple[dict[str, str], list[tuple[str, set[str]]]]:
+def _infer_pairs(
+    rows: list[dict],
+    *,
+    abbrev_siglas_mapeadas_ci: AbstractSet[str] | None = None,
+) -> tuple[dict[str, str], list[tuple[str, set[str]]]]:
     rows_by_item_id: dict[str, list[dict]] = defaultdict(list)
     for r in rows:
         iid = (r.get("item_id") or "").strip()
@@ -475,6 +583,16 @@ def _infer_pairs(rows: list[dict]) -> tuple[dict[str, str], list[tuple[str, set[
             continue
         nm = _norm_name(r.get("receita_nome"))
         if not nm:
+            continue
+        got_r2 = _try_rule_nd_two_segment_sigla(nm)
+        if got_r2:
+            sigla = got_r2[1].strip()
+            if (
+                abbrev_siglas_mapeadas_ci is not None
+                and sigla.lower() in abbrev_siglas_mapeadas_ci
+            ):
+                continue
+            cand[got_r2[0]].add(sigla)
             continue
         got_r3 = _try_rule_nd_parenthetical_suffix(nm)
         if got_r3:
@@ -491,6 +609,7 @@ def _infer_pairs(rows: list[dict]) -> tuple[dict[str, str], list[tuple[str, set[
         if not pname or not cname:
             continue
         cid = (ch.get("item_id") or "").strip()
+        matched_pf = False
         for rule_fn in _RULE_FUNCS_PRIMARY:
             got = rule_fn(pname, cname)
             if got:
@@ -498,7 +617,15 @@ def _infer_pairs(rows: list[dict]) -> tuple[dict[str, str], list[tuple[str, set[
                 cand[termo].add(abrev)
                 if cid:
                     matched_item_ids.add(cid)
+                matched_pf = True
                 break
+        if not matched_pf:
+            r4_pairs = _try_rule_4_pf_pairs(pname, cname)
+            if r4_pairs:
+                for termo, abrev in r4_pairs:
+                    cand[termo].add(abrev)
+                if cid:
+                    matched_item_ids.add(cid)
 
     abbrev_map = _unambiguous_abbrev_map(cand)
     for ch in rows:

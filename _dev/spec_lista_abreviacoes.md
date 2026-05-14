@@ -50,6 +50,14 @@ Apesar de essa ser a principal fonte de análise, haverá análises que não dep
 
 - (vi) Diz-se que um par candidato `(termo_nome, abreviação)` é **redundante em sentido composicional** quando a abreviação proposta para o **termo frasal** (duas ou mais palavras significativas, no sentido do protocolo) não acrescenta informação além do que já está no **mapa vigente** de pares palavra→token: a `abreviação` coincide, token a token e na mesma ordem, com a junção dos tokens já associados a cada palavra significativa do `termo_nome`. Nesse caso o protocolo **omite** o registro da linha frasal (vide **Regra 7 (ND)**). O mapa vigente inclui **todas** as linhas já persistidas com aquele vocabulário de termos (incluindo registros **desativados** em transaction time, isto é, `data_registro_fim` diferente da sentinela), bem como inferências e manuais aceites na mesma execução, **e** os átomos derivados conforme a **Regra 6** quando aplicável.
 
+- (vii) **`termo_nome` canónico (lexical)** — definição operacional: o valor persistido em `termo` / `termo_nome` deve ser uma **expressão lexical de referência**, composta apenas por **palavras por extenso** (e conectivos, vírgulas, etc., conforme já tratados no protocolo) **e/ou siglas** no sentido **(v)**, **sem** incorporar **abreviação por encurtamento** no sentido **(iv)** no interior do `termo_nome`, salvo excepção explícita na subsecção *Excepções ao termo_nome canónico*.
+
+- (viii) **`termo_nome` inválido para persistência (só encurtamento (iv))** — critério booleano: decomponha o `termo_nome` em **tokens lexicais** delimitados por **espaços em branco**; após remover **pontuação de fronteira** comum de cada token **sem** retirar o ponto final que integra um token no padrão **(iv)** (isto é: retiram-se vírgulas, `;`, `:`, `!`, `?`, parênteses/chevrons/aspas, etc., das extremidades do token; o padrão **(iv)** continua a ser `^[letras]{1,8}\.$` sobre o token assim normalizado), se **qualquer** token restante for classificável como **abreviação por encurtamento** no sentido **(iv)** no papel de forma curta (ex.: `Contrib.`, `Princ.`), o par candidato **não** pode ser objecto de **INSERT** na lista (protocolo automático, carga a partir de seed, criação via admin, e inserções da fase `--print-conflicts-resolve`). **Siglas (v)** no interior do `termo_nome` **não** por si só violam (viii). Exemplos: **inválido** — `Contrib. Patronal` (token `Contrib.`); **válido** — `Contribuição Patronal` (sem token (iv)); **válido** — segmento que inclua `ICMS` como sigla **(v)** sem token terminado em ponto (iv).
+
+### Excepções ao termo_nome canónico
+
+- **v1:** nenhuma excepção documentada; entradas históricas inválidas devem ser corrigidas manualmente ou por migração de dados se a governança o exigir.
+
 
 ## Fluxo de dados e artefactos
 
@@ -61,7 +69,9 @@ Apesar de essa ser a principal fonte de análise, haverá análises que não dep
 
 - (A) *atributos* - a tabela de listagem de abreviações deve ter as seguintes colunas no modelo persistido: `termo`, `alias_lexico_ref`, `abreviacao`, `data_registro_inicio`, `data_registro_fim`. No CSV de seed (`seed_lista_abreviacoes.csv`), o campo `termo` é exportado com o cabeçalho `termo_nome` (equivalência semântica usada nesta spec).
 
-- (B) *update (protocolo automático)* - ao identificar um par `termo`/`abreviacao` (no CSV: `termo_nome`/`abreviacao`), o protocolo **só insere** nova linha se **não existir** ainda qualquer linha com esse **mesmo** `termo` na tabela — **incluindo** linhas com `data_registro_fim` **diferente** da sentinela (registos desativados em transaction time). O protocolo automático **não** remove nem altera linhas existentes por omissão. A unicidade do `termo` deve ser **garantida ao nível da base de dados** (ver subsecção *Unicidade do termo*). Exceção à proibição de atualização: apenas o fluxo interativo `--print-conflicts-resolve`, conforme *(F)*.
+- (A′) *validade do `termo`* — todo **INSERT** (e criação equivalente via ORM/admin) deve satisfazer **(vii)** e **(viii)**. Candidatos inferidos ou derivados que falhem **(viii)** são **omitidos** (não persistidos); recomenda-se contagem e `logger.info` distinta de omissões por redundância composicional (Regra 7). O fluxo `--print-conflicts-resolve` **não** deve gravar par escolhido se o `termo` for inválido por **(viii)** (registar aviso e continuar).
+
+- (B) *update (protocolo automático)* - ao identificar um par `termo`/`abreviacao` (no CSV: `termo_nome`/`abreviacao`), o protocolo **só insere** nova linha se **não existir** ainda qualquer linha com esse **mesmo** `termo` na tabela — **incluindo** linhas com `data_registro_fim` **diferente** da sentinela (registos desativados em transaction time). O protocolo automático **não** remove nem altera linhas existentes por omissão (**nunca** `DELETE` nem `UPDATE` na fase automática de inferência). A unicidade do `termo` deve ser **garantida ao nível da base de dados** (ver subsecção *Unicidade do termo*). Exceção à proibição de actualização in-place: apenas o fluxo interativo `--print-conflicts-resolve`, conforme *(F)* (com confirmação explícita quando já existe linha para o `termo`).
 
 - (C) *conflito* - se o mesmo `termo` recebe mais de uma `abreviacao` candidata entre pares distintos **numa mesma execução** do protocolo automático, **nenhuma** dessas candidatas entra nas novidades daquela execução (fica em **conflito silencioso** no modo servidor).
 
@@ -73,11 +83,11 @@ Apesar de essa ser a principal fonte de análise, haverá análises que não dep
   - **`--print-conflicts`:** no fim da execução, **lista** os conflitos que permaneceram **silenciosos** durante a corrida (mesmo `termo`, múltiplas `abreviacao` candidatas na mesma execução, sem gravação automática). Não altera o BD.
   - **`--print-conflicts-resolve`:** após a gravação normal da execução, entra em **modo interativo** no terminal: para cada conflito pendente, apresenta **numeradas** as opções de `abreviacao` obtidas pelas heurísticas alinhadas à spec e solicita que o utilizador escolha uma opção válida ou abandone (`n`). Destina-se a **operadores com shell**; não é o caminho padrão de workers agendados sem stdin.
   - **Efeito no BD quando o conflito envolve `termo` ainda não mapeado:** após escolha válida, **cria-se** nova linha com esse `termo` e a `abreviacao` escolhida, `data_registro_fim` = sentinela, e demais campos conforme *(L)* e *(K)*.
-  - **Efeito no BD quando o conflito envolve `termo` já mapeado** (linha existente **ativa ou desativada** em transaction time): **não** se cria nova linha; **atualiza-se** a linha existente: campo `abreviacao` ← abreviação escolhida; `data_registro_fim` ← **valor sentinela** (registo passa a **Ativo** após a correção); **`data_registro_inicio` mantém-se** (não repor data de início). O `alias_lexico_ref` **mantém-se** salvo contratação explícita futura.
+  - **Efeito no BD quando o conflito envolve `termo` já mapeado** (linha existente **ativa ou desativada** em transaction time): **não** se cria nova linha; após a escolha numérica das abreviações candidatas, o comando deve solicitar **segunda confirmação explícita** ([y/N]) antes de **atualizar** a linha existente: campo `abreviacao` ← abreviação escolhida; `data_registro_fim` ← **valor sentinela** (registo passa a **Ativo** após a correção); **`data_registro_inicio` mantém-se**. Se o operador recusar, **mantém-se** o registo inalterado (protecção de entradas manuais ou já curadas). O `alias_lexico_ref` **mantém-se** salvo contratação explícita futura.
   - O *task* `atualizar-abreviacoes` pode invocar o mesmo comando **com** `--print-conflicts-resolve` quando se pretender sessão interativa (ex.: post-release); em CI/workers deve usar-se apenas `--print-conflicts` ou execução sem flags.
   - **Log mínimo:** recomenda-se `logger.info` (ou equivalente) com contagem de conflitos e termos omitidos, sem exigência de auditoria pesada.
 
-- (G) *carga banco* - ao ler o CSV, valida `alias_lexico_ref` numérico de forma que, duplicata de `termo_nome` (segunda ocorrência) é ignorada na lista reconstruída, mas o termo continua no conjunto que bloqueia inferência/derivação.
+- (G) *carga banco* - ao ler o CSV, valida `alias_lexico_ref` numérico de forma que, duplicata de `termo_nome` (segunda ocorrência) é ignorada na lista reconstruída, mas o termo continua no conjunto que bloqueia inferência/derivação. Linhas cujo `termo_nome` viole **(viii)** devem ser **omitidas** na carga (sem abortar o recurso completo) e o operador deve poder inspeccionar contagem em log; não persistir entradas inválidas.
 
 - (H) *conectivos* - no scopo/topo do script, deve haver lista fixa de conectivos ignorados na extração de palavras significativas.
 
@@ -96,7 +106,7 @@ Apesar de essa ser a principal fonte de análise, haverá análises que não dep
 
 ### Export do seed `seed_lista_abreviacoes.csv`
 
-O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export que o admin (`export_resource` para o recurso `lista_abreviacoes`). O export corre: (i) após `save_model` em `AliasLexico`; (ii) após `save_model` em `ItemClassificacao` que dispare o protocolo de atualização da lista **e** este resulte em **pelo menos uma** nova linha na tabela/banco de lista de abreviações; (iii) após o comando de atualização em lote concluir as escritas na tabela. Em (iii), uma única exportação consolidada é disparada ao terminar o lote (equivalente a uma transação de negócio concluída), não intercalada por linha.
+O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export que o admin (`export_resource` para o recurso `lista_abreviacoes`). A substituição do ficheiro no disco **não** altera a tabela na BD. O comando ``manage.py atualizar_lista_abreviacoes --export-seed`` deve, por omissão, criar **cópia de segurança** do CSV anterior (``*.backup.<timestamp>`` no mesmo directório) antes de sobrescrever, para recuperar edições manuais ao ficheiro que ainda não tenham sido carregadas na BD; as exportações automáticas (ii) e (iii) podem omitir essa cópia para não acumular ficheiros em execuções frequentes. O export corre: (i) após `save_model` em `AliasLexico`; (ii) após `save_model` em `ItemClassificacao` que dispare o protocolo de atualização da lista **e** este resulte em **pelo menos uma** nova linha na tabela/banco de lista de abreviações; (iii) após o comando de atualização em lote concluir as escritas na tabela. Em (iii), uma única exportação consolidada é disparada ao terminar o lote (equivalente a uma transação de negócio concluída), não intercalada por linha.
 
 **Nova linha (critério para (ii)):** conta-se como **nova linha** qualquer **`INSERT`** bem-sucedido em `lista_abreviacoes` durante a execução do protocolo disparada pelo `save_model` em `ItemClassificacao` (isto é, contagem de linhas criadas com novo `id` / novo PK). Duplicata do mesmo termo em sentido **case-insensitive** (violando a constraint `unique_lista_abrev_termo_ci` em `LOWER(termo)`) **não** conta como nova linha: a implementação deve usar o mesmo critério que `insert_alias_lexico_if_new` em `apps/core/alias_lexico_protocol.py` (retorno `inserted is True` após tentativa de `INSERT` isolada em `transaction.atomic`, mapeando `IntegrityError` para “não houve insert”). **Não** contam: apenas `UPDATE` em linhas já existentes (incl. reativação ou correção de `abreviacao` sem insert); execuções do protocolo que não persistem alterações; falhas silenciosas ou conflitos sem gravação. Se o protocolo correr mas o número de linhas da tabela **não** aumentar em relação ao estado lido no início daquele disparo, **não** se exporta ao abrigo de (ii). Opcionalmente, a implementação pode usar o retorno explícito do serviço de inferência (`inseridos > 0`) em vez de comparar contagens globais, desde que seja **equivalente** a esta definição.
 
@@ -111,7 +121,7 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
 
 ### Unicidade do termo
 
-- Existe **constraint de unicidade** em **PostgreSQL** sobre `LOWER(termo)` (`UniqueConstraint` com expressão `Lower("termo")`, nome `unique_lista_abrev_termo_ci` na migração `0001_initial` do app `core`): **não** podem coexistir duas linhas cujo `termo` coincida **sem distinguir maiúsculas/minúsculas**, **independentemente** de `data_registro_fim` (ativa ou desativada). Isto implica que correções por `--print-conflicts-resolve` são **UPDATE** na linha existente quando o termo já está mapeado, e não um segundo insert.
+- Existe **constraint de unicidade** em **PostgreSQL** sobre `LOWER(termo)` (`UniqueConstraint` com expressão `Lower("termo")`, nome `unique_lista_abrev_termo_ci` na migração `0001_initial` do app `core`): **não** podem coexistir duas linhas cujo `termo` coincida **sem distinguir maiúsculas/minúsculas**, **independentemente** de `data_registro_fim` (ativa ou desativada). Isto implica que correções por `--print-conflicts-resolve` são **UPDATE** na linha existente quando o termo já está mapeado (após confirmação explícita [y/N] pelo operador), e não um segundo insert.
 - O modelo aplica também validação em `clean()` com `termo__iexact` para mensagem de erro amigável antes do `INSERT`.
 
 
@@ -157,6 +167,7 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
 - 2.1. item de classificação tem nome com 2 segmentos
 - 2.2. o segundo segmento do nome é uma sigla
 - 2.3. o segundo segmento deve ser registrado como abreviação do primeiro segmento
+- 2.4. **refinamento (sigla já mapeada):** se o texto do segundo segmento (a sigla no sentido **(v)**), após normalização de espaços extremos, coincidir **exactamente** com o valor de `abreviacao` de **qualquer** entrada **já** presente no mapa vigente da lista (valores carregados da BD e/ou do seed de fallback **antes** da passagem de inferência na mesma execução do comando), **comparação case-insensitive**, então **não** se regista o par da Regra 2 para esse item: o candidato é **omitido** (não entra no conjunto de inferências unívocas nem gera conflito **só** por este motivo). Exemplo negativo: item ``Alienação Bens Mercadorias Apreendidos - MJM`` quando já existir noutra linha ``Multas e Juros de Mora`` → ``MJM`` (token exacto ``MJM`` como `abreviacao`), não se adiciona ``Alienação Bens Mercadorias Apreendidos`` → ``MJM``. Nota: ``DA-MJM`` **não** coincide com ``MJM``; a regra compara o valor **integral** da coluna `abreviacao`.
 
   1.1.1.3.01.0.0.00.000 "Imposto sobre a Renda de Pessoa Física - IRPF"
 
@@ -166,7 +177,7 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
 
   1.1.1.5.01.1.0.00.000	"Imposto sobre Operações Financeiras Incidente sobre o Ouro - IOF-Ouro"
 
-  "IOF-Ouro" deve ser registrado como abreviação de "Imposto sobre Operações Financeiras Incidente sobre o Ouro - IOF-Ouro"
+  "IOF-Ouro" deve ser registrado como abreviação de "Imposto sobre Operações Financeiras Incidente sobre o Ouro" (primeiro segmento antes de ` - IOF-Ouro`)
 
 
 ## Regra 3 (ND)
@@ -300,6 +311,8 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
 
 
 ## Regra 7 (ND) - Redundância composicional
+
+- 7.0. **Independente** da redundância composicional, candidatos cujo `termo_nome` viole **(viii)** (encurtamento (iv) como token lexical no termo) são sempre **omitidos** da persistência; ver **(A′)** e **(vii)**.
 
 - 7.1. a redundância composicional é um critério de **omissão**: não compara pai e filho; apenas decide se um par candidato `(termo_nome, abreviação)` **não** deve ser acrescentado à lista porque seria **derivável sem ambiguidade** a partir de mapeamentos já presentes no **mapa vigente** (vide **(vi)**)
 - 7.2. o **mapa vigente** é uma estrutura lógica `palavra_significativa → token` (o token é o valor de `abreviação` guardado para aquela palavra como `termo_nome` atômico). Inicialmente contém todos os pares das linhas **já existentes** no seed; ao longo da execução do protocolo, passa a incluir também cada par **aceite** na mesma ordem de processamento (inferências resolvidas, entradas manuais não colidentes) e os **átomos** inferidos pela **Regra 6** assim que o par frasal que os originou é aceite (cada átomo entra com `setdefault`, ou seja, **não** altera token já associado à mesma palavra)

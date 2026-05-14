@@ -13,8 +13,22 @@ from django.db.models import UniqueConstraint
 from django.db.models.functions import Lower
 from django.utils import timezone
 
+from apps.core.alias_lexico_termo_policy import termo_nome_rejeitado_encurtamento_iv
+
 
 _TRANSACTION_SENTINEL = datetime.datetime(9999, 12, 31, 0, 0, 0)
+
+
+def lista_abreviacoes_registro_inicio_novo() -> datetime.datetime:
+    """
+    Spec ``_dev/spec_lista_abreviacoes.md`` *(L)*: ``data_registro_início`` = 01/01/<ano civil corrente>
+    às 00:00:00 na timezone actual do Django.
+    """
+    y = timezone.localdate().year
+    return timezone.make_aware(
+        datetime.datetime(y, 1, 1, 0, 0, 0),
+        timezone.get_current_timezone(),
+    )
 
 
 class AliasLexico(models.Model):
@@ -41,7 +55,7 @@ class AliasLexico(models.Model):
         help_text="Forma curta sugerida correspondente ao termo.",
     )
     data_registro_inicio = models.DateTimeField(
-        default=timezone.now,
+        default=lista_abreviacoes_registro_inicio_novo,
         verbose_name="Data de início do registro",
         help_text="Momento em que esta linha passou a valer no sistema.",
     )
@@ -81,6 +95,15 @@ class AliasLexico(models.Model):
             raise ValidationError({"termo": "Informe o termo completo."})
         if not a:
             raise ValidationError({"abreviacao": "Informe a abreviação."})
+        if termo_nome_rejeitado_encurtamento_iv(t):
+            raise ValidationError(
+                {
+                    "termo": (
+                        "O termo não pode conter token de abreviação por encurtamento no sentido (iv) "
+                        "(ex.: «Contrib.»). Use a forma por extenso (ex.: «Contribuição Patronal»)."
+                    )
+                }
+            )
         dup = AliasLexico.objects.filter(termo__iexact=t)
         if self.pk:
             dup = dup.exclude(pk=self.pk)
