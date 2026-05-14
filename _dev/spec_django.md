@@ -127,6 +127,20 @@ Foi implementada a estrutura básica do app `core` para gerenciamento das estrut
 - `date_hierarchy` para navegação temporal
 - `raw_id_fields` para FKs (melhor performance)
 
+##### Lupa (raw id) na criação de registros: filtro «Ativos (Ano Corrente)»
+
+Em formulários de **adicionar** (`…_add`) para `Classificacao`, `NivelHierarquico` e `ItemClassificacao`, o `href` da lupa de algumas FKs inclui na query string o mesmo parâmetro que o filtro de sidebar **Status do Registro → Ativos (Ano Corrente)** (`registro_ativo=ativo_corrente`, constantes em `apps.core.admin_mixins`). Assim a changelist do popup abre já com esse critério; o utilizador pode mudar para «Todos» ou outra opção na barra lateral.
+
+Campos configurados (via `popup_default_registro_ativo_ano_corrente` em `semantic_fk_config`):
+
+| ModelAdmin (origem) | FK |
+|---------------------|-----|
+| `Classificacao` | `serie_id` (Série de Classificação) |
+| `NivelHierarquico` | `classificacao_id` |
+| `ItemClassificacao` | `classificacao_id`, `parent_item_id` (item pai), `nivel_id` |
+
+Não se aplica à vista de **alterar** nem a FKs sem essa flag (ex.: base legal técnica em classificação/item). O critério «Ano Corrente» é o já definido em `RegistroAtivoFilter` (sobreposição da vigência com o ano civil corrente e registo ativo em tempo de transação), não «vigente apenas no dia de hoje».
+
 ### Migrations
 
 Migrations iniciais criadas com sucesso:

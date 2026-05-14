@@ -27,10 +27,18 @@ class ForeignKeySemanticDisplayRawIdWidget(ForeignKeyRawIdWidget):
         semantic_lookup_url: str | None = None,
         attrs: dict[str, Any] | None = None,
         using: str | None = None,
+        popup_url_extra: dict[str, str] | None = None,
     ):
         super().__init__(rel, admin_site, attrs=attrs, using=using)
         self.semantic_field = semantic_field
         self.semantic_lookup_url = semantic_lookup_url
+        self.popup_url_extra = popup_url_extra or {}
+
+    def url_parameters(self):
+        params = super().url_parameters()
+        if self.popup_url_extra:
+            params = {**params, **self.popup_url_extra}
+        return params
 
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)

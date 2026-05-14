@@ -34,6 +34,13 @@ from apps.core.models import (
 )
 
 
+def admin_request_is_model_add_form(request) -> bool:
+    """True quando o request está a servir o changeform de criação (…_add)."""
+    match = getattr(request, "resolver_match", None)
+    url_name = getattr(match, "url_name", None) or ""
+    return str(url_name).endswith("_add")
+
+
 def transaction_time_sentinel_for_query():
     """
     Valor de data_registro_fim para registro ativo, alinhado ao uso em queries ORM
@@ -90,6 +97,14 @@ ID_HELP_EXAMPLES = {
 }
 
 #---------------------------------------------------------------------------------------------------
+# Valores do query string do ``RegistroAtivoFilter`` (usar estes nomes em URLs, p.ex. lupa raw_id).
+REGISTRO_ATIVO_QUERY_PARAM = "registro_ativo"
+REGISTRO_ATIVO_VALUE_ANO_CORRENTE = "ativo_corrente"
+REGISTRO_ATIVO_VALUE_FUTURO = "ativo_futuro"
+REGISTRO_ATIVO_VALUE_HISTORICO = "ativo_historico"
+REGISTRO_ATIVO_VALUE_INATIVO = "inativo"
+
+
 # Filtro para registros ativos (correntes, históricos e futuros) e inativos em termos de registro/vigência
 class RegistroAtivoFilter(admin.SimpleListFilter):
     """
@@ -98,14 +113,14 @@ class RegistroAtivoFilter(admin.SimpleListFilter):
     """
 
     title = "Status do Registro"
-    parameter_name = "registro_ativo"
+    parameter_name = REGISTRO_ATIVO_QUERY_PARAM
 
     def lookups(self, request, model_admin):
         return (
-            ("ativo_corrente", "Ativos (Ano Corrente)"),
-            ("ativo_futuro", "Ativos (Futuro)"),
-            ("ativo_historico", "Ativos (Histórico)"),
-            ("inativo", "Inativos"),
+            (REGISTRO_ATIVO_VALUE_ANO_CORRENTE, "Ativos (Ano Corrente)"),
+            (REGISTRO_ATIVO_VALUE_FUTURO, "Ativos (Futuro)"),
+            (REGISTRO_ATIVO_VALUE_HISTORICO, "Ativos (Histórico)"),
+            (REGISTRO_ATIVO_VALUE_INATIVO, "Inativos"),
         )
 
     def queryset(self, request, queryset):
@@ -114,22 +129,22 @@ class RegistroAtivoFilter(admin.SimpleListFilter):
         primeiro_dia_ano = date(ano_corrente, 1, 1)
         ultimo_dia_ano = date(ano_corrente, 12, 31)
 
-        if self.value() == "ativo_corrente":
+        if self.value() == REGISTRO_ATIVO_VALUE_ANO_CORRENTE:
             return queryset.filter(
                 data_registro_fim=TRANSACTION_TIME_SENTINEL,
                 data_vigencia_inicio__lte=ultimo_dia_ano,
                 data_vigencia_fim__gte=primeiro_dia_ano,
             )
-        if self.value() == "ativo_futuro":
+        if self.value() == REGISTRO_ATIVO_VALUE_FUTURO:
             return queryset.filter(
                 data_registro_fim=TRANSACTION_TIME_SENTINEL,
                 data_vigencia_fim__gt=ultimo_dia_ano,
             )
-        if self.value() == "ativo_historico":
+        if self.value() == REGISTRO_ATIVO_VALUE_HISTORICO:
             return queryset.filter(
                 data_registro_fim=TRANSACTION_TIME_SENTINEL,
             )
-        if self.value() == "inativo":
+        if self.value() == REGISTRO_ATIVO_VALUE_INATIVO:
             return queryset.exclude(data_registro_fim=TRANSACTION_TIME_SENTINEL)
         return queryset
 
@@ -338,6 +353,13 @@ class SemanticForeignKeyAdminMixin:
     Para usar o verbose_name do campo FK como rótulo da coluna, defina ``model = SeuModel``
     no corpo do ModelAdmin (o ``@admin.register`` também preenche ``model``, mas só depois
     da criação da classe; sem ``model`` no corpo, o título da coluna cai no fallback).
+
+    Chave opcional por FK em ``semantic_fk_config``:
+
+        ``popup_default_registro_ativo_ano_corrente`` (bool): na vista **adicionar**,
+        o ``href`` da lupa (changelist do modelo relacionado) inclui o parâmetro do
+        ``RegistroAtivoFilter`` equivalente a «Ativos (Ano Corrente)», para o utilizador
+        poder alterar na barra lateral (ex.: «Todos»).
     """
 
     semantic_fk_config: Dict[str, Dict[str, Any]] = {}
@@ -488,6 +510,14 @@ class SemanticForeignKeyAdminMixin:
         ).replace("/0/", "/{pk}/")
 
         using_db = kwargs.get("using") or getattr(formfield.widget, "db", None)
+        popup_url_extra: Dict[str, str] | None = None
+        if admin_request_is_model_add_form(request) and cfg.get(
+            "popup_default_registro_ativo_ano_corrente"
+        ):
+            popup_url_extra = {
+                REGISTRO_ATIVO_QUERY_PARAM: REGISTRO_ATIVO_VALUE_ANO_CORRENTE,
+            }
+
         formfield.widget = ForeignKeySemanticDisplayRawIdWidget(
             db_field.remote_field,
             self.admin_site,
@@ -495,6 +525,7 @@ class SemanticForeignKeyAdminMixin:
             semantic_lookup_url=lookup_url,
             attrs=getattr(formfield.widget, "attrs", None),
             using=using_db,
+            popup_url_extra=popup_url_extra,
         )
         return formfield
 

@@ -204,6 +204,7 @@ class ClassificacaoAdmin(
             "model": SerieClassificacao,
             "semantic_field": "serie_id",
             "display_label": lambda obj: f"{obj.serie_id} - {obj.serie_nome}",
+            "popup_default_registro_ativo_ano_corrente": True,
         },
         "base_legal_tecnica_id": {
             "kind": "base_legal_tecnica",
@@ -277,6 +278,7 @@ class NivelHierarquicoAdmin(
             "model": Classificacao,
             "semantic_field": "classificacao_id",
             "display_label": lambda obj: f"{obj.classificacao_id} - {obj.classificacao_nome}",
+            "popup_default_registro_ativo_ano_corrente": True,
         },
     }
 
@@ -353,12 +355,14 @@ class ItemClassificacaoAdmin(
             "model": Classificacao,
             "semantic_field": "classificacao_id",
             "display_label": lambda obj: f"{obj.classificacao_id} - {obj.classificacao_nome}",
+            "popup_default_registro_ativo_ano_corrente": True,
         },
         "nivel_id": {
             "kind": "nivel",
             "model": NivelHierarquico,
             "semantic_field": "nivel_id",
             "display_label": lambda obj: f"{obj.nivel_id} - {obj.nivel_nome}",
+            "popup_default_registro_ativo_ano_corrente": True,
         },
         "base_legal_tecnica_id": {
             "kind": "base_legal_tecnica",
@@ -379,6 +383,7 @@ class ItemClassificacaoAdmin(
             "display_label": lambda obj: f"{obj.receita_cod} - {obj.receita_nome or obj.item_id or ''}".strip(
                 " -"
             ),
+            "popup_default_registro_ativo_ano_corrente": True,
         },
     }
 
