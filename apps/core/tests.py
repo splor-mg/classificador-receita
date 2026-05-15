@@ -272,6 +272,30 @@ class Rule4PfTests(SimpleTestCase):
             [],
         )
 
+    def test_rule4_atencao_mac_head_plus_tail_sigla(self) -> None:
+        parent = (
+            "Transf. Bloco Manut. ASPS - Atenção Especializada - Princ. - "
+            "Atenção de Média e Alta Complexidade"
+        )
+        child = (
+            "Transf. Bloco Manut. ASPS - Atenção Especializada - Princ. - "
+            "Atenção MAC - Prestadores Ambulatoriais e Hospitalares"
+        )
+        pairs = _try_rule_4_pf_pairs(parent, child)
+        self.assertEqual(
+            pairs,
+            [("Atenção de Média e Alta Complexidade", "Atenção MAC")],
+        )
+
+    def test_rule4_head_sigla_rejects_two_significant_words_parent(self) -> None:
+        self.assertEqual(
+            _try_rule_4_pf_pairs(
+                "A - Atenção Especializada",
+                "A - Atenção E - B",
+            ),
+            [],
+        )
+
     def test_infer_pairs_rule4_parent_child_cessao(self) -> None:
         parent_id = "IT-PARENT-1361011000000"
         child_id = "IT-CHILD-1361011100000"
@@ -341,6 +365,49 @@ class TermoNomeEncurtamentoIvPolicyTests(SimpleTestCase):
     def test_empty_invalid(self) -> None:
         self.assertTrue(termo_nome_rejeitado_encurtamento_iv(""))
         self.assertTrue(termo_nome_rejeitado_encurtamento_iv("   "))
+
+
+class RenumberAliasLexicoRefTests(TestCase):
+    """``--new-ref``: ``renumber_alias_lexico_refs_alphabetical``."""
+
+    def test_renumber_assigns_sequential_refs_by_termo_order(self) -> None:
+        from apps.core.alias_lexico_run import renumber_alias_lexico_refs_alphabetical
+        from apps.core.models import AliasLexico
+        from apps.core.models_alias_lexico import (
+            lista_abreviacoes_registro_fim_sentinela,
+            lista_abreviacoes_registro_inicio_novo,
+        )
+
+        AliasLexico.objects.all().delete()
+        reg_ini = lista_abreviacoes_registro_inicio_novo()
+        reg_fim = lista_abreviacoes_registro_fim_sentinela()
+        AliasLexico.objects.create(
+            termo="Zebra Term",
+            abreviacao="Z",
+            alias_lexico_ref=99,
+            data_registro_inicio=reg_ini,
+            data_registro_fim=reg_fim,
+        )
+        AliasLexico.objects.create(
+            termo="Alpha Term",
+            abreviacao="A",
+            alias_lexico_ref=50,
+            data_registro_inicio=reg_ini,
+            data_registro_fim=reg_fim,
+        )
+        AliasLexico.objects.create(
+            termo="Middle Term",
+            abreviacao="M",
+            alias_lexico_ref=1,
+            data_registro_inicio=reg_ini,
+            data_registro_fim=reg_fim,
+        )
+        n = renumber_alias_lexico_refs_alphabetical()
+        self.assertEqual(n, 3)
+        by_termo = {o.termo: o.alias_lexico_ref for o in AliasLexico.objects.order_by("termo")}
+        self.assertEqual(by_termo["Alpha Term"], 1)
+        self.assertEqual(by_termo["Middle Term"], 2)
+        self.assertEqual(by_termo["Zebra Term"], 3)
 
 
 class ListaAbreviacoesRegistroInicioTests(SimpleTestCase):

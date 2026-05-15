@@ -318,6 +318,47 @@ def run_alias_lexico_infer_persist(
     )
 
 
+def _alias_lexico_registry_sort_key(obj: AliasLexico) -> tuple[str, datetime, str]:
+    """Ordem do export/registry: ``LOWER(termo)``, ``data_registro_inicio``, ``termo``."""
+    dr = obj.data_registro_inicio
+    if dr is None:
+        dr_key = datetime(1970, 1, 1, tzinfo=timezone.utc)
+    elif timezone.is_naive(dr):
+        dr_key = timezone.make_aware(dr, timezone.get_current_timezone())
+    else:
+        dr_key = dr
+    return ((obj.termo or "").lower(), dr_key, obj.termo or "")
+
+
+def renumber_alias_lexico_refs_alphabetical() -> int:
+    """
+    Renumera ``alias_lexico_ref`` para ``1..N`` na ordem do registry (``LOWER(termo)``,
+    ``data_registro_inicio``). Duas fases para respeitar ``unique`` em ``alias_lexico_ref``.
+
+    Actualiza **todas** as linhas de ``lista_abreviacoes`` (``scope=all`` do export).
+    """
+    rows = list(AliasLexico.objects.all())
+    if not rows:
+        return 0
+    ordered = sorted(rows, key=_alias_lexico_registry_sort_key)
+    mx = AliasLexico.objects.aggregate(m=Max("alias_lexico_ref"))["m"] or 0
+    offset = mx + 1_000_000
+    with transaction.atomic():
+        for i, obj in enumerate(ordered):
+            obj.alias_lexico_ref = offset + i
+        AliasLexico.objects.bulk_update(ordered, ["alias_lexico_ref"], batch_size=500)
+        for i, obj in enumerate(ordered, start=1):
+            obj.alias_lexico_ref = i
+        AliasLexico.objects.bulk_update(ordered, ["alias_lexico_ref"], batch_size=500)
+    logger.info(
+        "%s: renumeração --new-ref — %s linhas, refs 1..%s (ordem LOWER(termo), data_registro_inicio)",
+        __name__,
+        len(ordered),
+        len(ordered),
+    )
+    return len(ordered)
+
+
 def export_alias_lexico_seed(*, do_backup: bool = False) -> dict:
     """
     Exporta recurso ``lista_abreviacoes`` para ``docs/assets/seed_lista_abreviacoes.csv``.
@@ -354,20 +395,23 @@ def maybe_export_seed_after_management_batch(
     n_auto_insert: int,
     n_resolve_insert: int,
     n_resolve_update: int,
+    n_renumbered: int = 0,
 ) -> dict | None:
     """
     *Export* **(iii)**: uma exportação consolidada ao fim do comando quando a execução
-    alterou ``lista_abreviacoes`` (INSERTs do protocolo automático e/ou fase resolve).
+    alterou ``lista_abreviacoes`` (INSERTs, resolve interactivo e/ou ``--new-ref``).
     """
-    total = n_auto_insert + n_resolve_insert + n_resolve_update
+    total = n_auto_insert + n_resolve_insert + n_resolve_update + n_renumbered
     if total < 1:
         logger.info(
             "%s: export (iii) omitido — auto_insert=%s resolve_insert=%s resolve_update=%s "
-            "(sem mutações nesta execução; use ``--export-seed`` no comando para gravar a BD no CSV)",
+            "renumbered=%s (sem mutações nesta execução; use ``--export-seed`` no comando para "
+            "gravar a BD no CSV)",
             __name__,
             n_auto_insert,
             n_resolve_insert,
             n_resolve_update,
+            n_renumbered,
         )
         return None
     return export_alias_lexico_seed()

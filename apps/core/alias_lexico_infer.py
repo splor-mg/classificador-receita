@@ -6,7 +6,7 @@ Regras PF (mãe–filho), ordem na passagem primária (``_RULE_FUNCS_PRIMARY``):
 - **Regra 1** (``_try_rule_a*``): mãe monossegmento → primeiro segmento do filho abrevia nome integral da mãe.
 - **Regra 1.2** (``_try_rule_1_2_pf``): mãe e filho com ≥2 segmentos major; caminho A eco literal
   (último = primeiro) ou caminho B cobertura lexical (1.2.8) → ``(nome integral da mãe, primeiro segmento do filho)``.
-- **Regra 4** (``_try_rule_4_pf_pairs``): alinhamento posicional segmento a segmento (filho X+1 segmentos).
+- **Regra 4** (``_try_rule_4_pf_pairs``): alinhamento posicional (filho X+1); incl. cabeça + sigla da cauda (ex. ``Atenção MAC``).
 
 Regras ND sobre o próprio ``receita_nome``:
 
@@ -497,6 +497,43 @@ def _try_rule_nd_parenthetical_suffix(name: str) -> tuple[str, str] | None:
     return (base, sigla)
 
 
+_EDGE_STRIP_SEGMENT_TOKEN = ',;:!?()[]{}"\'«»'
+
+
+def _lexical_tokens_by_space(segment: str) -> list[str]:
+    """Tokens lexicais de um segmento major (espaços); remove pontuação de fronteira comum."""
+    s = re.sub(r",\s*", " ", (segment or "").strip())
+    s = re.sub(r"\s+", " ", s).strip()
+    out: list[str] = []
+    for raw in s.split():
+        tok = raw.strip(_EDGE_STRIP_SEGMENT_TOKEN)
+        if tok:
+            out.append(tok)
+    return out
+
+
+def _is_head_plus_tail_sigla_rule4(parent_seg: str, child_seg: str) -> bool:
+    """
+    Regra 4 — cabeça preservada + sigla (v) das palavras significativas restantes da mãe
+    (spec: refinamento 4.3, ex. ``Atenção MAC`` ← ``Atenção de Média e Alta Complexidade``).
+    """
+    parent_words = _significant_words_ordered(parent_seg)
+    if len(parent_words) < 3:
+        return False
+    child_tokens = _lexical_tokens_by_space(child_seg)
+    if len(child_tokens) != 2:
+        return False
+    head_c, sigla_c = child_tokens[0], child_tokens[1]
+    if head_c.casefold() != parent_words[0].casefold():
+        return False
+    if len(sigla_c) < 2 or sigla_c != sigla_c.upper():
+        return False
+    if not _RE_SIGLA_BODY_FULL.match(sigla_c):
+        return False
+    tail_phrase = " ".join(parent_words[1:])
+    return _initials_acronym(tail_phrase) == sigla_c
+
+
 def _is_segment_abbrev_rule4(parent_seg: str, child_seg: str) -> bool:
     """
     O segmento do filho é abreviação do segmento do mãe (Regra 4 / PF), excluindo
@@ -509,6 +546,8 @@ def _is_segment_abbrev_rule4(parent_seg: str, child_seg: str) -> bool:
     if _RE_SHORT_SEG.match(c) and _initials_acronym(p) == c:
         return True
     if _align_parent_words_to_head_tokens(p, c) is not None:
+        return True
+    if _is_head_plus_tail_sigla_rule4(p, c):
         return True
     return False
 

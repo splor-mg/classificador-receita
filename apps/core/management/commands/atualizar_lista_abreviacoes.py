@@ -21,6 +21,7 @@ from apps.core.alias_lexico_protocol import insert_alias_lexico_if_new
 from apps.core.alias_lexico_run import (
     export_alias_lexico_seed,
     maybe_export_seed_after_management_batch,
+    renumber_alias_lexico_refs_alphabetical,
     run_alias_lexico_infer_persist,
 )
 from apps.core.alias_lexico_termo_policy import termo_nome_rejeitado_encurtamento_iv
@@ -86,6 +87,15 @@ class Command(BaseCommand):
             action="store_true",
             help="Com ``--export-seed``, não criar ficheiro ``.backup.*`` antes de substituir o CSV.",
         )
+        parser.add_argument(
+            "--new-ref",
+            action="store_true",
+            help=(
+                "Após inferência (e resolução interactiva, se aplicável), renumera alias_lexico_ref "
+                "na BD para 1..N na ordem alfabética de termo (LOWER(termo), data_registro_inicio), "
+                "como no export do seed; em seguida exporta o CSV se não usar --no-export."
+            ),
+        )
 
     def handle(self, *args, **options):
         logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -94,6 +104,7 @@ class Command(BaseCommand):
         no_export: bool = options["no_export"]
         export_seed: bool = options["export_seed"]
         export_seed_no_backup: bool = options["export_seed_no_backup"]
+        new_ref: bool = options["new_ref"]
 
         n_lista_existing = AliasLexico.objects.count()
 
@@ -111,11 +122,12 @@ class Command(BaseCommand):
 
         logger.info(
             "atualizar_lista_abreviacoes: início T=%s print_conflicts=%s print_resolve=%s "
-            "lista_abreviacoes_existentes=%s",
+            "lista_abreviacoes_existentes=%s new_ref=%s",
             t_instant.isoformat(),
             print_conflicts,
             print_resolve,
             n_lista_existing,
+            new_ref,
         )
 
         res = run_alias_lexico_infer_persist(
@@ -240,6 +252,17 @@ class Command(BaseCommand):
             if len(conflicts) > 80:
                 self.stdout.write(self.style.WARNING(f"  ... e mais {len(conflicts) - 80}"))
 
+        n_renumbered = 0
+        if new_ref:
+            n_renumbered = renumber_alias_lexico_refs_alphabetical()
+            if n_renumbered:
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f"Renumeração --new-ref: {n_renumbered} linhas, alias_lexico_ref 1..{n_renumbered} "
+                        f"(ordem alfabética de termo)."
+                    )
+                )
+
         if not no_export:
             try:
                 if export_seed:
@@ -256,6 +279,7 @@ class Command(BaseCommand):
                         n_auto_insert=res.n_inserted,
                         n_resolve_insert=n_resolve_insert,
                         n_resolve_update=n_resolve_update,
+                        n_renumbered=n_renumbered,
                     )
                     if result is not None:
                         logger.info(
@@ -279,6 +303,6 @@ class Command(BaseCommand):
             self.style.SUCCESS(
                 f"Concluído: inseridos={res.n_inserted} omitidos_termo_viii={res.n_skip_termo_viii} "
                 f"resolve_insert={n_resolve_insert} resolve_update={n_resolve_update} "
-                f"conflitos_pendentes={len(conflicts)}"
+                f"renumerados={n_renumbered} conflitos_pendentes={len(conflicts)}"
             )
         )

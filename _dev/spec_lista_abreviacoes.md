@@ -101,6 +101,7 @@ Apesar de essa ser a principal fonte de análise, haverá análises que não dep
 - (Ja) *exclusão* - deve ser possível, Desativar/Reativar um registro, bem como excluir um registro. A exclusão deve remover fisicamente o registro anterior.
 
 - (K) *criação* - ao acrescentar um novo registro na tabela/banco de lista de abreviações, o script deve garantir que o respectivo `alias_lexico_ref` seja correspondente ao último `alias_lexico_ref` cadastrado + 1, isto é, garantir comportamento incremental do `alias_lexico_ref`, levando em consideração que, eventual delete/exclusão de algum registro anterior pode ter deixado "buracos" no `alias_lexico_ref`.
+- (K′) *renumeração opcional (`--new-ref`)* — o comando ``manage.py atualizar_lista_abreviacoes --new-ref`` (e a task Poetry ``atualizar-abreviacoes-ref``) executa o mesmo protocolo que a execução sem flags (inferência, INSERTs, export **(iii)** quando há mutações) e, **em seguida**, faz ``UPDATE`` de **todas** as linhas em ``lista_abreviacoes`` para que `alias_lexico_ref` seja **1, 2, …, N** na ordem do export (`LOWER(termo)`, `data_registro_inicio`); o CSV exportado reflecte essa ordem. Não altera `termo` nem `abreviacao`.
 
 - (L) *vigência novo registro* - todo novo registro feito na lista de abreviações deve ser registrado como `data_registro_início` = 01/01/<ano-corrente> (ex.: 2026-01-01 00:00:00) e `data_registro_fim` = valor sentinela (ex.: 9999-12-31 00:00:00). Função canónica: `lista_abreviacoes_registro_inicio_novo()` em `apps/core/models_alias_lexico.py` (fuso local do Django, 00:00:00).
 - (La) *admin — tela de adicionar* - na criação manual no Django Admin (`AliasLexico`), os campos só leitura `data_registro_inicio_fmt` e `data_registro_fim_fmt` **devem** antecipar os valores que serão gravados em `save_model`: início = **(L)** (`01/01/<ano-corrente> 00:00:00` local), fim = sentinela (`9999-12-31 00:00:00`). **Não** usar `timezone.now()` na pré-visualização do início.
@@ -135,7 +136,7 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
 
 ### Testes automatizados (v1)
 
-- Recomenda-se pelo menos: (1) cenário pai/filho em BD que dispara uma regra PF e **assert** de que `AliasLexico` contém o par esperado; (1b) par **Regra 1.2** caminho A (eco literal) com `termo_nome` = nome integral da mãe; (1c) par **Regra 1.2** caminho B (cobertura lexical), p.ex. `Cota-Parte IOF-Ouro` → nome integral da mãe IOF-Ouro / Comercialização do Ouro; (2) segunda execução do comando **sem** `--print-conflicts-resolve` **não** aumenta o número de linhas para o mesmo termo; (3) opcionalmente, smoke de que o ficheiro exportado contém o `termo_nome` esperado após `export_resource`.
+- Recomenda-se pelo menos: (1) cenário pai/filho em BD que dispara uma regra PF e **assert** de que `AliasLexico` contém o par esperado; (1b) par **Regra 1.2** caminho A (eco literal) com `termo_nome` = nome integral da mãe; (1c) par **Regra 1.2** caminho B (cobertura lexical), p.ex. `Cota-Parte IOF-Ouro` → nome integral da mãe IOF-Ouro / Comercialização do Ouro; (1d) par **Regra 4** cabeça + sigla da cauda, p.ex. `Atenção MAC` → `Atenção de Média e Alta Complexidade`; (2) segunda execução do comando **sem** `--print-conflicts-resolve` **não** aumenta o número de linhas para o mesmo termo; (3) opcionalmente, smoke de que o ficheiro exportado contém o `termo_nome` esperado após `export_resource`.
 
 
 ### Evolução — desempenho (documentação em código)
@@ -328,6 +329,26 @@ Mãe `Segmento Alfa - Segmento Beta`, filho `Só Alfa - Principal` — `W_f` nã
   segmento 3 do item filho ("Tx. Segurança Pública") -> deve ser registrado como abreviação do correspondente segmento 3 do item mãe ("Taxa de Segurança Pública")
 
   "Tx. Segurança Pública" deve ser registrado como abreviação de "Taxa de Segurança Pública"
+
+  ---
+
+  **Cabeça preservada + sigla da cauda (refinamento 4.3):**
+
+  Além dos padrões já cobertos (sigla de todo o segmento, encurtamento com ponto, alinhamento token-a-token com pontos), o segmento do filho pode abreviar o da mãe quando:
+
+  - o segmento do filho se decompõe em **exactamente dois** tokens lexicais separados por espaço: **cabeça** + **sigla** (sentido **(v)**);
+  - a **cabeça** coincide, *case-insensitive*, com a **primeira palavra significativa** do segmento da mãe;
+  - a **sigla** coincide com as iniciais das **demais** palavras significativas do segmento da mãe (conectivos excluídos), na ordem — **não** com as iniciais de **todas** as palavras do segmento (que daria, p.ex., `AMAC` e não `MAC`);
+  - o segmento da mãe tem **pelo menos três** palavras significativas (cabeça + cauda com ≥ 2 palavras), para evitar falsos positivos do tipo `Atenção` + `E` → `Atenção Especializada`;
+  - a sigla tem **pelo menos 2** caracteres e satisfaz **(v)**.
+
+  1.7.1.3.50.2.1.01.000	`Transf. Bloco Manut. ASPS - Atenção Especializada - Princ. - Atenção de Média e Alta Complexidade`  
+  1.7.1.3.50.2.1.01.001	`Transf. Bloco Manut. ASPS - Atenção Especializada - Princ. - Atenção MAC - Prestadores Ambulatoriais e Hospitalares`
+
+  segmentos 1–3 do filho iguais aos da mãe → não registam par.  
+  segmento 4 do filho (`Atenção MAC`) abrevia o segmento 4 da mãe (`Atenção de Média e Alta Complexidade`): cabeça `Atenção`; cauda da mãe `Média`, `Alta`, `Complexidade` → sigla `MAC`.
+
+  `Atenção MAC` deve ser registrado como abreviação de `Atenção de Média e Alta Complexidade` (par **por segmento**, como `Principal` → `Princ.`).
 
 
 ## Regra 5 (PF)
