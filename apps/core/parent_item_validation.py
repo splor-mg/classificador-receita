@@ -206,7 +206,7 @@ def validate_item_parent_item_rules(instance) -> None:
     if nivel_n == 1:
         if parent is not None:
             raise ValidationError(
-                {"parent_item_id": "Itens de nível 1 (raiz) não devem possuir item pai."}
+                {"parent_item_id": "Itens de nível 1 (raiz) não devem possuir item mãe."}
             )
         return
 
@@ -214,7 +214,7 @@ def validate_item_parent_item_rules(instance) -> None:
         raise ValidationError(
             {
                 "parent_item_id": (
-                    "Itens de nível superior a 1 devem possuir um item pai."
+                    "Itens de nível superior a 1 devem possuir um item mãe."
                 )
             }
         )
@@ -405,7 +405,7 @@ def validate_item_parent_item_rules(instance) -> None:
                             f"{nivel_n - 1}; esses níveis devem conter apenas zeros canônicos."
                         ),
                         "receita_cod": (
-                            "Para este item pai, os níveis entre o nível do mãe e o nível do "
+                            "Para este item mãe, os níveis entre o nível do mãe e o nível do "
                             "item devem estar apenas com zeros canônicos."
                         ),
                     }

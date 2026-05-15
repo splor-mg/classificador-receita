@@ -21,6 +21,18 @@ from apps.core.temporal_fk_resolution import (
     get_temporal_fk_field_names,
     resolve_active_compatible_fk,
 )
+from apps.core.classification_naming_abbrev import (
+    calcular_radical_abreviado,
+    normalize_receita_nome_base_mode,
+)
+from apps.core.classification_naming_messages import (
+    RECEITA_NOME_SUBMIT_INCOMPLETO_ERROR,
+    RECEITA_NOME_VAZIO_ERROR,
+)
+from apps.core.classification_naming_validation import (
+    validar_receita_nome_guardrail_g0,
+    validar_receita_nome_guardrail_g1,
+)
 
 
 class PlaceholderNullNormalizationFormMixin:
@@ -143,7 +155,8 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
     )
     receita_nome_base_mode = forms.ChoiceField(
         choices=[
-            ("base_pai", "Radical Baseado no item pai"),
+            ("base_pai_abrev", "Radical Baseado no Item Mãe - Abreviado"),
+            ("base_pai_completo", "Radical Baseado no Item Mãe - Completo"),
             ("sem_base", "Sem Nome Base"),
         ],
         required=False,
@@ -222,7 +235,7 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
             parent_field.initial = None
             parent_field.widget.attrs["data_readonly_root"] = "1"
             parent_field.widget.attrs["data_empty_display"] = ""
-            parent_field.widget.attrs["data_root_message"] = "Item raiz, de nível 1, não possui item pai."
+            parent_field.widget.attrs["data_root_message"] = "Item raiz, de nível 1, não possui item mãe."
 
     def clean_matriz(self):
         return self.cleaned_data["matriz"] == "matriz"
@@ -296,6 +309,28 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
                 receita_cod = receita_cod.ljust(expected_digits, "0")
 
             cleaned["receita_cod"] = receita_cod
+
+        is_add = not (self.instance and getattr(self.instance, "pk", None))
+        if is_add:
+            receita_nome = (cleaned.get("receita_nome") or "").strip()
+            base_mode = normalize_receita_nome_base_mode(cleaned.get("receita_nome_base_mode"))
+            cleaned["receita_nome_base_mode"] = base_mode
+            parent = cleaned.get("parent_item_id")
+            nome_mae = ""
+            if parent is not None:
+                nome_mae = (getattr(parent, "receita_nome", None) or "").strip()
+            radical_abrev = None
+            if nome_mae and base_mode == "base_pai_abrev":
+                radical_abrev = calcular_radical_abreviado(nome_mae).radical
+            if validar_receita_nome_guardrail_g0(receita_nome=receita_nome):
+                self.add_error("receita_nome", RECEITA_NOME_VAZIO_ERROR)
+            elif validar_receita_nome_guardrail_g1(
+                receita_nome=receita_nome,
+                receita_nome_base_mode=base_mode,
+                nome_mae=nome_mae,
+                radical_abreviado=radical_abrev,
+            ):
+                self.add_error("receita_nome", RECEITA_NOME_SUBMIT_INCOMPLETO_ERROR)
 
         return cleaned
 

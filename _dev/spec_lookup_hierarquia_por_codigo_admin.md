@@ -122,7 +122,7 @@ Resposta típica: `{"ok": false, "message": "<texto>"}`.
 
 **Máscara:** `digit_mask_for_classificacao_vigencia(class_pk, effective_inicio, effective_fim)`; se vazia, fallback `resolve_receita_cod_mask_context(None, input_length=len(code), on_date=hoje)`.
 
-**Item pai:** código derivado por zeros canónicos a partir do nível derivado; candidatos `matriz=True`, `nivel_numero = derived − 1`, vigência e registo activos. O ficheiro Python documenta por comentário a ordem de tentativas (matriz na classificação seleccionada, fallback por último nível detalhado, busca noutra classificação, diagnóstico “só existe como detalhe”).
+**item mãe:** código derivado por zeros canónicos a partir do nível derivado; candidatos `matriz=True`, `nivel_numero = derived − 1`, vigência e registo activos. O ficheiro Python documenta por comentário a ordem de tentativas (matriz na classificação seleccionada, fallback por último nível detalhado, busca noutra classificação, diagnóstico “só existe como detalhe”).
 
 ---
 

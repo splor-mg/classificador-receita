@@ -312,6 +312,7 @@
     var itemReceitaCodMasks = JSON.parse('{{ item_receita_cod_masks_json|default:"[]"|escapejs }}');
     var itemParentLookupUrl = '{{ item_parent_lookup_url|default:"" }}';
     var itemHierarchyLookupUrl = '{{ item_hierarchy_lookup_url|default:"" }}';
+    var itemAbbreviatedRadicalLookupUrl = '{{ item_abbreviated_radical_lookup_url|default:"" }}';
     var itemParentLevelJumpWarnUrl = '{{ item_parent_level_jump_warn_url|default:"" }}';
     var itemClassificacaoDigitLimitLookupUrl = '{{ item_classificacao_digit_limit_lookup_url|default:"" }}';
     var receitaCodDigitLimitCache = {};
@@ -936,7 +937,7 @@
               if (data && data.message) {
                 if (/n[íi]vel hier[áa]rquico/i.test(data.message)) {
                   showHierarchyWarning(getFieldRow(nivelIdInput), data.message);
-                } else if (/item pai/i.test(data.message)) {
+                } else if (/item mãe/i.test(data.message)) {
                   showHierarchyWarning(getFieldRow(parentItemIdInput), data.message);
                 } else {
                   showReceitaCodWarning(getReceitaCodFieldRow(receitaCodInput), data.message);
@@ -995,9 +996,17 @@
             }
 
             if (parent.found && parent.pk) {
-              if (parentItemIdInput.value !== parent.pk) {
-                parentItemIdInput.value = parent.pk;
+              var newParentPk = String(parent.pk);
+              var parentNomeMae = (parent.name || '').trim();
+              if (parentItemIdInput.value !== newParentPk) {
+                parentItemIdInput.value = newParentPk;
                 parentItemIdInput.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+              if (
+                parentNomeMae &&
+                typeof window.applyClassificationNamingAfterParentResolved === 'function'
+              ) {
+                window.applyClassificationNamingAfterParentResolved(newParentPk, parentNomeMae);
               }
               var parentRow = getFieldRow(parentItemIdInput);
               var parentFoundStatus = parent.status || {};
@@ -1087,7 +1096,7 @@
 
       function runClassificationNamingInit() {
         if (typeof window.initClassificationNaming === 'function') {
-          window.initClassificationNaming(isAddMode);
+          window.initClassificationNaming(isAddMode, itemAbbreviatedRadicalLookupUrl || '');
         }
       }
       if (document.readyState === 'loading') {
@@ -1222,7 +1231,7 @@
           body.className = 'core-level-jump-modal-body';
 
           var par = document.createElement('p');
-          par.appendChild(document.createTextNode('O item pai, ('));
+          par.appendChild(document.createTextNode('O item mãe, ('));
           var parentData = (payload && payload.parent) ? payload.parent : {};
           var parentCod = parentData.cod_masked || '';
           var parentUrl = parentData.admin_absolute_url || '';

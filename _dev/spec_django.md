@@ -137,7 +137,7 @@ Campos configurados (via `popup_default_registro_ativo_ano_corrente` em `semanti
 |---------------------|-----|
 | `Classificacao` | `serie_id` (Série de Classificação) |
 | `NivelHierarquico` | `classificacao_id` |
-| `ItemClassificacao` | `classificacao_id`, `parent_item_id` (item pai), `nivel_id` |
+| `ItemClassificacao` | `classificacao_id`, `parent_item_id` (item mãe), `nivel_id` |
 
 Não se aplica à vista de **alterar** nem a FKs sem essa flag (ex.: base legal técnica em classificação/item). O critério «Ano Corrente» é o já definido em `RegistroAtivoFilter` (sobreposição da vigência com o ano civil corrente e registo ativo em tempo de transação), não «vigente apenas no dia de hoje».
 

@@ -37,7 +37,14 @@ from apps.core.item_classificacao_code_lookup import (
     lookup_parent_by_code_response_data,
 )
 from apps.core.parent_item_validation import warn_parent_level_jump_json_dict
-from apps.core.classification_naming_messages import classification_naming_messages_dict
+from apps.core.classification_naming_abbrev import (
+    calcular_radical_abreviado,
+    radical_com_sufixo_canonico,
+)
+from apps.core.classification_naming_messages import (
+    classification_naming_messages_dict,
+    format_lexico_termo_duplicado,
+)
 
 from apps.core.admin_filters import (
     AliasLexicoRegistroAtivoFilter,
@@ -431,6 +438,11 @@ class ItemClassificacaoAdmin(
                 self.admin_site.admin_view(self.warn_parent_level_jump_view),
                 name=f"{self.model._meta.app_label}_{self.model._meta.model_name}_warn_parent_level_jump",
             ),
+            path(
+                "lookup-abbreviated-radical/",
+                self.admin_site.admin_view(self.lookup_abbreviated_radical_view),
+                name=f"{self.model._meta.app_label}_{self.model._meta.model_name}_lookup_abbreviated_radical",
+            ),
         ]
         return custom + urls
 
@@ -464,7 +476,32 @@ class ItemClassificacaoAdmin(
             context["subtitle"] = f"{masked_codigo} - {nome}".strip(" -")
         else:
             context["classification_naming_messages"] = classification_naming_messages_dict()
+            context["item_abbreviated_radical_lookup_url"] = reverse(
+                f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_lookup_abbreviated_radical"
+            )
         return super().render_change_form(request, context, add, change, form_url, obj)
+
+    def lookup_abbreviated_radical_view(self, request):
+        nome_mae = (request.GET.get("nome_mae") or "").strip()
+        parent_pk = (request.GET.get("parent_item_id") or "").strip()
+        if parent_pk.isdigit() and not nome_mae:
+            parent = ItemClassificacao.objects.filter(pk=int(parent_pk)).only("receita_nome").first()
+            if parent:
+                nome_mae = (parent.receita_nome or "").strip()
+        if not nome_mae:
+            return JsonResponse({"ok": False, "message": "nome_mae ou parent_item_id obrigatório."})
+        result = calcular_radical_abreviado(nome_mae)
+        radical = (result.radical or "").strip()
+        return JsonResponse(
+            {
+                "ok": True,
+                "radical": radical,
+                "receita_nome_sugerido": radical_com_sufixo_canonico(radical),
+                "lexico_alertas": [
+                    format_lexico_termo_duplicado(t) for t in result.lexico_termo_duplicado
+                ],
+            }
+        )
 
     def lookup_classificacao_digit_limit_view(self, request):
         classificacao_pk = (request.GET.get("classificacao_pk") or "").strip()
@@ -709,7 +746,7 @@ class AliasLexicoAdmin(
 
     def data_registro_inicio_fmt(self, obj):
         if obj is None or not getattr(obj, "pk", None):
-            return _alias_lexico_format_registro_dt(timezone.now())
+            return _alias_lexico_format_registro_dt(lista_abreviacoes_registro_inicio_novo())
         return super().data_registro_inicio_fmt(obj)
 
     data_registro_inicio_fmt.short_description = "Data do Início do Registro"

@@ -203,3 +203,50 @@ class TermoNomeEncurtamentoIvPolicyTests(SimpleTestCase):
     def test_empty_invalid(self) -> None:
         self.assertTrue(termo_nome_rejeitado_encurtamento_iv(""))
         self.assertTrue(termo_nome_rejeitado_encurtamento_iv("   "))
+
+
+class ListaAbreviacoesRegistroInicioTests(SimpleTestCase):
+    """Spec (L) / ``lista_abreviacoes_registro_inicio_novo``."""
+
+    def test_registro_inicio_novo_e_1_janeiro_ano_corrente(self) -> None:
+        from django.utils import timezone
+
+        from apps.core.models_alias_lexico import lista_abreviacoes_registro_inicio_novo
+
+        dt = lista_abreviacoes_registro_inicio_novo()
+        local = timezone.localtime(dt)
+        self.assertEqual(local.year, timezone.localdate().year)
+        self.assertEqual((local.month, local.day, local.hour, local.minute), (1, 1, 0, 0))
+
+    def test_admin_add_preview_inicio_fmt_usa_padrao_l(self) -> None:
+        from django.contrib.admin.sites import AdminSite
+
+        from apps.core.admin import AliasLexicoAdmin, _alias_lexico_format_registro_dt
+        from apps.core.models import AliasLexico
+        from apps.core.models_alias_lexico import lista_abreviacoes_registro_inicio_novo
+
+        admin = AliasLexicoAdmin(AliasLexico, AdminSite())
+        esperado = _alias_lexico_format_registro_dt(lista_abreviacoes_registro_inicio_novo())
+        self.assertEqual(admin.data_registro_inicio_fmt(None), esperado)
+
+    def test_clean_com_defaults_nao_compara_naive_com_aware(self) -> None:
+        from unittest.mock import MagicMock, patch
+
+        from apps.core.models import AliasLexico
+        from apps.core.models_alias_lexico import (
+            lista_abreviacoes_registro_fim_sentinela,
+            lista_abreviacoes_registro_inicio_novo,
+        )
+
+        obj = AliasLexico(
+            alias_lexico_ref=1,
+            termo="Contribuição Patronal",
+            abreviacao="Contr. Patronal",
+            data_registro_inicio=lista_abreviacoes_registro_inicio_novo(),
+            data_registro_fim=lista_abreviacoes_registro_fim_sentinela(),
+        )
+        dup_qs = MagicMock()
+        dup_qs.exists.return_value = False
+        with patch.object(AliasLexico.objects, "filter", return_value=dup_qs):
+            obj.clean()
+        self.assertLess(obj.data_registro_inicio, obj.data_registro_fim)

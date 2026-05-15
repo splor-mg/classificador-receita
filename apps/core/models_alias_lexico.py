@@ -19,6 +19,22 @@ from apps.core.alias_lexico_termo_policy import termo_nome_rejeitado_encurtament
 _TRANSACTION_SENTINEL = datetime.datetime(9999, 12, 31, 0, 0, 0)
 
 
+def _datetime_aware_local(dt: datetime.datetime | None) -> datetime.datetime | None:
+    """Normaliza para datetime com fuso (comparável com ``lista_abreviacoes_registro_inicio_novo``)."""
+    if dt is None:
+        return None
+    if timezone.is_naive(dt):
+        return timezone.make_aware(dt, timezone.get_current_timezone())
+    return dt
+
+
+def lista_abreviacoes_registro_fim_sentinela() -> datetime.datetime:
+    """Sentinela de registo ativo, com fuso alinhado a **(L)** e queries ORM com ``USE_TZ``."""
+    aware = _datetime_aware_local(_TRANSACTION_SENTINEL)
+    assert aware is not None
+    return aware
+
+
 def lista_abreviacoes_registro_inicio_novo() -> datetime.datetime:
     """
     Spec ``_dev/spec_lista_abreviacoes.md`` *(L)*: ``data_registro_início`` = 01/01/<ano civil corrente>
@@ -60,7 +76,7 @@ class AliasLexico(models.Model):
         help_text="Momento em que esta linha passou a valer no sistema.",
     )
     data_registro_fim = models.DateTimeField(
-        default=_TRANSACTION_SENTINEL,
+        default=lista_abreviacoes_registro_fim_sentinela,
         verbose_name="Data de fim do registro",
         help_text=(
             "Momento em que a entrada deixa de ser usada. Valor sentinela 31/12/9999 indica registro ativo."
@@ -116,8 +132,8 @@ class AliasLexico(models.Model):
                     )
                 }
             )
-        ini = self.data_registro_inicio
-        fim = self.data_registro_fim
+        ini = _datetime_aware_local(self.data_registro_inicio)
+        fim = _datetime_aware_local(self.data_registro_fim)
         if ini and fim and ini > fim:
             raise ValidationError(
                 {"data_registro_fim": "Data de fim do registro deve ser posterior ao início."}

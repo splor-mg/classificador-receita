@@ -101,7 +101,8 @@ Apesar de essa ser a principal fonte de análise, haverá análises que não dep
 
 - (K) *criação* - ao acrescentar um novo registro na tabela/banco de lista de abreviações, o script deve garantir que o respectivo `alias_lexico_ref` seja correspondente ao último `alias_lexico_ref` cadastrado + 1, isto é, garantir comportamento incremental do `alias_lexico_ref`, levando em consideração que, eventual delete/exclusão de algum registro anterior pode ter deixado "buracos" no `alias_lexico_ref`.
 
-- (L) *vigência novo registro* - todo novo registro feito na lista de abreviações deve ser registrado como `data_registro_início` = 01/01/<ano-corrente> (ex.: 2026-01-01 00:00:00) e `data_registro_fim` = valor sentinela (ex.: 9999-12-31 00:00:00).
+- (L) *vigência novo registro* - todo novo registro feito na lista de abreviações deve ser registrado como `data_registro_início` = 01/01/<ano-corrente> (ex.: 2026-01-01 00:00:00) e `data_registro_fim` = valor sentinela (ex.: 9999-12-31 00:00:00). Função canónica: `lista_abreviacoes_registro_inicio_novo()` em `apps/core/models_alias_lexico.py` (fuso local do Django, 00:00:00).
+- (La) *admin — tela de adicionar* - na criação manual no Django Admin (`AliasLexico`), os campos só leitura `data_registro_inicio_fmt` e `data_registro_fim_fmt` **devem** antecipar os valores que serão gravados em `save_model`: início = **(L)** (`01/01/<ano-corrente> 00:00:00` local), fim = sentinela (`9999-12-31 00:00:00`). **Não** usar `timezone.now()` na pré-visualização do início.
 
 
 ### Export do seed `seed_lista_abreviacoes.csv`
@@ -146,7 +147,7 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
 - 1.1. item mãe tem nome de segmento único, isto é, a nomenclatura não contém nenhum traço " - " no seu nome
 - 1.2. item filho tem pelo menos 2 segmentos
 - 1.3. o primeiro segmento do nome do filho é uma abreviação, por sigla, ou por encurtamento de palavra, mas não é uma abreviação simples
-- 1.4. o primeiro segmento do nome do item filho deve ser registrado como abreviação do nome completo do item pai
+- 1.4. o primeiro segmento do nome do item filho deve ser registrado como abreviação do nome completo do item mãe
   
   1.1.1.2.51.0.0.00.000 "Imposto sobre a Propriedade de Veículos Automotores"
   1.1.1.2.51.0.1.00.000 "IPVA - Principal"
@@ -194,10 +195,10 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
 
 - 4.1. item mãe tem nome com X segmentos, sendo X maior ou igual a 2
 - 4.2. o item filho tem X+1 segmentos
-- 4.3. cada um dos segmentos do item filho, até o segmento X, deve ser registrado como sendo uma abreviação do correspondente segmento do item pai, desde que:
+- 4.3. cada um dos segmentos do item filho, até o segmento X, deve ser registrado como sendo uma abreviação do correspondente segmento do item mãe, desde que:
   - o segmento do item filho seja uma abreviação
-  - o segmento do item filho não seja uma `abreviação simples` do correspondente segmento do item pai
-  - o segmento do item filho não seja igual ao correspondente segmento do item pai
+  - o segmento do item filho não seja uma `abreviação simples` do correspondente segmento do item mãe
+  - o segmento do item filho não seja igual ao correspondente segmento do item mãe
 
   1.1.1.4.50.1.1.00.000	"ICMS - Principal"
   1.1.1.4.50.1.1.01.000	"ICMS - Princ. - Cota Parte do Estado"
@@ -253,7 +254,7 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
 
 - 5.1. item mãe tem nome com X segmentos, sendo X maior ou igual a 2
 - 5.2. o item filho tem, igualmente, X segmentos
-- 5.3. um dos segmentos, chamado aqui de segmento Y, do item filho corresponde à juntação, com traço ou sem traço, da versão abreviada de 2 seguimentos do item pai, chamados aqui de segmentos A e B
+- 5.3. um dos segmentos, chamado aqui de segmento Y, do item filho corresponde à juntação, com traço ou sem traço, da versão abreviada de 2 seguimentos do item mãe, chamados aqui de segmentos A e B
 - 5.4. o segmento Y deve ser registrado como sendo a abreviação da junção dos segmentos A e B
 
   1.1.1.2.52.0.4.00.000	"ITCD - Dívida Ativa - Multas e Juros de Mora"
@@ -262,7 +263,7 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
   ambos mãe e filho possuem 3 segmentos
   contexto: já existe abreviação de "Dívida Ativa" como sendo "DA" (assumido para exemplo)
   contexto: já existe abreviação de "Multas e Juros de Mora" como sendo "MJM" (assumido para exemplo)
-  o semento 2 do item filho, "DA-MJM" corresponde à junção de "DA" (segmento 2 do item pai), com "MJM" (segmento 3 do item pai), separados por traço "DA-MJM"
+  o semento 2 do item filho, "DA-MJM" corresponde à junção de "DA" (segmento 2 do item mãe), com "MJM" (segmento 3 do item mãe), separados por traço "DA-MJM"
 
   "DA-MJM" deve ser registrado como abreviação de "Dívida Ativa - Multas e Juros de Mora"
 

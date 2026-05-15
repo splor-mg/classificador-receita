@@ -1,4 +1,4 @@
-# Especificação: validação de item pai, salto de nível no admin e listagem de intermediários
+# Especificação: validação de item mãe, salto de nível no admin e listagem de intermediários
 
 ## Objetivo e escopo
 
@@ -12,7 +12,7 @@ Lookups JSON de **código / hierarquia** no mesmo admin (lupa de mãe por códig
 
 | Termo | Significado no código |
 |--------|-------------------------|
-| `LP` | `nivel_numero` do **item pai** (`parent.nivel_id.nivel_numero`). |
+| `LP` | `nivel_numero` do **item mãe** (`parent.nivel_id.nivel_numero`). |
 | `L` / `L_filho` | `nivel_numero` do **nível do item em criação** (registo `NivelHierarquico` cujo PK vem no campo `nivel_id` do formulário). |
 | Salto de nível | `LP < L_filho − 1` (mãe **não** é o nível imediatamente abaixo do filho). |
 | Radical (intermediários) | Primeiros `sum(mask[0:LP])` **dígitos** do `receita_cod` do mãe (apenas caracteres numéricos; o BD armazena sem pontuação de máscara). |
@@ -77,7 +77,7 @@ Se faltar qualquer um dos obrigatórios da primeira linha (pai, nível, classifi
 ### 2. Máscara de dígitos
 
 1. `mask = digit_mask_for_classificacao_vigencia(classificacao_pk, vig_ini, vig_fim)`.
-2. Se `mask` vazio: **fallback** com `data_vigencia_inicio` / `data_vigencia_fim` do **item pai** (só para resolver `estrutura_codigo` quando a janela do formulário não produz máscara; **não** altera o filtro de vigência da query abaixo).
+2. Se `mask` vazio: **fallback** com `data_vigencia_inicio` / `data_vigencia_fim` do **item mãe** (só para resolver `estrutura_codigo` quando a janela do formulário não produz máscara; **não** altera o filtro de vigência da query abaixo).
 
 Se ainda não houver máscara ou `parent_n > len(mask)`, retorna contagem zero.
 
@@ -144,7 +144,7 @@ O utilizador pode ver `level_jump: true` e `intermediate_count: 0`: o primeiro d
 ### 4. Texto e UX do modal (`change_form.html`)
 
 - Título: **“Atenção!”**
-- Primeiro parágrafo: `O item pai, (` + link com código mascarado do mãe + ` - ` + rótulo semântico do nível do mãe + `)` + texto fixo até o código/nível do **filho** entre parêntesis (filho **sem** link no trecho principal).
+- Primeiro parágrafo: `O item mãe, (` + link com código mascarado do mãe + ` - ` + rótulo semântico do nível do mãe + `)` + texto fixo até o código/nível do **filho** entre parêntesis (filho **sem** link no trecho principal).
 - Se `intermediate_count > 0` ou houver linhas: segundo parágrafo **“Além disso, existe … código(s) discriminado(s) no(s) …”** com `no` vs `nos` conforme o rótulo de níveis contém a substring ` e `; contagem com zero à esquerda para `< 100` (`intermediate_count_display`).
 - Lista: até 3 itens; cada linha com código mascarado + tab + nome, link para o change do admin (`white-space: pre-wrap`).
 - Pergunta final: **“Deseja continuar e gravar o registo?”** (sem “mesmo assim”).

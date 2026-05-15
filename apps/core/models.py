@@ -557,8 +557,11 @@ class ItemClassificacao(BitemporalModel):
         on_delete=models.PROTECT,
         related_name='sub_itens',
         db_column='parent_item_id',
-        verbose_name='Item Pai',
-        help_text='Referência ao item do nível imediatamente superior na hierarquia. NULL para itens do nível 1.',
+        verbose_name='Item Mãe',
+        help_text=(
+            'Referência ao item mãe (nível imediatamente superior na hierarquia). '
+            'NULL para itens do nível 1.'
+        ),
         null=True,
         blank=True,
     )
@@ -616,7 +619,7 @@ class ItemClassificacao(BitemporalModel):
             [
                 ("classificacao_id", "classificação"),
                 ("nivel_id", "nível hierárquico"),
-                ("parent_item_id", "item pai"),
+                ("parent_item_id", "item mãe"),
                 ("base_legal_tecnica_id", "base legal/técnica"),
             ],
         )
@@ -648,7 +651,7 @@ class ItemClassificacao(BitemporalModel):
         # Nível 1: não pode ter pai
         if nivel.nivel_numero == 1 and self.parent_item_id is not None:
             raise ValidationError(
-                {'parent_item_id': 'Itens de nível 1 (raiz) não devem possuir item pai.'}
+                {'parent_item_id': 'Itens de nível 1 (raiz) não devem possuir item mãe.'}
             )
 
         if nivel.nivel_numero == 1:
@@ -657,7 +660,7 @@ class ItemClassificacao(BitemporalModel):
         # Níveis acima de 1: precisam ter pai
         if nivel.nivel_numero > 1 and self.parent_item_id is None:
             raise ValidationError(
-                {'parent_item_id': 'Itens de nível superior a 1 devem possuir um item pai.'}
+                {'parent_item_id': 'Itens de nível superior a 1 devem possuir um item mãe.'}
             )
 
         if nivel.nivel_numero > 1 and self.parent_item_id is not None:

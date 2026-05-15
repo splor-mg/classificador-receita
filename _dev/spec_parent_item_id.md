@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Definir a regra de negócio para o campo `parent_item_id` na hierarquia de `item_classificacao`, garantindo coerência estrutural, semântica e temporal entre item filho e item pai.
+Definir a regra de negócio para o campo `parent_item_id` na hierarquia de `item_classificacao`, garantindo coerência estrutural, semântica e temporal entre item filho e item mãe.
 
 ## Alinhamento
 

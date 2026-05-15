@@ -143,7 +143,7 @@ def lookup_hierarchy_by_code_response_data(request: HttpRequest) -> Dict[str, An
     if not vigencia_inicio or not vigencia_fim:
         return {
             "ok": False,
-            "message": "Informe o período de vigência para derivar nível e item pai.",
+            "message": "Informe o período de vigência para derivar nível e item mãe.",
         }
     if vigencia_fim < vigencia_inicio:
         return {

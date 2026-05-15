@@ -101,7 +101,7 @@ fields:
       required: true
   - name: parent_item_id
     type: string
-    title: Identificador do Item Pai
+    title: Identificador do Item Mãe
     description: |
       Referência ao item do nível imediatamente superior. NULL para itens do nível 1.
     gsim: ClassificationItem.parentItem

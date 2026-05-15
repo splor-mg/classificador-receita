@@ -44,172 +44,174 @@ Contribuição Social sobre o Lucro Líquido,42,CSLL,2026-01-01 00:00:00,9999-12
 Contribuições para o Regime Geral de Previdência Social,43,RGPS,2026-01-01 00:00:00,9999-12-31 00:00:00
 Contribuições Referentes ao Fundo de Garantia do Tempo de Serviço,44,FGTS,2026-01-01 00:00:00,9999-12-31 00:00:00
 Controle,45,Contr.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Cota-Parte da Compensação Financeira de Recursos Minerais,46,CFEM,2026-01-01 00:00:00,9999-12-31 00:00:00
-Cota-Parte da Compensação Financeira pela Exploração de Recursos Minerais,47,CFEM,2026-01-01 00:00:00,9999-12-31 00:00:00
-Cota-Parte do Adicional ao Frete para a Renovação da Marinha Mercante,48,AFRMM,2026-01-01 00:00:00,9999-12-31 00:00:00
-Cota-Parte do Fundo de Participação dos Estados e do Distrito Federal,49,FPE,2026-01-01 00:00:00,9999-12-31 00:00:00
-Cota-Parte do Fundo de Participação dos Municípios,50,FPM,2026-01-01 00:00:00,9999-12-31 00:00:00
-Cota-Parte do Fundo Especial do Petróleo,51,FEP,2026-01-01 00:00:00,9999-12-31 00:00:00
-Dedução das Receitas,52,Dedução Rec.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Defensoria Pública do Estado de Minas Gerais,53,DEFPUB,2026-01-01 00:00:00,9999-12-31 00:00:00
-Delegação,54,Deleg.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Delegação para a Prestação dos Serviços de Transporte Rodoviário,55,Deleg. Prest. Serv. Transp. Rodoviário,2026-01-01 00:00:00,9999-12-31 00:00:00
-Delegação para Exploração da Infraestrutura Aeroportuária,56,Deleg. Exploração Infraest. Aeroportuária,2026-01-01 00:00:00,9999-12-31 00:00:00
-Delegação para Exploração da Infraestrutura de Transporte Rodoviário para o Setor Privado,57,Deleg. Explor. Infra. Transp. Rodoviário Setor Privado,2026-01-01 00:00:00,9999-12-31 00:00:00
-Delegações,58,Deleg.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Direito,59,Dir.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Direitos,60,Dir.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Dívida Ativa,61,DA,2026-01-01 00:00:00,9999-12-31 00:00:00
-Dívida Ativa - Multas e Juros de Mora,62,DA-MJM,2026-01-01 00:00:00,9999-12-31 00:00:00
-Dívida Ativda,63,DA,2026-01-01 00:00:00,9999-12-31 00:00:00
-Dívida Ativda - Multas e Juros de Mora,64,DA-MJM,2026-01-01 00:00:00,9999-12-31 00:00:00
-Encargos,65,Encarg.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Estados Exportadores de Produtos Industrializados,66,Estados Export. Prod. Indust.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Expediente,67,Exp.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Exploração,68,Explor.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Exportadores,69,Export.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Fiscalização,70,Fisc.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Fundo de Erradicação da Miséria,71,FEM,2026-01-01 00:00:00,9999-12-31 00:00:00
-Fundo de Manutenção e Desenvolvimento da Educação Básica e de Valorização dos Profissionais da Educação,72,FUNDEB,2026-01-01 00:00:00,9999-12-31 00:00:00
-Fundo de Manutenção e Desenvolvimento do Ensino Fundamental e de Valorização do Magistério,73,FUNDEF,2026-01-01 00:00:00,9999-12-31 00:00:00
-Fundo de Participação dos Estados e do Distrito Federal,74,FPE,2026-01-01 00:00:00,9999-12-31 00:00:00
-Fundo de Participação dos Municípios,75,FPM,2026-01-01 00:00:00,9999-12-31 00:00:00
-Fundo Estadual Combate Pobreza - Fundo de Erradicação da Miséria,76,FEM,2026-01-01 00:00:00,9999-12-31 00:00:00
-Fundo Estadual de Desenvolvimento de Transportes,77,FUNTRANS,2026-01-01 00:00:00,9999-12-31 00:00:00
-Fundo Nacional de Assistência Social,78,FNAS,2026-01-01 00:00:00,9999-12-31 00:00:00
-Fundo Nacional de Saúde,79,FNS,2026-01-01 00:00:00,9999-12-31 00:00:00
-Fundo Nacional do Desenvolvimento da Educação,80,FNDE,2026-01-01 00:00:00,9999-12-31 00:00:00
-Gerais,81,Ger.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Geral,82,G.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Imposto sobre a Propriedade de Veículos Automotores,83,IPVA,2026-01-01 00:00:00,9999-12-31 00:00:00
-Imposto sobre a Renda,84,IR,2026-01-01 00:00:00,9999-12-31 00:00:00
-Imposto sobre a Renda de Pessoa Física,85,IRPF,2026-01-01 00:00:00,9999-12-31 00:00:00
-Imposto Sobre Operações Financeiras,86,IOF,2026-01-01 00:00:00,9999-12-31 00:00:00
-Imposto sobre Operações Financeiras Incidente sobre o Ouro,87,IOF-Ouro,2026-01-01 00:00:00,9999-12-31 00:00:00
-Imposto sobre Operações Relativas à Circulação de Mercadorias e sobre Prestações de Serviços de Transporte Interestadual e Intermunicipal e de Comunicação,88,ICMS,2026-01-01 00:00:00,9999-12-31 00:00:00
-Imposto sobre Produtos Industrializados,89,IPI,2026-01-01 00:00:00,9999-12-31 00:00:00
-Imposto sobre Serviços de Qualquer Natureza,90,ISSQN,2026-01-01 00:00:00,9999-12-31 00:00:00
-Imposto sobre Transmissão “Causa Mortis” e Doação de Bens e Direitos,91,ITCD,2026-01-01 00:00:00,9999-12-31 00:00:00
-Imposto sobre Vendas a Varejo de Combustíveis Líquidos e Gasosos,92,IVVC,2026-01-01 00:00:00,9999-12-31 00:00:00
-Imóveis,93,Imóv.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Industrializados,94,Indust.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Infraestrutura,95,Infraest.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Inspeção,96,Insp.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Instituto de Previdência do Legislativo do Estado de Minas Gerais,97,IPLEMG,2026-01-01 00:00:00,9999-12-31 00:00:00
-Instituto de Previdência do Servidor Militar,98,IPSM,2026-01-01 00:00:00,9999-12-31 00:00:00
-Instituto Nacional de Colonização e Reforma Agrária,99,INCRA,2026-01-01 00:00:00,9999-12-31 00:00:00
-Instituto Nacional de Estudos e Pesquisas Educacionais Anísio Teixeira,100,INEP,2026-01-01 00:00:00,9999-12-31 00:00:00
-Intraorçamentária,101,Intra.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Judiciais,102,Judic.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Judiciário,103,Judic.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Legislação,104,Legisl.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Legislação de Trânsito,105,Legisl. Trânsito,2026-01-01 00:00:00,9999-12-31 00:00:00
-Mercadorias,106,Mercad.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Ministério Público do Estado de Minas Gerais,107,MPMG,2026-01-01 00:00:00,9999-12-31 00:00:00
-Mobiliários,108,Mobil.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Multa Administrativa Disciplinar,109,Multa Adm. Disciplinar,2026-01-01 00:00:00,9999-12-31 00:00:00
-Multas Administrativas por Danos Ambientais,110,Multas Adm. Danos Ambientais,2026-01-01 00:00:00,9999-12-31 00:00:00
-Multas e Juros de Mora,111,MJM,2026-01-01 00:00:00,9999-12-31 00:00:00
-Multas e Juros de Mora de Amortização de Financiamento do Fundo de Financiamento ao Estudante do Ensino Superior,112,FIES,2026-01-01 00:00:00,9999-12-31 00:00:00
-Multas Previstas no Código de Trânsito Brasileiro,113,CTB,2026-01-01 00:00:00,9999-12-31 00:00:00
-Operacionalização,114,Operac.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Operações,115,Op.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Operações de Crédito Internas para Programas de Modernização da Administração Pública,116,Op. Crédito Internas Programas Modernização Adm. Pública,2026-01-01 00:00:00,9999-12-31 00:00:00
-Outorga de Direito de Uso ou de Exploração de Criação Protegida,117,Outorga Dir. Uso Exploração Criação Protegida,2026-01-01 00:00:00,9999-12-31 00:00:00
-Outorga de Direitos de Uso de Recursos Hídricos,118,Outorga Dir. Uso Recursos Hídricos,2026-01-01 00:00:00,9999-12-31 00:00:00
-Outras Delegações de Serviços Públicos,119,Outras Deleg. Serv. Púb.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Outras Delegações para Exploração de Recursos Naturais,120,Outras Deleg. Exploração Recursos Naturais,2026-01-01 00:00:00,9999-12-31 00:00:00
-Outras Operações de Crédito,121,Outras Op. Crédito,2026-01-01 00:00:00,9999-12-31 00:00:00
-Outras Receitas Imobiliárias,122,Outras Rec. Imobiliárias,2026-01-01 00:00:00,9999-12-31 00:00:00
-Outras Receitas Patrimoniais,123,Outras Rec. Patrimoniais,2026-01-01 00:00:00,9999-12-31 00:00:00
-Outras Transferências de Pessoas Físicas,124,Outras Transf. Pessoas Físicas,2026-01-01 00:00:00,9999-12-31 00:00:00
-Outras Transferências de Recursos do Sistema Único de Saúde,125,SUS,2026-01-01 00:00:00,9999-12-31 00:00:00
-Outras Transferências Diretas do Fundo Nacional do Desenvolvimento da Educação,126,FNDE,2026-01-01 00:00:00,9999-12-31 00:00:00
-Outras Transferências do Exterior,127,Outras Transf. Exterior,2026-01-01 00:00:00,9999-12-31 00:00:00
-Outras Transferências dos Estados e DF,128,Outras Transf. Estados DF,2026-01-01 00:00:00,9999-12-31 00:00:00
-Outras Transferências dos Municípios,129,Outras Transf. Municípios,2026-01-01 00:00:00,9999-12-31 00:00:00
-Outras Transferências para Segurança Pública,130,Outras Transf. Segurança Pública,2026-01-01 00:00:00,9999-12-31 00:00:00
-Outros Programas,131,Outros Prog.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Outros Serviços de Atendimento à Saúde,132,Outros Serv. Atend. Saúde,2026-01-01 00:00:00,9999-12-31 00:00:00
-Pagamentos,133,Pag.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Parceria Público-Privada,134,PPP,2026-01-01 00:00:00,9999-12-31 00:00:00
-Passageiros,135,Passag.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Patronal,136,Patron.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Permissão,137,Perm.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Poder Judiciário,138,Poder Judic.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Prestação,139,Prest.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Principal,140,Princ.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Produtos,141,Prod.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Programa de Apoio aos Sistemas de Ensino para Atendimento à Educação de Jovens e Adultos,142,PEJA,2026-01-01 00:00:00,9999-12-31 00:00:00
-Programa de Integração Nacional,143,PIN,2026-01-01 00:00:00,9999-12-31 00:00:00
-Programa de Integração Social e para Programa de Formação de Patrimônio do Servidor Público,144,PIS/PASEP,2026-01-01 00:00:00,9999-12-31 00:00:00
-Programa Dinheiro Direto na Escola,145,PDDE,2026-01-01 00:00:00,9999-12-31 00:00:00
-Programa Nacional de Alimentação Escolar,146,PNAE,2026-01-01 00:00:00,9999-12-31 00:00:00
-Programa Nacional de Apoio ao Transporte do Escolar,147,PNATE,2026-01-01 00:00:00,9999-12-31 00:00:00
-Programa Nacional de Saúde do Escolar,148,PNSE,2026-01-01 00:00:00,9999-12-31 00:00:00
-Programas,149,Prog.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Prêmio do Seguro Obrigatório de Danos Pessoais Causados por Veículos Automotores de Via Terrestre,150,DPVAT,2026-01-01 00:00:00,9999-12-31 00:00:00
-Públicos,151,Púb.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Receita,152,Rec.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Receita Agropecuária,153,Rec. Agropecuária,2026-01-01 00:00:00,9999-12-31 00:00:00
-Receita Industrial,154,Rec. Industrial,2026-01-01 00:00:00,9999-12-31 00:00:00
-Receita Intraorçamentária,155,Rec. Intra.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Receitas,156,Rec.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Receitas de Alienação de Certificados de Potencial Adicional de Construção,157,CEPAC,2026-01-01 00:00:00,9999-12-31 00:00:00
-Regime Geral de Previdência Social,158,RGPS,2026-01-01 00:00:00,9999-12-31 00:00:00
-Regime Próprio de Previdência Social,159,RPPS,2026-01-01 00:00:00,9999-12-31 00:00:00
-Registro,160,Reg.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Remuneração dos Recursos do Regime Próprio de Previdência Social,161,RPPS,2026-01-01 00:00:00,9999-12-31 00:00:00
-Ressarcimento ao Regime Geral de Previdência Social,162,RGPS,2026-01-01 00:00:00,9999-12-31 00:00:00
-"Retorno de Operações, Juros e Encargos Financeiros",163,Retorno Oper. Juros Encarg. Financeiros,2026-01-01 00:00:00,9999-12-31 00:00:00
-Sentenças,164,Sent.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Servidor,165,Serv.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Servidor Civil,166,Serv. Civil,2026-01-01 00:00:00,9999-12-31 00:00:00
-Servidor Civil Ativo,167,Serv. Civil Ativo,2026-01-01 00:00:00,9999-12-31 00:00:00
-Servidor Civil Inativo,168,Serv. Civil Inativo,2026-01-01 00:00:00,9999-12-31 00:00:00
-Serviços,169,Serv.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Serviços Administrativos e Comerciais Gerais,170,Serviços Adm. Comerc. Ger.,2026-01-01 00:00:00,9999-12-31 00:00:00
-"Serviços de Registro, Certificação e Fiscalização",171,Serviços Reg. Certif. Fiscaliz.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Serviços de Transporte de Passageiros ou Mercadorias,172,Serviços Transp. Passag. Mercad.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Taxa,173,Tx.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Taxa de Controle e Fiscalização Ambiental,174,Tx. Contr. Fisc. Ambient.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Taxa de Estudo de Impacto de Vizinhança,175,EIV,2026-01-01 00:00:00,9999-12-31 00:00:00
-Taxa de Expediente,176,Tx. Exp.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Taxa de Segurança Pública,177,Tx. Segurança Pública,2026-01-01 00:00:00,9999-12-31 00:00:00
-Taxa de Utilização do Mercante,178,TUM,2026-01-01 00:00:00,9999-12-31 00:00:00
-Taxa de Utilização do Sistema Integrado de Comércio Exterior,179,SISCOMEX,2026-01-01 00:00:00,9999-12-31 00:00:00
-Taxas,180,Tx.,2026-01-01 00:00:00,9999-12-31 00:00:00
-"Taxas de Inspeção, Controle e Fiscalização",181,Tx. Insp. Contr. Fisc.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Taxas pela Prestação de Serviços em Geral,182,Tx. Prest. Serv. G.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Termo de Ajustamento de Conduta,183,TAC,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferencias,184,Transf.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferencias do FEF,185,Transf. FEF,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferência,186,Transf.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferência Especial da União,187,Transf. Especial União,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferências,188,Transf.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferências de Convênios da União para o Sistema Único de Saúde,189,SUS,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferências de Convênios do Exterior,190,Transf. Convênios Exterior,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferências de Convênios dos Estados e DF para o Sistema Único de Saúde,191,SUS,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferências de Convênios dos Estados para o Sistema Único de Saúde,192,SUS,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferências de Convênios dos Municípios para o Sistema Único de Saúde,193,SUS,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferências de Recursos de Complementação da União ao Fundo de Manutenção e Desenvolvimento da Educação Básica e de Valorização dos Profissionais da Educação,194,FUNDEB,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferências de Recursos do Fundo de Manutenção e Desenvolvimento da Educação Básica e de Valorização dos Profissionais da Educação,195,FUNDEB,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferências de Recursos do Fundo Nacional de Assistência Social,196,FNAS,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferências de Recursos do Fundo Nacional de Segurança Pública,197,FNSP,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferências de Recursos do Fundo Nacional do Desenvolvimento da Educação,198,FNDE,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferências de Recursos do Fundo Penitenciário Nacional,199,FUPEN,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferências de Recursos do Sistema Único de Saúde,200,SUS,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferências Decorrentes de Decisão Judicial (precatórios) Relativas ao Fundo de Manutenção e Desenvolvimento do Ensino Fundamental e de Valorização do Magistério,201,FUNDEF,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferências Diretas do FNDE Referentes ao Programa Dinheiro Direto na Escola,202,PDDE,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferências Financeiras do ICMS,203,Transf. Financeiras ICMS,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferências Referentes ao Programa Brasil Alfabetizado,204,PBA,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferências Referentes ao Programa de Apoio aos Sistemas de Ensino para Atendimento à Educação de Jovens e Adultos,205,PEJA,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferências Referentes ao Programa Nacional de Alimentação Escolar,206,PNAE,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferências Referentes ao Programa Nacional de Apoio ao Transporte do Escolar,207,PNATE,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transferências Referentes ao Programa Nacional de Saúde do Escolar,208,PNSE,2026-01-01 00:00:00,9999-12-31 00:00:00
-Transporte,209,Transp.,2026-01-01 00:00:00,9999-12-31 00:00:00
-Tribunal de Contas do Estado de Minas Gerais,210,TCEMG,2026-01-01 00:00:00,9999-12-31 00:00:00
-Tribunal de Justiça do Estado de Minas Gerais,211,TJMG,2026-01-01 00:00:00,9999-12-31 00:00:00
-Tribunal de Justiça Militar do Estado de Minas Gerais,212,TJMMG,2026-01-01 00:00:00,9999-12-31 00:00:00
-Tribunal Regional Federal,213,TRF,2026-01-01 00:00:00,9999-12-31 00:00:00
-Títulos da Dívida Agrária,214,TDA,2026-01-01 00:00:00,9999-12-31 00:00:00
+Coordenadoria Estadual de Gestão do Trânsito,46,CET,2026-01-01 00:00:00,9999-12-31 00:00:00
+Cota-Parte da Compensação Financeira de Recursos Minerais,47,CFEM,2026-01-01 00:00:00,9999-12-31 00:00:00
+Cota-Parte da Compensação Financeira pela Exploração de Recursos Minerais,48,CFEM,2026-01-01 00:00:00,9999-12-31 00:00:00
+Cota-Parte do Adicional ao Frete para a Renovação da Marinha Mercante,49,AFRMM,2026-01-01 00:00:00,9999-12-31 00:00:00
+Cota-Parte do Fundo de Participação dos Estados e do Distrito Federal,50,FPE,2026-01-01 00:00:00,9999-12-31 00:00:00
+Cota-Parte do Fundo de Participação dos Municípios,51,FPM,2026-01-01 00:00:00,9999-12-31 00:00:00
+Cota-Parte do Fundo Especial do Petróleo,52,FEP,2026-01-01 00:00:00,9999-12-31 00:00:00
+Dedução das Receitas,53,Dedução Rec.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Defensoria Pública do Estado de Minas Gerais,54,DEFPUB,2026-01-01 00:00:00,9999-12-31 00:00:00
+Delegação,55,Deleg.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Delegação para a Prestação dos Serviços de Transporte Rodoviário,56,Deleg. Prest. Serv. Transp. Rodoviário,2026-01-01 00:00:00,9999-12-31 00:00:00
+Delegação para Exploração da Infraestrutura Aeroportuária,57,Deleg. Exploração Infraest. Aeroportuária,2026-01-01 00:00:00,9999-12-31 00:00:00
+Delegação para Exploração da Infraestrutura de Transporte Rodoviário para o Setor Privado,58,Deleg. Explor. Infra. Transp. Rodoviário Setor Privado,2026-01-01 00:00:00,9999-12-31 00:00:00
+Delegações,59,Deleg.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Direito,60,Dir.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Direitos,61,Dir.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Dívida Ativa,62,DA,2026-01-01 00:00:00,9999-12-31 00:00:00
+Dívida Ativa - Multas e Juros de Mora,63,DA-MJM,2026-01-01 00:00:00,9999-12-31 00:00:00
+Dívida Ativda,64,DA,2026-01-01 00:00:00,9999-12-31 00:00:00
+Dívida Ativda - Multas e Juros de Mora,65,DA-MJM,2026-01-01 00:00:00,9999-12-31 00:00:00
+Encargos,66,Encarg.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Estados Exportadores de Produtos Industrializados,67,Estados Export. Prod. Indust.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Expediente,68,Exp.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Exploração,69,Explor.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Exportadores,70,Export.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Fiscalização,71,Fisc.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Fundo de Erradicação da Miséria,72,FEM,2026-01-01 00:00:00,9999-12-31 00:00:00
+Fundo de Manutenção e Desenvolvimento da Educação Básica e de Valorização dos Profissionais da Educação,73,FUNDEB,2026-01-01 00:00:00,9999-12-31 00:00:00
+Fundo de Manutenção e Desenvolvimento do Ensino Fundamental e de Valorização do Magistério,74,FUNDEF,2026-01-01 00:00:00,9999-12-31 00:00:00
+Fundo de Participação dos Estados e do Distrito Federal,75,FPE,2026-01-01 00:00:00,9999-12-31 00:00:00
+Fundo de Participação dos Municípios,76,FPM,2026-01-01 00:00:00,9999-12-31 00:00:00
+Fundo Estadual Combate Pobreza - Fundo de Erradicação da Miséria,77,FEM,2026-01-01 00:00:00,9999-12-31 00:00:00
+Fundo Estadual de Desenvolvimento de Transportes,78,FUNTRANS,2026-01-01 00:00:00,9999-12-31 00:00:00
+Fundo Nacional de Assistência Social,79,FNAS,2026-01-01 00:00:00,9999-12-31 00:00:00
+Fundo Nacional de Saúde,80,FNS,2026-01-01 00:00:00,9999-12-31 00:00:00
+Fundo Nacional do Desenvolvimento da Educação,81,FNDE,2026-01-01 00:00:00,9999-12-31 00:00:00
+Gerais,82,Ger.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Geral,83,G.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Imposto sobre a Propriedade de Veículos Automotores,84,IPVA,2026-01-01 00:00:00,9999-12-31 00:00:00
+Imposto sobre a Renda,85,IR,2026-01-01 00:00:00,9999-12-31 00:00:00
+Imposto sobre a Renda de Pessoa Física,86,IRPF,2026-01-01 00:00:00,9999-12-31 00:00:00
+Imposto Sobre Operações Financeiras,87,IOF,2026-01-01 00:00:00,9999-12-31 00:00:00
+Imposto sobre Operações Financeiras Incidente sobre o Ouro,88,IOF-Ouro,2026-01-01 00:00:00,9999-12-31 00:00:00
+Imposto sobre Operações Relativas à Circulação de Mercadorias e sobre Prestações de Serviços de Transporte Interestadual e Intermunicipal e de Comunicação,89,ICMS,2026-01-01 00:00:00,9999-12-31 00:00:00
+Imposto sobre Produtos Industrializados,90,IPI,2026-01-01 00:00:00,9999-12-31 00:00:00
+Imposto sobre Serviços de Qualquer Natureza,91,ISSQN,2026-01-01 00:00:00,9999-12-31 00:00:00
+Imposto sobre Transmissão “Causa Mortis” e Doação de Bens e Direitos,92,ITCD,2026-01-01 00:00:00,9999-12-31 00:00:00
+Imposto sobre Vendas a Varejo de Combustíveis Líquidos e Gasosos,93,IVVC,2026-01-01 00:00:00,9999-12-31 00:00:00
+Imóveis,94,Imóv.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Industrializados,95,Indust.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Infraestrutura,96,Infraest.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Inspeção,97,Insp.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Instituto de Previdência do Legislativo do Estado de Minas Gerais,98,IPLEMG,2026-01-01 00:00:00,9999-12-31 00:00:00
+Instituto de Previdência do Servidor Militar,99,IPSM,2026-01-01 00:00:00,9999-12-31 00:00:00
+Instituto Nacional de Colonização e Reforma Agrária,100,INCRA,2026-01-01 00:00:00,9999-12-31 00:00:00
+Instituto Nacional de Estudos e Pesquisas Educacionais Anísio Teixeira,101,INEP,2026-01-01 00:00:00,9999-12-31 00:00:00
+Intraorçamentária,102,Intra.,2026-01-01 00:00:00,9999-12-31 00:00:00
+ITCD,103,HY,2026-01-01 00:00:00,9999-12-31 00:00:00
+Judiciais,104,Judic.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Judiciário,105,Judic.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Legislação,106,Legisl.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Legislação de Trânsito,107,Legisl. Trânsito,2026-01-01 00:00:00,9999-12-31 00:00:00
+Mercadorias,108,Mercad.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Ministério Público do Estado de Minas Gerais,109,MPMG,2026-01-01 00:00:00,9999-12-31 00:00:00
+Mobiliários,110,Mobil.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Multa Administrativa Disciplinar,111,Multa Adm. Disciplinar,2026-01-01 00:00:00,9999-12-31 00:00:00
+Multas Administrativas por Danos Ambientais,112,Multas Adm. Danos Ambientais,2026-01-01 00:00:00,9999-12-31 00:00:00
+Multas e Juros de Mora,113,MJM,2026-01-01 00:00:00,9999-12-31 00:00:00
+Multas e Juros de Mora de Amortização de Financiamento do Fundo de Financiamento ao Estudante do Ensino Superior,114,FIES,2026-01-01 00:00:00,9999-12-31 00:00:00
+Multas Previstas no Código de Trânsito Brasileiro,115,CTB,2026-01-01 00:00:00,9999-12-31 00:00:00
+Operacionalização,116,Operac.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Operações,117,Op.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Operações de Crédito Internas para Programas de Modernização da Administração Pública,118,Op. Crédito Internas Programas Modernização Adm. Pública,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outorga de Direito de Uso ou de Exploração de Criação Protegida,119,Outorga Dir. Uso Exploração Criação Protegida,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outorga de Direitos de Uso de Recursos Hídricos,120,Outorga Dir. Uso Recursos Hídricos,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outras Delegações de Serviços Públicos,121,Outras Deleg. Serv. Púb.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outras Delegações para Exploração de Recursos Naturais,122,Outras Deleg. Exploração Recursos Naturais,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outras Operações de Crédito,123,Outras Op. Crédito,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outras Receitas Imobiliárias,124,Outras Rec. Imobiliárias,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outras Receitas Patrimoniais,125,Outras Rec. Patrimoniais,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outras Transferências de Pessoas Físicas,126,Outras Transf. Pessoas Físicas,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outras Transferências de Recursos do Sistema Único de Saúde,127,SUS,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outras Transferências Diretas do Fundo Nacional do Desenvolvimento da Educação,128,FNDE,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outras Transferências do Exterior,129,Outras Transf. Exterior,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outras Transferências dos Estados e DF,130,Outras Transf. Estados DF,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outras Transferências dos Municípios,131,Outras Transf. Municípios,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outras Transferências para Segurança Pública,132,Outras Transf. Segurança Pública,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outros Programas,133,Outros Prog.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Outros Serviços de Atendimento à Saúde,134,Outros Serv. Atend. Saúde,2026-01-01 00:00:00,9999-12-31 00:00:00
+Pagamentos,135,Pag.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Parceria Público-Privada,136,PPP,2026-01-01 00:00:00,9999-12-31 00:00:00
+Passageiros,137,Passag.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Patronal,138,Patron.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Permissão,139,Perm.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Poder Judiciário,140,Poder Judic.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Prestação,141,Prest.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Principal,142,Princ.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Produtos,143,Prod.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Programa de Apoio aos Sistemas de Ensino para Atendimento à Educação de Jovens e Adultos,144,PEJA,2026-01-01 00:00:00,9999-12-31 00:00:00
+Programa de Integração Nacional,145,PIN,2026-01-01 00:00:00,9999-12-31 00:00:00
+Programa de Integração Social e para Programa de Formação de Patrimônio do Servidor Público,146,PIS/PASEP,2026-01-01 00:00:00,9999-12-31 00:00:00
+Programa Dinheiro Direto na Escola,147,PDDE,2026-01-01 00:00:00,9999-12-31 00:00:00
+Programa Nacional de Alimentação Escolar,148,PNAE,2026-01-01 00:00:00,9999-12-31 00:00:00
+Programa Nacional de Apoio ao Transporte do Escolar,149,PNATE,2026-01-01 00:00:00,9999-12-31 00:00:00
+Programa Nacional de Saúde do Escolar,150,PNSE,2026-01-01 00:00:00,9999-12-31 00:00:00
+Programas,151,Prog.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Prêmio do Seguro Obrigatório de Danos Pessoais Causados por Veículos Automotores de Via Terrestre,152,DPVAT,2026-01-01 00:00:00,9999-12-31 00:00:00
+Públicos,153,Púb.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Receita,154,Rec.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Receita Agropecuária,155,Rec. Agropecuária,2026-01-01 00:00:00,9999-12-31 00:00:00
+Receita Industrial,156,Rec. Industrial,2026-01-01 00:00:00,9999-12-31 00:00:00
+Receita Intraorçamentária,157,Rec. Intra.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Receitas,158,Rec.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Receitas de Alienação de Certificados de Potencial Adicional de Construção,159,CEPAC,2026-01-01 00:00:00,9999-12-31 00:00:00
+Regime Geral de Previdência Social,160,RGPS,2026-01-01 00:00:00,9999-12-31 00:00:00
+Regime Próprio de Previdência Social,161,RPPS,2026-01-01 00:00:00,9999-12-31 00:00:00
+Registro,162,Reg.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Remuneração dos Recursos do Regime Próprio de Previdência Social,163,RPPS,2026-01-01 00:00:00,9999-12-31 00:00:00
+Ressarcimento ao Regime Geral de Previdência Social,164,RGPS,2026-01-01 00:00:00,9999-12-31 00:00:00
+"Retorno de Operações, Juros e Encargos Financeiros",165,Retorno Oper. Juros Encarg. Financeiros,2026-01-01 00:00:00,9999-12-31 00:00:00
+Sentenças,166,Sent.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Servidor,167,Serv.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Servidor Civil,168,Serv. Civil,2026-01-01 00:00:00,9999-12-31 00:00:00
+Servidor Civil Ativo,169,Serv. Civil Ativo,2026-01-01 00:00:00,9999-12-31 00:00:00
+Servidor Civil Inativo,170,Serv. Civil Inativo,2026-01-01 00:00:00,9999-12-31 00:00:00
+Serviços,171,Serv.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Serviços Administrativos e Comerciais Gerais,172,Serviços Adm. Comerc. Ger.,2026-01-01 00:00:00,9999-12-31 00:00:00
+"Serviços de Registro, Certificação e Fiscalização",173,Serviços Reg. Certif. Fiscaliz.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Serviços de Transporte de Passageiros ou Mercadorias,174,Serviços Transp. Passag. Mercad.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Taxa,175,Tx.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Taxa de Controle e Fiscalização Ambiental,176,Tx. Contr. Fisc. Ambient.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Taxa de Estudo de Impacto de Vizinhança,177,EIV,2026-01-01 00:00:00,9999-12-31 00:00:00
+Taxa de Expediente,178,Tx. Exp.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Taxa de Segurança Pública,179,Tx. Segurança Pública,2026-01-01 00:00:00,9999-12-31 00:00:00
+Taxa de Utilização do Mercante,180,TUM,2026-01-01 00:00:00,9999-12-31 00:00:00
+Taxa de Utilização do Sistema Integrado de Comércio Exterior,181,SISCOMEX,2026-01-01 00:00:00,9999-12-31 00:00:00
+Taxas,182,Tx.,2026-01-01 00:00:00,9999-12-31 00:00:00
+"Taxas de Inspeção, Controle e Fiscalização",183,Tx. Insp. Contr. Fisc.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Taxas pela Prestação de Serviços em Geral,184,Tx. Prest. Serv. G.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Termo de Ajustamento de Conduta,185,TAC,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferencias,186,Transf.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferencias do FEF,187,Transf. FEF,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferência,188,Transf.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferência Especial da União,189,Transf. Especial União,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferências,190,Transf.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferências de Convênios da União para o Sistema Único de Saúde,191,SUS,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferências de Convênios do Exterior,192,Transf. Convênios Exterior,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferências de Convênios dos Estados e DF para o Sistema Único de Saúde,193,SUS,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferências de Convênios dos Estados para o Sistema Único de Saúde,194,SUS,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferências de Convênios dos Municípios para o Sistema Único de Saúde,195,SUS,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferências de Recursos de Complementação da União ao Fundo de Manutenção e Desenvolvimento da Educação Básica e de Valorização dos Profissionais da Educação,196,FUNDEB,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferências de Recursos do Fundo de Manutenção e Desenvolvimento da Educação Básica e de Valorização dos Profissionais da Educação,197,FUNDEB,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferências de Recursos do Fundo Nacional de Assistência Social,198,FNAS,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferências de Recursos do Fundo Nacional de Segurança Pública,199,FNSP,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferências de Recursos do Fundo Nacional do Desenvolvimento da Educação,200,FNDE,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferências de Recursos do Fundo Penitenciário Nacional,201,FUPEN,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferências de Recursos do Sistema Único de Saúde,202,SUS,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferências Decorrentes de Decisão Judicial (precatórios) Relativas ao Fundo de Manutenção e Desenvolvimento do Ensino Fundamental e de Valorização do Magistério,203,FUNDEF,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferências Diretas do FNDE Referentes ao Programa Dinheiro Direto na Escola,204,PDDE,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferências Financeiras do ICMS,205,Transf. Financeiras ICMS,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferências Referentes ao Programa Brasil Alfabetizado,206,PBA,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferências Referentes ao Programa de Apoio aos Sistemas de Ensino para Atendimento à Educação de Jovens e Adultos,207,PEJA,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferências Referentes ao Programa Nacional de Alimentação Escolar,208,PNAE,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferências Referentes ao Programa Nacional de Apoio ao Transporte do Escolar,209,PNATE,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transferências Referentes ao Programa Nacional de Saúde do Escolar,210,PNSE,2026-01-01 00:00:00,9999-12-31 00:00:00
+Transporte,211,Transp.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Tribunal de Contas do Estado de Minas Gerais,212,TCEMG,2026-01-01 00:00:00,9999-12-31 00:00:00
+Tribunal de Justiça do Estado de Minas Gerais,213,TJMG,2026-01-01 00:00:00,9999-12-31 00:00:00
+Tribunal de Justiça Militar do Estado de Minas Gerais,214,TJMMG,2026-01-01 00:00:00,9999-12-31 00:00:00
+Tribunal Regional Federal,215,TRF,2026-01-01 00:00:00,9999-12-31 00:00:00
+Títulos da Dívida Agrária,216,TDA,2026-01-01 00:00:00,9999-12-31 00:00:00
