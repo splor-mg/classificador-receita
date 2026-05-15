@@ -42,6 +42,7 @@ from apps.core.alias_lexico_infer import (
     _merge_abbrev_map_from_pair,
     _parse_iso_date,
     sort_pairs_like_registry_order,
+    termo_suppressed_by_junction_m,
 )
 from apps.core.alias_lexico_termo_policy import (
     termo_nome_persistivel,
@@ -69,6 +70,9 @@ class AliasLexicoPersistResult:
 
     ``n_inserted`` é o contador usado na spec para *Export* **(ii)** (≥1 INSERT real
     do protocolo automático; duplicata CI não incrementa).
+
+    ``n_skip_junction_m`` conta candidatos inferidos omitidos pela spec **(M)** (junção já
+    representada por pares no mapa vigente).
     """
 
     n_inserted: int
@@ -77,6 +81,7 @@ class AliasLexicoPersistResult:
     n_inferred_only: int
     n_derived: int
     n_skip_comp_inf: int
+    n_skip_junction_m: int
     n_skip_termo_viii: int
     conflicts: list[tuple[str, set[str]]]
 
@@ -226,10 +231,14 @@ def run_alias_lexico_infer_persist(
 
     additions: list[tuple[str, str]] = []
     n_skip_comp_inf = 0
+    n_skip_junction_m = 0
     n_skip_termo_viii = 0
     for termo, abrev in inferred_candidates:
         if not termo_nome_persistivel(termo, viii_exempt_termos=termos_viii_exempt):
             n_skip_termo_viii += 1
+            continue
+        if termo_suppressed_by_junction_m(termo, abbrev_by_termo):
+            n_skip_junction_m += 1
             continue
         if _is_compositional_redundant(termo, abrev, abbrev_by_termo):
             n_skip_comp_inf += 1
@@ -296,12 +305,14 @@ def run_alias_lexico_infer_persist(
         )
     logger.info(
         "%s: persistência — existentes_antes=%s existentes_depois=%s inseridos=%s duplicados=%s "
-        "omitidos_termo_viii=%s conflitos=%s",
+        "omitidos_comp_inf=%s omitidos_junction_m=%s omitidos_termo_viii=%s conflitos=%s",
         __name__,
         n_existing_before,
         n_existing_after,
         n_inserted,
         n_skipped_dup,
+        n_skip_comp_inf,
+        n_skip_junction_m,
         n_skip_termo_viii,
         len(conflicts),
     )
@@ -313,6 +324,7 @@ def run_alias_lexico_infer_persist(
         n_inferred_only=n_inferred_only,
         n_derived=len(derived),
         n_skip_comp_inf=n_skip_comp_inf,
+        n_skip_junction_m=n_skip_junction_m,
         n_skip_termo_viii=n_skip_termo_viii,
         conflicts=conflicts,
     )

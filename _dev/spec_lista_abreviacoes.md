@@ -78,7 +78,17 @@ Apesar de essa ser a principal fonte de análise, haverá análises que não dep
 
 - (D) *fonte* - a fonte de dados para **inferência** é o **Banco de Dados** (`ItemClassificacao` e `lista_abreviacoes`). O ficheiro `docs/assets/seed_lista_abreviacoes.csv` é **subsidiário**: artefacto de export; carga inicial segue o datapackage e o comando de carga, como nas demais tabelas.
 
-- (E) *ordem das regras* - as regras abaixo devem ser aplicadas nessa ordem, sendo que a primeira que se aplicar, encerra a tentativa **na passagem PF por par mãe–filho** (regras **ND** por item, **Regra 4**, **Regra 5** e pós-processamento **6**/**7** seguem o desenho de cada secção). Na passagem PF, ordem recomendada: **Regra 1** (1.1–1.4), **Regra 1.2**, **Regra 4**, **Regra 5**.
+- (E) *ordem das regras* - as regras abaixo devem ser aplicadas nessa ordem, sendo que a primeira que se aplicar, encerra a tentativa **na passagem PF por par mãe–filho** (regras **ND** por item, **Regra 4**, **Regra 5** e pós-processamento **6**/**7** seguem o desenho de cada secção). Na passagem PF, ordem recomendada: **Regra 1** (1.1–1.4), **Regra 1.2**, **Regra 4**, **Regra 5**. Independentemente dessa ordem, **toda** candidatura a **INSERT** automático na lista (PF ou ND) fica sujeita ao filtro **(M)** antes de gravar, consultando o **mapa vigente** acumulado até ao momento (ver **(M)**).
+
+- (M) *omissão por junção de `termo` já decomposto* — antes de **persistir** (INSERT automático) qualquer par candidato `(termo_nome, abreviacao)` produzido pela **inferência** nesta execução, o protocolo **omite** o candidato se existir **alguma** linha **já** presente no **mapa vigente** da lista (ver abaixo) cujo `termo_nome` e `abreviacao`, quando concatenados pelo **mesmo** delimitador de segmento major que o resto do protocolo (`' - '`, espaço–traço–espaço), formem uma string **equivalente** ao `termo_nome` do candidato após a **normalização (M.1)**.
+
+  - (M.1) **Normalização para comparação** (flexível, alinhada ao espírito de **1.2.9.1**): *trim* de extremos da string final; colapsar **qualquer** sequência de carateres Unicode classificados como espaço em branco a **um** espaço ASCII `U+0020`; **case fold** Unicode. Define-se `join(T_raw, A_raw)` como a concatenação dos textos `T_raw` e `A_raw` após *trim* individual, unidos pelo separador literal de segmento major **` - `** (espaço, traço, espaço). O candidato com `termo_nome = U` é omitido quando `norm(U) == norm(join(T_raw, A_raw))` para **algum** par `(T_raw, A_raw)` no mapa vigente, onde `norm(·)` aplica a normalização deste item a **toda** a string.
+
+  - (M.2) **Mapa vigente para (M)** — inclui: (i) todas as linhas carregadas da BD e/ou do seed **antes** do início da passagem de inferência da execução corrente; (ii) cada par `(termo_nome, abreviacao)` **já aceite** e persistido (ou enfileirado para persistência inequívoca) **mais cedo na mesma execução**, na ordem em que o protocolo os materializa. **Não** é necessário que `(T, A)` provenha de uma regra PF específica: basta constar no mapa como par **lista** válido.
+
+  - (M.3) **Motivação / exemplo** — Se já existe `Contribuição para Financiamento da Seguridade Social` → `COFINS` (ex.: **Regra 1**), então **não** se deve acrescentar linha cujo `termo_nome` seja `Contribuição para Financiamento da Seguridade Social - COFINS` com `abreviacao` igual ao primeiro segmento major de um filho (ex.: par **295** / inferência **Regra 1.2** sobre o mesmo ramo): o `termo_nome` do candidato **não acrescenta** relação lexical nova face à **decomposição** já registada `(T, A)` com `join(T, A) = termo_nome` do candidato.
+
+  - (M.4) **Limites** — (M) é **independente** da **(vi)** (redundância composicional token-a-token / **Regra 7**): critérios distintos; um candidato pode falhar só um dos dois. (M) **não** substitui conflitos **(C)** nem unicidade **(B)**. Carga manual no admin ou fluxo **(F)** interactivo seguem as suas regras próprias; **(M)** documenta sobretudo o **motor de inferência automática** e o seed como reflexo exportado.
 
 - (F) *ferramentas, flags e conflitos*
   - **`--print-conflicts`:** no fim da execução, **lista** os conflitos que permaneceram **silenciosos** durante a corrida (mesmo `termo`, múltiplas `abreviacao` candidatas na mesma execução, sem gravação automática). Não altera o BD.
@@ -136,7 +146,7 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
 
 ### Testes automatizados (v1)
 
-- Recomenda-se pelo menos: (1) cenário pai/filho em BD que dispara uma regra PF e **assert** de que `AliasLexico` contém o par esperado; (1b) par **Regra 1.2** caminho A (eco literal) com `termo_nome` = nome integral da mãe; (1c) par **Regra 1.2** caminho B (cobertura lexical), p.ex. `Cota-Parte IOF-Ouro` → nome integral da mãe IOF-Ouro / Comercialização do Ouro; (1d) par **Regra 4** cabeça + sigla da cauda, p.ex. `Atenção MAC` → `Atenção de Média e Alta Complexidade`; (2) segunda execução do comando **sem** `--print-conflicts-resolve` **não** aumenta o número de linhas para o mesmo termo; (3) opcionalmente, smoke de que o ficheiro exportado contém o `termo_nome` esperado após `export_resource`.
+- Recomenda-se pelo menos: (1) cenário pai/filho em BD que dispara uma regra PF e **assert** de que `AliasLexico` contém o par esperado; (1b) par **Regra 1.2** caminho A (eco literal) com `termo_nome` = nome integral da mãe; (1c) par **Regra 1.2** caminho **B** subcritério **B.1**, p.ex. `Cota-Parte IOF-Ouro` → nome integral da mãe IOF-Ouro / Comercialização do Ouro; (1c′) par **Regra 1.2** caminho **B** subcritério **B.2** (fallback), **com igual número ou menos segmentos major no filho do que na mãe** (`N_f ≤ N`), p.ex. `SUS-Saúde` → `Transf. Convênios União SUS-Saúde - Principal`; regressão **negativa** do **B.2**: mãe `Compensações Ambientais - Dívida Ativa` e filho `Compensações Ambientais - DA - Reposição Florestal` (`N_f > N`) **não** deve produzir par **1.2** por caminho **B**; (1c″) regressão negativa **1.2.4.5.5** (cauda alinhada ≈ **Regra 4**): `Alienação Bens Imóveis - Principal` / `Alienação Bens Imóveis - Princ.` — **não** par nome integral → primeiro segmento por **caminho B** (esperável par **Principal**/`Princ.` pela **4** na mesma cascata PF); (1c‴) regressão **1.2.9** (mesmo `receita_nome` mãe/filho após **1.2.9.1** — ex. caso **296** duplicado): sem par **Regra 1.2**; (1e) regressão **(M)** — com entrada **37** no mapa vigente (`Contribuição para Financiamento da Seguridade Social` → `COFINS`), **não** inferir par tipo **295** (`termo_nome` = junção **37**, `abreviacao` = primeiro segmento de filho `… - COFINS sobre o Faturamento`); (1d) par **Regra 4** cabeça + sigla da cauda, p.ex. `Atenção MAC` → `Atenção de Média e Alta Complexidade`; (2) segunda execução do comando **sem** `--print-conflicts-resolve` **não** aumenta o número de linhas para o mesmo termo; (3) opcionalmente, smoke de que o ficheiro exportado contém o `termo_nome` esperado após `export_resource`.
 
 
 ### Evolução — desempenho (documentação em código)
@@ -166,12 +176,17 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
 
 ## Regra 1.2 (PF) — abreviação do nome integral da mãe pelo primeiro segmento do filho
 
-Regra para pares mãe–filho em que o **primeiro segmento major** do filho condensa, de forma reconhecível, a nomenclatura **completa** da mãe (vários segmentos major), e não apenas um segmento isolado da mãe. Há **dois caminhos** de candidatura (A e B); basta **um** deles. A contagem de segmentos major usa o separador ` - ` (espaços–traço–espaços), alinhada à **Regra 4** — **não** confundir com traços **internos** a um segmento (ex.: `Cota-Parte`, `IOF-Ouro`).
+Regra para pares mãe–filho em que o **primeiro segmento major** do filho condensa, de forma reconhecível, a nomenclatura **completa** da mãe (vários segmentos major), e não apenas um segmento isolado da mãe. Há **dois caminhos** de candidatura (A e B); basta **um** deles, **salvo** **1.2.9** (nome integral repetido entre mãe e filho). A contagem de segmentos major usa o separador ` - ` (espaços–traço–espaços), alinhada à **Regra 4** — **não** confundir com traços **internos** a um segmento (ex.: `Cota-Parte`, `IOF-Ouro`).
 
 ### Pré-requisitos (1.2.1–1.2.2)
 
 - 1.2.1. o item mãe tem **pelo menos 2** segmentos major no `receita_nome`
 - 1.2.2. o item filho tem **pelo menos 2** segmentos major no `receita_nome`
+
+### Exclusão — nome integral «duplicado» mãe/filho (1.2.9)
+
+- 1.2.9. (**antes** de avaliar **1.2.3** ou **1.2.4**) se o `receita_nome` integral da mãe e o do filho forem **equivalentes** pelo processo **1.2.9.1**, **não** se forma candidato **Regra 1.2** (nem caminho A nem B). **Motivação:** hierarquias em que pai e filho repetem o **mesmo** rótulo textual não representam condensação do nome da mãe na cabeça do filho — evita artefactos do tipo par **296** no seed (primeiro segmento «falso» face a nomes idênticos).
+- 1.2.9.1. (**normalização flexível para comparação**) à string integral de cada item aplica-se: *trim* de espaços de extremo; substituir **qualquer** sequência de carateres Unicode classificados como espaço em branco por **um** espaço ASCII `U+0020`; **case fold** Unicode (*case-insensitive* canónico). **Não** se normalizam vírgulas, acentos ou traços internos a segmentos — só homogeneizar **em branco** e **maiúsculas/minúsculas** para detectar duplicados «óbvios».
 
 ### Caminho A — eco literal do último segmento da mãe (1.2.3)
 
@@ -186,14 +201,35 @@ Regra para pares mãe–filho em que o **primeiro segmento major** do filho cond
 
 ### Caminho B — cobertura lexical por segmento da mãe (1.2.4)
 
-Quando **1.2.3** **não** se verifica, candidato alternativo:
+Quando **1.2.3** **não** se verifica, avalia-se o caminho **B** em dois subcritérios: **B.1 estrito**, depois — se falhar — **B.2 fallback de razoabilidade**. **Basta** um de **B.1** ou **B.2** para aceitar o candidato. Para **B.2**, além das condições sobre falhas lexicalmente «em falta» em segmentos extremos da mãe (**1.2.4.5.1–1.2.4.5.2**), também se exige **`N_f ≤ N`** (**1.2.4.5.3**). Antes de aceitar **qualquer** candidato pelo **caminho B**, aplica-se ainda **1.2.4.5.5** (exclusão por caudas alinhadas), **sem** depender da igualdade **`N_f = N`** quando `N ≥ 2` e `N_f ≥ 2` em simultâneo.
 
-- 1.2.4.1. seja `S_f` o **primeiro** segmento major do filho (após *trim*) e `S_{m,1} … S_{m,N}` os **N** segmentos major da mãe (`N ≥ 2`, por 1.2.1)
+#### Definições (1.2.4.1–1.2.4.3)
+
+- 1.2.4.1. seja `S_f` o **primeiro** segmento major do filho (após *trim*), `N_f` o **número total** de segmentos major do filho (`N_f ≥ 2`, por 1.2.2), e `S_{m,1} … S_{m,N}` os **N** segmentos major da mãe (`N ≥ 2`, por 1.2.1)
 - 1.2.4.2. extraia o conjunto de **palavras significativas** `W_f` de `S_f` e, para cada `i`, o conjunto `W_{m,i}` de `S_{m,i}`, conforme o algoritmo **1.2.8**
-- 1.2.4.3. para **cada** `i` de `1` a `N`, a intersecção `W_f ∩ W_{m,i}` (comparação *case-insensitive*) deve ser **não vazia** — isto é: o primeiro segmento do filho contém **pelo menos uma** palavra significativa **de cada** segmento da mãe (não é necessário que **todas** as palavras de `W_f` apareçam na mãe; palavras só no filho, como `IOF` no exemplo abaixo, **não** invalidam o candidato)
-- 1.2.4.4. **não** se exige igualdade literal entre `S_f` e qualquer `S_{m,i}` nem entre `S_f` e o último segmento da mãe
+- 1.2.4.3. (**correspondência lexical**) diz-se que o segmento da mãe `S_{m,i}` **corresponde lexicalmente** a `S_f` quando a intersecção `W_f ∩ W_{m,i}` (comparação *case-insensitive*) é **não vazia**. Não é necessário que **todas** as palavras de `W_f` apareçam na mãe; palavras só no filho (ex.: sigla/atoms que não aparecem em segmento inteiro isolado mas entram pela 1.2.8) **não** invalidam por si só o candidato
 
-  **Exemplo (caminho B):**
+
+#### Critério estrito — B.1 (1.2.4.4)
+
+- 1.2.4.4. (**B.1 — todos os segmentos com correspondência**) para **cada** `i` de `1` a `N`, `S_{m,i}` **corresponde lexicalmente** a `S_f`
+
+
+#### Fallback de razoabilidade — B.2 (1.2.4.5)
+
+Quando **B.1** **não** se verifica (existe pelo menos um `i` sem correspondência lexical):
+
+- 1.2.4.5.1. o número de índices `i ∈ {1,…,N}` **sem** correspondência lexical deve ser **no máximo 1**
+- 1.2.4.5.2. qualquer `i` **sem** correspondência lexical deve ser **ou** `i = 1` (**primeiro** segmento major da mãe) **ou** `i = N` (**último** segmento major da mãe) — **não** é aceite pelo fallback um segmento **intermédio** (`2 ≤ i ≤ N−1`) sem intersecção com `W_f`
+- 1.2.4.5.3. (**somente B.2 — profundidade do nome**) deve verificar-se `N_f ≤ N`: o item filho **não pode** ter **mais** segmentos major do que a mãe. Se `N_f > N`, **B.2 não se aplica** — **mesmo que** apenas um segmento da mãe fique sem intersecção lexical e esse segmento seja o primeiro ou o último. **Motivação:** quando o filho **desdobra** o `receita_nome` em **mais** peças delimitadas por ` - ` do que a mãe (`N_f > N`), o primeiro segmento deixa de ser candidato razoável a abreviação do **nome integral** da mãe nos termos da Regra 1.2; outros pares (ex. **Regra 4**) podem eventualmente capturar refinamentos segmento-a-segmento. **Esta condição não restringe o critério B.1**, que já exige intersecção em **todos** os segmentos da mãe.
+- 1.2.4.5.4. (**nota**) com `N = 2`, permite-se exactamente um segmento «em falta» por palavras quando **B.2** aplicável (`N_f ≤ 2`): tipicamente a cauda institucional `Principal` (ou equivalente lexical que não aparece em `W_f`). Com `N ≥ 3`, obriga correspondência lexical com **pelo menos** `N − 1` segmentos em conjunto (**B.1 ∪ B.2**) e falha sempre que dois ou mais segmentos ficarem sem overlap com `W_f`, ou quando o único segmento sem overlap for intermédio, ou quando `N_f > N` em **B.2**. Em qualquer caso, o candidato pelo **caminho B** fica também sujeito a **1.2.4.5.5**
+- 1.2.4.5.5. (**somente avaliação do caminho B — exclusão por caudas alinhadas / paralelismo com a Regra 4**) com `N ≥ 2` na mãe e `N_f ≥ 2` no filho, **não** se aceita pela **Regra 1.2** via **caminho B** o par **`(nome integral da mãe, S_f)`** se existir um índice `i ∈ {2, …, min(N, N_f)}` tal que o segmento major `S_{f,i}` do filho seja uma **abreviação**, no sentido de **segmento‑a‑segmento** já descrito para a **Regra 4 (PF)** (abreviação activa reconhecível entre textos não literalmente iguais após *trim* — ex.: caso `Principal` / `Princ.`), **do** segmento major `S_{m,i}` da mãe na **mesma** posição `i`. **Não** se exige `N_f = N`: o paralelismo só se verifica onde **ambos** os lados têm segmento na posição `i`, i.e. **`i ≤ min(N, N_f)`**; com `min(N, N_f) ≥ 2`, inclui-se sempre a comparação dos **primeiros** pares de caudas (`i = 2`). **Motivação:** se as caudas alinhadas diferem apenas por encurtamento que seria modelo da **Regra 4**, o par deve ser tratado pela **geometria posicional**, e **não** como condensação lexical do nome **integral** da mãe no primeiro segmento do filho. **O caminho A (1.2.3) não está sujeito a 1.2.4.5.5** (geometria distinta).
+
+#### Observação geral (1.2.4.6)
+
+- 1.2.4.6. **não** se exige igualdade literal entre `S_f` e qualquer `S_{m,i}` nem entre `S_f` e o último segmento da mãe (salvo já coberto pelo **caminho A**)
+
+- **Exemplo B.1** (critério estrito; sem recurso ao fallback):
 
   1711550000000	`Cota-Parte do Imposto sobre Operações de Crédito, Câmbio e Seguro, ou Relativas a Títulos ou Valores Mobiliários - Comercialização do Ouro`  
   1711550100000	`Cota-Parte IOF-Ouro - Principal`
@@ -204,19 +240,28 @@ Quando **1.2.3** **não** se verifica, candidato alternativo:
   | mãe 2 | `Comercialização do Ouro` |
   | filho 1 | `Cota-Parte IOF-Ouro` |
 
-  Em `S_f`, os subtermos separados por espaço são `Cota-Parte` e `IOF-Ouro`; subdividindo cada um pelo hífen ASCII interno, `W_f` inclui pelo menos `Cota`, `Parte`, `IOF`, `Ouro` (conectivos excluídos).  
-  - Em `W_{m,1}`: `Cota`, `Parte` (entre outras) → intersecção com `W_f` não vazia.  
-  - Em `W_{m,2}`: `Comercialização`, `Ouro` → `Ouro` ∈ `W_f`.  
+  Em `S_f`: `W_f` inclui entre outras `Cota`, `Parte`, `IOF`, `Ouro`; ambos `S_{m,1}` e `S_{m,2}` têm correspondência lexical com `W_f`.
 
-  `Cota-Parte IOF-Ouro` deve ser registrado como abreviação do **nome integral** da mãe (não apenas do primeiro ou do último segmento).
+  `Cota-Parte IOF-Ouro` deve ser registrado como abreviação do **nome integral** da mãe.
 
-  *Nota:* a **Regra 2** (ND) no item de nomenclatura única `… Ouro - IOF-Ouro` regista `IOF-Ouro` como abreviação do primeiro segmento **daquele** item; a **Regra 1.2** caminho B regista o **primeiro segmento do filho** como abreviação do **nome completo multi-segmento** da mãe — geometrias distintas.
+- **Exemplo B.2** (fallback — cauda lexical sem intersectar `W_f` no último segmento; **sem** conflito com **1.2.4.5.5**):
+
+  1717500100000	`Transf. Convênios União SUS-Saúde - Principal`  
+  1717500101000	`SUS-Saúde - Ministério da Saúde`
+
+  Para `i = 2`, não se trata `Ministério da Saúde` como **abreviação** reconhecível de `Principal`; por isso não se dispensa o candidato **B.2**. `W_f` a partir de `SUS-Saúde` intersecta palavras do **primeiro** segmento da mãe (`SUS`, `Saúde`); típicamente **não** intersecta o segundo segmento `Principal`. **B.1** falha; **B.2** aplica-se: um único segmento (`N = 2`, último) sem correspondência lexical, e **`N_f = N = 2`** (satisfaz 1.2.4.5.3).
+
+  `SUS-Saúde` deve ser registrado como abreviação do nome integral da mãe.
+
+  *Nota:* a **Regra 2** (ND) noutros itens pode registar pares próprios sobre segmentos diferentes; geometrias continuam distintas.
+
+**Refinamento opcional na implementação (recomendação, não obrigatório na spec):** se surgirem falsos positivos com `|W_f| = 1`, considerar na implementação uma barreira mínima (ex.: `|W_f| ≥ 2`); registar contagens nos logs antes de endurecer contrato na spec.
 
 ### Registro e política (1.2.5–1.2.7)
 
-- 1.2.5. quando **1.2.3** (caminho A) **ou** **1.2.4** (caminho B) se verifica, o **primeiro** segmento major do filho (`S_f`) deve ser registrado como `abreviacao` do **nome completo** do item mãe (`termo_nome` = string integral do `receita_nome` da mãe). Esse `termo_nome` está **isento de (viii)** quando contiver tokens **(iv)** como parte da nomenclatura oficial da mãe (ver *Excepções ao termo_nome canónico*)
+- 1.2.5. quando **1.2.3** (caminho A) **ou** caminho **B** (**1.2.4.4 / 1.2.4.5**, **incluindo 1.2.4.5.5**) se verifica **e passou por 1.2.9** (não há duplicado nominal mãe/filho pelo **1.2.9.1**), o **primeiro** segmento major do filho (`S_f`) deve ser registrado como `abreviacao` do **nome completo** do item mãe (`termo_nome` = string integral do `receita_nome` da mãe) **desde que** o par candidato **não** seja omitido pelo filtro **(M)** (junção `termo` + ` - ` + `abreviacao` já presente no mapa vigente). Esse `termo_nome` está **isento de (viii)** quando contiver tokens **(iv)** como parte da nomenclatura oficial da mãe (ver *Excepções ao termo_nome canónico*)
 - 1.2.6. **não** se exige o critério **1.3** da Regra 1 (primeiro segmento do filho como sigla/encurtamento formal): nos caminhos A e B o par é candidato mesmo com palavra por extenso repetida (caminho A, ex.: `Cultura`) ou com condensação lexical (caminho B)
-- 1.2.7. **ordem (PF):** na implementação, avaliar **depois** das heurísticas da **Regra 1** (1.1–1.4) e **antes** da **Regra 4**; dentro da Regra 1.2, testar **primeiro** o caminho A (1.2.3) e **só se falhar** o caminho B (1.2.4); se outra regra PF tiver sido aplicada ao mesmo par mãe–filho na mesma execução, aplica-se **(E)**
+- 1.2.7. **ordem (PF):** na implementação, avaliar **depois** das heurísticas da **Regra 1** (1.1–1.4) e **antes** da **Regra 4**; dentro da Regra 1.2: aplicar **1.2.9**; testar **primeiro** o caminho A (1.2.3), **depois** o caminho **B** tentando na ordem interna **1.2.4.4 (B.1)** e, se falhar, **1.2.4.5 (B.2)** — aplicando sempre **1.2.4.5.5** antes de declarar êxito por **caminho B**, e (**só para B.2**) a verificação **`len(filho) ≤ len(mãe)`** em segmentos major (1.2.4.5.3); se outra regra PF tiver sido aplicada ao mesmo par mãe–filho na mesma execução, aplica-se **(E)**. Qualquer par **1.2** aceite por critério interno fica ainda sujeito a **(M)** antes de INSERT (ex.: **295** omitido quando já existe **37** no mapa vigente).
 
 ### Algoritmo de palavras significativas (1.2.8)
 
@@ -232,6 +277,19 @@ Usado no caminho B (e alinhado ao vocabulário “significativo” da **Regra 7*
 
 ### Exemplos negativos
 
+**Não candidato pela Regra 1.2 (nome integral mãe/filho coincidente; 1.2.9):**
+
+Dois níveis hierárquicos com o **mesmo** `receita_nome` canónico (ex.: mesmo texto «Contribuição para Fundos de Assistência Médica - Bombeiros Militares» em pai e filho).
+
+Por **1.2.9.1** são equivalentes; **não** se registra **`(nome integral da mãe, primeiro segmento do filho)`** pela Regra **1.2** — mesmo que lexicalmente algum caminho **B** fosse tentador (**ref 296 / lista**).
+
+**Não candidato pela Regra 1.2 (caminho B — paralelismo de cauda com abreviação Regra 4; 1.2.4.5.5):**
+
+2.2.2.1.01.0.1.00.000	`Alienação Bens Imóveis - Principal`  
+2.2.2.1.01.0.1.01.000	`Alienação Bens Imóveis - Princ.`
+
+`N ≥ 2`, `N_f ≥ 2`, primeiro segmentos iguais; no índice `i = 2`, `Princ.` é abreviação activa (`Principal`/`Princ.`) no sentido **Regra 4**. Por **1.2.4.5.5** **não** se aceita **`(nome integral da mãe, Alienação Bens Imóveis)`** pelo **caminho B** (**B.2** ficaria lexicalmente tentador na cauda institucional, mas a geometria é de **efeito paralelo**, não condensação do nome inteiro no primeiro segmento).
+
 **Não aplica caminho A nem B (mãe monosegmento — Regra 1):**
 
 1.1.1.2.51.0.0.00.000	`Imposto sobre a Propriedade de Veículos Automotores`  
@@ -239,9 +297,18 @@ Usado no caminho B (e alinhado ao vocabulário “significativo” da **Regra 7*
 
 último segmento da mãe ≠ primeiro do filho; caminho B falha porque a mãe não tem ≥ 2 segmentos major → candidato **1.2** não se forma; pode aplicar-se **Regra 1**.
 
-**Não aplica caminho B (falta cobertura de algum segmento da mãe):**
+**Não aplica caminho B (fallback insuficiente):**
 
-Mãe `Segmento Alfa - Segmento Beta`, filho `Só Alfa - Principal` — `W_f` não intersecta `W_{m,2}` → caminho B falha (caminho A só se `Beta` = `Só Alfa`, o que não é o caso).
+Mãe com **três** segmentos major `S₁ - S₂ - S₃`, conjunto `W_f` do filho intersecta apenas `S₁` e `S₃` mas **não** `S₂` — segmento sem correspondência é **intermédio**, logo **B.2** (1.2.4.5.2) **não** aplica mesmo havendo apenas «um falhanço» lexical; **B.1** também falha → candidato 1.2 **não** se forma pelo caminho **B**.
+
+Mãe `P - Q`, filho `R - Órgão`, com `W_f` intersectando **nenhum** dos dois segmentos — dois falhanços (**B.2** exige ≤ 1) → caminho **B** falha.
+
+**Não aplica caminho B.2 (`N_f > N` — filho mais segmentado que a mãe):**
+
+1.3.4.9.01.0.3.00.000	`Compensações Ambientais - Dívida Ativa` (mãe: **2** segmentos major)  
+1.3.4.9.01.0.3.01.000	`Compensações Ambientais - DA - Reposição Florestal` (filho: **3** segmentos major)
+
+O primeiro segmento do filho (`Compensações Ambientais`) tem intersecção lexical com o primeiro segmento da mãe e típicamente **não** com o segundo (`Dívida Ativa`) — cenário compatível com **no máximo** uma falha no **último** segmento da mãe. Contudo **`N_f = 3 > N = 2`**, logo por **1.2.4.5.3** o fallback **B.2 não se aplica**; **B.1** também falha → **não** se registra par **Regra 1.2** por caminho **B** para esse par (outras regras PF/ND continuam avaliadas nos termos próprios).
 
 
 ## Regra 2 (ND)

@@ -3,6 +3,7 @@
 from django.test import SimpleTestCase, TestCase
 
 from apps.core.alias_lexico_infer import (
+    _filter_good_dict_junction_m,
     _infer_pairs,
     _is_sigla_second_segment_rule2,
     _significant_word_keys_major_segment,
@@ -13,6 +14,7 @@ from apps.core.alias_lexico_infer import (
     _try_rule_a,
     _try_rule_nd_parenthetical_suffix,
     _try_rule_nd_two_segment_sigla,
+    termo_suppressed_by_junction_m,
 )
 from apps.core.alias_lexico_termo_policy import (
     termo_nome_persistivel,
@@ -116,7 +118,7 @@ class RuleNdTwoSegmentSiglaTests(SimpleTestCase):
 
 
 class Rule12PfTests(SimpleTestCase):
-    """Regra 1.2 (PF) — caminho A (eco) e caminho B (cobertura lexical)."""
+    """Regra 1.2 (PF) — **1.2.9** (duplicados); caminho A; B (B.1/B.2); **N_f ≤ N** em B.2; **1.2.4.5.5**."""
 
     def test_rule_1_2_cultura_example(self) -> None:
         parent = "Outras Transf. Convênios União Entidades - Princ. - Cultura"
@@ -168,11 +170,90 @@ class Rule12PfTests(SimpleTestCase):
         keys = _significant_word_keys_major_segment(child_seg)
         self.assertTrue({"cota", "parte", "iof", "ouro"} <= keys)
 
-    def test_rule_1_2_path_b_rejects_partial_segment_coverage(self) -> None:
+    def test_rule_1_2_path_b2_single_miss_last_segment(self) -> None:
+        """B.2: único segmento sem intersecção é o último (ex.: cauda Principal)."""
         parent = "Segmento Alfa - Segmento Beta"
         child = "Só Alfa - Principal"
+        self.assertIsNone(_try_rule_1_2_pf_tail_echo(parent, child))
+        got = _try_rule_1_2_pf_segment_coverage(parent, child)
+        self.assertEqual(got, (parent, "Só Alfa"))
+        self.assertEqual(_try_rule_1_2_pf(parent, child), got)
+
+    def test_rule_1_2_path_b2_single_miss_first_segment(self) -> None:
+        """B.2: único segmento sem intersecção é o primeiro (caminho A falha nos literais)."""
+        parent = "Stuff Here - Alfa Beta Gamma"
+        child = "Alfa Gamma Beta - Principal"
+        self.assertIsNone(_try_rule_1_2_pf_tail_echo(parent, child))
+        got = _try_rule_1_2_pf_segment_coverage(parent, child)
+        self.assertEqual(got, (parent, "Alfa Gamma Beta"))
+
+    def test_rule_1_2_path_b_rejects_intermediate_segment_miss(self) -> None:
+        """B.2 não cobre falha apenas no segmento intermédio (N≥3)."""
+        parent = "Alfa Paz - Segmento Beta - Gama Sul"
+        child = "Alfa Gama Sul - Principal"
         self.assertIsNone(_try_rule_1_2_pf_segment_coverage(parent, child))
         self.assertIsNone(_try_rule_1_2_pf(parent, child))
+
+    def test_rule_1_2_path_b_rejects_two_segment_misses(self) -> None:
+        parent = "Segmento Alfa - Segmento Beta"
+        child = "Só Gamma - Principal"
+        self.assertIsNone(_try_rule_1_2_pf_segment_coverage(parent, child))
+        self.assertIsNone(_try_rule_1_2_pf(parent, child))
+
+    def test_rule_1_2_path_b2_rejects_child_more_segments_than_parent(self) -> None:
+        """B.2: ``N_f > N`` bloqueia o fallback (ex. spec Compensações Ambientais / DA)."""
+        parent = "Compensações Ambientais - Dívida Ativa"
+        child = "Compensações Ambientais - DA - Reposição Florestal"
+        self.assertIsNone(_try_rule_1_2_pf_tail_echo(parent, child))
+        self.assertIsNone(_try_rule_1_2_pf_segment_coverage(parent, child))
+        self.assertIsNone(_try_rule_1_2_pf(parent, child))
+
+    def test_rule_1_2_path_b1_allows_child_more_segments_when_full_coverage(self) -> None:
+        """B.1 não sofre a restrição ``N_f ≤ N`` de B.2."""
+        parent = "Parte Comum - Outra Parte"
+        child = "Parte Comum - Qualquer - Sufixo"
+        self.assertIsNone(_try_rule_1_2_pf_tail_echo(parent, child))
+        got = _try_rule_1_2_pf_segment_coverage(parent, child)
+        self.assertEqual(got, (parent, "Parte Comum"))
+
+    def test_rule_1_2_path_b_blocked_parallel_tail_rule4(self) -> None:
+        """1.2.4.5.5 — cauda alinhada abrevia como na Regra 4 (ex.: Principal / Princ.)."""
+        parent = "Alienação Bens Imóveis - Principal"
+        child = "Alienação Bens Imóveis - Princ."
+        self.assertIsNone(_try_rule_1_2_pf_tail_echo(parent, child))
+        self.assertIsNone(_try_rule_1_2_pf_segment_coverage(parent, child))
+        self.assertIsNone(_try_rule_1_2_pf(parent, child))
+
+    def test_rule_1_2_sus_saude_path_b2(self) -> None:
+        parent = "Transf. Convênios União SUS-Saúde - Principal"
+        child = "SUS-Saúde - Ministério da Saúde"
+        self.assertIsNone(_try_rule_1_2_pf_tail_echo(parent, child))
+        got = _try_rule_1_2_pf_segment_coverage(parent, child)
+        self.assertEqual(got, (parent, "SUS-Saúde"))
+        self.assertEqual(_try_rule_1_2_pf(parent, child), got)
+
+    def test_rule_1_2_skips_identical_mother_child_receita_nome(self) -> None:
+        """1.2.9 — duplicados mãe/filho; guard em ``_try_rule_1_2_pf``, não dentro de coverage isolado."""
+        name = "Contribuição para Fundos de Assistência Médica - Bombeiros Militares"
+        cov = _try_rule_1_2_pf_segment_coverage(name, name)
+        self.assertIsNotNone(cov)
+        self.assertEqual(cov[0], name)
+        self.assertIsNone(_try_rule_1_2_pf(name, name))
+
+    def test_rule_1_2_duplicate_guard_normalizes_spaces_and_case(self) -> None:
+        mother = "  Contribuição para Fundos de Assistência Médica - Bombeiros Militares  "
+        child = "contribuição  para\tfundos  de ASSISTência médica - bomBEIROS   militares"
+        self.assertIsNone(_try_rule_1_2_pf(mother, child))
+
+    def test_infer_pairs_skips_identical_mother_child_receita_nome(self) -> None:
+        parent_name = "Contribuição para Fundos de Assistência Médica - Bombeiros Militares"
+        rows = [
+            _active_item_row(parent_name, item_id="it-dup-par", parent_item_id="-"),
+            _active_item_row(parent_name, item_id="it-dup-child", parent_item_id="it-dup-par"),
+        ]
+        good, conflicts, exempt = _infer_pairs(rows)
+        self.assertEqual(conflicts, [])
+        self.assertNotIn(parent_name, good)
 
     def test_infer_pairs_rule_1_2_iof_ouro(self) -> None:
         parent_name = (
@@ -193,6 +274,41 @@ class Rule12PfTests(SimpleTestCase):
         self.assertEqual(conflicts, [])
         self.assertEqual(good[parent_name], "Cota-Parte IOF-Ouro")
         self.assertIn(parent_name, exempt)
+
+    def test_infer_pairs_rule_1_2_sus_saude(self) -> None:
+        """Igual ao exemplo da spec — B.2 (cauda «Principal» sem overlap com ``W_f``)."""
+        parent_name = "Transf. Convênios União SUS-Saúde - Principal"
+        parent_id = "IT-PARENT-1717500100000"
+        child_id = "IT-CHILD-1717500101000"
+        rows = [
+            _active_item_row(parent_name, item_id=parent_id, parent_item_id="-"),
+            _active_item_row(
+                "SUS-Saúde - Ministério da Saúde",
+                item_id=child_id,
+                parent_item_id=parent_id,
+            ),
+        ]
+        good, conflicts, exempt = _infer_pairs(rows)
+        self.assertEqual(conflicts, [])
+        self.assertEqual(good[parent_name], "SUS-Saúde")
+        self.assertIn(parent_name, exempt)
+
+    def test_infer_pairs_rule_1_2_not_alienacao_principal_princ_parallel(self) -> None:
+        """Não par 1.2 por caminho B quando cauda alinhada é Principal/Princ. (1.2.4.5.5)."""
+        parent_name = "Alienação Bens Imóveis - Principal"
+        parent_id = "IT-PARENT-2222210100000"
+        child_id = "IT-CHILD-2222210101000"
+        rows = [
+            _active_item_row(parent_name, item_id=parent_id, parent_item_id="-"),
+            _active_item_row(
+                "Alienação Bens Imóveis - Princ.",
+                item_id=child_id,
+                parent_item_id=parent_id,
+            ),
+        ]
+        good, conflicts, exempt = _infer_pairs(rows)
+        self.assertEqual(conflicts, [])
+        self.assertNotIn(parent_name, good)
 
     def test_infer_pairs_rule_1_2_parent_child(self) -> None:
         parent_id = "IT-PARENT-1717990109000"
@@ -318,6 +434,49 @@ class Rule4PfTests(SimpleTestCase):
             good["Cessão do Direito de Operacionalização de Pagamentos"],
             "Cessão Dir. Operac. Pag.",
         )
+
+
+class JunctionMTests(SimpleTestCase):
+    """Spec (M) — omissão quando o termo é a junção ``T - A`` já coberta por pares no mapa / *good*."""
+
+    def test_termo_suppressed_by_junction_m_seed_style(self) -> None:
+        base = "Contribuição para Financiamento da Seguridade Social"
+        m = {base: "COFINS"}
+        joined = f"{base} - COFINS"
+        self.assertTrue(termo_suppressed_by_junction_m(joined, m))
+        self.assertFalse(termo_suppressed_by_junction_m(base, m))
+
+    def test_filter_good_dict_junction_m_drops_join_when_base_pair_present(self) -> None:
+        base = "Contribuição para Financiamento da Seguridade Social"
+        good_in = {
+            base: "COFINS",
+            f"{base} - COFINS": "Contribuição para Financiamento da Seguridade Social",
+        }
+        good_out = _filter_good_dict_junction_m(good_in)
+        self.assertEqual(good_out, {base: "COFINS"})
+
+    def test_infer_pairs_junction_m_same_run(self) -> None:
+        pid = "it-parent-cofins-m"
+        cid_a = "it-child-cofins-a"
+        cid_b = "it-child-cofins-b"
+        long_name = "Contribuicao para Financiamento da Seguridade Social"
+        rows = [
+            _active_item_row(long_name, item_id=pid, parent_item_id="-"),
+            _active_item_row(
+                "COFINS - Receita Bruta",
+                item_id=cid_a,
+                parent_item_id=pid,
+            ),
+            _active_item_row(
+                f"{long_name} - COFINS sobre o Faturamento",
+                item_id=cid_b,
+                parent_item_id=pid,
+            ),
+        ]
+        good, conflicts, _ = _infer_pairs(rows)
+        self.assertEqual(conflicts, [])
+        self.assertEqual(good.get(long_name), "COFINS")
+        self.assertNotIn(f"{long_name} - COFINS", good)
 
 
 class InsertAliasLexicoViiiExemptTests(TestCase):

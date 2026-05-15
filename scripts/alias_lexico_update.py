@@ -46,6 +46,7 @@ from apps.core.alias_lexico_infer import (  # noqa: E402
     _max_alias_lexico_ref,
     _merge_abbrev_map_from_pair,
     _sort_rows_alias_lexico_registry,
+    termo_suppressed_by_junction_m,
 )
 from apps.core.alias_lexico_termo_policy import (  # noqa: E402
     termo_nome_persistivel,
@@ -190,10 +191,14 @@ def main() -> None:
 
     additions: list[tuple[str, str]] = []
     n_skip_comp_inf = 0
+    n_skip_junction_m = 0
     n_skip_termo_viii = 0
     for termo, abrev in inferred_candidates:
         if not termo_nome_persistivel(termo, viii_exempt_termos=termos_viii_exempt):
             n_skip_termo_viii += 1
+            continue
+        if termo_suppressed_by_junction_m(termo, abbrev_by_termo):
+            n_skip_junction_m += 1
             continue
         if _is_compositional_redundant(termo, abrev, abbrev_by_termo):
             n_skip_comp_inf += 1
@@ -254,11 +259,12 @@ def main() -> None:
 
     logger.info(
         "infer_csv: gravado — existentes=%s novas_inferência=%s derivadas=%s omitidas_comp=%s "
-        "omitidas_termo_viii=%s",
+        "omitidas_junction_m=%s omitidas_termo_viii=%s",
         len(existing_rows),
         n_inferred_only,
         n_derived,
         n_skip_comp,
+        n_skip_junction_m,
         n_skip_termo_viii,
     )
 
@@ -279,6 +285,9 @@ def main() -> None:
     if n_skip_comp:
         print()
         print(f"  Omitidas por redundância composicional: {n_skip_comp}.")
+    if n_skip_junction_m:
+        print()
+        print(f"  Omitidas por junção já decomposta (spec M): {n_skip_junction_m}.")
     if n_skip_termo_viii:
         print()
         print(

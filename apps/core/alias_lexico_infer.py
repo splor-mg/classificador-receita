@@ -4,14 +4,19 @@ Inferência conservadora de pares (termo, abreviação) a partir de linhas de it
 Regras PF (mãe–filho), ordem na passagem primária (``_RULE_FUNCS_PRIMARY``):
 
 - **Regra 1** (``_try_rule_a*``): mãe monossegmento → primeiro segmento do filho abrevia nome integral da mãe.
-- **Regra 1.2** (``_try_rule_1_2_pf``): mãe e filho com ≥2 segmentos major; caminho A eco literal
-  (último = primeiro) ou caminho B cobertura lexical (1.2.8) → ``(nome integral da mãe, primeiro segmento do filho)``.
+- **Regra 1.2** (``_try_rule_1_2_pf``): mãe e filho com ≥2 segmentos major; omitida quando nome integral
+  mãe=filho coincide após **1.2.9**; caminho A eco literal ou caminho **B.1**/**B.2**, vetando **B** se cauda
+  alinhada for abreviação **Regra 4** (**1.2.4.5.5**, ``_rule_12_path_b_blocked_parallel_tail``).
 - **Regra 4** (``_try_rule_4_pf_pairs``): alinhamento posicional (filho X+1); incl. cabeça + sigla da cauda (ex. ``Atenção MAC``).
 
 Regras ND sobre o próprio ``receita_nome``:
 
 - **Regra 2 (ND):** exactamente dois segmentos; segundo é sigla (v), incl. ``IOF-Ouro``; omissão 2.4 se sigla já mapeada.
 - **Regra 3 (ND):** um segmento major e sufixo ``(SIGLA)`` → par base → sigla.
+
+**Omissão (M) — junção já decomposta:** antes de devolver candidatos únicos ou persistir, omite-se o
+par cujo ``termo`` (após **1.2.9.1**) coincide com ``T + ' - ' + A`` de outro par já no mapa ou no
+mesmo lote ``good`` (ver ``_filter_good_dict_junction_m``, ``termo_suppressed_by_junction_m``).
 
 Sem dependências Django: pode ser importado pelo script CSV na raiz do projeto (ver ``scripts/``).
 """
@@ -62,6 +67,7 @@ _CONNECTIVES = frozenset(
         "pela",
         "pelos",
         "pelas",
+        "sobre",
         "um",
         "uma",
         "uns",
@@ -114,6 +120,68 @@ def _split_segments_major(name: str) -> list[str]:
     Evita partir siglas compostas com traço interno (ex.: ``DA-MJM``) como se fossem dois segmentos.
     """
     return [p.strip() for p in re.split(r"\s+-\s+", name.strip()) if p.strip()]
+
+
+def _norm_receita_nome_rule12_duplicate_guard(name: str) -> str:
+    """
+    Chave de comparação para **1.2.9** (duplicados mãe/filho): ``strip``, colapsar blocos Unicode
+    whitespace a um espaço ASCII, ``casefold``.
+    """
+    s = (name or "").strip()
+    return re.sub(r"\s+", " ", s).casefold()
+
+
+def _junction_join_norm_m(t: str, a: str) -> str:
+    """Chave (M.1) para a junção canónica ``T.strip() + ' - ' + A.strip()``."""
+    return _norm_receita_nome_rule12_duplicate_guard(f"{t.strip()} - {a.strip()}")
+
+
+def termo_suppressed_by_junction_m(termo: str, abbrev_map: dict[str, str]) -> bool:
+    """
+    Spec **(M)**: ``True`` se ``norm(termo)`` (1.2.9.1) coincide com a junção de algum
+    ``(T, A)`` em *abbrev_map* (``norm(T + ' - ' + A)``), com ``T`` e ``A`` não vazios após *strip*.
+    """
+    if not (termo or "").strip():
+        return False
+    n_t = _norm_receita_nome_rule12_duplicate_guard(termo)
+    for T_raw, A_raw in abbrev_map.items():
+        T = (T_raw or "").strip()
+        A = (A_raw or "").strip()
+        if not T or not A:
+            continue
+        if _junction_join_norm_m(T, A) == n_t:
+            return True
+    return False
+
+
+def _filter_good_dict_junction_m(good: dict[str, str]) -> dict[str, str]:
+    """
+    Remove entradas de *good* cujo ``termo`` é reduntante por **(M)** face à junção de outro par
+    presente no mesmo dicionário (mesma corrida de inferência).
+    """
+    if len(good) < 2:
+        return good
+    join_norms: set[str] = set()
+    for T, A_raw in good.items():
+        T_s = (T or "").strip()
+        A = (A_raw or "").strip()
+        if not T_s or not A:
+            continue
+        join_norms.add(_junction_join_norm_m(T_s, A))
+    out: dict[str, str] = {}
+    for termo, abrev in good.items():
+        n_t = _norm_receita_nome_rule12_duplicate_guard(termo)
+        if n_t in join_norms:
+            continue
+        out[termo] = abrev
+    return out
+
+
+def _rule12_skip_duplicate_mother_child_labels(parent_name: str, child_name: str) -> bool:
+    """True se nome integral da mãe coincide com o do filho após 1.2.9 → Regra **1.2** omitida."""
+    return _norm_receita_nome_rule12_duplicate_guard(
+        parent_name
+    ) == _norm_receita_nome_rule12_duplicate_guard(child_name)
 
 
 def _norm_name(raw: str | None) -> str | None:
@@ -552,6 +620,27 @@ def _is_segment_abbrev_rule4(parent_seg: str, child_seg: str) -> bool:
     return False
 
 
+def _rule_12_path_b_blocked_parallel_tail(pp: list[str], pc: list[str]) -> bool:
+    """
+    Spec 1.2.4.5.5 — exclusão do **caminho B**: para algum índice 1-based ``i`` em
+    ``2 … min(N, N_f)``, o segmento ``S_{f,i}`` abrevia ``S_{m,i}`` no mesmo sentido da **Regra 4**,
+    ignorando igualdade literal e abreviação só por conectivos (alinhado ao laço de ``_try_rule_4_pf_pairs``).
+    """
+    upto = min(len(pp), len(pc))
+    for idx in range(1, upto):
+        p_seg = pp[idx].strip()
+        c_seg = pc[idx].strip()
+        if not p_seg or not c_seg:
+            continue
+        if p_seg.casefold() == c_seg.casefold():
+            continue
+        if _is_simple_abbrev_connectives_only(p_seg, c_seg):
+            continue
+        if _is_segment_abbrev_rule4(p_seg, c_seg):
+            return True
+    return False
+
+
 def _try_rule_1_2_pf_tail_echo(parent_name: str, child_name: str) -> tuple[str, str] | None:
     """
     Regra 1.2 caminho A (PF): último segmento major da mãe = primeiro do filho (*casefold*).
@@ -574,8 +663,10 @@ def _try_rule_1_2_pf_tail_echo(parent_name: str, child_name: str) -> tuple[str, 
 
 def _try_rule_1_2_pf_segment_coverage(parent_name: str, child_name: str) -> tuple[str, str] | None:
     """
-    Regra 1.2 caminho B (PF): primeiro segmento do filho intersecta palavras significativas
-    (1.2.8) de **cada** segmento major da mãe.
+    Regra 1.2 caminho B (PF): **B.1** — intersecção lexical (1.2.8) com **cada** segmento major da mãe;
+    se falhar, **B.2** — no máximo **um** segmento sem intersecção, apenas no **primeiro** ou **último**
+    da mãe, e **apenas** se o filho **não** tiver **mais** segmentos major do que a mãe
+    (``len(pc) <= len(pp)``; spec 1.2.4.5.3); **1.2.4.5.5** vetado por caudas alinhadas tipo Regra 4.
     """
     pp = _split_segments_major(parent_name)
     pc = _split_segments_major(child_name)
@@ -584,12 +675,24 @@ def _try_rule_1_2_pf_segment_coverage(parent_name: str, child_name: str) -> tupl
     first_child = pc[0].strip()
     if not first_child:
         return None
+    if _rule_12_path_b_blocked_parallel_tail(pp, pc):
+        return None
     w_child = _significant_word_keys_major_segment(first_child)
     if not w_child:
         return None
-    for parent_seg in pp:
+    misses: list[int] = []
+    for i, parent_seg in enumerate(pp):
         w_parent = _significant_word_keys_major_segment(parent_seg)
         if not w_child.intersection(w_parent):
+            misses.append(i)
+    if misses:
+        if len(pc) > len(pp):
+            return None
+        if len(misses) != 1:
+            return None
+        (idx,) = misses
+        n = len(pp)
+        if idx != 0 and idx != n - 1:
             return None
     termo = parent_name.strip()
     if not termo:
@@ -598,7 +701,9 @@ def _try_rule_1_2_pf_segment_coverage(parent_name: str, child_name: str) -> tupl
 
 
 def _try_rule_1_2_pf(parent_name: str, child_name: str) -> tuple[str, str] | None:
-    """Regra 1.2 (PF): caminho A; se falhar, caminho B (spec 1.2.7)."""
+    """Regra 1.2 (PF): **1.2.9**; caminho A; se falhar, caminho B (spec 1.2.7)."""
+    if _rule12_skip_duplicate_mother_child_labels(parent_name, child_name):
+        return None
     return _try_rule_1_2_pf_tail_echo(parent_name, child_name) or _try_rule_1_2_pf_segment_coverage(
         parent_name, child_name
     )
@@ -774,6 +879,7 @@ def _infer_pairs(
             good[termo] = next(iter(abrevs))
         else:
             conflicts.append((termo, abrevs))
+    good = _filter_good_dict_junction_m(good)
     return good, conflicts, frozenset(termos_viii_exempt)
 
 

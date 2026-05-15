@@ -138,10 +138,11 @@ class Command(BaseCommand):
         conflicts = res.conflicts
 
         logger.info(
-            "atualizar_lista_abreviacoes: inferência — inferidos=%s omitidas_comp_inf=%s derivadas=%s "
-            "omitidas_termo_viii=%s",
+            "atualizar_lista_abreviacoes: inferência — inferidos=%s omitidas_comp_inf=%s omitidas_junction_m=%s "
+            "derivadas=%s omitidas_termo_viii=%s",
             res.n_inferred_only,
             res.n_skip_comp_inf,
+            res.n_skip_junction_m,
             res.n_derived,
             res.n_skip_termo_viii,
         )
