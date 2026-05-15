@@ -43,7 +43,10 @@ from apps.core.alias_lexico_infer import (
     _parse_iso_date,
     sort_pairs_like_registry_order,
 )
-from apps.core.alias_lexico_termo_policy import termo_nome_rejeitado_encurtamento_iv
+from apps.core.alias_lexico_termo_policy import (
+    termo_nome_persistivel,
+    termo_nome_rejeitado_encurtamento_iv,
+)
 from apps.core.alias_lexico_protocol import (
     budget_period_contains_instant,
     insert_alias_lexico_if_new,
@@ -207,7 +210,9 @@ def run_alias_lexico_infer_persist(
         (a or "").strip().lower() for a in abbrev_by_termo.values() if (a or "").strip()
     }
 
-    good, conflicts = _infer_pairs(rows, abbrev_siglas_mapeadas_ci=abbrev_siglas_mapeadas_ci)
+    good, conflicts, termos_viii_exempt = _infer_pairs(
+        rows, abbrev_siglas_mapeadas_ci=abbrev_siglas_mapeadas_ci
+    )
 
     initial_blocked_ci = set(blocked_ci)
     initial_pairs: list[tuple[str, str]] = list(abbrev_by_termo.items())
@@ -223,7 +228,7 @@ def run_alias_lexico_infer_persist(
     n_skip_comp_inf = 0
     n_skip_termo_viii = 0
     for termo, abrev in inferred_candidates:
-        if termo_nome_rejeitado_encurtamento_iv(termo):
+        if not termo_nome_persistivel(termo, viii_exempt_termos=termos_viii_exempt):
             n_skip_termo_viii += 1
             continue
         if _is_compositional_redundant(termo, abrev, abbrev_by_termo):
@@ -272,6 +277,7 @@ def run_alias_lexico_infer_persist(
                 alias_lexico_ref=next_ref,
                 data_registro_inicio=reg_ini,
                 data_registro_fim=sent_orm,
+                termo_viii_exempt=termo in termos_viii_exempt,
             )
             if inserted:
                 mx = next_ref

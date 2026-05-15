@@ -40,16 +40,23 @@ def budget_period_contains_instant(
     return data_vigencia_inicio <= d <= data_vigencia_fim
 
 
-def insert_alias_lexico_if_new(**kwargs) -> tuple[bool, AliasLexico | None]:
+def insert_alias_lexico_if_new(
+    *,
+    termo_viii_exempt: bool = False,
+    **kwargs,
+) -> tuple[bool, AliasLexico | None]:
     """
     Tenta ``INSERT`` de ``AliasLexico``. Duplicata de ``termo`` (unicidade **case-insensitive** no BD)
     resulta em ``(False, None)`` — equivalente a “não houve insert” para efeitos de export (ii).
 
-    ``ValidationError`` em ``full_clean()`` (incl. **(viii)** do termo) resulta em ``(False, None)``.
+    ``ValidationError`` em ``full_clean()`` (incl. **(viii)** do termo) resulta em ``(False, None)``,
+    salvo ``termo_viii_exempt=True`` (ex.: Regra 1.2 — ``receita_nome`` integral da mãe).
 
     Usa ``transaction.atomic`` interno para isolar ``IntegrityError`` sem abortar a transação exterior.
     """
     obj = AliasLexico(**kwargs)
+    if termo_viii_exempt:
+        obj._skip_termo_viii_check = True
     try:
         obj.full_clean()
     except ValidationError:

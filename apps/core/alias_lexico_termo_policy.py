@@ -41,3 +41,22 @@ def termo_nome_rejeitado_encurtamento_iv(termo: str) -> bool:
         if _RE_ENCURTAMENTO_IV_COMO_TOKEN.fullmatch(tok):
             return True
     return False
+
+
+def termo_nome_persistivel(
+    termo: str,
+    *,
+    viii_exempt_termos: frozenset[str] | None = None,
+) -> bool:
+    """
+    True se o ``termo`` pode ser objecto de INSERT (satisfaz **(viii)** ou excepção documentada).
+
+    ``viii_exempt_termos``: termos cuja violação **(viii)** é tolerada (ex.: Regra 1.2 — nome
+    integral do item mãe copiado de ``receita_nome``).
+    """
+    s = (termo or "").strip()
+    if not s:
+        return False
+    if viii_exempt_termos is not None and s in viii_exempt_termos:
+        return True
+    return not termo_nome_rejeitado_encurtamento_iv(s)

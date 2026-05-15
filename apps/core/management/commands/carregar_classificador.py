@@ -552,15 +552,6 @@ class Command(BaseCommand):
             if termo is None or abrev is None:
                 continue
 
-            if termo_nome_rejeitado_encurtamento_iv(termo):
-                self.stdout.write(
-                    self.style.WARNING(
-                        f"lista_abreviacoes: linha omitida (termo com token de encurtamento (iv) no "
-                        f"termo_nome, spec viii): {termo!r}"
-                    )
-                )
-                continue
-
             ref_raw = _strip_csv_empty(row.get("alias_lexico_ref")) or _strip_csv_empty(
                 row.get("termo_nome_ref")
             )
@@ -584,7 +575,10 @@ class Command(BaseCommand):
                 if mx >= next_ref:
                     next_ref = mx + 1
 
-            inserted, _ = insert_alias_lexico_if_new(**prepared)
+            inserted, _ = insert_alias_lexico_if_new(
+                **prepared,
+                termo_viii_exempt=termo_nome_rejeitado_encurtamento_iv(termo),
+            )
             if inserted:
                 created += 1
 

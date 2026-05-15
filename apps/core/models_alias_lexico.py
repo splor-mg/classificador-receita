@@ -111,7 +111,9 @@ class AliasLexico(models.Model):
             raise ValidationError({"termo": "Informe o termo completo."})
         if not a:
             raise ValidationError({"abreviacao": "Informe a abreviação."})
-        if termo_nome_rejeitado_encurtamento_iv(t):
+        if not getattr(self, "_skip_termo_viii_check", False) and termo_nome_rejeitado_encurtamento_iv(
+            t
+        ):
             raise ValidationError(
                 {
                     "termo": (

@@ -47,7 +47,10 @@ from apps.core.alias_lexico_infer import (  # noqa: E402
     _merge_abbrev_map_from_pair,
     _sort_rows_alias_lexico_registry,
 )
-from apps.core.alias_lexico_termo_policy import termo_nome_rejeitado_encurtamento_iv  # noqa: E402
+from apps.core.alias_lexico_termo_policy import (  # noqa: E402
+    termo_nome_persistivel,
+    termo_nome_rejeitado_encurtamento_iv,
+)
 
 ITEM_CSV = ROOT / "docs/assets/seed_item_classificacao.csv"
 OUT_CSV = ROOT / "docs/assets/seed_lista_abreviacoes.csv"
@@ -162,7 +165,9 @@ def main() -> None:
     with ITEM_CSV.open(encoding="utf-8", newline="") as f:
         rows = list(csv.DictReader(f))
 
-    good, conflicts = _infer_pairs(rows, abbrev_siglas_mapeadas_ci=abbrev_siglas_ci)
+    good, conflicts, termos_viii_exempt = _infer_pairs(
+        rows, abbrev_siglas_mapeadas_ci=abbrev_siglas_ci
+    )
     logger.info(
         "infer_csv: infer_pairs concluído — candidatos únicos=%s conflitos=%s",
         len(good),
@@ -187,7 +192,7 @@ def main() -> None:
     n_skip_comp_inf = 0
     n_skip_termo_viii = 0
     for termo, abrev in inferred_candidates:
-        if termo_nome_rejeitado_encurtamento_iv(termo):
+        if not termo_nome_persistivel(termo, viii_exempt_termos=termos_viii_exempt):
             n_skip_termo_viii += 1
             continue
         if _is_compositional_redundant(termo, abrev, abbrev_by_termo):

@@ -1,13 +1,17 @@
 """
 Inferência conservadora de pares (termo, abreviação) a partir de linhas de item (dict compatível com CSV).
 
-Inclui, por ordem da spec (*Regras ND* sobre o próprio ``receita_nome``):
+Regras PF (mãe–filho), ordem na passagem primária (``_RULE_FUNCS_PRIMARY``):
 
-- **Regra 2 (ND):** exactamente dois segmentos (``' - '`` como em ``_split_segments``); o segundo é
-  sigla no sentido de ``_dev/spec_lista_abreviacoes.md`` (v), incluindo o padrão tipo ``IOF-Ouro``;
-  candidato ``(segmento_1, segmento_2)``. Se a sigla (texto do 2.º segmento) já existir como valor de
-  ``abreviacao`` noutra entrada do mapa vigente, o candidato **omite-se** (2.4 na spec).
-- **Regra 3 (ND):** um segmento major (``' - '``) e sufixo ``(SIGLA)`` → par base → sigla.
+- **Regra 1** (``_try_rule_a*``): mãe monossegmento → primeiro segmento do filho abrevia nome integral da mãe.
+- **Regra 1.2** (``_try_rule_1_2_pf``): mãe e filho com ≥2 segmentos major; caminho A eco literal
+  (último = primeiro) ou caminho B cobertura lexical (1.2.8) → ``(nome integral da mãe, primeiro segmento do filho)``.
+- **Regra 4** (``_try_rule_4_pf_pairs``): alinhamento posicional segmento a segmento (filho X+1 segmentos).
+
+Regras ND sobre o próprio ``receita_nome``:
+
+- **Regra 2 (ND):** exactamente dois segmentos; segundo é sigla (v), incl. ``IOF-Ouro``; omissão 2.4 se sigla já mapeada.
+- **Regra 3 (ND):** um segmento major e sufixo ``(SIGLA)`` → par base → sigla.
 
 Sem dependências Django: pode ser importado pelo script CSV na raiz do projeto (ver ``scripts/``).
 """
@@ -199,6 +203,28 @@ def _resolve_parent_row(child: dict, rows_by_item_id: dict[str, list[dict]]) -> 
 def _significant_words_ordered(text: str) -> list[str]:
     words = re.findall(r"[A-Za-zÀ-ÿ]+", text)
     return [w for w in words if w.lower() not in _CONNECTIVES]
+
+
+def _significant_word_keys_major_segment(segment: str) -> set[str]:
+    """
+    Palavras significativas de um segmento major (Regra 1.2 caminho B / spec 1.2.8).
+
+    Vírgulas → espaço; tokens por espaço; subdivisão por hífen ASCII; exclusão de conectivos;
+    chaves *casefold* para comparação.
+    """
+    s = re.sub(r",\s*", " ", (segment or "").strip())
+    s = re.sub(r"\s+", " ", s).strip()
+    if not s:
+        return set()
+    keys: set[str] = set()
+    for token in s.split():
+        for part in re.split(r"-+", token):
+            if not part or not re.search(r"[A-Za-zÀ-ÿ]", part):
+                continue
+            for word in re.findall(r"[A-Za-zÀ-ÿ]+", part):
+                if word.lower() not in _CONNECTIVES:
+                    keys.add(word.casefold())
+    return keys
 
 
 def _is_simple_abbrev_connectives_only(long_seg: str, short_seg: str) -> bool:
@@ -487,6 +513,58 @@ def _is_segment_abbrev_rule4(parent_seg: str, child_seg: str) -> bool:
     return False
 
 
+def _try_rule_1_2_pf_tail_echo(parent_name: str, child_name: str) -> tuple[str, str] | None:
+    """
+    Regra 1.2 caminho A (PF): último segmento major da mãe = primeiro do filho (*casefold*).
+    """
+    pp = _split_segments_major(parent_name)
+    pc = _split_segments_major(child_name)
+    if len(pp) < 2 or len(pc) < 2:
+        return None
+    last_parent = pp[-1].strip()
+    first_child = pc[0].strip()
+    if not last_parent or not first_child:
+        return None
+    if last_parent.casefold() != first_child.casefold():
+        return None
+    termo = parent_name.strip()
+    if not termo:
+        return None
+    return (termo, first_child)
+
+
+def _try_rule_1_2_pf_segment_coverage(parent_name: str, child_name: str) -> tuple[str, str] | None:
+    """
+    Regra 1.2 caminho B (PF): primeiro segmento do filho intersecta palavras significativas
+    (1.2.8) de **cada** segmento major da mãe.
+    """
+    pp = _split_segments_major(parent_name)
+    pc = _split_segments_major(child_name)
+    if len(pp) < 2 or len(pc) < 2:
+        return None
+    first_child = pc[0].strip()
+    if not first_child:
+        return None
+    w_child = _significant_word_keys_major_segment(first_child)
+    if not w_child:
+        return None
+    for parent_seg in pp:
+        w_parent = _significant_word_keys_major_segment(parent_seg)
+        if not w_child.intersection(w_parent):
+            return None
+    termo = parent_name.strip()
+    if not termo:
+        return None
+    return (termo, first_child)
+
+
+def _try_rule_1_2_pf(parent_name: str, child_name: str) -> tuple[str, str] | None:
+    """Regra 1.2 (PF): caminho A; se falhar, caminho B (spec 1.2.7)."""
+    return _try_rule_1_2_pf_tail_echo(parent_name, child_name) or _try_rule_1_2_pf_segment_coverage(
+        parent_name, child_name
+    )
+
+
 def _try_rule_4_pf_pairs(parent_name: str, child_name: str) -> list[tuple[str, str]]:
     """
     Regra 4 (PF): mãe com X segmentos (``_split_segments_major``, X ≥ 2), filho com X+1;
@@ -557,6 +635,7 @@ _RULE_FUNCS_PRIMARY = (
     _try_rule_a_multi_first,
     _try_rule_a_first_word_dot_abbrev,
     _try_rule_a_dotted_chain,
+    _try_rule_1_2_pf,
 )
 
 
@@ -568,7 +647,7 @@ def _infer_pairs(
     rows: list[dict],
     *,
     abbrev_siglas_mapeadas_ci: AbstractSet[str] | None = None,
-) -> tuple[dict[str, str], list[tuple[str, set[str]]]]:
+) -> tuple[dict[str, str], list[tuple[str, set[str]]], frozenset[str]]:
     rows_by_item_id: dict[str, list[dict]] = defaultdict(list)
     for r in rows:
         iid = (r.get("item_id") or "").strip()
@@ -577,6 +656,7 @@ def _infer_pairs(
 
     cand: dict[str, set[str]] = defaultdict(set)
     matched_item_ids: set[str] = set()
+    termos_viii_exempt: set[str] = set()
 
     for r in rows:
         if not _is_transaction_active_row(r):
@@ -615,6 +695,8 @@ def _infer_pairs(
             if got:
                 termo, abrev = got
                 cand[termo].add(abrev)
+                if rule_fn is _try_rule_1_2_pf:
+                    termos_viii_exempt.add(termo)
                 if cid:
                     matched_item_ids.add(cid)
                 matched_pf = True
@@ -653,7 +735,7 @@ def _infer_pairs(
             good[termo] = next(iter(abrevs))
         else:
             conflicts.append((termo, abrevs))
-    return good, conflicts
+    return good, conflicts, frozenset(termos_viii_exempt)
 
 
 _SEED_WRITER_KW = {"quoting": csv.QUOTE_MINIMAL}

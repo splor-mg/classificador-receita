@@ -56,7 +56,8 @@ Apesar de essa ser a principal fonte de análise, haverá análises que não dep
 
 ### Excepções ao termo_nome canónico
 
-- **v1:** nenhuma excepção documentada; entradas históricas inválidas devem ser corrigidas manualmente ou por migração de dados se a governança o exigir.
+- **Regra 1.2 (PF):** quando o par candidato provém da **Regra 1.2** e o `termo_nome` é o **`receita_nome` integral do item mãe** (1.2.5), o protocolo **pode persistir** esse `termo_nome` mesmo que contenha tokens de encurtamento **(iv)** no interior (ex.: `Princ.` em `Outras Transf. Convênios União Entidades - Princ. - Cultura`), porque o termo não é uma forma lexical inventada na inferência — é a nomenclatura oficial do item de classificação. A excepção aplica-se **apenas** a termos marcados como isentos de **(viii)** na passagem de inferência (conjunto devolvido com os candidatos da Regra 1.2).
+- Entradas históricas inválidas fora desta excepção devem ser corrigidas manualmente ou por migração de dados se a governança o exigir.
 
 
 ## Fluxo de dados e artefactos
@@ -77,7 +78,7 @@ Apesar de essa ser a principal fonte de análise, haverá análises que não dep
 
 - (D) *fonte* - a fonte de dados para **inferência** é o **Banco de Dados** (`ItemClassificacao` e `lista_abreviacoes`). O ficheiro `docs/assets/seed_lista_abreviacoes.csv` é **subsidiário**: artefacto de export; carga inicial segue o datapackage e o comando de carga, como nas demais tabelas.
 
-- (E) *ordem das regras* - as regras abaixo devem ser aplicadas nessa ordem, sendo que a primeira que se aplicar, encerra a tentativa
+- (E) *ordem das regras* - as regras abaixo devem ser aplicadas nessa ordem, sendo que a primeira que se aplicar, encerra a tentativa **na passagem PF por par mãe–filho** (regras **ND** por item, **Regra 4**, **Regra 5** e pós-processamento **6**/**7** seguem o desenho de cada secção). Na passagem PF, ordem recomendada: **Regra 1** (1.1–1.4), **Regra 1.2**, **Regra 4**, **Regra 5**.
 
 - (F) *ferramentas, flags e conflitos*
   - **`--print-conflicts`:** no fim da execução, **lista** os conflitos que permaneceram **silenciosos** durante a corrida (mesmo `termo`, múltiplas `abreviacao` candidatas na mesma execução, sem gravação automática). Não altera o BD.
@@ -134,7 +135,7 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
 
 ### Testes automatizados (v1)
 
-- Recomenda-se pelo menos: (1) cenário pai/filho em BD que dispara uma regra PF e **assert** de que `AliasLexico` contém o par esperado; (2) segunda execução do comando **sem** `--print-conflicts-resolve` **não** aumenta o número de linhas para o mesmo termo; (3) opcionalmente, smoke de que o ficheiro exportado contém o `termo_nome` esperado após `export_resource`.
+- Recomenda-se pelo menos: (1) cenário pai/filho em BD que dispara uma regra PF e **assert** de que `AliasLexico` contém o par esperado; (1b) par **Regra 1.2** caminho A (eco literal) com `termo_nome` = nome integral da mãe; (1c) par **Regra 1.2** caminho B (cobertura lexical), p.ex. `Cota-Parte IOF-Ouro` → nome integral da mãe IOF-Ouro / Comercialização do Ouro; (2) segunda execução do comando **sem** `--print-conflicts-resolve` **não** aumenta o número de linhas para o mesmo termo; (3) opcionalmente, smoke de que o ficheiro exportado contém o `termo_nome` esperado após `export_resource`.
 
 
 ### Evolução — desempenho (documentação em código)
@@ -146,7 +147,7 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
 
 - 1.1. item mãe tem nome de segmento único, isto é, a nomenclatura não contém nenhum traço " - " no seu nome
 - 1.2. item filho tem pelo menos 2 segmentos
-- 1.3. o primeiro segmento do nome do filho é uma abreviação, por sigla, ou por encurtamento de palavra, mas não é uma abreviação simples
+- 1.3. o primeiro segmento do nome do filho é uma abreviação, por sigla, ou por encurtamento de palavra, mas não é uma `abreviação simples`
 - 1.4. o primeiro segmento do nome do item filho deve ser registrado como abreviação do nome completo do item mãe
   
   1.1.1.2.51.0.0.00.000 "Imposto sobre a Propriedade de Veículos Automotores"
@@ -161,6 +162,85 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
   
   "Tx. Insp. Contr. Fisc" deve ser registrado como abreviação de "Taxas de Inspeção, Controle e Fiscalização"
 
+
+## Regra 1.2 (PF) — abreviação do nome integral da mãe pelo primeiro segmento do filho
+
+Regra para pares mãe–filho em que o **primeiro segmento major** do filho condensa, de forma reconhecível, a nomenclatura **completa** da mãe (vários segmentos major), e não apenas um segmento isolado da mãe. Há **dois caminhos** de candidatura (A e B); basta **um** deles. A contagem de segmentos major usa o separador ` - ` (espaços–traço–espaços), alinhada à **Regra 4** — **não** confundir com traços **internos** a um segmento (ex.: `Cota-Parte`, `IOF-Ouro`).
+
+### Pré-requisitos (1.2.1–1.2.2)
+
+- 1.2.1. o item mãe tem **pelo menos 2** segmentos major no `receita_nome`
+- 1.2.2. o item filho tem **pelo menos 2** segmentos major no `receita_nome`
+
+### Caminho A — eco literal do último segmento da mãe (1.2.3)
+
+- 1.2.3. o **último** segmento major do nome do item mãe, após *trim*, é **exactamente igual** ao **primeiro** segmento major do nome do item filho, após *trim* — **comparação sem distinção de maiúsculas/minúsculas** (*case fold* Unicode). Isto vale **independentemente** de esse segmento ser, ou não, uma `abreviação` (sigla, encurtamento ou `abreviação simples`) de qualquer outra parte do nome da mãe: basta a **igualdade literal** dos dois segmentos na posição indicada.
+
+  **Exemplo (caminho A):**
+
+  1717990109000	`Outras Transf. Convênios União Entidades - Princ. - Cultura`  
+  1717990109001	`Cultura - Ministério da Cidadania`
+
+  último segmento da mãe (`Cultura`) = primeiro segmento do filho (`Cultura`) → `Cultura` abrevia o nome integral da mãe.
+
+### Caminho B — cobertura lexical por segmento da mãe (1.2.4)
+
+Quando **1.2.3** **não** se verifica, candidato alternativo:
+
+- 1.2.4.1. seja `S_f` o **primeiro** segmento major do filho (após *trim*) e `S_{m,1} … S_{m,N}` os **N** segmentos major da mãe (`N ≥ 2`, por 1.2.1)
+- 1.2.4.2. extraia o conjunto de **palavras significativas** `W_f` de `S_f` e, para cada `i`, o conjunto `W_{m,i}` de `S_{m,i}`, conforme o algoritmo **1.2.8**
+- 1.2.4.3. para **cada** `i` de `1` a `N`, a intersecção `W_f ∩ W_{m,i}` (comparação *case-insensitive*) deve ser **não vazia** — isto é: o primeiro segmento do filho contém **pelo menos uma** palavra significativa **de cada** segmento da mãe (não é necessário que **todas** as palavras de `W_f` apareçam na mãe; palavras só no filho, como `IOF` no exemplo abaixo, **não** invalidam o candidato)
+- 1.2.4.4. **não** se exige igualdade literal entre `S_f` e qualquer `S_{m,i}` nem entre `S_f` e o último segmento da mãe
+
+  **Exemplo (caminho B):**
+
+  1711550000000	`Cota-Parte do Imposto sobre Operações de Crédito, Câmbio e Seguro, ou Relativas a Títulos ou Valores Mobiliários - Comercialização do Ouro`  
+  1711550100000	`Cota-Parte IOF-Ouro - Principal`
+
+  | Papel | Segmento |
+  |-------|----------|
+  | mãe 1 | `Cota-Parte do Imposto sobre Operações de Crédito, Câmbio e Seguro, ou Relativas a Títulos ou Valores Mobiliários` |
+  | mãe 2 | `Comercialização do Ouro` |
+  | filho 1 | `Cota-Parte IOF-Ouro` |
+
+  Em `S_f`, os subtermos separados por espaço são `Cota-Parte` e `IOF-Ouro`; subdividindo cada um pelo hífen ASCII interno, `W_f` inclui pelo menos `Cota`, `Parte`, `IOF`, `Ouro` (conectivos excluídos).  
+  - Em `W_{m,1}`: `Cota`, `Parte` (entre outras) → intersecção com `W_f` não vazia.  
+  - Em `W_{m,2}`: `Comercialização`, `Ouro` → `Ouro` ∈ `W_f`.  
+
+  `Cota-Parte IOF-Ouro` deve ser registrado como abreviação do **nome integral** da mãe (não apenas do primeiro ou do último segmento).
+
+  *Nota:* a **Regra 2** (ND) no item de nomenclatura única `… Ouro - IOF-Ouro` regista `IOF-Ouro` como abreviação do primeiro segmento **daquele** item; a **Regra 1.2** caminho B regista o **primeiro segmento do filho** como abreviação do **nome completo multi-segmento** da mãe — geometrias distintas.
+
+### Registro e política (1.2.5–1.2.7)
+
+- 1.2.5. quando **1.2.3** (caminho A) **ou** **1.2.4** (caminho B) se verifica, o **primeiro** segmento major do filho (`S_f`) deve ser registrado como `abreviacao` do **nome completo** do item mãe (`termo_nome` = string integral do `receita_nome` da mãe). Esse `termo_nome` está **isento de (viii)** quando contiver tokens **(iv)** como parte da nomenclatura oficial da mãe (ver *Excepções ao termo_nome canónico*)
+- 1.2.6. **não** se exige o critério **1.3** da Regra 1 (primeiro segmento do filho como sigla/encurtamento formal): nos caminhos A e B o par é candidato mesmo com palavra por extenso repetida (caminho A, ex.: `Cultura`) ou com condensação lexical (caminho B)
+- 1.2.7. **ordem (PF):** na implementação, avaliar **depois** das heurísticas da **Regra 1** (1.1–1.4) e **antes** da **Regra 4**; dentro da Regra 1.2, testar **primeiro** o caminho A (1.2.3) e **só se falhar** o caminho B (1.2.4); se outra regra PF tiver sido aplicada ao mesmo par mãe–filho na mesma execução, aplica-se **(E)**
+
+### Algoritmo de palavras significativas (1.2.8)
+
+Usado no caminho B (e alinhado ao vocabulário “significativo” da **Regra 7** / `_significant_words_ordered` na implementação):
+
+- 1.2.8.1. **Entrada:** texto de um segmento major `S` (uma única peça entre delimitadores ` - `).
+- 1.2.8.2. **Normalização superficial:** substituir vírgulas `,` por espaço; colapsar espaços; *trim*.
+- 1.2.8.3. **Tokens por espaço:** dividir o resultado em tokens contíguos separados por espaços em branco.
+- 1.2.8.4. **Subdivisão por hífen:** para cada token, subdividir pelo caractere hífen ASCII `-` (um ou mais hífens consecutivos tratam-se como um separador); cada subparte não vazia que contenha pelo menos uma letra latina (incl. acentuadas) é candidata a palavra.
+- 1.2.8.5. **Conectivos:** excluir tokens classificados como conectivos do protocolo (lista usada na implementação: `de`, `da`, `do`, `das`, `dos`, `e`, `ou`, `em`, … — ver `_CONNECTIVES` em `alias_lexico_infer.py`).
+- 1.2.8.6. **Chave de comparação:** *case fold* Unicode em cada palavra restante; duas palavras coincidem se as chaves forem iguais.
+- 1.2.8.7. **Siglas com hífen** (ex.: `IOF-Ouro` no filho): **não** são tratadas como sigla indivisível **(v)** neste passo — aplicam-se 1.2.8.3–1.2.8.4, produzindo `IOF` e `Ouro` como palavras distintas (coerente com o exemplo IOF-Ouro acima).
+
+### Exemplos negativos
+
+**Não aplica caminho A nem B (mãe monosegmento — Regra 1):**
+
+1.1.1.2.51.0.0.00.000	`Imposto sobre a Propriedade de Veículos Automotores`  
+1.1.1.2.51.0.1.00.000	`IPVA - Principal`
+
+último segmento da mãe ≠ primeiro do filho; caminho B falha porque a mãe não tem ≥ 2 segmentos major → candidato **1.2** não se forma; pode aplicar-se **Regra 1**.
+
+**Não aplica caminho B (falta cobertura de algum segmento da mãe):**
+
+Mãe `Segmento Alfa - Segmento Beta`, filho `Só Alfa - Principal` — `W_f` não intersecta `W_{m,2}` → caminho B falha (caminho A só se `Beta` = `Só Alfa`, o que não é o caso).
 
 
 ## Regra 2 (ND)
