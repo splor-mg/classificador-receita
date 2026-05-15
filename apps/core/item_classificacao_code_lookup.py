@@ -1,6 +1,6 @@
 """
 Lookups JSON do admin para `ItemClassificacao`: hierarquia a partir do código
-e resolução de item pai por código exato.
+e resolução de item mãe por código exato.
 
 Ver `_dev/spec_lookup_hierarquia_por_codigo_admin.md`.
 """
@@ -132,7 +132,7 @@ def lookup_parent_by_code_response_data(request: HttpRequest) -> Dict[str, Any]:
 
 
 def lookup_hierarchy_by_code_response_data(request: HttpRequest) -> Dict[str, Any]:
-    """Payload JSON para `lookup-hierarchy-by-code/` (nível derivado + item pai matriz)."""
+    """Payload JSON para `lookup-hierarchy-by-code/` (nível derivado + item mãe matriz)."""
     raw_code = (request.GET.get("code") or "").replace(".", "").strip()
     classificacao_pk = (request.GET.get("classificacao_pk") or "").strip()
     vigencia_inicio = _parse_admin_get_date(request.GET.get("vigencia_inicio"))
@@ -415,20 +415,20 @@ def lookup_hierarchy_by_code_response_data(request: HttpRequest) -> Dict[str, An
                             parent_payload["status"] = {
                                 "severity": "warning",
                                 "message": (
-                                    "Não existe item pai vigente para o código informado "
+                                    "Não existe item mãe vigente para o código informado "
                                     "na classificação selecionada, porém existe noutra classificação compatível."
                                 ),
                                 "alternative": {
                                     "classificacao": fb_alt_payload,
                                     "message": (
-                                        "Não existe item pai vigente para a classificação selecionada, "
+                                        "Não existe item mãe vigente para a classificação selecionada, "
                                         f"porém existe para {fb_alt_id}. "
                                         "Certifique-se de que a classificação selecionada está correta."
                                     ),
                                 },
                             }
                         notices.append(
-                            f"O item pai encontrado pertence ao nível {fb_level}, "
+                            f"O item mãe encontrado pertence ao nível {fb_level}, "
                             f"que não é imediatamente anterior ao item filho (nível {derived_level_number}) "
                             "que está sendo criado."
                         )
@@ -492,13 +492,13 @@ def lookup_hierarchy_by_code_response_data(request: HttpRequest) -> Dict[str, An
                     parent_payload["status"] = {
                         "severity": "warning",
                         "message": (
-                            "Não existe item pai vigente para o código informado "
+                            "Não existe item mãe vigente para o código informado "
                             "na classificação selecionada, porém existe noutra classificação compatível."
                         ),
                         "alternative": {
                             "classificacao": alt_class_payload,
                             "message": (
-                                "Não existe item pai vigente para a classificação selecionada, "
+                                "Não existe item mãe vigente para a classificação selecionada, "
                                 f"porém existe para {alt_class_id}. "
                                 "Certifique-se de que a classificação selecionada está correta."
                             ),
@@ -543,7 +543,7 @@ def lookup_hierarchy_by_code_response_data(request: HttpRequest) -> Dict[str, An
                     plain = (
                         f"Existe item com o código {detail_obj.receita_cod} ativo e vigente, "
                         "mas está registado como detalhe, não como matriz. "
-                        "Altere-o para matriz para poder utilizá-lo como item pai nesta hierarquia."
+                        "Altere-o para matriz para poder utilizá-lo como item mãe nesta hierarquia."
                     )
                     parent_payload["status"] = {
                         "severity": "error",
@@ -551,7 +551,7 @@ def lookup_hierarchy_by_code_response_data(request: HttpRequest) -> Dict[str, An
                         "html": format_html(
                             "Existe item com o código <strong>{}</strong> ativo e vigente, "
                             "mas está registado como <strong>detalhe</strong>, não como matriz. "
-                            "Altere-o para matriz para poder utilizá-lo como item pai nesta hierarquia. "
+                            "Altere-o para matriz para poder utilizá-lo como item mãe nesta hierarquia. "
                             '<a href="{}" target="_blank" rel="noopener noreferrer">Ver item</a>.',
                             detail_obj.receita_cod,
                             item_url,
@@ -562,7 +562,7 @@ def lookup_hierarchy_by_code_response_data(request: HttpRequest) -> Dict[str, An
                     parent_payload["status"] = {
                         "severity": "error",
                         "message": (
-                            "Não existe item pai ativo e vigente como matriz para o código informado "
+                            "Não existe item mãe ativo e vigente como matriz para o código informado "
                             "nem na classificação selecionada, nem em noutra classificação compatível."
                         ),
                         "alternative": None,
@@ -571,7 +571,7 @@ def lookup_hierarchy_by_code_response_data(request: HttpRequest) -> Dict[str, An
                     parent_payload["status"] = {
                         "severity": "error",
                         "message": (
-                            "Não existe item pai ativo e vigente como matriz para o código informado "
+                            "Não existe item mãe ativo e vigente como matriz para o código informado "
                             "compatível com a vigência indicada."
                         ),
                         "alternative": None,

@@ -473,7 +473,7 @@ def _try_rule_nd_parenthetical_suffix(name: str) -> tuple[str, str] | None:
 
 def _is_segment_abbrev_rule4(parent_seg: str, child_seg: str) -> bool:
     """
-    O segmento do filho é abreviação do segmento do pai (Regra 4 / PF), excluindo
+    O segmento do filho é abreviação do segmento do mãe (Regra 4 / PF), excluindo
     igualdade literal e abreviação simples (tratadas antes).
     """
     p = parent_seg.strip()
@@ -489,7 +489,7 @@ def _is_segment_abbrev_rule4(parent_seg: str, child_seg: str) -> bool:
 
 def _try_rule_4_pf_pairs(parent_name: str, child_name: str) -> list[tuple[str, str]]:
     """
-    Regra 4 (PF): pai com X segmentos (``_split_segments_major``, X ≥ 2), filho com X+1;
+    Regra 4 (PF): mãe com X segmentos (``_split_segments_major``, X ≥ 2), filho com X+1;
     para cada posição i < X, se o segmento do filho abrevia o do pai, não é igual nem
     abreviação simples, candidato ``(segmento_pai_i, segmento_filho_i)``.
     """

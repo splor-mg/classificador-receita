@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Acrescenta registros em ``docs/assets/seed_lista_abreviacoes.csv`` por inferência **conservadora**
-a partir de ``docs/assets/seed_item_classificacao.csv`` (arestas **pai → filho direto**).
+a partir de ``docs/assets/seed_item_classificacao.csv`` (arestas **mãe → filho direto**).
 
 A lógica de regras vive em ``apps/core/alias_lexico_infer.py`` (sem Django): Regras ND 2 e 3 sobre o
 nome do item, Regras PF 1 (``_try_rule_a*``), Regra 4 (``_try_rule_4_pf_pairs``) e Regra 5 (PF).

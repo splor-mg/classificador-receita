@@ -5,7 +5,7 @@ Usados no cliente via json_script no template; mantidos aqui como fonte única.
 """
 
 RECEITA_NOME_SUGESTAO_INFO = (
-    "Nome sugerido com base no item pai selecionado. "
+    "Nome sugerido com base no item mãe selecionado. "
     "Complete o nome desta classificação após o traço."
 )
 

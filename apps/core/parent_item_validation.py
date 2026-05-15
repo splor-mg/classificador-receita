@@ -1,9 +1,9 @@
 """
 Regras de consistência de `parent_item_id` em `ItemClassificacao`.
 
-Ver `_dev/spec_parent_item_id.md`. A compatibilidade temporal entre pai e filho
+Ver `_dev/spec_parent_item_id.md`. A compatibilidade temporal entre mãe e filho
 considera apenas vigência (tempo válido), não o registro bitemporal ativo.
-A contenção de vigência do filho no pai já é coberta por
+A contenção de vigência do filho no mãe já é coberta por
 `validate_vigencia_contained_in_fk_targets` quando `parent_item_id` está preenchido.
 """
 
@@ -227,31 +227,31 @@ def validate_item_parent_item_rules(instance) -> None:
         and self_pk == parent_pk
     ):
         raise ValidationError(
-            {"parent_item_id": "Um item não pode ser pai de si mesmo."}
+            {"parent_item_id": "Um item não pode ser mãe de si mesmo."}
         )
 
     if not getattr(parent, "matriz", False):
         raise ValidationError(
             {
                 "parent_item_id": (
-                    "O item pai deve ser de natureza matriz (agregador), não detalhe."
+                    "O item mãe deve ser de natureza matriz (agregador), não detalhe."
                 )
             }
         )
 
     parent_nivel = getattr(parent, "nivel_id", None)
     if parent_nivel is None:
-        raise ValidationError({"parent_item_id": "O item pai não possui nível hierárquico válido."})
+        raise ValidationError({"parent_item_id": "O item mãe não possui nível hierárquico válido."})
 
     parent_n = getattr(parent_nivel, "nivel_numero", None)
     if parent_n is None:
-        raise ValidationError({"parent_item_id": "O item pai não possui nível hierárquico válido."})
+        raise ValidationError({"parent_item_id": "O item mãe não possui nível hierárquico válido."})
 
     if parent_n >= nivel_n:
         raise ValidationError(
             {
                 "parent_item_id": (
-                    "O item pai deve estar em nível hierárquico estritamente acima "
+                    "O item mãe deve estar em nível hierárquico estritamente acima "
                     f"(menor número de nível) do item filho (nível do filho: {nivel_n})."
                 )
             }
@@ -296,7 +296,7 @@ def validate_item_parent_item_rules(instance) -> None:
         raise ValidationError(
             {
                 "parent_item_id": (
-                    f"O nível do item pai ({parent_n}) não é compatível com a máscara "
+                    f"O nível do item mãe ({parent_n}) não é compatível com a máscara "
                     f"da classificação ({len(mask)} níveis)."
                 )
             }
@@ -317,7 +317,7 @@ def validate_item_parent_item_rules(instance) -> None:
         raise ValidationError(
             {
                 "parent_item_id": (
-                    "O código canônico do item pai não está alinhado à máscara de níveis "
+                    "O código canônico do item mãe não está alinhado à máscara de níveis "
                     "desta classificação e vigência."
                 )
             }
@@ -337,7 +337,7 @@ def validate_item_parent_item_rules(instance) -> None:
                         "ao nível do item."
                     ),
                     "parent_item_id": (
-                        "Código do item pai insuficiente para validar a hierarquia "
+                        "Código do item mãe insuficiente para validar a hierarquia "
                         "com o item filho."
                     ),
                 }
@@ -346,11 +346,11 @@ def validate_item_parent_item_rules(instance) -> None:
             raise ValidationError(
                 {
                     "parent_item_id": (
-                        "O código do item pai deve coincidir com o do filho em todos os "
+                        "O código do item mãe deve coincidir com o do filho em todos os "
                         f"níveis até {parent_n} (nível do pai)."
                     ),
                     "receita_cod": (
-                        "Prefixo do código incompatível com o item pai indicado."
+                        "Prefixo do código incompatível com o item mãe indicado."
                     ),
                 }
             )
@@ -364,7 +364,7 @@ def validate_item_parent_item_rules(instance) -> None:
             raise ValidationError(
                 {
                     "parent_item_id": (
-                        f"A partir do nível {parent_n + 1}, o código do item pai deve usar "
+                        f"A partir do nível {parent_n + 1}, o código do item mãe deve usar "
                         "apenas zeros canônicos nos segmentos correspondentes."
                     )
                 }
@@ -375,7 +375,7 @@ def validate_item_parent_item_rules(instance) -> None:
         raise ValidationError(
             {
                 "parent_item_id": (
-                    f"A partir do nível {parent_n + 1}, o código do item pai deve usar "
+                    f"A partir do nível {parent_n + 1}, o código do item mãe deve usar "
                     "apenas zeros canônicos, inclusive em dígitos excedentes "
                     "além da máscara."
                 )
@@ -392,7 +392,7 @@ def validate_item_parent_item_rules(instance) -> None:
                         "receita_cod": (
                             f"Código canônico insuficiente para validar os níveis "
                             f"{parent_n + 1} a {nivel_n - 1} (esperado zero canônico "
-                            "quando o pai não está no nível imediatamente anterior)."
+                            "quando o mãe não está no nível imediatamente anterior)."
                         )
                     }
                 )
@@ -400,12 +400,12 @@ def validate_item_parent_item_rules(instance) -> None:
                 raise ValidationError(
                     {
                         "parent_item_id": (
-                            "O item pai não está no nível imediatamente anterior e o código "
+                            "O item mãe não está no nível imediatamente anterior e o código "
                             f"do filho apresenta detalhamento nos níveis {parent_n + 1} a "
                             f"{nivel_n - 1}; esses níveis devem conter apenas zeros canônicos."
                         ),
                         "receita_cod": (
-                            "Para este item pai, os níveis entre o nível do pai e o nível do "
+                            "Para este item pai, os níveis entre o nível do mãe e o nível do "
                             "item devem estar apenas com zeros canônicos."
                         ),
                     }
@@ -475,8 +475,8 @@ def analyze_intermediate_items_for_level_jump(
 
     Critério (códigos no BD sem pontuação de máscara):
 
-    - radical numérico = primeiros dígitos do ``receita_cod`` do pai até ao fim
-      do nível do pai (soma das larguras ``mask[0:LP]``);
+    - radical numérico = primeiros dígitos do ``receita_cod`` do mãe até ao fim
+      do nível do mãe (soma das larguras ``mask[0:LP]``);
     - ``classificacao_pk``: PK da classificação usada na query (no admin, o do
       **formulário** de criação);
     - registo ativo (``data_registro_fim`` sentinela);
@@ -652,7 +652,7 @@ def warn_parent_level_jump_json_dict(
     Monta o dicionário JSON para o aviso de salto de nível no admin (antes do submit).
 
     Retorna ``{"ok": true, "level_jump": false}`` quando não há salto estrutural
-    (pai já está em ``L_filho - 1``) ou dados insuficientes; caso contrário retorna
+    (mãe já está em ``L_filho - 1``) ou dados insuficientes; caso contrário retorna
     o payload completo com ``level_jump: true``, análise de intermediários e
     códigos mascarados para o modal.
     """

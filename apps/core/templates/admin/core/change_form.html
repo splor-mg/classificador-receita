@@ -1044,7 +1044,7 @@
                 parentItemIdInput.value = '';
                 parentItemIdInput.dispatchEvent(new Event('change', { bubbles: true }));
               }
-              var parentErrorMsg = parentStatus.message || 'Não existe item pai ativo e vigente para o código informado.';
+              var parentErrorMsg = parentStatus.message || 'Não existe item mãe ativo e vigente para o código informado.';
               parentItemIdInput.setCustomValidity(parentErrorMsg);
               var parentRow = getFieldRow(parentItemIdInput);
               if (parentStatus.html) {
@@ -1062,7 +1062,7 @@
               parentItemIdInput.value = '';
               parentItemIdInput.dispatchEvent(new Event('change', { bubbles: true }));
             }
-            var parentMissingMsg = 'Não existe item pai ativo e vigente para o código informado. Cadastre o item pai antes de salvar este registro.';
+            var parentMissingMsg = 'Não existe item mãe ativo e vigente para o código informado. Cadastre o item mãe antes de salvar este registro.';
             parentItemIdInput.setCustomValidity(parentMissingMsg);
             showHierarchyError(getFieldRow(parentItemIdInput), parentMissingMsg);
             if (triggerName === 'submit' && parentItemIdInput.reportValidity) {

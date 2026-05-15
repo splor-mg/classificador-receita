@@ -5,7 +5,7 @@
 Documentar o contrato HTTP/JSON dos endpoints usados pelo formulário de **adicionar/alterar** `ItemClassificacao` no Django Admin para:
 
 1. Resolver um **item** pelo **código exato** e janela de vigência (lupa de `parent_item_id`).
-2. Derivar **nível hierárquico** a partir do **código canónico** e sugerir **item pai matriz** coerente com a máscara e a vigência.
+2. Derivar **nível hierárquico** a partir do **código canónico** e sugerir **item mãe matriz** coerente com a máscara e a vigência.
 
 A lógica de negócio e ORM vive em `apps/core/item_classificacao_code_lookup.py`. As views em `ItemClassificacaoAdmin` apenas delegam e envolvem o dicionário em `JsonResponse`.
 
@@ -60,7 +60,7 @@ Se faltar qualquer um dos três, a resposta é o objeto “vazio” abaixo (sem 
 | `code` | Sim | Código canónico **só com dígitos** (`.` removidos). |
 | `vigencia_inicio` | Sim | Data (`YYYY-MM-DD` ou `DD/MM/YYYY`). |
 | `vigencia_fim` | Sim | Data (mesmos formatos). |
-| `classificacao_pk` | Não | PK da `Classificacao` escolhida no formulário. Ausente = sem restrição de classificação nas queries de nível/pai (salvo onde o código reintroduz busca noutra classificação). |
+| `classificacao_pk` | Não | PK da `Classificacao` escolhida no formulário. Ausente = sem restrição de classificação nas queries de nível/mãe (salvo onde o código reintroduz busca noutra classificação). |
 
 ### Erros (`ok: false`)
 
@@ -113,12 +113,12 @@ Resposta típica: `{"ok": false, "message": "<texto>"}`.
 | Campo | Tipo | Significado |
 |-------|------|-------------|
 | `required` | bool | `true` se `derived_level.number > 1`. |
-| `found` | bool | Matriz pai resolvida (incluindo fallbacks documentados no código). |
-| `pk`, `code`, `name`, `display_label`, `link_url` | strings | Dados do item pai ou vazios. |
+| `found` | bool | Matriz mãe resolvida (incluindo fallbacks documentados no código). |
+| `pk`, `code`, `name`, `display_label`, `link_url` | strings | Dados do item mãe ou vazios. |
 | `status` | object | Igual convenção `severity` / `message` / `alternative`; em erro “detalhe em vez de matriz” pode existir `html` (fragmento com link) além de `message` em texto simples. |
 | `notices` | array de strings | Avisos não bloqueantes (ex.: múltiplas matrizes, fallback de nível). |
 
-**Âmbito de classificação:** quando `classificacao_pk` identifica um registo, as queries de nível e de pai **primário** filtram pela identidade semântica da classificação (`classificacao_ref` / `classificacao_id` / FK), tal como em `classificacao_identity_filters` no módulo.
+**Âmbito de classificação:** quando `classificacao_pk` identifica um registo, as queries de nível e de mãe **primário** filtram pela identidade semântica da classificação (`classificacao_ref` / `classificacao_id` / FK), tal como em `classificacao_identity_filters` no módulo.
 
 **Máscara:** `digit_mask_for_classificacao_vigencia(class_pk, effective_inicio, effective_fim)`; se vazia, fallback `resolve_receita_cod_mask_context(None, input_length=len(code), on_date=hoje)`.
 

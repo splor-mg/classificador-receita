@@ -13,7 +13,7 @@ def effective_vigencia_for_item_hierarchy_lookup(
     classificacao: Optional[Classificacao] = None,
 ) -> Tuple[date, date, bool, Optional[Classificacao]]:
     """
-    Vigência efetiva para lookups de nível e item pai a partir do código canônico (admin).
+    Vigência efetiva para lookups de nível e item mãe a partir do código canônico (admin).
 
     - **Com classificação:** se o intervalo do formulário não estiver contido na
       vigência da classificação, usa-se o intervalo de vigência da classificação

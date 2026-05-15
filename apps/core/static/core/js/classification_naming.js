@@ -1,5 +1,5 @@
 /**
- * Radical do nome a partir do item pai (admin — criação de ItemClassificacao).
+ * Radical do nome a partir do item mãe (admin — criação de ItemClassificacao).
  * Mensagens vêm do elemento #classification-naming-config (json_script).
  */
 (function () {
@@ -186,14 +186,14 @@
 
     function nomeReceitaEhSugestaoIncompletaDoRadicalDoPai(nome, radicalDoPai) {
       var n = String(nome || '').trim();
-      var b = String(radicalDoPai || '').trim();
+      var b = String(radicalDomãe || '').trim();
       if (!n || !b) return false;
       var withSpaceDashSpace = (b + ' - ').trimEnd();
       var withSpaceDash = b + ' -';
       return n === withSpaceDashSpace || n === withSpaceDash || n === (b + ' - ');
     }
 
-    /** Aviso azul de sugestão só quando o texto é apenas radical do pai + traço (sem complemento). */
+    /** Aviso azul de sugestão só quando o texto é apenas radical do mãe + traço (sem complemento). */
     function refreshReceitaNomeSugestaoInfoMensagem() {
       var radical = String(currentParentNameBase || '').trim();
       if (
@@ -383,7 +383,7 @@
     setupReceitaNomeBaseOptions();
 
     /**
-     * Mantém radical do pai sincronizado com o formulário já repovoado pelo servidor,
+     * Mantém radical do mãe sincronizado com o formulário já repovoado pelo servidor,
      * sem sobrescrever receita_nome.
      */
     function scheduleHydrateParentNameBaseOnLoad() {

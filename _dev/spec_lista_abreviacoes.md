@@ -4,9 +4,9 @@
 
 A missão aqui é criar um protocolo/script que, analisando o banco de dados, consiga entender/derivar quais abreviações foram de fato implementadas. Aqueles casos que preencherem os requisitos de cada uma das regras, devem gerar um registro na tabela de lista de abreviações. 
 
-O padrão geral é que vamos pesquisar, no banco de dados `ItemClassificacao`, cada **filho** com **registro ativo** (valor sentinela fixo em `data_registro_fim`) e com **vigência orçamentária** que **compreenda o instante de análise T** (ver subsecção em *Design*), e cujo **pai** resolvido esteja **compatível com T** (registro ativo e vigência que também compreenda **T**, com o intervalo do filho contido no do pai quando a resolução temporal assim o exigir). A análise, para entender se houve alguma abreviação ou não, parte da comparação dos nomes/nomenclatura do item pai em relação ao do item filho. 
+O padrão geral é que vamos pesquisar, no banco de dados `ItemClassificacao`, cada **filho** com **registro ativo** (valor sentinela fixo em `data_registro_fim`) e com **vigência orçamentária** que **compreenda o instante de análise T** (ver subsecção em *Design*), e cujo **pai** resolvido esteja **compatível com T** (registro ativo e vigência que também compreenda **T**, com o intervalo do filho contido no do mãe quando a resolução temporal assim o exigir). A análise, para entender se houve alguma abreviação ou não, parte da comparação dos nomes/nomenclatura do item mãe em relação ao do item filho. 
 
-Apesar de essa ser a principal fonte de análise, haverá análises que não dependerão dessa comparação entre pai e filho. As regras que dependerem de pai e filho serão identificadas como (PF), e as que não dependerem, serão identificadas como (ND) - "não-dependente".
+Apesar de essa ser a principal fonte de análise, haverá análises que não dependerão dessa comparação entre mãe e filho. As regras que dependerem de mãe e filho serão identificadas como (PF), e as que não dependerem, serão identificadas como (ND) - "não-dependente".
 
 ## Alinhamento terminológico:
 
@@ -116,7 +116,7 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
 - **T** é o instante “agora” usado para filtrar itens, expresso em **UTC** de forma consistente com `USE_TZ` / `timezone.now()` na implementação Django, salvo parâmetro explícito de comando documentado.
 - **Registo ativo:** apenas linhas com `data_registro_fim` igual ao **valor sentinela** fixo do projeto (transaction time).
 - **Filho (candidato a inferência):** além de registo ativo, a **vigência orçamentária** do filho deve **conter T**, isto é, `data_vigencia_inicio ≤ T ≤ data_vigencia_fim`, com comparação de datas definida de forma **inclusiva** nas duas extremidades, salvo decisão explícita contrária no código (deve ser única e documentada no repositório).
-- **Pai (resolvido):** deve estar com **registo ativo** e com vigência que **compreenda T** (`data_vigencia_inicio ≤ T ≤ data_vigencia_fim`, mesma regra de inclusão). Onde a resolução temporal de FK exigir, o intervalo de vigência do filho (em T) deve permanecer **contido** no intervalo de vigência do pai.
+- **mãe (resolvido):** deve estar com **registo ativo** e com vigência que **compreenda T** (`data_vigencia_inicio ≤ T ≤ data_vigencia_fim`, mesma regra de inclusão). Onde a resolução temporal de FK exigir, o intervalo de vigência do filho (em T) deve permanecer **contido** no intervalo de vigência do pai.
 
 
 ### Unicidade do termo
@@ -143,7 +143,7 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
 
 ## Regra 1 (PF)
 
-- 1.1. item pai tem nome de segmento único, isto é, a nomenclatura não contém nenhum traço " - " no seu nome
+- 1.1. item mãe tem nome de segmento único, isto é, a nomenclatura não contém nenhum traço " - " no seu nome
 - 1.2. item filho tem pelo menos 2 segmentos
 - 1.3. o primeiro segmento do nome do filho é uma abreviação, por sigla, ou por encurtamento de palavra, mas não é uma abreviação simples
 - 1.4. o primeiro segmento do nome do item filho deve ser registrado como abreviação do nome completo do item pai
@@ -182,8 +182,8 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
 
 ## Regra 3 (ND)
 
-- 3.1. item pai tem nome de segmento único e é terminado com uma sigla entre parênteses
-- 3.2. a sigla entre parênteses deve ser entendida como sendo abreviação do restante do nome do item pai (desconsiderado a parte entre parênteses ao final)
+- 3.1. item mãe tem nome de segmento único e é terminado com uma sigla entre parênteses
+- 3.2. a sigla entre parênteses deve ser entendida como sendo abreviação do restante do nome do item mãe (desconsiderado a parte entre parênteses ao final)
 
   1.1.1.4.52.0.0.00.000	"Imposto sobre Vendas a Varejo de Combustíveis Líquidos e Gasosos (IVVC)"
   
@@ -192,7 +192,7 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
 
 ## Regra 4 (PF)
 
-- 4.1. item pai tem nome com X segmentos, sendo X maior ou igual a 2
+- 4.1. item mãe tem nome com X segmentos, sendo X maior ou igual a 2
 - 4.2. o item filho tem X+1 segmentos
 - 4.3. cada um dos segmentos do item filho, até o segmento X, deve ser registrado como sendo uma abreviação do correspondente segmento do item pai, desde que:
   - o segmento do item filho seja uma abreviação
@@ -202,8 +202,8 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
   1.1.1.4.50.1.1.00.000	"ICMS - Principal"
   1.1.1.4.50.1.1.01.000	"ICMS - Princ. - Cota Parte do Estado"
   
-  segmento 1 do item filho ("ICMS") -> apesar de ser uma abreviação, por sigla, não deve ser registrada como abreviação, já que é igual ao correspondente segmento 1 do item pai ("ICMS")
-  segmento 2 do item filho ("Princ.") -> considerando que é uma abreviação (por encurtamento de palavra), é diferente do correspondente segmento 2 do item pai ("Principal"), deve sim ser considerado como abreviação
+  segmento 1 do item filho ("ICMS") -> apesar de ser uma abreviação, por sigla, não deve ser registrada como abreviação, já que é igual ao correspondente segmento 1 do item mãe ("ICMS")
+  segmento 2 do item filho ("Princ.") -> considerando que é uma abreviação (por encurtamento de palavra), é diferente do correspondente segmento 2 do item mãe ("Principal"), deve sim ser considerado como abreviação
 
   "Princ." deve ser registrado como abreviação de "Principal"
 
@@ -212,8 +212,8 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
   1.1.1.4.50.1.2.00.000	"ICMS - Multas e Juros de Mora"
   1.1.1.4.50.1.2.01.000	"ICMS - MJM - Cota Parte do Estado"
 
-  segmento 1 do item filho ("ICMS") -> apesar de ser uma abreviação, por sigla, não deve ser registrada como abreviação, já que é igual ao correspondente segmento 1 do item pai ("ICMS")
-  segmento 2 do item filho ("MJM") -> considerando que é uma abreviação (por sigla), é diferente do correspondente segmento 2 do item pai ("Multas e Juros de Mora"), deve sim ser considerado como abreviação
+  segmento 1 do item filho ("ICMS") -> apesar de ser uma abreviação, por sigla, não deve ser registrada como abreviação, já que é igual ao correspondente segmento 1 do item mãe ("ICMS")
+  segmento 2 do item filho ("MJM") -> considerando que é uma abreviação (por sigla), é diferente do correspondente segmento 2 do item mãe ("Multas e Juros de Mora"), deve sim ser considerado como abreviação
 
   "MJM" deve ser registrado como abreviação de "Multas e Juros de Mora"
 
@@ -222,8 +222,8 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
   1.1.1.4.50.1.1.01.000	"ICMS - Cota Parte do Estado"
   1.1.1.4.50.1.1.01.001	"ICMS - Cota Parte Estado - Devolução"
 
-  segmento 1 do item filho ("ICMS") -> apesar de ser uma abreviação, por sigla, não deve ser registrada como abreviação, já que é igual ao correspondente segmento 1 do item pai ("ICMS")
-  segmento 2 do item filho ("Cota Parte Estado") -> apesar de ser diferente do correspondente segmento 2 do item pai ("Cota Parte do Estado"), a única diferença é a remoção do conectivo "de"
+  segmento 1 do item filho ("ICMS") -> apesar de ser uma abreviação, por sigla, não deve ser registrada como abreviação, já que é igual ao correspondente segmento 1 do item mãe ("ICMS")
+  segmento 2 do item filho ("Cota Parte Estado") -> apesar de ser diferente do correspondente segmento 2 do item mãe ("Cota Parte do Estado"), a única diferença é a remoção do conectivo "de"
 
   "Cota Parte Estado", por se tratar de mera `abreviação simples`, não deve ser registrado como abreviação de "Cota Parte do Estado"
 
@@ -232,8 +232,8 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
   1.1.2.1.01.0.1.00.000	"Tx. Insp. Contr. Fisc. - Principal"
   1.1.2.1.01.0.1.01.000	"Tx. Insp. Contr. Fisc. - Princ. - Taxa de Segurança Pública"
 
-  segmento 1 do item filho ("Tx. Insp. Contr. Fisc") -> apesar de ser uma abreviação, por encurtamento de palavra, não deve ser registrada como abreviação, já que é igual ao correspondente segmento 1 do item pai ("Tx. Insp. Contr. Fisc")
-  segmento 2 do item filho ("Princ.") -> deve ser registrado como abreviação do correspondente segmento 2 do item pai ("Principal")
+  segmento 1 do item filho ("Tx. Insp. Contr. Fisc") -> apesar de ser uma abreviação, por encurtamento de palavra, não deve ser registrada como abreviação, já que é igual ao correspondente segmento 1 do item mãe ("Tx. Insp. Contr. Fisc")
+  segmento 2 do item filho ("Princ.") -> deve ser registrado como abreviação do correspondente segmento 2 do item mãe ("Principal")
 
   "Princ." deve ser registrado como abreviação de "Principal"
 
@@ -242,16 +242,16 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
   1.1.2.1.01.0.1.01.000	"Tx. Insp. Contr. Fisc. - Princ. - Taxa de Segurança Pública"
   1.1.2.1.01.0.1.01.001	"Tx. Insp. Contr. Fisc. - Princ. - Tx. Segurança Pública - Polícia Civil do Estado de Minas Gerais - PCMG e Coordenadoria Estadual de Gestão do Trânsito - CET"
 
-  segmento 1 do item filho ("Tx. Insp. Contr. Fisc") -> apesar de ser uma abreviação, por encurtamento de palavra, não deve ser registrada como abreviação, já que é igual ao correspondente segmento 1 do item pai ("Tx. Insp. Contr. Fisc")
-  segmento 2 do item filho ("Princ.") -> apesar de ser uma abreviação, por encurtamento de palavra, não deve ser registrada como abreviação, já que é igual ao correspondente segmento 2 do item pai ("Princ.")
-  segmento 3 do item filho ("Tx. Segurança Pública") -> deve ser registrado como abreviação do correspondente segmento 3 do item pai ("Taxa de Segurança Pública")
+  segmento 1 do item filho ("Tx. Insp. Contr. Fisc") -> apesar de ser uma abreviação, por encurtamento de palavra, não deve ser registrada como abreviação, já que é igual ao correspondente segmento 1 do item mãe ("Tx. Insp. Contr. Fisc")
+  segmento 2 do item filho ("Princ.") -> apesar de ser uma abreviação, por encurtamento de palavra, não deve ser registrada como abreviação, já que é igual ao correspondente segmento 2 do item mãe ("Princ.")
+  segmento 3 do item filho ("Tx. Segurança Pública") -> deve ser registrado como abreviação do correspondente segmento 3 do item mãe ("Taxa de Segurança Pública")
 
   "Tx. Segurança Pública" deve ser registrado como abreviação de "Taxa de Segurança Pública"
 
 
 ## Regra 5 (PF)
 
-- 5.1. item pai tem nome com X segmentos, sendo X maior ou igual a 2
+- 5.1. item mãe tem nome com X segmentos, sendo X maior ou igual a 2
 - 5.2. o item filho tem, igualmente, X segmentos
 - 5.3. um dos segmentos, chamado aqui de segmento Y, do item filho corresponde à juntação, com traço ou sem traço, da versão abreviada de 2 seguimentos do item pai, chamados aqui de segmentos A e B
 - 5.4. o segmento Y deve ser registrado como sendo a abreviação da junção dos segmentos A e B
@@ -259,7 +259,7 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
   1.1.1.2.52.0.4.00.000	"ITCD - Dívida Ativa - Multas e Juros de Mora"
   1.1.1.2.52.0.4.01.000	"ITCD - DA-MJM - Cota Parte do Estado"
 
-  ambos pai e filho possuem 3 segmentos
+  ambos mãe e filho possuem 3 segmentos
   contexto: já existe abreviação de "Dívida Ativa" como sendo "DA" (assumido para exemplo)
   contexto: já existe abreviação de "Multas e Juros de Mora" como sendo "MJM" (assumido para exemplo)
   o semento 2 do item filho, "DA-MJM" corresponde à junção de "DA" (segmento 2 do item pai), com "MJM" (segmento 3 do item pai), separados por traço "DA-MJM"
@@ -277,7 +277,7 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
 - 6.6. para cada candidato `(palavra, token.)`, só se grava nova linha se o `termo_nome` igual a essa **palavra** **ainda não existir** em nenhuma linha da lista (independentemente de vigência de registro ou de outras colunas); **não** se altera `abreviação` de linhas já existentes para o mesmo termo **no protocolo automático de derivação atômica** — **exceto** o fluxo interativo `--print-conflicts-resolve` quando aplicável à sobreescrita acordada em *(F)* do *Design*
 - 6.7. a derivação atômica alimenta o **mapa vigente** usado na **Regra 7 (ND)** e referido em **(vi)**: cada par atômico aceite entra no mapa (sem sobrescrever mapeamento já fixado para a mesma palavra), permitindo detectar **redundância composicional** antes de aceitar um par frasal candidato
 
-  (contexto) supõe-se que, por uma regra (PF), já exista o registro na lista de abreviações em que o `termo_nome` é o **segmento único** do nome do item pai e a `abreviação` é exatamente a **primeira parte** (primeiro segmento) do nome do item filho, já validada pelo alinhamento token a palavra descrito em 6.2:
+  (contexto) supõe-se que, por uma regra (PF), já exista o registro na lista de abreviações em que o `termo_nome` é o **segmento único** do nome do item mãe e a `abreviação` é exatamente a **primeira parte** (primeiro segmento) do nome do item filho, já validada pelo alinhamento token a palavra descrito em 6.2:
 
   `termo_nome`: "Contribuição para os Serviços Sociais Gerais"
   `abreviação`: "Contrib. Serv. Sociais Gerais"
@@ -314,7 +314,7 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
 
 - 7.0. **Independente** da redundância composicional, candidatos cujo `termo_nome` viole **(viii)** (encurtamento (iv) como token lexical no termo) são sempre **omitidos** da persistência; ver **(A′)** e **(vii)**.
 
-- 7.1. a redundância composicional é um critério de **omissão**: não compara pai e filho; apenas decide se um par candidato `(termo_nome, abreviação)` **não** deve ser acrescentado à lista porque seria **derivável sem ambiguidade** a partir de mapeamentos já presentes no **mapa vigente** (vide **(vi)**)
+- 7.1. a redundância composicional é um critério de **omissão**: não compara mãe e filho; apenas decide se um par candidato `(termo_nome, abreviação)` **não** deve ser acrescentado à lista porque seria **derivável sem ambiguidade** a partir de mapeamentos já presentes no **mapa vigente** (vide **(vi)**)
 - 7.2. o **mapa vigente** é uma estrutura lógica `palavra_significativa → token` (o token é o valor de `abreviação` guardado para aquela palavra como `termo_nome` atômico). Inicialmente contém todos os pares das linhas **já existentes** no seed; ao longo da execução do protocolo, passa a incluir também cada par **aceite** na mesma ordem de processamento (inferências resolvidas, entradas manuais não colidentes) e os **átomos** inferidos pela **Regra 6** assim que o par frasal que os originou é aceite (cada átomo entra com `setdefault`, ou seja, **não** altera token já associado à mesma palavra)
 - 7.3. **Pré-condições** para aplicar o teste: o `termo_nome` candidato deve ter **duas ou mais** palavras significativas (mesma extração que o restante do protocolo: conectivos ignorados, vírgulas tratadas como separação equivalente a espaço); a `abreviação` candidata, após remoção de espaços extremos, deve ser **não vazia**
 - 7.4. **Critério decisório:** decomponha o `termo_nome` na lista ordenada de palavras significativas `w₁, w₂, …, wₙ` (`n ≥ 2`). Para cada `wᵢ`, consulte o mapa vigente: deve existir entrada com chave exatamente `wᵢ` (igualdade de string conforme o protocolo). Seja `tᵢ` o token (`abreviação`) associado a `wᵢ`. O par é **redundante em sentido composicional** se, e somente se, **para todo** `i` existe `tᵢ` e a concatenação `t₁ + " " + t₂ + … + " " + tₙ` (um espaço entre tokens consecutivos, **sem** espaço extra à esquerda/direita da string final) é **igual**, como string única, à `abreviação` candidata já normalizada (espaços extremos removidos)
