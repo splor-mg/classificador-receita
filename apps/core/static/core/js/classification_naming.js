@@ -173,6 +173,9 @@
 
   /**
    * **A9.2 / A9.3** — remove radical conhecido (N7) e repõe novo prefixo + complemento.
+   * Quando o strip pelo radical reconhecido **corresponde** mas não resta texto (**M1.5**
+   * só sugestão incompleta), **não** usar ``extrairComplementoPreservado`` no valor inteiro —
+   * nomes multi-segmento teriam o primeiro traço interno confundido com início do complemento.
    */
   function reporRadicalPreservandoComplemento(val, novoPrefixo, radicalRemover) {
     var complemento = '';
@@ -180,11 +183,10 @@
       var stripped = stripLeadingParentRadical(val, radicalRemover);
       if (stripped !== null) {
         complemento = String(stripped).trim();
+        return complemento ? novoPrefixo + complemento : novoPrefixo;
       }
     }
-    if (!complemento) {
-      complemento = extrairComplementoPreservado(val);
-    }
+    complemento = extrairComplementoPreservado(val).trim();
     return complemento ? novoPrefixo + complemento : novoPrefixo;
   }
 
