@@ -1,10 +1,19 @@
 ----------------------------------------------------------------------------------------------------
 # lista 
 
+- **visualização** - **changelit** - implementar padrão de, em todas changelist's, a visualização inicial vir, por padrão, como Ativos (Ano Corrente) 
 
-- verificar a ordenação do db de ItemClassificação, já que as novas receitas criadas, independente do código, estão vindo por último
+- **itemClassificacao*** - criar código já existente - Na tela de criação, se o campo de código canônico for preenchido com código que já existe com registro ativo e vigente para período de vigência compatível com o do formulário, deve haver mensagem de alerta informando que já existe tal código vigente <link para o registro já existente>. Clique aqui para navegar para próximo dígito disponível. 
+   Lembrar que, a vigência do formulário deve ser entendida da seguinte forma: 
 
-- funcionalidade exportar para excel, csv, pdf
+   -> Se o campo classificação estiver vazio, deve interpretar o que já foi definido como fallback. 
+   -> Se o campo classificação estiver preenchido, deve ser entendido como a vigência correspondente ao do campo classificação 
+
+   Me fale o que entendeu
+  
+- verificar se protocolo permite registrar itemClassificação, mesmo tendo informado campo Classificação, classificacao_id, FK, com vigência que não compreende a vigência que constou nos campos de data de vigência do formulário
+- **itemClassificacao** - colocar navegação para, próximo item, para navegar para o item do mesmo nivel, ou item imediatamente anterior; Ou próxima matriz, sendo que navegará para item de mesmo nível imediatamente seguinte em relação ao item _ pai desse registro
+
 
 
 
@@ -12,6 +21,17 @@
   - tratamento Excel/csv por ano
   - gerar script que vai considerar alteração nos metadados d
 
+- classificação com vigência ativa tem que ter níveis hierárquicos cadastrados para, com vigência que abrança todo perído da vigencia da classificação, com a quantidade de níveis detalhados equivalentes aquele
+
+- **Base Legal**
+  - verificar possibilidade de excluir registro
+
+- **itemClassificacao** - **criação automática** - pensar em critério para perguntar se quer criação automática de principal, mjm, dA etc
+
+- **Consistência de Banco** - **validação**
+  - verificar se todo registro ativo tem item pai que está identificado como matriz
+
+- funcionalidade exportar para excel, csv, pdf
 - implementar schemas/correspondence-table (variant?)
 - revisar description de chave semântica de todas tabelas
 - revisar datapackage.yaml
@@ -30,6 +50,7 @@
 
 
 -------- feito
+x verificar a ordenação do db de ItemClassificação, já que as novas receitas criadas, independente do código, estão vindo por último
 x verificar consistência de não permitir a criação de item sem que exista matriz anterior existente?. Seria pelo campo `item_pai`?
       x pré-preenchimento de códigos até chegar a 13 dígitos e erro se houver mais dígitos que o máximo
       x considerando que foi implementada máscara conforme última estrutura vigente, avaliar a adição de item de classificação vir com campo "Classificacao" pré preenchida com a última classificação vigente.
