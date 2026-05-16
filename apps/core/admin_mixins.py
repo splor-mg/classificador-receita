@@ -1,7 +1,7 @@
 """
 Mixins reutilizáveis para Django Admin.
 
-AutoExportAdminMixin — dispara export do seed após save.
+AutoExportAdminMixin — dispara export do seed após save ou delete no admin.
 BitemporalAdminMixin — fluxo de confirmação bitemporal (sobrescrever / nova vigência).
 BitemporalInactiveReadOnlyMixin — somente leitura para registros inativos + rota de reativação.
 BitemporalDateFormatMixin — formatação de datas bitemporais (dd/mm/yyyy).
@@ -858,8 +858,8 @@ class BitemporalDateFormatMixin:
 #---------------------------------------------------------------------------------------------------
 # Dispara exportação para o seed correspondente após save/confirm
 class AutoExportAdminMixin:
-    """Mixin para disparar exportação do seed correspondente após save no Admin.
-    Dispara export_resource(resource, output=docs/assets/seed_<resource>.csv) em background.
+    """Mixin para disparar exportação do seed correspondente após save ou delete no Admin.
+    Dispara export_resource(resource, output=docs/assets/seed_<resource>.csv).
     """
     export_backup_default = False
     export_backup_dir = None
@@ -909,6 +909,14 @@ class AutoExportAdminMixin:
         except Exception:
             pass
         self.trigger_export(request, obj.__class__)
+
+    def delete_model(self, request, obj):
+        super().delete_model(request, obj)
+        self.trigger_export(request, self.model)
+
+    def delete_queryset(self, request, queryset):
+        super().delete_queryset(request, queryset)
+        self.trigger_export(request, self.model)
 
     def response_change(self, request, obj):
         """

@@ -614,3 +614,26 @@ class ListaAbreviacoesRegistroInicioTests(SimpleTestCase):
         with patch.object(AliasLexico.objects, "filter", return_value=dup_qs):
             obj.clean()
         self.assertLess(obj.data_registro_inicio, obj.data_registro_fim)
+
+
+class AutoExportAdminDeleteTests(SimpleTestCase):
+    """Export do seed após delete no admin (AutoExportAdminMixin)."""
+
+    def test_delete_model_triggers_export(self) -> None:
+        from unittest.mock import MagicMock, patch
+
+        from django.contrib.admin.sites import AdminSite
+
+        from apps.core.admin import AliasLexicoAdmin
+        from apps.core.models import AliasLexico
+
+        admin = AliasLexicoAdmin(AliasLexico, AdminSite())
+        request = MagicMock()
+        obj = MagicMock(spec=AliasLexico)
+        with patch.object(admin, "trigger_export") as trigger:
+            with patch(
+                "apps.core.admin_mixins.admin.ModelAdmin.delete_model",
+                return_value=None,
+            ):
+                admin.delete_model(request, obj)
+        trigger.assert_called_once_with(request, AliasLexico)
