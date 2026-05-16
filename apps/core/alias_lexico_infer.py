@@ -29,6 +29,8 @@ from collections import defaultdict
 from collections.abc import Set as AbstractSet
 from datetime import date, datetime
 
+from apps.core.classification_naming_connectives import LEXICO_CONNECTIVOS_FIXOS
+
 _REGISTRO_FIM_SENTINELS = frozenset(
     {
         "9999-12-31 00:00:00",
@@ -37,43 +39,7 @@ _REGISTRO_FIM_SENTINELS = frozenset(
     }
 )
 
-_CONNECTIVES = frozenset(
-    {
-        "a",
-        "o",
-        "as",
-        "os",
-        "e",
-        "ou",
-        "de",
-        "da",
-        "do",
-        "das",
-        "dos",
-        "em",
-        "na",
-        "no",
-        "nas",
-        "nos",
-        "por",
-        "para",
-        "com",
-        "sem",
-        "ao",
-        "aos",
-        "à",
-        "às",
-        "pelo",
-        "pela",
-        "pelos",
-        "pelas",
-        "sobre",
-        "um",
-        "uma",
-        "uns",
-        "umas",
-    }
-)
+_CONNECTIVES = LEXICO_CONNECTIVOS_FIXOS
 
 _RE_HEAD_ASCII = re.compile(r"^[A-Z]{2,15}$")
 _RE_SHORT_SEG = re.compile(r"^[A-Z]{2,8}$")

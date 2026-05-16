@@ -1,9 +1,11 @@
 ----------------------------------------------------------------------------------------------------
 # lista 
 
-- **visualização** - **changelit** - implementar padrão de, em todas changelist's, a visualização inicial vir, por padrão, como Ativos (Ano Corrente) 
+- **visualização** - **changelist** - implementar padrão de, em todas changelist's, a visualização inicial vir, por padrão, como Ativos (Ano Corrente) 
 
-- **itemClassificacao*** - criar código já existente - Na tela de criação, se o campo de código canônico for preenchido com código que já existe com registro ativo e vigente para período de vigência compatível com o do formulário, deve haver mensagem de alerta informando que já existe tal código vigente <link para o registro já existente>. Clique aqui para navegar para próximo dígito disponível. 
+- **itemClassificacao** - criar a partir de item pai - 
+
+- **itemClassificacao** - criar código já existente - Na tela de criação, se o campo de código canônico for preenchido com código que já existe com registro ativo e vigente para período de vigência compatível com o do formulário, deve haver mensagem de alerta informando que já existe tal código vigente <link para o registro já existente>. Clique aqui para navegar para próximo dígito disponível. 
    Lembrar que, a vigência do formulário deve ser entendida da seguinte forma: 
 
    -> Se o campo classificação estiver vazio, deve interpretar o que já foi definido como fallback. 

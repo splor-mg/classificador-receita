@@ -8,6 +8,14 @@ from apps.core.classification_naming_abbrev import (
     norm_colapso_espacos,
     radical_com_sufixo_canonico,
 )
+from apps.core.classification_naming_connectives import (
+    LEXICO_CONNECTIVOS_FIXOS,
+    NOME_CLASSIFICACAO_CONNECTIVOS_FIXOS,
+    compactar_texto_radical_a6,
+    normalizar_token_pontuacao_a6,
+    token_e_abreviacao_encurtamento_iv,
+)
+from apps.core.alias_lexico_infer import _CONNECTIVES
 from apps.core.classification_naming_messages import (
     RECEITA_NOME_SUGESTAO_INFO_ABREV_TEMPLATE,
     RECEITA_NOME_SUGESTAO_INFO_COMPLETO,
@@ -111,7 +119,12 @@ class G1ValidationTests(SimpleTestCase):
 
 
 class AbbrevProtocolTests(SimpleTestCase):
-    def test_a8_sem_lexico_retorna_nome_mae(self) -> None:
+    def test_connectivos_ssot_unica_entre_infer_e_nomenclatura(self) -> None:
+        self.assertEqual(_CONNECTIVES, LEXICO_CONNECTIVOS_FIXOS)
+        self.assertEqual(NOME_CLASSIFICACAO_CONNECTIVOS_FIXOS, LEXICO_CONNECTIVOS_FIXOS)
+        self.assertIn("sobre", LEXICO_CONNECTIVOS_FIXOS)
+
+    def test_a8_sem_lexico_remove_conectivos(self) -> None:
         from unittest.mock import patch
 
         with patch(
@@ -120,6 +133,58 @@ class AbbrevProtocolTests(SimpleTestCase):
         ):
             r = calcular_radical_abreviado("Taxa Única")
         self.assertEqual(r.radical, "Taxa Única")
+
+    def test_a8_iptu_sem_lexico_remove_conectivos(self) -> None:
+        from unittest.mock import patch
+
+        nome = "Imposto sobre a Propriedade Predial e Territorial Urbana"
+        with patch(
+            "apps.core.classification_naming_abbrev.iter_alias_lexico_ativos_ordenados",
+            return_value=[],
+        ):
+            r = calcular_radical_abreviado(nome)
+        self.assertEqual(
+            r.radical,
+            "Imposto Propriedade Predial Territorial Urbana",
+        )
+
+    def test_a3_match_exato_passa_por_a6(self) -> None:
+        from unittest.mock import patch
+
+        nome_mae = "Imposto sobre a Propriedade de Veículos Automotores"
+        with patch(
+            "apps.core.classification_naming_abbrev.iter_alias_lexico_ativos_ordenados",
+            return_value=[(nome_mae, "Imposto sobre o IPVA")],
+        ):
+            r = calcular_radical_abreviado(nome_mae)
+        self.assertEqual(r.radical, "Imposto IPVA")
+
+    def test_a6_remove_virgula_e_preserva_iv(self) -> None:
+        self.assertTrue(token_e_abreviacao_encurtamento_iv("Princ."))
+        self.assertEqual(normalizar_token_pontuacao_a6("Princ."), "Princ.")
+        self.assertEqual(normalizar_token_pontuacao_a6("Imposto,"), "Imposto")
+        self.assertEqual(
+            compactar_texto_radical_a6("Tx. Insp., Princ."),
+            "Tx. Insp. Princ.",
+        )
+
+    def test_a6_remove_pontuacao_solta(self) -> None:
+        self.assertEqual(compactar_texto_radical_a6("! ; :"), "")
+        self.assertEqual(compactar_texto_radical_a6("Taxa!"), "Taxa")
+
+    def test_a6_remove_ponto_final_fora_iv(self) -> None:
+        self.assertEqual(normalizar_token_pontuacao_a6("Automotores."), "Automotores")
+        self.assertEqual(normalizar_token_pontuacao_a6("Receita."), "Receita.")
+
+    def test_a6_via_calcular_radical_com_pontuacao(self) -> None:
+        from unittest.mock import patch
+
+        with patch(
+            "apps.core.classification_naming_abbrev.iter_alias_lexico_ativos_ordenados",
+            return_value=[],
+        ):
+            r = calcular_radical_abreviado("Imposto, sobre a Propriedade!")
+        self.assertEqual(r.radical, "Imposto Propriedade")
 
     def test_sufixo_canonico(self) -> None:
         self.assertEqual(radical_com_sufixo_canonico("IPVA"), "IPVA - ")

@@ -66,7 +66,7 @@ Disparado quando `parent_item_id` recebe ou altera valor (incluindo após `syncH
 
 ## Relação com outras specs e código
 
-- **Lista de abreviações:** no modo **Abreviado**, aplicam-se, quando couber, as noções de *segmento*, *abreviação*, *sigla* e *conectivos* de `_dev/spec_lista_abreviacoes.md`. A lista fixa de conectivos para compactação está em `apps/core/classification_naming_connectives.py` (`NOME_CLASSIFICACAO_CONNECTIVOS_FIXOS`).
+- **Lista de abreviações:** no modo **Abreviado**, aplicam-se, quando couber, as noções de *segmento*, *abreviação*, *sigla* e *conectivos* de `_dev/spec_lista_abreviacoes.md`. A lista fixa de conectivos (**fonte única**) está em `apps/core/classification_naming_connectives.py` (`LEXICO_CONNECTIVOS_FIXOS`; alias `NOME_CLASSIFICACAO_CONNECTIVOS_FIXOS`). O motor de inferência (`alias_lexico_infer.py`) importa a mesma lista — não duplicar.
 - **Léxico ativo:** `queryset_alias_lexico_ativos()` e `iter_alias_lexico_ativos_ordenados()` em `apps/core/alias_lexico_service.py`.
 - **Resolução do item mãe:** `_dev/spec_lookup_hierarquia_por_codigo_admin.md` (rótulo `receita_cod - receita_nome` para extrair `nome_mae`).
 
@@ -277,7 +277,7 @@ Disparado quando `parent_item_id` recebe ou altera valor (incluindo após `syncH
 
 ### Regra A3 (ND) — Match exato do nome completo do item mãe
 
-- **A3.1.** **Passagem estrita:** se existir **exatamente uma** linha ativa em que `norm(termo) == norm(nome_mae)` (**(N6)**), o radical interno = `abreviacao` dessa linha (*strip*), sem A4–A6; em seguida **A7** aplica **`+ sufixo_canônico`** em `receita_nome`.
+- **A3.1.** **Passagem estrita:** se existir **exatamente uma** linha ativa em que `norm(termo) == norm(nome_mae)` (**(N6)**), o radical interno = `abreviacao` dessa linha (*strip*), **sem A4–A5**; em seguida aplica-se **A6** e **A7** (`+ sufixo_canônico` em `receita_nome`).
 - **A3.2.** Se existirem **duas ou mais** linhas ativas com `norm(termo) == norm(nome_mae)` na **mesma passagem** (**(N6)** ou **(N8)**), tratar como **erro de dados no banco**. **Não** há desempate: **não** aplicar **A3.1** nem **A3.3** para esse match. O sistema **deve** exibir **alerta** conforme **G6**, com `termo_nome` = valor de `nome_mae` (no match exato do item mãe) ou do `termo` em conflito. Em seguida, o protocolo **deve** continuar por **A4**–**A6**, ou **A8** se não houver substituições.
 - **A3.3.** **Passagem fallback (espaços):** somente se **A3.1** **não** tiver encontrado **exatamente uma** linha: repetir o critério de **A3.1** usando `norm_colapso_espacos(termo) == norm_colapso_espacos(nome_mae)` (**(N8)**), com as mesmas regras de unicidade e **A3.2** em caso de duplicidade.
 
@@ -305,18 +305,29 @@ Disparado quando `parent_item_id` recebe ou altera valor (incluindo após `syncH
 
 - **A5.1.** Trechos não cobertos permanecem como no `nome_mae`.
 
-### Regra A6 (ND) — Conectivos
+### Regra A6 (ND) — Conectivos e pontuação
 
-- **A6.1–A6.3.** Tokenizar por espaços; remover tokens em `NOME_CLASSIFICACAO_CONNECTIVOS_FIXOS`; reunir com um espaço.
+- **A6.0.** **Sempre** após o radical produzido por **A3**, **A4**/**A5** ou **A8** (e **antes** de **A7**): aplicar compactação **A6** ao texto do radical, **independentemente** de haver correspondência no léxico.
+- **A6.1 (pontuação nas extremidades).** Tokenizar por espaços; em cada token, remover das **extremidades** (repetir até fixar) os caracteres em `LEXICO_PONTUACAO_OMITIR_NAS_EXTREMIDADES` (`,`, `;`, `:`, `!` — sozinhos ou colados à palavra). Omitir tokens que fiquem vazios ou compostos **apenas** por esses caracteres e/ou `.` solto.
+- **A6.2 (conectivos lexicais).** Remover tokens cujo *casefold* está em `LEXICO_CONNECTIVOS_FIXOS` (mesmo módulo SSOT).
+- **A6.3 (ponto final).** Se o token **integral** casa com abreviação por encurtamento **(iv)** da spec de abreviações (`^[letras]{1,8}\.$`, ex.: `Princ.`, `Contrib.`), **não** alterar o token. Caso contrário, remover `.` das extremidades do token (não remover ponto **interior**, ex. separadores em siglas).
+- **A6.4.** Reunir tokens restantes com um espaço ASCII.
+
+**Exemplo A6 (pontuação + conectivos)**  
+- `Tx. Insp. Contr. Fisc., Princ.` → `Tx. Insp. Contr. Fisc. Princ.` (vírgula omitida; tokens **(iv)** preservados).  
+- `Imposto, sobre a Propriedade` → `Imposto Propriedade` (após **A6.2**).
 
 ### Regra A7 (ND) — Concatenação do sufixo canônico (igual ao Completo)
 
-- **A7.1.** Se o radical produzido por **A1–A6** (ou por **A3** / **A8** conforme o ramo) for **não vazio** após *trim*, o valor a atribuir a `receita_nome` na sugestão **deve** ser **`radical + sufixo_canônico`** (**(N5)**), *i.e.* o mesmo padrão **`… + " - "`** que **M1.1** no modo **Completo**.
+- **A7.1.** Se o radical produzido após **A6** (em qualquer ramo **A3**, **A4** ou **A8**) for **não vazio** após *trim*, o valor a atribuir a `receita_nome` na sugestão **deve** ser **`radical + sufixo_canônico`** (**(N5)**), *i.e.* o mesmo padrão **`… + " - "`** que **M1.1** no modo **Completo**.
 - **A7.2.** Se o radical for vazio, **não** aplicar sufixo canônico por omissão (alinhado à exceção de **M1.1** quando não há `nome_mae`).
 
 ### Regra A8 (ND) — Nenhuma substituição
 
-- **A8.1.** Sem A3 nem A4 → o radical interno = `nome_mae.strip()`; em seguida **A7** aplica **`+ sufixo_canônico`**; recomenda-se aviso de léxico não aplicável.
+- **A8.1.** Sem A3 nem A4 → o radical interno intermédio = `nome_mae.strip()`; em seguida **A6** remove conectivos; **A7** aplica **`+ sufixo_canônico`**; recomenda-se aviso de léxico não aplicável.
+
+**Exemplo A8 + A6 (sem léxico)**  
+- `nome_mae` = `Imposto sobre a Propriedade Predial e Territorial Urbana` → radical após **A6** = `Imposto Propriedade Predial Territorial Urbana` → sugestão `… Urbana - ` (**(N5)**).
 
 ### Regra A9 (ND) — Mudança de modo ou item mãe
 
@@ -369,7 +380,7 @@ Disparado quando `parent_item_id` recebe ou altera valor (incluindo após `syncH
 - **G0 vs G1:** `ITCD - ` → **G0** não bloqueia; **G1** bloqueia no modo **Abreviado**.
 - **G1 / sem_base:** POST com `sem_base` e `IPVA - ` → **não** falha **G1** (mas **G0** bloqueia se `receita_nome` vazio).
 - **G4:** POST com erro + modo Abreviado: `b` em **G1.2** coerente com prefixo abreviado.
-- **A3, A4+A6, A8.**
+- **A3+A6, A4+A6, A8+A6** (A6 em todos os ramos).
 - **A3.2 / A1.3 / G6:** com duas linhas ativas em conflito por `norm(termo)`, alerta com `termo_nome` e **sem** aplicação de **A3.1**.
 - **A3.3 / A4.1b:** `nome_mae` com um espaço e `termo` com dois espaços internos — match na passagem fallback **(N8)**; **A4.1a** sem intervalos antes do fallback.
 
@@ -387,6 +398,7 @@ Disparado quando `parent_item_id` recebe ou altera valor (incluindo após `syncH
 | D6 | **G1** no servidor (**I4**) | **Uma** definição (**G1.2**); **dois** pontos de aplicação: cliente (**G1.1**–**G1.3**) e `ItemClassificacaoAdminForm.clean()` em **add** (**G1.4**). **Paridade Completo / Abreviado:** `b` = `nome_mae` ou `radical_abreviado`; bloqueia `n === b` e `n === b + (N7)` sem complemento. **`sem_base`:** fora de **G1**. Mensagem única **G1.5**. |
 | D7 | Orquestração hierarquia → **P-mãe** | **P-orq.1**–**P-orq.4**, **P-mãe.2-bis**, **A9.2-bis**, **I5**: após lookup por `receita_cod`, invocar **P-mãe** com `parent.name` do JSON; não depender só de `change` + rótulo DOM; na troca de mãe, não manter prefixo de sugestão incompleta da mãe anterior. |
 | D8 | **M1.3**, troca de modo (**M1.5** / **A9.3**) e **G2** | **M1.3:** prefixar **`prefixo_completo`** só se o valor **não** começa por **`prefixo_completo`** nem por **`prefixo_abreviado`** (**(N9)**). **M1.5 / A9.3:** ao trocar rádio **Completo** ↔ **Abreviado**, **substituir** o radical do modo anterior (remoção **(N7)** + **A9.2**), não empilhar prefixos (ex.: `ITCD - ` → **Completo** = só `nome_mae - `). **G2.1:** «versão completa» + completar após o traço (texto fixo). **G2.2:** «versão abreviada» + completar após o traço + `nome_mae` entre aspas (template `{nome_mae}`). |
+| D9 | Conectivos (SSOT + **A6**) | `LEXICO_CONNECTIVOS_FIXOS` e `LEXICO_PONTUACAO_OMITIR_NAS_EXTREMIDADES` em `classification_naming_connectives.py`; infer importa só conectivos lexicais. **A6** (pontuação + conectivos) aplica-se **sempre** ao radical (**A3**, **A4**, **A8**) antes de **A7**; ponto preservado só em token **(iv)**. |
 | D9 | **G0** — nome obrigatório no **add** | `trim(receita_nome)` vazio → bloquear **sempre** (**G0**), **independente** do rádio; **não** altera sugestão/remoção dos rádios. **G1** continua só para sugestão incompleta (Abreviado/Completo). Ordem: **G0** → **G1**. Alinhado a `item_classificacao.yaml` (`required: true`). |
 
 ---

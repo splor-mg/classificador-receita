@@ -100,7 +100,7 @@ Apesar de essa ser a principal fonte de análise, haverá análises que não dep
 
 - (G) *carga banco* - ao ler o CSV, valida `alias_lexico_ref` numérico de forma que, duplicata de `termo_nome` (segunda ocorrência) é ignorada na lista reconstruída, mas o termo continua no conjunto que bloqueia inferência/derivação. Linhas cujo `termo_nome` viole **(viii)** devem ser **omitidas** na carga (sem abortar o recurso completo) e o operador deve poder inspeccionar contagem em log; não persistir entradas inválidas.
 
-- (H) *conectivos* - no scopo/topo do script, deve haver lista fixa de conectivos ignorados na extração de palavras significativas.
+- (H) *conectivos* - no scopo/topo do script, deve haver lista fixa de conectivos ignorados na extração de palavras significativas. **Fonte única de implementação:** `LEXICO_CONNECTIVOS_FIXOS` em `apps/core/classification_naming_connectives.py` (consumida por `alias_lexico_infer.py` e pelo modo Abreviado em `classification_naming_abbrev.py`). A compactação **A6** do modo Abreviado (criar item) reutiliza a mesma noção de fronteira de pontuação que **(viii)** para `,;:!:` e preserva ponto em token **(iv)** — ver `spec_itemClassificacao_criar_nome.md` (**A6.1**–**A6.3**).
 
 - (I) *trigger de atualização* - os protocolos automatizados de atualização da lista de abreviações devem ser acionados toda vez que houver um **Create** ou **Update** de um item de classificação na tabela `ItemClassificacao` (disparando inferência; o **export** do seed segue a subsecção *Export do seed* abaixo).
 
@@ -271,7 +271,7 @@ Usado no caminho B (e alinhado ao vocabulário “significativo” da **Regra 7*
 - 1.2.8.2. **Normalização superficial:** substituir vírgulas `,` por espaço; colapsar espaços; *trim*.
 - 1.2.8.3. **Tokens por espaço:** dividir o resultado em tokens contíguos separados por espaços em branco.
 - 1.2.8.4. **Subdivisão por hífen:** para cada token, subdividir pelo caractere hífen ASCII `-` (um ou mais hífens consecutivos tratam-se como um separador); cada subparte não vazia que contenha pelo menos uma letra latina (incl. acentuadas) é candidata a palavra.
-- 1.2.8.5. **Conectivos:** excluir tokens classificados como conectivos do protocolo (lista usada na implementação: `de`, `da`, `do`, `das`, `dos`, `e`, `ou`, `em`, … — ver `_CONNECTIVES` em `alias_lexico_infer.py`).
+- 1.2.8.5. **Conectivos:** excluir tokens classificados como conectivos do protocolo (lista usada na implementação: `de`, `da`, `do`, `das`, `dos`, `e`, `ou`, `em`, `sobre`, … — ver `LEXICO_CONNECTIVOS_FIXOS` em `apps/core/classification_naming_connectives.py`, importada por `alias_lexico_infer.py`).
 - 1.2.8.6. **Chave de comparação:** *case fold* Unicode em cada palavra restante; duas palavras coincidem se as chaves forem iguais.
 - 1.2.8.7. **Siglas com hífen** (ex.: `IOF-Ouro` no filho): **não** são tratadas como sigla indivisível **(v)** neste passo — aplicam-se 1.2.8.3–1.2.8.4, produzindo `IOF` e `Ouro` como palavras distintas (coerente com o exemplo IOF-Ouro acima).
 

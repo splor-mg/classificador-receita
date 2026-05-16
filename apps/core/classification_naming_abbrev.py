@@ -14,6 +14,7 @@ from apps.core.alias_lexico_service import (
     connectivos_fixos_nome_classificacao,
     iter_alias_lexico_ativos_ordenados,
 )
+from apps.core.classification_naming_connectives import compactar_texto_radical_a6
 
 SUFIXO_CANONICO = " - "
 
@@ -180,11 +181,13 @@ def _apply_interval_substitutions(nome_mae: str, selected: list[_Interval]) -> s
 
 
 def _remove_connectivos(texto: str) -> str:
-    """A6: remove tokens em NOME_CLASSIFICACAO_CONNECTIVOS_FIXOS."""
-    connectivos = connectivos_fixos_nome_classificacao()
-    tokens = (texto or "").split()
-    kept = [t for t in tokens if t.casefold() not in connectivos]
-    return " ".join(kept)
+    """A6: pontuação (**A6.1**–**A6.3**) + conectivos lexicais (**A6.2**) — SSOT em ``classification_naming_connectives``."""
+    return compactar_texto_radical_a6(texto, connectivos_fixos_nome_classificacao())
+
+
+def _finalizar_radical(radical: str) -> str:
+    """A6 universal: última transformação sobre o radical textual antes de **A7**."""
+    return _remove_connectivos(radical).strip()
 
 
 def _a3_exact_match(
@@ -223,7 +226,10 @@ def calcular_radical_abreviado(nome_mae: str) -> AbbrevRadicalResult:
 
     abrev_a3 = _a3_exact_match(nome_mae, lexicon, alertas)
     if abrev_a3 is not None:
-        return AbbrevRadicalResult(radical=abrev_a3.strip(), lexico_termo_duplicado=_uniq(alertas))
+        return AbbrevRadicalResult(
+            radical=_finalizar_radical(abrev_a3),
+            lexico_termo_duplicado=_uniq(alertas),
+        )
 
     candidates: list[_Interval] = []
     for order, (termo, abrev) in enumerate(lexicon):
@@ -238,10 +244,15 @@ def calcular_radical_abreviado(nome_mae: str) -> AbbrevRadicalResult:
     if candidates:
         selected = _greedy_non_overlapping(candidates)
         substituido = _apply_interval_substitutions(nome_mae, selected)
-        radical = _remove_connectivos(substituido).strip()
-        return AbbrevRadicalResult(radical=radical, lexico_termo_duplicado=_uniq(alertas))
+        return AbbrevRadicalResult(
+            radical=_finalizar_radical(substituido),
+            lexico_termo_duplicado=_uniq(alertas),
+        )
 
-    return AbbrevRadicalResult(radical=nome_mae, lexico_termo_duplicado=_uniq(alertas))
+    return AbbrevRadicalResult(
+        radical=_finalizar_radical(nome_mae),
+        lexico_termo_duplicado=_uniq(alertas),
+    )
 
 
 def radical_com_sufixo_canonico(radical: str) -> str:
