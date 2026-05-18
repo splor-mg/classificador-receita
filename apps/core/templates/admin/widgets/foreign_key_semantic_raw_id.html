@@ -107,6 +107,13 @@
 
     function onHiddenChanged() {
       updateDisplayFromSemanticPk(hidden.value);
+      try {
+        hidden.dispatchEvent(
+          new CustomEvent("semantic-fk-changed", { bubbles: true, detail: { pk: hidden.value } })
+        );
+      } catch (e) {
+        /* IE legado: ignorar */
+      }
     }
 
     if (jq) {

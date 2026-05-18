@@ -5,7 +5,7 @@
 Documentar o contrato HTTP/JSON dos endpoints usados pelo formulário de **adicionar/alterar** `ItemClassificacao` no Django Admin para:
 
 1. Resolver um **item** pelo **código exato** e janela de vigência (lupa de `parent_item_id`).
-2. Derivar **nível hierárquico** a partir do **código canónico** e sugerir **item mãe matriz** coerente com a máscara e a vigência.
+2. Derivar **nível hierárquico** a partir do **código canônico** e sugerir **item mãe matriz** coerente com a máscara e a vigência.
 
 A lógica de negócio e ORM vive em `apps/core/item_classificacao_code_lookup.py`. As views em `ItemClassificacaoAdmin` apenas delegam e envolvem o dicionário em `JsonResponse`.
 
@@ -57,7 +57,7 @@ Se faltar qualquer um dos três, a resposta é o objeto “vazio” abaixo (sem 
 
 | Parâmetro | Obrigatório | Descrição |
 |-----------|-------------|-----------|
-| `code` | Sim | Código canónico **só com dígitos** (`.` removidos). |
+| `code` | Sim | Código canônico **só com dígitos** (`.` removidos). |
 | `vigencia_inicio` | Sim | Data (`YYYY-MM-DD` ou `DD/MM/YYYY`). |
 | `vigencia_fim` | Sim | Data (mesmos formatos). |
 | `classificacao_pk` | Não | PK da `Classificacao` escolhida no formulário. Ausente = sem restrição de classificação nas queries de nível/mãe (salvo onde o código reintroduz busca noutra classificação). |
@@ -122,7 +122,12 @@ Resposta típica: `{"ok": false, "message": "<texto>"}`.
 
 **Máscara:** `digit_mask_for_classificacao_vigencia(class_pk, effective_inicio, effective_fim)`; se vazia, fallback `resolve_receita_cod_mask_context(None, input_length=len(code), on_date=hoje)`.
 
-**item mãe:** código derivado por zeros canónicos a partir do nível derivado; candidatos `matriz=True`, `nivel_numero = derived − 1`, vigência e registo activos. O ficheiro Python documenta por comentário a ordem de tentativas (matriz na classificação seleccionada, fallback por último nível detalhado, busca noutra classificação, diagnóstico “só existe como detalhe”).
+**item mãe:** código derivado por zeros canônicos a partir do nível derivado; candidatos `matriz=True`, `nivel_numero = derived − 1`, vigência e registo activos. O ficheiro Python documenta por comentário a ordem de tentativas (matriz na classificação seleccionada, fallback por último nível detalhado, busca noutra classificação, diagnóstico “só existe como detalhe”).
+
+**Consumo no cliente (`change_form.html`):**
+
+- **Alteração do código** (`code_blur`, `classificacao_change`, `init`): se `parent.found`, o cliente **substitui** `parent_item_id` pelo PK devolvido via `setParentItemIdProgrammatically` (flag `__suppressChildCodeSuggestOnParentChange`), mesmo que o campo já estivesse preenchido (ex.: autocomplete anterior). Essa escrita **não** dispara sugestão de código filho nem `confirm` de troca de mãe — ver **(G6)** em `_dev/spec_itemClassificacao_criar_filho.md`. Se o lookup não encontrar mãe, aplica erro/limpeza conforme severidade (sem preservar mãe “manual”), também via escrita programática quando limpa o campo.
+- **Salvar** (`submit`): regras em `_dev/spec_validar_item_pai.md` — pode preservar mãe já preenchida quando o lookup falha ou devolve PK diferente.
 
 ---
 

@@ -186,6 +186,85 @@ def validate_item_receita_cod_level_consistency(instance) -> None:
         )
 
 
+def intermediate_levels_canonical_zero_error_message(
+    child_nivel_numero: int, parent_nivel_numero: int
+) -> str:
+    """Mensagem de bloqueio (fluxo B) para níveis intermédios não canônicos entre mãe e filho."""
+    return (
+        f"Os campos correspondentes aos níveis entre o código atual (nível {child_nivel_numero}) "
+        f"e o código mãe selecionado (nível {parent_nivel_numero}), devem conter apenas "
+        "zeros canônicos."
+    )
+
+
+def find_intermediate_non_canonical_zero_message(
+    *,
+    receita_cod: str,
+    parent_item: Any,
+    child_nivel_numero: int,
+    classificacao_pk: int,
+    vig_ini,
+    vig_fim,
+) -> Optional[str]:
+    """
+  Retorna mensagem de erro em ``receita_cod`` quando há salto de nível e algum
+  segmento intermédio do filho não é zero canônico; ``None`` se OK ou sem salto.
+    """
+    parent_nivel = getattr(parent_item, "nivel_id", None)
+    parent_n = getattr(parent_nivel, "nivel_numero", None) if parent_nivel else None
+    if parent_n is None or parent_n >= child_nivel_numero - 1:
+        return None
+
+    c_cod = _receita_cod_digits_only(receita_cod)
+    p_cod = (getattr(parent_item, "receita_cod", None) or "").strip()
+    if not c_cod or not p_cod:
+        return None
+
+    mask = digit_mask_for_classificacao_vigencia(classificacao_pk, vig_ini, vig_fim)
+    if not mask:
+        return None
+
+    child_parts = split_receita_cod_segments_tolerant(c_cod, mask)
+    if child_parts is None:
+        return None
+
+    for i in range(parent_n, child_nivel_numero - 1):
+        seg = child_parts[i]
+        if seg is None or not _canonical_zero_segment(seg):
+            return intermediate_levels_canonical_zero_error_message(
+                child_nivel_numero, parent_n
+            )
+    return None
+
+
+def validate_intermediate_canonical_zeros_json_dict(
+    *,
+    parent_item: Any,
+    child_nivel: Any,
+    receita_cod_digits: str,
+    vig_inicio,
+    vig_fim,
+    classificacao_pk: int,
+) -> Dict[str, Any]:
+    """Payload JSON para validação pré-submit (fluxo B) no admin."""
+    if not parent_item or not child_nivel:
+        return {"ok": True}
+    child_n = getattr(child_nivel, "nivel_numero", None)
+    if child_n is None or child_n <= 1:
+        return {"ok": True}
+    message = find_intermediate_non_canonical_zero_message(
+        receita_cod=receita_cod_digits,
+        parent_item=parent_item,
+        child_nivel_numero=child_n,
+        classificacao_pk=classificacao_pk,
+        vig_ini=vig_inicio,
+        vig_fim=vig_fim,
+    )
+    if message:
+        return {"ok": False, "message": message}
+    return {"ok": True}
+
+
 def validate_item_parent_item_rules(instance) -> None:
     """
     Aplica regras de `_dev/spec_parent_item_id.md` (exceto contenção de vigência,
@@ -382,34 +461,18 @@ def validate_item_parent_item_rules(instance) -> None:
             }
         )
 
-    # Salto de nível: níveis LP+1 .. L-1 no filho devem ser zeros canônicos.
+    # Salto de nível: níveis LP+1 .. L-1 no filho devem ser zeros canônicos (só receita_cod).
     if parent_n < nivel_n - 1:
-        for i in range(parent_n, nivel_n - 1):
-            seg = child_parts[i]
-            if seg is None:
-                raise ValidationError(
-                    {
-                        "receita_cod": (
-                            f"Código canônico insuficiente para validar os níveis "
-                            f"{parent_n + 1} a {nivel_n - 1} (esperado zero canônico "
-                            "quando o mãe não está no nível imediatamente anterior)."
-                        )
-                    }
-                )
-            if not _canonical_zero_segment(seg):
-                raise ValidationError(
-                    {
-                        "parent_item_id": (
-                            "O item mãe não está no nível imediatamente anterior e o código "
-                            f"do filho apresenta detalhamento nos níveis {parent_n + 1} a "
-                            f"{nivel_n - 1}; esses níveis devem conter apenas zeros canônicos."
-                        ),
-                        "receita_cod": (
-                            "Para este item mãe, os níveis entre o nível do mãe e o nível do "
-                            "item devem estar apenas com zeros canônicos."
-                        ),
-                    }
-                )
+        jump_msg = find_intermediate_non_canonical_zero_message(
+            receita_cod=c_cod,
+            parent_item=parent,
+            child_nivel_numero=nivel_n,
+            classificacao_pk=class_pk,
+            vig_ini=vig_ini,
+            vig_fim=vig_fim,
+        )
+        if jump_msg:
+            raise ValidationError({"receita_cod": jump_msg})
 
     child_level_seg = child_parts[idx]
     if child_level_seg is None:
@@ -484,7 +547,7 @@ def analyze_intermediate_items_for_level_jump(
       datas do formulário);
     - ``receita_cod__startswith=radical``;
     - ``nivel_numero`` entre ``LP+1`` e ``L_filho-1`` (inclusive);
-    - segmento do código na posição do próprio nível do item não é zero canónico.
+    - segmento do código na posição do próprio nível do item não é zero canônico.
 
     Se ``digit_mask_for_classificacao_vigencia`` com ``(classificacao_pk, vig_ini,
     vig_fim)`` devolver máscara vazia, tenta-se de novo com a vigência do **pai**

@@ -36,7 +36,13 @@ from apps.core.item_classificacao_code_lookup import (
     lookup_hierarchy_by_code_response_data,
     lookup_parent_by_code_response_data,
 )
-from apps.core.parent_item_validation import warn_parent_level_jump_json_dict
+from apps.core.item_classificacao_suggest_child_code import (
+    suggest_child_code_by_parent_response_data,
+)
+from apps.core.parent_item_validation import (
+    validate_intermediate_canonical_zeros_json_dict,
+    warn_parent_level_jump_json_dict,
+)
 from apps.core.classification_naming_abbrev import (
     calcular_radical_abreviado,
     radical_com_sufixo_canonico,
@@ -439,9 +445,19 @@ class ItemClassificacaoAdmin(
                 name=f"{self.model._meta.app_label}_{self.model._meta.model_name}_warn_parent_level_jump",
             ),
             path(
+                "validate-intermediate-canonical-zeros/",
+                self.admin_site.admin_view(self.validate_intermediate_canonical_zeros_view),
+                name=f"{self.model._meta.app_label}_{self.model._meta.model_name}_validate_intermediate_canonical_zeros",
+            ),
+            path(
                 "lookup-abbreviated-radical/",
                 self.admin_site.admin_view(self.lookup_abbreviated_radical_view),
                 name=f"{self.model._meta.app_label}_{self.model._meta.model_name}_lookup_abbreviated_radical",
+            ),
+            path(
+                "suggest-child-code-by-parent/",
+                self.admin_site.admin_view(self.suggest_child_code_by_parent_view),
+                name=f"{self.model._meta.app_label}_{self.model._meta.model_name}_suggest_child_code_by_parent",
             ),
         ]
         return custom + urls
@@ -465,6 +481,9 @@ class ItemClassificacaoAdmin(
         context["item_parent_level_jump_warn_url"] = reverse(
             f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_warn_parent_level_jump"
         )
+        context["item_validate_intermediate_zeros_url"] = reverse(
+            f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_validate_intermediate_canonical_zeros"
+        )
         if obj is not None:
             masked_codigo = format_receita_cod_by_vigencia(
                 obj.receita_cod or "",
@@ -478,6 +497,9 @@ class ItemClassificacaoAdmin(
             context["classification_naming_messages"] = classification_naming_messages_dict()
             context["item_abbreviated_radical_lookup_url"] = reverse(
                 f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_lookup_abbreviated_radical"
+            )
+            context["item_suggest_child_code_url"] = reverse(
+                f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_suggest_child_code_by_parent"
             )
         return super().render_change_form(request, context, add, change, form_url, obj)
 
@@ -529,6 +551,9 @@ class ItemClassificacaoAdmin(
     def lookup_parent_by_code_view(self, request):
         return JsonResponse(lookup_parent_by_code_response_data(request))
 
+    def suggest_child_code_by_parent_view(self, request):
+        return JsonResponse(suggest_child_code_by_parent_response_data(request))
+
     def warn_parent_level_jump_view(self, request):
         def parse_date(raw):
             value = (raw or "").strip()
@@ -576,6 +601,60 @@ class ItemClassificacaoAdmin(
             classificacao_form_pk=class_id_int,
             child_receita_cod_digits=child_cod_raw,
             reg_sent=reg_sent,
+        )
+        return JsonResponse(payload)
+
+    def validate_intermediate_canonical_zeros_view(self, request):
+        def parse_date(raw):
+            value = (raw or "").strip()
+            if not value:
+                return None
+            for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
+                try:
+                    return datetime.strptime(value, fmt).date()
+                except ValueError:
+                    continue
+            return None
+
+        parent_pk = (request.GET.get("parent_item_id") or "").strip()
+        nivel_pk = (request.GET.get("nivel_id") or "").strip()
+        class_pk_raw = (request.GET.get("classificacao_id") or "").strip()
+        vig_inicio = parse_date(request.GET.get("vigencia_inicio"))
+        vig_fim = parse_date(request.GET.get("vigencia_fim"))
+        receita_cod = (request.GET.get("receita_cod") or "").replace(".", "").strip()
+
+        if (
+            not parent_pk
+            or not nivel_pk
+            or not class_pk_raw
+            or not vig_inicio
+            or not vig_fim
+            or not receita_cod
+        ):
+            return JsonResponse({"ok": True})
+        try:
+            parent_id_int = int(parent_pk)
+            nivel_id_int = int(nivel_pk)
+            class_id_int = int(class_pk_raw)
+        except ValueError:
+            return JsonResponse({"ok": True})
+
+        parent = (
+            ItemClassificacao.objects.filter(pk=parent_id_int)
+            .select_related("nivel_id", "classificacao_id")
+            .first()
+        )
+        nivel = NivelHierarquico.objects.filter(pk=nivel_id_int).first()
+        if not parent or not nivel:
+            return JsonResponse({"ok": True})
+
+        payload = validate_intermediate_canonical_zeros_json_dict(
+            parent_item=parent,
+            child_nivel=nivel,
+            receita_cod_digits=receita_cod,
+            vig_inicio=vig_inicio,
+            vig_fim=vig_fim,
+            classificacao_pk=class_id_int,
         )
         return JsonResponse(payload)
 

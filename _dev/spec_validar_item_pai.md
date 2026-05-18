@@ -16,7 +16,7 @@ Lookups JSON de **código / hierarquia** no mesmo admin (lupa de mãe por códig
 | `L` / `L_filho` | `nivel_numero` do **nível do item em criação** (registo `NivelHierarquico` cujo PK vem no campo `nivel_id` do formulário). |
 | Salto de nível | `LP < L_filho − 1` (mãe **não** é o nível imediatamente abaixo do filho). |
 | Radical (intermediários) | Primeiros `sum(mask[0:LP])` **dígitos** do `receita_cod` do mãe (apenas caracteres numéricos; o BD armazena sem pontuação de máscara). |
-| Zero canónico | Segmento em que todos os caracteres são `'0'` (função `_canonical_zero_segment`). |
+| Zero canônico | Segmento em que todos os caracteres são `'0'` (função `_canonical_zero_segment`). |
 | Registo ativo | `data_registro_fim` igual ao sentinela de tempo de transação retornado por `transaction_time_sentinel_for_query()` (mesma convenção do admin bitemporal). |
 
 ## Três fluxos distintos (importante para manutenção)
@@ -29,13 +29,17 @@ Lookups JSON de **código / hierarquia** no mesmo admin (lupa de mãe por códig
 
 **O que não entra neste gatilho:** o `receita_cod` do filho **não** altera `true`/`false` de `level_jump`. Ou seja: o modal pode aparecer mesmo que a lista de intermediários venha vazia.
 
-### B) Validação ao gravar — **código do filho e regras de domínio**
+### B) Validação de zeros canônicos nos níveis intermédios — **bloqueio no código**
 
-**Onde:** `validate_item_parent_item_rules` em `apps/core/parent_item_validation.py` (ver também `_dev/spec_parent_item_id.md`).
+**Onde:** `find_intermediate_non_canonical_zero_message` / `validate_intermediate_canonical_zeros_json_dict` e `validate_item_parent_item_rules` em `apps/core/parent_item_validation.py`; endpoint `validate-intermediate-canonical-zeros/` no admin.
 
-Quando `parent_n < nivel_n − 1`, os segmentos do **filho** nos índices `LP .. L−2` devem ser **zeros canónicos**; caso contrário, `ValidationError` (mensagem sobre detalhamento nos níveis entre mãe e filho).
+Quando `parent_n < nivel_n − 1`, os segmentos do **filho** nos índices `LP .. L−2` devem ser **zeros canônicos**; caso contrário, erro **apenas** em `receita_cod`:
 
-Este fluxo responde à pergunta “o **código digitado** do novo item é coerente com o salto?”. É **independente** da query de intermediários na base.
+> Os campos correspondentes aos níveis entre o código atual (nível **F**) e o código mãe selecionado (nível **M**), devem conter apenas zeros canônicos.
+
+(**F** = `nivel_numero` do filho; **M** = `nivel_numero` da mãe.)
+
+No **Salvar** (add), o cliente chama este endpoint **antes** do modal de salto (fluxo A). Se `ok: false`, exibe erro vermelho sob o código e **não** abre o pop-up. É **independente** da query de intermediários na base (fluxo C).
 
 ### C) Listagem de intermediários — **outros registos em `ItemClassificacao`**
 
@@ -109,7 +113,7 @@ Filtros **simultâneos**:
 1. Se `exclude_receita_cod` (só dígitos) for igual ao código da linha, pular.
 2. `split_receita_cod_segments_tolerant(receita_cod, mask)`.
 3. `nn` = `nivel_numero` da linha; confirmar `nivel_min <= nn <= nivel_max`.
-4. Segmento do nível `nn`: índice `nn − 1`. Se `None` ou zero canónico, **excluir** da contagem.
+4. Segmento do nível `nn`: índice `nn − 1`. Se `None` ou zero canônico, **excluir** da contagem.
 
 Amostras: até `sample_limit` (no admin: **3**) para o JSON.
 
@@ -160,12 +164,18 @@ Foi implementado um bloco condicionado a `?debug=1` que acrescentava `intermedia
 
 **Arquivo:** `apps/core/templates/admin/core/change_form.html`.
 
-Fluxo: no `submit` do form em modo **add**, após validações de dígitos e hierarquia (`runCodeDigitValidation`, `syncHierarchyFromCode`), chama-se `requestParentLevelJumpConfirmation()`.
+Fluxo no `submit` (modo **add**):
 
-- Se a resposta não tiver `level_jump`, devolve `true` e o fluxo segue para o submit nativo.
-- Se tiver `level_jump`, abre `showCoreLevelJumpModal` com o JSON; **OK** libera o submit (`allowNativeSubmit`), **Cancelar** aborta.
+1. `runCodeDigitValidation`
+2. `syncHierarchyFromCode` — lookup de nível/mãe canónica
+3. `validateIntermediateCanonicalZerosOnSubmit` — fluxo B (bloqueio; sem modal se falhar)
+4. naming
+5. `requestParentLevelJumpConfirmation` — fluxo A (modal só se B passou)
+6. submit nativo → `clean()` / `validate_item_parent_item_rules` (mesma regra B no servidor)
 
-Variável de contexto: `item_parent_level_jump_warn_url` (definida no admin ao renderizar o change form).
+**Item mãe no lookup por código:** em `syncHierarchyFromCode`, alteração do `receita_cod` (blur/change de classificação/init) **atualiza** `parent_item_id` quando o lookup devolve `parent.found`. Preservar mãe sem substituir aplica-se só no **Salvar** (`submit`): falha do lookup ou PK diferente não limpa nem bloqueia, para permitir mãe escolhida na lupa e validação de salto/zeros. Após erro do Django (`.errornote`), `syncHierarchyFromCode('init')` **não** corre.
+
+Variáveis de contexto: `item_validate_intermediate_zeros_url`, `item_parent_level_jump_warn_url`.
 
 ---
 
@@ -177,7 +187,7 @@ Variável de contexto: `item_parent_level_jump_warn_url` (definida no admin ao r
 | View JSON | `warn_parent_level_jump_view` (`admin.py`) → `warn_parent_level_jump_json_dict` (`parent_item_validation.py`) |
 | Análise intermediários | `analyze_intermediate_items_for_level_jump` |
 | Validação domínio pai/filho | `validate_item_parent_item_rules` |
-| Modal | `showCoreLevelJumpModal`, `requestParentLevelJumpConfirmation` em `change_form.html` |
+| Modal | `showCoreAttentionModal` (base), `showCoreLevelJumpModal` (salto ao gravar), `requestParentLevelJumpConfirmation` em `change_form.html`; troca de mãe com código preenchido usa o mesmo modal — ver **(G5)** em `spec_itemClassificacao_criar_filho.md` |
 | Sentinela registo | `transaction_time_sentinel_for_query` em `apps/core/admin_mixins.py` |
 
 ## Relação com outras especificações

@@ -92,6 +92,13 @@
     note.className = 'errornote classification-naming-errornote';
     note.textContent = text;
     formEl.insertBefore(note, formEl.firstChild);
+    window.setTimeout(function() {
+      var content = document.getElementById('content');
+      if (content && content.scrollIntoView) {
+        content.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 0);
   }
 
   function escapeRegExp(s) {
@@ -685,6 +692,9 @@
 
     parentItemIdInput.addEventListener('change', function () {
       window.setTimeout(function () {
+        if (window.__blockNamingParentChange) {
+          return;
+        }
         if (!(parentItemIdInput.value || '').trim()) {
           clearReceitaNomeBaseSelection();
           ultimoParentPkAplicado = '';

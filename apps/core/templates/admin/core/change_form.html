@@ -314,6 +314,8 @@
     var itemHierarchyLookupUrl = '{{ item_hierarchy_lookup_url|default:"" }}';
     var itemAbbreviatedRadicalLookupUrl = '{{ item_abbreviated_radical_lookup_url|default:"" }}';
     var itemParentLevelJumpWarnUrl = '{{ item_parent_level_jump_warn_url|default:"" }}';
+    var itemValidateIntermediateZerosUrl = '{{ item_validate_intermediate_zeros_url|default:"" }}';
+    var itemSuggestChildCodeUrl = '{{ item_suggest_child_code_url|default:"" }}';
     var itemClassificacaoDigitLimitLookupUrl = '{{ item_classificacao_digit_limit_lookup_url|default:"" }}';
     var receitaCodDigitLimitCache = {};
     var receitaCodResolvedDigitMask = null;
@@ -763,6 +765,28 @@
         return input ? (input.closest('.form-row') || input.closest('div')) : null;
       }
 
+      function clearClientSubmitErrorSummary(formEl) {
+        if (!formEl) return;
+        var note = formEl.querySelector('.client-submit-errornote');
+        if (note) note.remove();
+      }
+
+      function focusSubmitValidationErrors(formEl) {
+        if (!formEl) return;
+        clearClientSubmitErrorSummary(formEl);
+        var note = document.createElement('p');
+        note.className = 'errornote client-submit-errornote';
+        note.textContent = 'Por favor, corrija o erro abaixo.';
+        formEl.insertBefore(note, formEl.firstChild);
+        window.setTimeout(function() {
+          var content = document.getElementById('content');
+          if (content && content.scrollIntoView) {
+            content.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 0);
+      }
+
       function clearHierarchyMessages(fieldRow) {
         if (!fieldRow) return;
         var messages = fieldRow.querySelectorAll('.hierarchy-autofill-error, .hierarchy-autofill-warning');
@@ -845,14 +869,40 @@
         clearHierarchyMessages(getFieldRow(nivelIdInput));
       }
 
+      var syncParentItemPkForPolling = null;
+
+      function setParentItemIdProgrammatically(pk, options) {
+        options = options || {};
+        var dispatchChange = options.dispatchChange !== false;
+        if (!parentItemIdInput) {
+          return;
+        }
+        var normalized = pk == null ? '' : String(pk).trim();
+        window.__suppressChildCodeSuggestOnParentChange = true;
+        try {
+          if (parentItemIdInput.value !== normalized) {
+            parentItemIdInput.value = normalized;
+            if (dispatchChange) {
+              parentItemIdInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+          }
+          if (typeof syncParentItemPkForPolling === 'function') {
+            syncParentItemPkForPolling(normalized);
+          }
+        } finally {
+          window.setTimeout(function() {
+            window.__suppressChildCodeSuggestOnParentChange = false;
+          }, 0);
+        }
+      }
+
       function clearDerivedHierarchyValues() {
         if (nivelIdInput && (nivelIdInput.value || '').trim()) {
           nivelIdInput.value = '';
           nivelIdInput.dispatchEvent(new Event('change', { bubbles: true }));
         }
         if (parentItemIdInput && (parentItemIdInput.value || '').trim()) {
-          parentItemIdInput.value = '';
-          parentItemIdInput.dispatchEvent(new Event('change', { bubbles: true }));
+          setParentItemIdProgrammatically('');
         }
       }
 
@@ -863,6 +913,9 @@
         if (parentItemIdInput.dataset.readonlyRoot === '1') {
           return Promise.resolve({ isValid: true });
         }
+        if (triggerName === 'init' && document.querySelector('.errornote')) {
+          return Promise.resolve({ isValid: true });
+        }
         var codeValue = stripReceitaCodFormatting(receitaCodInput.value);
         var classificacaoPk = getCurrentClassificacaoPk();
         var vigencia = getCurrentVigenciaIsoValues();
@@ -871,6 +924,17 @@
           clearParentValidationState();
           clearLevelValidationState();
           return Promise.resolve({ isValid: true });
+        }
+
+        var manualParentPkBeforeLookup = (parentItemIdInput.value || '').trim();
+        var keepParentWhenLookupIncomplete = triggerName === 'submit';
+
+        function finishSubmitKeepingManualParent(warningText) {
+          clearParentValidationState();
+          if (warningText) {
+            showHierarchyWarning(getFieldRow(parentItemIdInput), warningText);
+          }
+          return { isValid: true };
         }
 
         var url = itemHierarchyLookupUrl
@@ -989,18 +1053,27 @@
             var parent = data.parent || {};
             if (!parent.required) {
               if ((parentItemIdInput.value || '').trim()) {
-                parentItemIdInput.value = '';
-                parentItemIdInput.dispatchEvent(new Event('change', { bubbles: true }));
+                setParentItemIdProgrammatically('');
               }
               return { isValid: true };
             }
 
             if (parent.found && parent.pk) {
               var newParentPk = String(parent.pk);
+              if (
+                keepParentWhenLookupIncomplete &&
+                manualParentPkBeforeLookup &&
+                manualParentPkBeforeLookup !== newParentPk
+              ) {
+                return finishSubmitKeepingManualParent(
+                  'Foi mantido o item mãe selecionado manualmente; a matriz canónica derivada do código não substitui essa escolha.'
+                );
+              }
               var parentNomeMae = (parent.name || '').trim();
               if (parentItemIdInput.value !== newParentPk) {
-                parentItemIdInput.value = newParentPk;
-                parentItemIdInput.dispatchEvent(new Event('change', { bubbles: true }));
+                setParentItemIdProgrammatically(newParentPk);
+              } else if (typeof syncParentItemPkForPolling === 'function') {
+                syncParentItemPkForPolling(newParentPk);
               }
               if (
                 parentNomeMae &&
@@ -1049,9 +1122,13 @@
               return { isValid: true };
             }
             if (parentStatus.severity === 'error') {
+              if (keepParentWhenLookupIncomplete && manualParentPkBeforeLookup) {
+                return finishSubmitKeepingManualParent(
+                  'Foi mantido o item mãe selecionado, já que não foi encontrada matriz canônica padrão para o código informado.'
+                );
+              }
               if ((parentItemIdInput.value || '').trim()) {
-                parentItemIdInput.value = '';
-                parentItemIdInput.dispatchEvent(new Event('change', { bubbles: true }));
+                setParentItemIdProgrammatically('');
               }
               var parentErrorMsg = parentStatus.message || 'Não existe item mãe ativo e vigente para o código informado.';
               parentItemIdInput.setCustomValidity(parentErrorMsg);
@@ -1067,9 +1144,14 @@
               return { isValid: false };
             }
 
+            if (keepParentWhenLookupIncomplete && manualParentPkBeforeLookup) {
+              return finishSubmitKeepingManualParent(
+                'Foi mantido o item mãe selecionado, já que não foi encontrada matriz canônica padrão para o código informado.'
+              );
+            }
+
             if ((parentItemIdInput.value || '').trim()) {
-              parentItemIdInput.value = '';
-              parentItemIdInput.dispatchEvent(new Event('change', { bubbles: true }));
+              setParentItemIdProgrammatically('');
             }
             var parentMissingMsg = 'Não existe item mãe ativo e vigente para o código informado. Cadastre o item mãe antes de salvar este registro.';
             parentItemIdInput.setCustomValidity(parentMissingMsg);
@@ -1085,13 +1167,290 @@
           });
       }
 
+      function isReceitaCodEmptyForSuggest() {
+        return !stripReceitaCodFormatting(receitaCodInput.value);
+      }
+
+      function getParentItemFieldRow() {
+        var display = document.getElementById('id_parent_item_id_display');
+        if (display) {
+          return display.closest('.form-row') || display.parentElement;
+        }
+        return getFieldRow(parentItemIdInput);
+      }
+
+      function extractNomeMaeFromParentLabel() {
+        if (!parentItemIdInput) return '';
+        var link = document.getElementById(parentItemIdInput.id + '_label_link');
+        if (!link) return '';
+        var text = (link.textContent || '').trim();
+        var sep = ' - ';
+        var idx = text.indexOf(sep);
+        if (idx >= 0) {
+          return text.slice(idx + sep.length).trim();
+        }
+        return text;
+      }
+
+      function applyNamingAfterParentSuggest(parentPk) {
+        if (typeof window.applyClassificationNamingAfterParentResolved !== 'function') {
+          return;
+        }
+        var tentativas = 0;
+        function tentar() {
+          tentativas += 1;
+          var nome = extractNomeMaeFromParentLabel();
+          if (nome) {
+            window.applyClassificationNamingAfterParentResolved(parentPk, nome);
+            return;
+          }
+          if (tentativas < 25) {
+            window.setTimeout(tentar, 50);
+          }
+        }
+        tentar();
+      }
+
+      function clearChildCodeSuggestMessages(fieldRow) {
+        if (!fieldRow) return;
+        fieldRow.querySelectorAll('.child-code-suggest-error, .child-code-suggest-warning').forEach(function(node) {
+          node.remove();
+        });
+      }
+
+      function showChildCodeSuggestError(fieldRow, text) {
+        if (!fieldRow || !text) return;
+        clearChildCodeSuggestMessages(fieldRow);
+        var ul = document.createElement('ul');
+        ul.className = 'errorlist child-code-suggest-error';
+        var li = document.createElement('li');
+        li.textContent = text;
+        ul.appendChild(li);
+        fieldRow.insertBefore(ul, fieldRow.firstChild);
+      }
+
+      function showChildCodeSuggestWarningHtml(fieldRow, html) {
+        if (!fieldRow || !html) return;
+        var ul = document.createElement('ul');
+        ul.className = 'messagelist child-code-suggest-warning';
+        ul.style.marginTop = '6px';
+        var li = document.createElement('li');
+        li.className = 'warning';
+        li.innerHTML = html;
+        ul.appendChild(li);
+        fieldRow.appendChild(ul);
+      }
+
+      function setAdminDateInput(input, isoDate) {
+        if (!input || !isoDate) return;
+        input.value = isoDate;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      var parentSuggestInFlight = false;
+      var lastParentSuggestSuccessPk = '';
+
+      function applyChildCodeSuggestPayload(data, parentPk, parentRow, codRow, vig) {
+        clearParentValidationState();
+        var displayCod = data.receita_cod_display || data.receita_cod || '';
+        if (displayCod) {
+          receitaCodInput.value = displayCod;
+          receitaCodInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        var classificacaoInput = document.getElementById('id_classificacao_id');
+        if (classificacaoInput && data.classificacao && data.classificacao.pk) {
+          classificacaoInput.value = data.classificacao.pk;
+          classificacaoInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        if (nivelIdInput && data.derived_level && data.derived_level.pk) {
+          nivelIdInput.value = data.derived_level.pk;
+          nivelIdInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        var vigInicioInput = document.querySelector('input[name="data_vigencia_inicio"]');
+        var vigFimInput = document.querySelector('input[name="data_vigencia_fim"]');
+        var vigPayload = data.vigencia || {};
+        var parentVig = data.parent || {};
+        if (!vig.vigenciaInicio) {
+          setAdminDateInput(
+            vigInicioInput,
+            vigPayload.inicio || parentVig.vigencia_inicio || ''
+          );
+        }
+        if (!vig.vigenciaFim) {
+          setAdminDateInput(
+            vigFimInput,
+            vigPayload.fim || parentVig.vigencia_fim || ''
+          );
+        }
+
+        syncItemIdPreview();
+
+        if (data.existing_code_warning) {
+          var warn = data.existing_code_warning;
+          var linkHtml = warn.link_url
+            ? ' <a href="' + warn.link_url + '" target="_blank" rel="noopener noreferrer">Abrir registo</a>'
+            : '';
+          showChildCodeSuggestWarningHtml(
+            codRow,
+            (warn.message || 'Código já existente.') + linkHtml
+          );
+        }
+
+        if (data.notices && data.notices.length) {
+          data.notices.forEach(function(noticeText) {
+            if (noticeText) {
+              showChildCodeSuggestWarningHtml(parentRow, noticeText);
+            }
+          });
+        }
+
+        lastParentSuggestSuccessPk = parentPk;
+        applyNamingAfterParentSuggest(parentPk);
+      }
+
+      function suggestChildCodeFromParent(triggerName, options) {
+        options = options || {};
+        var forceUpdate = options.force === true;
+
+        if (!isAddMode || !itemSuggestChildCodeUrl || !parentItemIdInput || !receitaCodInput) {
+          return Promise.resolve(false);
+        }
+        if (!forceUpdate && !isReceitaCodEmptyForSuggest()) {
+          return Promise.resolve(false);
+        }
+        var parentPk = (parentItemIdInput.value || '').trim();
+        if (!parentPk) {
+          return Promise.resolve(false);
+        }
+        if (parentSuggestInFlight) {
+          return Promise.resolve(false);
+        }
+        if (!forceUpdate && parentPk === lastParentSuggestSuccessPk) {
+          return Promise.resolve(false);
+        }
+
+        var parentRow = getParentItemFieldRow();
+        var codRow = getReceitaCodFieldRow(receitaCodInput);
+        clearChildCodeSuggestMessages(parentRow);
+        clearChildCodeSuggestMessages(codRow);
+
+        var vig = getCurrentVigenciaIsoValues();
+        var params = new URLSearchParams({ parent_item_id: parentPk });
+        if (vig.vigenciaInicio && vig.vigenciaFim) {
+          params.set('vigencia_inicio', vig.vigenciaInicio);
+          params.set('vigencia_fim', vig.vigenciaFim);
+        }
+
+        parentSuggestInFlight = true;
+        window.__blockNamingParentChange = true;
+        return fetch(itemSuggestChildCodeUrl + '?' + params.toString(), {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          credentials: 'same-origin'
+        })
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (!data || !data.ok) {
+              var msg = (data && data.message) || 'Não foi possível sugerir o código do item filho.';
+              showChildCodeSuggestError(parentRow, msg);
+              if (parentItemIdInput.setCustomValidity) {
+                parentItemIdInput.setCustomValidity(msg);
+              }
+              return false;
+            }
+
+            applyChildCodeSuggestPayload(data, parentPk, parentRow, codRow, vig);
+            return true;
+          })
+          .catch(function() {
+            showChildCodeSuggestError(
+              parentRow,
+              'Falha ao comunicar com o servidor para sugerir o código do item filho.'
+            );
+            return false;
+          })
+          .finally(function() {
+            parentSuggestInFlight = false;
+            window.__blockNamingParentChange = false;
+          });
+      }
+
+      var pendingParentChangeConfirmPk = '';
+
+      function onParentItemSelectionChanged() {
+        if (window.__suppressChildCodeSuggestOnParentChange) {
+          return;
+        }
+        clearParentValidationState();
+        if (parentSuggestInFlight) {
+          return;
+        }
+        var parentPk = (parentItemIdInput.value || '').trim();
+        if (!parentPk) {
+          pendingParentChangeConfirmPk = '';
+          return;
+        }
+
+        if (isReceitaCodEmptyForSuggest()) {
+          pendingParentChangeConfirmPk = '';
+          suggestChildCodeFromParent('parent_change');
+          return;
+        }
+
+        if (parentPk === lastParentSuggestSuccessPk) {
+          return;
+        }
+        if (pendingParentChangeConfirmPk === parentPk) {
+          return;
+        }
+        pendingParentChangeConfirmPk = parentPk;
+
+        showCoreAttentionModal({
+          message:
+            'O código canônico da natureza de receita já está preenchido. ' +
+            'Deseja atualizar o código com base no novo item mãe seleccionado?'
+        }).then(function(ok) {
+          pendingParentChangeConfirmPk = '';
+          if (!ok) {
+            return;
+          }
+          suggestChildCodeFromParent('parent_change', { force: true });
+        });
+      }
+
       if (parentItemIdInput) {
         parentItemIdInput.addEventListener('input', function() {
           clearParentValidationState();
         });
-        parentItemIdInput.addEventListener('change', function() {
-          clearParentValidationState();
-        });
+        parentItemIdInput.addEventListener('change', onParentItemSelectionChanged);
+        parentItemIdInput.addEventListener('semantic-fk-changed', onParentItemSelectionChanged);
+
+        var jqParent = null;
+        try {
+          jqParent = window.django && window.django.jQuery ? window.django.jQuery : window.jQuery;
+        } catch (e) { jqParent = null; }
+        if (jqParent) {
+          jqParent(parentItemIdInput).on('change', onParentItemSelectionChanged);
+        }
+
+        // Raw-id / semantic FK: o popup nem sempre dispara `change` no hidden.
+        var lastParentItemPk = (parentItemIdInput.value || '').trim();
+        syncParentItemPkForPolling = function(pk) {
+          lastParentItemPk = pk || '';
+        };
+        window.setInterval(function() {
+          var currentPk = (parentItemIdInput.value || '').trim();
+          if (currentPk !== lastParentItemPk) {
+            lastParentItemPk = currentPk;
+            if (currentPk) {
+              onParentItemSelectionChanged();
+            } else {
+              lastParentSuggestSuccessPk = '';
+            }
+          }
+        }, 350);
       }
 
       function runClassificationNamingInit() {
@@ -1189,9 +1548,11 @@
         }
       });
 
-      function showCoreLevelJumpModal(payload) {
+      function showCoreAttentionModal(options) {
+        options = options || {};
         return new Promise(function(resolve) {
-          var existing = document.getElementById('core-level-jump-modal-overlay');
+          var overlayId = 'core-level-jump-modal-overlay';
+          var existing = document.getElementById(overlayId);
           if (existing) {
             existing.remove();
           }
@@ -1206,7 +1567,7 @@
             }
           }
           var overlay = document.createElement('div');
-          overlay.id = 'core-level-jump-modal-overlay';
+          overlay.id = overlayId;
           overlay.className = 'core-level-jump-modal-overlay';
           overlay.setAttribute('role', 'dialog');
           overlay.setAttribute('aria-modal', 'true');
@@ -1223,13 +1584,61 @@
           icon.textContent = '⚠️';
           var h = document.createElement('h3');
           h.id = 'core-level-jump-modal-title';
-          h.textContent = 'Atenção!';
+          h.textContent = options.title || 'Atenção!';
           header.appendChild(icon);
           header.appendChild(h);
 
           var body = document.createElement('div');
           body.className = 'core-level-jump-modal-body';
 
+          if (typeof options.buildBody === 'function') {
+            options.buildBody(body);
+          } else {
+            var texts = options.messages || (options.message ? [options.message] : []);
+            texts.forEach(function(text) {
+              var p = document.createElement('p');
+              p.textContent = text;
+              body.appendChild(p);
+            });
+          }
+
+          if (options.confirmQuestion) {
+            var ask = document.createElement('p');
+            ask.appendChild(document.createTextNode(options.confirmQuestion));
+            body.appendChild(ask);
+          }
+
+          var actions = document.createElement('div');
+          actions.className = 'core-level-jump-modal-actions';
+          var btnCancel = document.createElement('button');
+          btnCancel.type = 'button';
+          btnCancel.className = 'core-level-jump-btn-cancel';
+          btnCancel.textContent = options.cancelLabel || 'Cancelar';
+          var btnOk = document.createElement('button');
+          btnOk.type = 'button';
+          btnOk.className = 'core-level-jump-btn-ok';
+          btnOk.textContent = options.okLabel || 'OK';
+          btnCancel.addEventListener('click', function() { close(false); });
+          btnOk.addEventListener('click', function() { close(true); });
+          overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) {
+              close(false);
+            }
+          });
+          actions.appendChild(btnCancel);
+          actions.appendChild(btnOk);
+
+          box.appendChild(header);
+          box.appendChild(body);
+          box.appendChild(actions);
+          overlay.appendChild(box);
+          document.body.appendChild(overlay);
+          document.addEventListener('keydown', onKey);
+          btnOk.focus();
+        });
+      }
+
+      function buildCoreLevelJumpModalBody(body, payload) {
           var par = document.createElement('p');
           par.appendChild(document.createTextNode('O item mãe, ('));
           var parentData = (payload && payload.parent) ? payload.parent : {};
@@ -1306,41 +1715,59 @@
               body.appendChild(ul);
             }
           }
+      }
 
-          var ask = document.createElement('p');
-          ask.appendChild(
-            document.createTextNode('Deseja continuar e gravar o registo?')
-          );
-          body.appendChild(ask);
-
-          var actions = document.createElement('div');
-          actions.className = 'core-level-jump-modal-actions';
-          var btnCancel = document.createElement('button');
-          btnCancel.type = 'button';
-          btnCancel.className = 'core-level-jump-btn-cancel';
-          btnCancel.textContent = 'Cancelar';
-          var btnOk = document.createElement('button');
-          btnOk.type = 'button';
-          btnOk.className = 'core-level-jump-btn-ok';
-          btnOk.textContent = 'OK';
-          btnCancel.addEventListener('click', function() { close(false); });
-          btnOk.addEventListener('click', function() { close(true); });
-          overlay.addEventListener('click', function(e) {
-            if (e.target === overlay) {
-              close(false);
-            }
-          });
-          actions.appendChild(btnCancel);
-          actions.appendChild(btnOk);
-
-          box.appendChild(header);
-          box.appendChild(body);
-          box.appendChild(actions);
-          overlay.appendChild(box);
-          document.body.appendChild(overlay);
-          document.addEventListener('keydown', onKey);
-          btnOk.focus();
+      function showCoreLevelJumpModal(payload) {
+        return showCoreAttentionModal({
+          buildBody: function(body) {
+            buildCoreLevelJumpModalBody(body, payload);
+          },
+          confirmQuestion: 'Deseja continuar e gravar o registo?'
         });
+      }
+
+      function validateIntermediateCanonicalZerosOnSubmit() {
+        if (!isAddMode || !itemValidateIntermediateZerosUrl || !parentItemIdInput || !nivelIdInput) {
+          return Promise.resolve({ isValid: true });
+        }
+        var parentPk = (parentItemIdInput.value || '').trim();
+        var nivelPk = (nivelIdInput.value || '').trim();
+        var classPk = getCurrentClassificacaoPk() || '';
+        var vig = getCurrentVigenciaIsoValues();
+        var codeValue = stripReceitaCodFormatting(receitaCodInput.value);
+        if (!parentPk || !nivelPk || !classPk || !vig.vigenciaInicio || !vig.vigenciaFim || !codeValue) {
+          return Promise.resolve({ isValid: true });
+        }
+        var params = new URLSearchParams({
+          parent_item_id: parentPk,
+          nivel_id: nivelPk,
+          classificacao_id: classPk,
+          vigencia_inicio: vig.vigenciaInicio,
+          vigencia_fim: vig.vigenciaFim,
+          receita_cod: codeValue
+        });
+        return fetch(itemValidateIntermediateZerosUrl + '?' + params.toString(), {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          credentials: 'same-origin'
+        })
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            var codRow = getReceitaCodFieldRow(receitaCodInput);
+            if (!data || data.ok) {
+              receitaCodInput.setCustomValidity('');
+              return { isValid: true };
+            }
+            var msg = data.message || (
+              'Os campos correspondentes aos níveis entre o código atual e o código mãe ' +
+              'selecionado devem conter apenas zeros canônicos.'
+            );
+            receitaCodInput.setCustomValidity('');
+            showReceitaCodError(codRow, msg);
+            return { isValid: false };
+          })
+          .catch(function() {
+            return { isValid: true };
+          });
       }
 
       function requestParentLevelJumpConfirmation() {
@@ -1399,28 +1826,34 @@
             return;
           }
           isSubmitValidationRunning = true;
+          clearClientSubmitErrorSummary(adminForm);
           if (defaultSubmitButton) {
             defaultSubmitButton.disabled = true;
           }
           runCodeDigitValidation('submit')
             .then(function(result) {
               if (!result || !result.isValid) {
-                if (receitaCodInput.reportValidity) {
-                  receitaCodInput.reportValidity();
-                }
+                receitaCodInput.setCustomValidity('');
+                focusSubmitValidationErrors(adminForm);
                 return;
               }
               return syncHierarchyFromCode('submit').then(function(hierarchyResult) {
                 if (!hierarchyResult || !hierarchyResult.isValid) {
+                  focusSubmitValidationErrors(adminForm);
                   return;
                 }
-                if (typeof window.validateClassificationNamingOnSubmit === 'function') {
-                  var namingOk = window.validateClassificationNamingOnSubmit();
-                  if (!namingOk) {
+                return validateIntermediateCanonicalZerosOnSubmit().then(function(zeroResult) {
+                  if (!zeroResult || !zeroResult.isValid) {
+                    focusSubmitValidationErrors(adminForm);
                     return;
                   }
-                }
-                return requestParentLevelJumpConfirmation().then(function(confirmed) {
+                  if (typeof window.validateClassificationNamingOnSubmit === 'function') {
+                    var namingOk = window.validateClassificationNamingOnSubmit();
+                    if (!namingOk) {
+                      return;
+                    }
+                  }
+                  return requestParentLevelJumpConfirmation().then(function(confirmed) {
                   if (!confirmed) {
                     return;
                   }
@@ -1447,6 +1880,7 @@
                       adminForm.submit();
                     }
                   }
+                });
                 });
               });
             })
