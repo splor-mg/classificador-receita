@@ -3,6 +3,16 @@
 Este documento centraliza as regras transversais de Foreign Key (FK) que se
 aplicam entre tabelas do projeto, especialmente entre modelos bitemporais.
 
+**Escopo.** Esta spec trata exclusivamente de **validação de cobertura
+temporal de FK** (filho cuja vigência precisa estar contida na vigência da
+mãe). A política aqui — união contígua de vigências de mesma entidade — é
+**complementar e distinta** das políticas de **resolução de máscara visual**
+em apresentação, formulários, lookups e sugestão de código filho. Para esses
+contextos, ver `_dev/spec_itemClassificacao_mascara_apresentacao.md`
+(apresentação na changelist, com tier estrito + tier secundário) e os pontos
+no código que usam diretamente `format_receita_cod_by_vigencia` (regra
+estrita pura, sem fallback).
+
 Tópicos:
 
 - [Definição de Vigência por União Contígua de Mesma Entidade Semântica](#definição-de-vigência-por-união-contígua-de-mesma-entidade-semântica)

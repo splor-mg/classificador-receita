@@ -29,6 +29,7 @@ from apps.core.forms import (
 )
 from apps.core.admin_formatters import (
     format_receita_cod_by_vigencia,
+    format_receita_cod_for_changelist,
     get_active_vigencia_masks,
 )
 from apps.core.code_mask import resolve_receita_cod_mask_context
@@ -685,7 +686,15 @@ class ItemClassificacaoAdmin(
         ordering="receita_cod",
     )
     def receita_cod_formatado(self, obj):
-        return format_receita_cod_by_vigencia(
+        # Política específica da changelist: aplica resolução em dois níveis
+        # (estrita + secundária ancorada em ``data_vigencia_fim`` do registro)
+        # para que registros cuja vigência não esteja inteiramente contida em
+        # uma única linha ativa de ``NivelHierarquico`` ainda assim recebam
+        # máscara compatível, evitando assimetria visual na listagem. Demais
+        # contextos (formulários, lookups, validações) seguem usando
+        # ``format_receita_cod_by_vigencia`` — regra estrita pura. Ver
+        # ``_dev/spec_itemClassificacao_mascara_apresentacao.md``.
+        return format_receita_cod_for_changelist(
             obj.receita_cod or "",
             getattr(obj, "data_vigencia_inicio", None),
             getattr(obj, "data_vigencia_fim", None),
