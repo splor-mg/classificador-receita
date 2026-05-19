@@ -8,10 +8,10 @@ Esta especificação define **como o fluxo deve funcionar** no formulário Djang
 
 | Spec | Relação |
 |------|---------|
-| `_dev/spec_parent_item_id.md` | Filho direto = nível **NM+1**; zeros canônicos na cauda; vigência do filho contida na da mãe ao gravar. |
-| `_dev/spec_lookup_hierarquia_por_codigo_admin.md` | Lookup inverso (código → mãe/nível); executa **depois** de `receita_cod` preenchido. |
+| `_dev/spec_itemClassificacao_regras_hierarquia.md` | Filho direto = nível **NM+1**; zeros canônicos na cauda; vigência do filho contida na da mãe ao gravar. |
+| `_dev/spec_itemClassificacao_foreignKeys_lookup.md` | Lookup inverso (código → mãe/nível); executa **depois** de `receita_cod` preenchido. |
 | `_dev/spec_itemClassificacao_criar_nome.md` | **P-mãe** (nomenclatura) após mãe/código definidos. |
-| `_dev/spec_validar_item_pai.md` | Aviso de salto de nível no **submit** quando `L > NM+1`; intermediários. |
+| `_dev/spec_itemClassificacao_validar_hierarquia.md` | Aviso de salto de nível no **submit** quando `L > NM+1`; intermediários. |
 | `_dev/toDo.md` | Alerta «código já existente» e «próximo dígito» — spec futura; ver **§ Decisões em aberto**. |
 
 ---
@@ -38,7 +38,7 @@ Dado um **item mãe** selecionado na tela de adição, com `receita_cod` do form
 - Gatilho: seleção de `parent_item_id` (lupa ou equivalente) com `receita_cod` **vazio** (*trim* / só pontuação = vazio).
 - Sugestão de `receita_cod` (dígitos canônicos, sem pontos no POST interno; formatação visual conforme máscara no cliente).
 - Pré-preenchimento **recomendado** no mesmo passo: `classificacao_id` (da mãe), `nivel_id` (= **`L`** resolvido), e datas de vigência do formulário **se ainda vazias** (ver **(V3)**).
-- Aviso informativo (não bloqueante na sugestão) quando **`L > NM+1`** — salto de nível em relação à mãe; confirmação no submit conforme `spec_validar_item_pai.md`.
+- Aviso informativo (não bloqueante na sugestão) quando **`L > NM+1`** — salto de nível em relação à mãe; confirmação no submit conforme `spec_itemClassificacao_validar_hierarquia.md`.
 - Mensagens de erro **(E1)** e aviso não bloqueante se o código sugerido já existir (ver **§ Decisões em aberto — DD3**).
 
 ### Fora de escopo (v1)
@@ -60,7 +60,7 @@ Dado um **item mãe** selecionado na tela de adição, com `receita_cod` do form
 - **(T5) `zero canônico`:** segmento em que todos os caracteres são `'0'` (`_canonical_zero_segment`).
 - **(T6) `registro ativo`:** `data_registro_fim` = sentinela de transaction time do projeto (`TRANSACTION_TIME_SENTINEL` / `transaction_time_sentinel_for_query()`).
 - **(T7) `vigência compatível (consulta)`:** sobreposição entre o intervalo do candidato e o intervalo de referência **(V1)**: `início_ref ≤ fim_candidato` e `fim_ref ≥ início_candidato` (datas inclusivas).
-- **(T8) `vigência compatível (gravação)`:** intervalo do **novo** filho deve estar **contido** no da mãe (`spec_parent_item_id.md`) — validação no `clean()` / domínio, não só na sugestão.
+- **(T8) `vigência compatível (gravação)`:** intervalo do **novo** filho deve estar **contido** no da mãe (`spec_itemClassificacao_regras_hierarquia.md`) — validação no `clean()` / domínio, não só na sugestão.
 - **(T9) `valor de segmento`:** texto do segmento na posição do nível; comparado **numericamente** (`int(segmento)`), com saída **zero-padded** à largura `mask[L-1]`.
 - **(T10) `capacidade do nível L`:** `10^w - 1` onde `w = mask[L-1]` (ex.: `w=1` → valores `1..9`; `w=2` → `1..99`). O valor **0** / zero canônico **não** é candidato a detalhamento.
 
@@ -144,14 +144,14 @@ Quando `parent_item_id` for alterado **por script** (ex.: resposta de `lookup-hi
 Não sugerir (mensagem de erro ou silêncio documentado na implementação) quando:
 
 - mãe sem `classificacao_id` ou sem máscara resolvível;
-- mãe com `matriz = false` (filho exige mãe matriz — `spec_parent_item_id.md`);
+- mãe com `matriz = false` (filho exige mãe matriz — `spec_itemClassificacao_regras_hierarquia.md`);
 - **`NM >= len(mask)`** (mãe já no último nível hierárquico; não há nível filho) → erro **(E2)**.
 
 ### (G4) Ordem em relação a outros fluxos
 
 1. Usuário escolhe mãe → **esta spec** (sugestão de código + pré-preenchimentos).
 2. Com `receita_cod` e mãe definidos → `spec_itemClassificacao_criar_nome.md` (**P-mãe**).
-3. Se o usuário editar manualmente `receita_cod` → `lookup-hierarchy-by-code` (`spec_lookup_hierarquia_por_codigo_admin.md`) pode reconciliar nível/mãe; a spec de lookup **prevalece** sobre a sugestão anterior nesse caso; o preenchimento programático da mãe **não** reabre **(G1)**/**(G5)** (**G6**).
+3. Se o usuário editar manualmente `receita_cod` → `lookup-hierarchy-by-code` (`spec_itemClassificacao_foreignKeys_lookup.md`) pode reconciliar nível/mãe; a spec de lookup **prevalece** sobre a sugestão anterior nesse caso; o preenchimento programático da mãe **não** reabre **(G1)**/**(G5)** (**G6**).
 
 ---
 
@@ -171,7 +171,7 @@ Dado o **radical** da mãe, percorrer **`K = NM+1 … len(mask)`** e, para cada 
 
 Em ambos os casos aplicam-se **(A)**, **(H)** ou **(E1)** sobre o conjunto escolhido.
 
-*Salto de nível:* se `L > NM+1`, o código sugerido tem zeros canônicos nos níveis intermediários; `nivel_id` pré-preenchido = `L`. O **gravar** continua sujeito a `spec_parent_item_id.md` e ao modal de `spec_validar_item_pai.md`.
+*Salto de nível:* se `L > NM+1`, o código sugerido tem zeros canônicos nos níveis intermediários; `nivel_id` pré-preenchido = `L`. O **gravar** continua sujeito a `spec_itemClassificacao_regras_hierarquia.md` e ao modal de `spec_itemClassificacao_validar_hierarquia.md`.
 
 ---
 
@@ -290,7 +290,7 @@ Nenhum segmento ≠ zero em **RAMO** para `K ≥ 6`; **FILHOS** vazio → `L = 6
 
 ## Contrato HTTP (proposto)
 
-Alinhado ao `spec_lookup_hierarquia_por_codigo_admin.md`.
+Alinhado ao `spec_itemClassificacao_foreignKeys_lookup.md`.
 
 - **Rota (proposta):** `GET …/admin/core/itemclassificacao/suggest-child-code-by-parent/`
 - **Parâmetros GET:**

@@ -28,7 +28,7 @@ def _build_identity_filter(related_obj: models.Model) -> dict[str, Any]:
     Prioriza ``*_ref`` (chave surrogada) por estabilidade frente a eventuais
     renomeações da chave semântica (ADR-003). Só recai em ``*_id`` quando
     nenhum ``*_ref`` estiver preenchido. PK só é usada se nem ``*_ref`` nem
-    ``*_id`` estiverem disponíveis. Ver ``_dev/spec_foreingKeys.md``.
+    ``*_id`` estiverem disponíveis. Ver ``_dev/spec_foreignKeys_vigencia.md``.
     """
     concrete_fields = list(getattr(related_obj._meta, "concrete_fields", []) or [])
 

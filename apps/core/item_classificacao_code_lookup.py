@@ -2,7 +2,7 @@
 Lookups JSON do admin para `ItemClassificacao`: hierarquia a partir do código
 e resolução de item mãe por código exato.
 
-Ver `_dev/spec_lookup_hierarquia_por_codigo_admin.md`.
+Ver `_dev/spec_itemClassificacao_foreignKeys_lookup.md`.
 """
 
 from __future__ import annotations

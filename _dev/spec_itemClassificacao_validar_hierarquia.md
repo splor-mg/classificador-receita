@@ -2,11 +2,11 @@
 
 ## Objetivo e escopo
 
-Documentar o comportamento **técnico** implementado em torno de `parent_item_id` no **Django Admin** ao **adicionar** `ItemClassificacao`: aviso de **salto de nível** (mãe não está em `L_filho − 1`), contagem/listagem de **itens intermediários** na base, e a relação com a **validação de domínio** já descrita em `_dev/spec_parent_item_id.md`.
+Documentar o comportamento **técnico** implementado em torno de `parent_item_id` no **Django Admin** ao **adicionar** `ItemClassificacao`: aviso de **salto de nível** (mãe não está em `L_filho − 1`), contagem/listagem de **itens intermediários** na base, e a relação com a **validação de domínio** já descrita em `_dev/spec_itemClassificacao_regras_hierarquia.md`.
 
-Esta especificação **não** substitui `spec_parent_item_id.md` nas regras de negócio gerais; complementa o que foi feito no **código** (`apps/core/parent_item_validation.py`, `apps/core/admin.py`, `apps/core/templates/admin/core/change_form.html`) para o fluxo de **confirmação antes do submit** e para a **análise de intermediários**.
+Esta especificação **não** substitui `spec_itemClassificacao_regras_hierarquia.md` nas regras de negócio gerais; complementa o que foi feito no **código** (`apps/core/parent_item_validation.py`, `apps/core/admin.py`, `apps/core/templates/admin/core/change_form.html`) para o fluxo de **confirmação antes do submit** e para a **análise de intermediários**.
 
-Lookups JSON de **código / hierarquia** no mesmo admin (lupa de mãe por código exacto e derivação de nível + mãe matriz): `_dev/spec_lookup_hierarquia_por_codigo_admin.md` (`apps/core/item_classificacao_code_lookup.py`).
+Lookups JSON de **código / hierarquia** no mesmo admin (lupa de mãe por código exacto e derivação de nível + mãe matriz): `_dev/spec_itemClassificacao_foreignKeys_lookup.md` (`apps/core/item_classificacao_code_lookup.py`).
 
 ## Glossário (implementação)
 
@@ -139,7 +139,7 @@ Amostras: até `sample_limit` (no admin: **3**) para o JSON.
 
 **Decisão:** `ItemClassificacaoAdmin` define `busca_intermediarios_class_pk = class_id_int` (GET) e passa esse valor para `analyze_intermediate_items_for_level_jump`.
 
-**Risco consciente:** se o utilizador escolher no form uma classificação **diferente** da do pai, a lista reflete o form (pode ser vazia ou incoerente com o vínculo real). Em produção, mãe e filho devem pertencer à **mesma** classificação (`spec_parent_item_id.md`); o caso acima foi guiado por **seed / teste** com PKs distintos.
+**Risco consciente:** se o utilizador escolher no form uma classificação **diferente** da do pai, a lista reflete o form (pode ser vazia ou incoerente com o vínculo real). Em produção, mãe e filho devem pertencer à **mesma** classificação (`spec_itemClassificacao_regras_hierarquia.md`); o caso acima foi guiado por **seed / teste** com PKs distintos.
 
 ### 3. Modal ≠ mesma regra que a listagem
 
@@ -192,7 +192,7 @@ Variáveis de contexto: `item_validate_intermediate_zeros_url`, `item_parent_lev
 
 ## Relação com outras especificações
 
-- **`_dev/spec_parent_item_id.md`:** regras normativas de `parent_item_id`, prefixo, cauda do pai, salto e zeros no filho, mesma classificação, vigência do mãe contendo a do filho, etc.
+- **`_dev/spec_itemClassificacao_regras_hierarquia.md`:** regras normativas de `parent_item_id`, prefixo, cauda do pai, salto e zeros no filho, mesma classificação, vigência do mãe contendo a do filho, etc.
 - **`_dev/spec_validar_codigos.md`:** validação offline de códigos; não substitui o fluxo admin acima.
 
 ## Exemplo que guiou decisões (seed)

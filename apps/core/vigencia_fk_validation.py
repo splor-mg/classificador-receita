@@ -2,7 +2,7 @@
 Validação de contenção temporal entre um registro bitemporal e os alvos de suas
 Foreign Keys.
 
-Ver `_dev/spec_foreingKeys.md`, tópico "Definição de Vigência por União
+Ver `_dev/spec_foreignKeys_vigencia.md`, tópico "Definição de Vigência por União
 Contígua de Mesma Entidade Semântica".
 
 Resumo do algoritmo (duas etapas, por FK):

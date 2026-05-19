@@ -9,7 +9,7 @@ Documentar o contrato HTTP/JSON dos endpoints usados pelo formulário de **adici
 
 A lógica de negócio e ORM vive em `apps/core/item_classificacao_code_lookup.py`. As views em `ItemClassificacaoAdmin` apenas delegam e envolvem o dicionário em `JsonResponse`.
 
-Relacionado: regras de domínio de `parent_item_id` em `_dev/spec_parent_item_id.md`; aviso de salto de nível e intermediários em `_dev/spec_validar_item_pai.md`.
+Relacionado: regras de domínio de `parent_item_id` em `_dev/spec_itemClassificacao_regras_hierarquia.md`; aviso de salto de nível e intermediários em `_dev/spec_itemClassificacao_validar_hierarquia.md`.
 
 ---
 
@@ -128,7 +128,7 @@ Resposta típica: `{"ok": false, "message": "<texto>"}`.
 **Consumo no cliente (`change_form.html`):**
 
 - **Alteração do código** (`code_blur`, `classificacao_change`, `init`): se `parent.found`, o cliente **substitui** `parent_item_id` pelo PK devolvido via `setParentItemIdProgrammatically` (flag `__suppressChildCodeSuggestOnParentChange`), mesmo que o campo já estivesse preenchido (ex.: autocomplete anterior). Essa escrita **não** dispara sugestão de código filho nem `confirm` de troca de mãe — ver **(G6)** em `_dev/spec_itemClassificacao_criar_filho.md`. Se o lookup não encontrar mãe, aplica erro/limpeza conforme severidade (sem preservar mãe “manual”), também via escrita programática quando limpa o campo.
-- **Salvar** (`submit`): regras em `_dev/spec_validar_item_pai.md` — pode preservar mãe já preenchida quando o lookup falha ou devolve PK diferente.
+- **Salvar** (`submit`): regras em `_dev/spec_itemClassificacao_validar_hierarquia.md` — pode preservar mãe já preenchida quando o lookup falha ou devolve PK diferente.
 
 ---
 

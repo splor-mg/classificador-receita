@@ -1,7 +1,7 @@
 """
 Regras de consistência de `parent_item_id` em `ItemClassificacao`.
 
-Ver `_dev/spec_parent_item_id.md`. A compatibilidade temporal entre mãe e filho
+Ver `_dev/spec_itemClassificacao_regras_hierarquia.md`. A compatibilidade temporal entre mãe e filho
 considera apenas vigência (tempo válido), não o registro bitemporal ativo.
 A contenção de vigência do filho no mãe já é coberta por
 `validate_vigencia_contained_in_fk_targets` quando `parent_item_id` está preenchido.
@@ -267,7 +267,7 @@ def validate_intermediate_canonical_zeros_json_dict(
 
 def validate_item_parent_item_rules(instance) -> None:
     """
-    Aplica regras de `_dev/spec_parent_item_id.md` (exceto contenção de vigência,
+    Aplica regras de `_dev/spec_itemClassificacao_regras_hierarquia.md` (exceto contenção de vigência,
     já tratada em `validate_vigencia_contained_in_fk_targets`).
 
     Levanta `ValidationError` com chaves de campo quando aplicável.
