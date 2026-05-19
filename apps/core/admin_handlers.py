@@ -16,6 +16,7 @@ from django.urls import reverse
 from django.contrib import messages
 from django.utils.html import format_html
 
+from django.core.exceptions import FieldDoesNotExist
 from django.db import models as django_models
 from django.utils import timezone
 
@@ -313,6 +314,13 @@ class BitemporalChangeHandler:
         
         Prioriza valores editados (edit_field_*, edit_vig_*) sobre os valores
         originais do form.cleaned_data.
+
+        Apenas campos que correspondem a atributos concretos do model entram
+        em ``new_values``. Campos auxiliares do form que existem somente para
+        suportar a UI (ex.: ``receita_nome_base_mode`` em ``ItemClassificacao``)
+        não devem ser propagados para o pipeline bitemporal, pois acabariam
+        sendo passados como ``kwargs`` em ``Model(...)`` no
+        ``apply_bitemporal_update`` e provocariam ``TypeError``.
         """
         from datetime import datetime
 
@@ -322,6 +330,12 @@ class BitemporalChangeHandler:
         # override edit_field_* usamos o cleaned_data original.
         for field in form.fields.keys():
             if field not in form.cleaned_data:
+                continue
+            try:
+                self.model._meta.get_field(field)
+            except FieldDoesNotExist:
+                # Campo auxiliar do form (sem correspondência no model);
+                # não propagar ao pipeline bitemporal.
                 continue
             edit_key = f"edit_field_{field}"
             cleaned_val = form.cleaned_data[field]

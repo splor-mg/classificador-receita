@@ -184,6 +184,14 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
         self.fields["matriz"].help_text = mf.help_text or ""
         is_change_form = bool(self.instance and getattr(self.instance, "pk", None))
         if is_change_form:
+            # `receita_nome_base_mode` é campo auxiliar do protocolo de criação
+            # (sugestão de `receita_nome` na tela de add). Fora desse escopo
+            # (change view) o campo não deve ser renderizado nem trafegar no
+            # POST — ver spec `_dev/spec_itemClassificacao_criar_nome.md`,
+            # seção "Escopo na tela de alteração (change view)".
+            self.fields.pop("receita_nome_base_mode", None)
+            self.initial.pop("receita_nome_base_mode", None)
+
             # ModelForm pode manter initial["matriz"] como bool da instância, enquanto
             # o ChoiceField trafega strings ("matriz"/"detalhe"). Normalizamos sempre
             # para evitar falso positivo de alteração em POST sem mudanças.

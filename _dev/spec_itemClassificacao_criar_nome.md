@@ -77,6 +77,16 @@ Disparado quando `parent_item_id` recebe ou altera valor (incluindo após `syncH
 - **Escopo:** tela de **add**; `receita_nome`; `receita_nome_base_mode`; rádios; integração com preenchimento a partir de `receita_cod` / lookup do item mãe (**P-mãe**).
 - **Escopo (validação):** **G0** (nome vazio no **add**, independente do rádio) e **G1** (sugestão incompleta nos modos com base no item mãe) no **cliente** (`validateClassificationNamingOnSubmit`) **e** no **servidor** (`ItemClassificacaoAdminForm.clean()`), com definições canônicas em **I4**.
 - **Fora de escopo:** `INSERT` em `AliasLexico` a partir desta tela; alteração do seed.
+- **Fora de escopo (tela de alteração — change view):** ver seção **«Escopo na tela de alteração (change view)»** logo abaixo. `receita_nome_base_mode`, rádios de modo e protocolos **P-mãe** / **A1–A9** / **G0** / **G1** **não** se aplicam à edição de um `ItemClassificacao` existente.
+
+### Escopo na tela de alteração (change view)
+
+A presente spec descreve o **protocolo de criação** (`add`) do nome da classificação. Em sua mesma essência, ela **não rege** a tela de alteração (`change`) de um `ItemClassificacao` já existente. Para manter a coerência entre código, UI e pipeline bitemporal de edição, observam-se as seguintes regras na tela de change:
+
+- **E-change.1 (UI).** O `HiddenInput` `receita_nome_base_mode` **não deve** ser renderizado na change view. O template `change_form.html` já guarda a renderização com `{% if adminform.form.receita_nome_base_mode %}`; a implementação **deve** garantir que esse campo seja **removido** do form quando `instance.pk` existir (ex.: `self.fields.pop("receita_nome_base_mode", None)` no `__init__` de `ItemClassificacaoForm`).
+- **E-change.2 (POST).** Como consequência de **E-change.1**, o POST de uma edição **não deve** conter `receita_nome_base_mode`. Se vier por algum motivo (campo legado, automação externa, *replays* de formulário), ele é tratado como ruído e **não** deve trafegar para o pipeline bitemporal.
+- **E-change.3 (pipeline bitemporal).** O *handler* bitemporal (`BitemporalChangeHandler._apply_user_edits`) e o serviço (`apply_bitemporal_update`) **devem** filtrar `new_values` para conter **apenas atributos concretos do model** (`Model._meta.concrete_fields`). Campos auxiliares de qualquer `ModelForm` (não só `receita_nome_base_mode`) **nunca** podem alcançar `Model.objects.create(**...)`, sob pena de `TypeError: <Model>() got unexpected keyword argument: '<campo>'`. Ver também a seção «Pipeline de atualização bitemporal — apenas campos do model» em `_dev/spec_django.md`.
+- **E-change.4 (guardrails).** **G0** e **G1** **são exclusivos do `add`**; na change view, a validação de `receita_nome` segue apenas os validators do model (`required`, `max_length`, etc.) e demais regras de domínio independentes do modo de radical.
 
 ---
 

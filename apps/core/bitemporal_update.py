@@ -91,6 +91,14 @@ def apply_bitemporal_update(model, prev_obj, new_values: Dict[str, Any], strateg
 
     Model = model
 
+    # Defesa em profundidade: ``new_values`` deve conter apenas atributos
+    # concretos do model. Campos auxiliares de ``ModelForm`` (ex.:
+    # ``receita_nome_base_mode`` em ``ItemClassificacao``, usado só pela UI
+    # de sugestão do nome) não podem alcançar ``Model.objects.create(...)``,
+    # sob pena de ``TypeError: ... got unexpected keyword argument ...``.
+    _model_field_names = {f.name for f in Model._meta.concrete_fields}
+    new_values = {k: v for k, v in new_values.items() if k in _model_field_names}
+
     with transaction.atomic():
         prev = Model.objects.select_for_update().get(pk=prev_obj.pk)
 

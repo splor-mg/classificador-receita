@@ -242,3 +242,25 @@ class SerieClassificacaoAdmin(
 - O mixin é **genérico**: aceita múltiplos pares chave/valor em `changelist_default_filters`, podendo combinar mais filtros default no futuro (ex.: `nivel_numero_recente`, `tipo_classificacao`).
 - A escolha do default por changelist é **decisão de domínio** e fica explícita no `ModelAdmin` (não no mixin nem no filtro). O mixin transporta apenas a mecânica.
 - Para mudar o default sem mudar código de mixin/filtro, basta editar `changelist_default_filters` no `ModelAdmin` correspondente.
+
+---
+
+## Pipeline de atualização bitemporal — apenas campos do model
+
+Esta seção formaliza um contrato transversal entre o `BitemporalChangeHandler` (admin) e o serviço `apply_bitemporal_update` (`apps/core/bitemporal_update.py`). O motivo é evitar que campos auxiliares de `ModelForm` — declarados para suportar a UI mas **sem** correspondência em colunas do banco — alcancem `Model.objects.create(**...)` e provoquem `TypeError: <Model>() got unexpected keyword argument: '<campo>'`.
+
+### Contrato
+
+- **B-pipe.1 (origem).** Em `BitemporalChangeHandler._apply_user_edits`, ao iterar `form.fields.keys()` para montar `new_values`, **apenas** nomes que correspondem a campos concretos do model — verificados via `self.model._meta.get_field(field)`, capturando `FieldDoesNotExist` — devem ser incluídos. Campos auxiliares do form (ex.: `receita_nome_base_mode` em `ItemClassificacaoForm`, usado só pelo protocolo de criação de nome no `add`) **devem** ser descartados nesse ponto.
+- **B-pipe.2 (defesa em profundidade).** Em `apply_bitemporal_update`, logo após resolver `Model = model`, `new_values` **deve** ser filtrado para conter apenas chaves em `{f.name for f in Model._meta.concrete_fields}`. Esse filtro protege também caminhos alternativos (rotinas de reativação, scripts utilitários, integrações futuras) que possam alimentar `apply_bitemporal_update` sem passar pelo handler.
+- **B-pipe.3 (sem novos *kwargs* implícitos).** É **proibido** adicionar chaves a `new_values` (ou a `create_data` / `version1_data` / `version2_data`) cujo nome **não** seja campo concreto do model. Para sinalizar metadados (ex.: estratégia, flags de auditoria), usar parâmetros explícitos da função (`strategy=...`) ou objetos de contexto, **não** o dicionário de valores que vira `kwargs` no `Model(...)`.
+- **B-pipe.4 (relação com o `ModelForm`).** Campos auxiliares do form devem ser declarados com `required=False` e tratados em `clean()` no escopo onde fazem sentido (ex.: `add`). Quando o campo só fizer sentido em um dos fluxos (`add` **xor** `change`), recomenda-se removê-lo do form no `__init__` do fluxo oposto (`self.fields.pop("<campo>", None)`), evitando renderização e POST espúrios.
+
+### Caso de referência
+
+`ItemClassificacaoForm.receita_nome_base_mode` (`apps/core/forms.py`) — campo `HiddenInput` declarado para o protocolo de criação de nome na tela de `add` (ver `_dev/spec_itemClassificacao_criar_nome.md`, em particular a seção «Escopo na tela de alteração (change view)»). Antes da formalização deste contrato, ele vazava em edições para `apply_bitemporal_update`, causando `ItemClassificacao() got unexpected keyword argument: 'receita_nome_base_mode'` ao salvar.
+
+### Testes recomendados
+
+- **T-pipe.1.** POST de change em `ItemClassificacao` alterando qualquer campo de negócio (ex.: `receita_nome`) **não deve** chamar `Model.objects.create(...)` com `receita_nome_base_mode` nos `kwargs`, mesmo que esse campo apareça no `request.POST` (caso de *replays* / formulários antigos).
+- **T-pipe.2.** Em qualquer model bitemporal, um `ModelForm` com um campo auxiliar (`forms.CharField` sem correspondência no model) **não deve** propagar esse campo a `apply_bitemporal_update`; o pipeline conclui a edição normalmente.
