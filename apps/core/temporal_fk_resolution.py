@@ -22,20 +22,37 @@ def _sentinel_for_field(dt_field: models.Field) -> datetime:
 
 
 def _build_identity_filter(related_obj: models.Model) -> dict[str, Any]:
-    filter_kwargs: dict[str, Any] = {}
+    """
+    Filtro de identidade da entidade semântica do alvo.
+
+    Prioriza ``*_ref`` (chave surrogada) por estabilidade frente a eventuais
+    renomeações da chave semântica (ADR-003). Só recai em ``*_id`` quando
+    nenhum ``*_ref`` estiver preenchido. PK só é usada se nem ``*_ref`` nem
+    ``*_id`` estiverem disponíveis. Ver ``_dev/spec_foreingKeys.md``.
+    """
     concrete_fields = list(getattr(related_obj._meta, "concrete_fields", []) or [])
 
-    ref_fields = [f for f in concrete_fields if f.name.endswith("_ref") and not f.is_relation]
-    id_fields = [f for f in concrete_fields if f.name.endswith("_id") and not f.is_relation]
-
-    for field in ref_fields + id_fields:
+    ref_filter: dict[str, Any] = {}
+    for field in concrete_fields:
+        if field.is_relation or not field.name.endswith("_ref"):
+            continue
         value = getattr(related_obj, field.name, None)
         if value in (None, ""):
             continue
-        filter_kwargs[field.name] = value
+        ref_filter[field.name] = value
+    if ref_filter:
+        return ref_filter
 
-    if filter_kwargs:
-        return filter_kwargs
+    id_filter: dict[str, Any] = {}
+    for field in concrete_fields:
+        if field.is_relation or not field.name.endswith("_id"):
+            continue
+        value = getattr(related_obj, field.name, None)
+        if value in (None, ""):
+            continue
+        id_filter[field.name] = value
+    if id_filter:
+        return id_filter
 
     pk_name = related_obj._meta.pk.name
     return {pk_name: getattr(related_obj, pk_name)}
