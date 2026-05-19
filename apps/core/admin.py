@@ -70,6 +70,9 @@ from apps.core.admin_filters import (
 )
 from apps.core.admin_mixins import (
     RegistroAtivoFilter,
+    REGISTRO_ATIVO_QUERY_PARAM,
+    REGISTRO_ATIVO_VALUE_HISTORICO,
+    ChangelistDefaultFilterRedirectMixin,
     CoreChangeSaveFormSubmitMixin,
     BitemporalInactiveReadOnlyMixin,
     BitemporalAdminMixin,
@@ -84,6 +87,7 @@ from apps.core.admin_mixins import (
 
 @admin.register(SerieClassificacao)
 class SerieClassificacaoAdmin(
+    ChangelistDefaultFilterRedirectMixin,
     BitemporalObjectActionsMixin,
     BitemporalAdminMixin,
     BitemporalInactiveReadOnlyMixin,
@@ -113,6 +117,9 @@ class SerieClassificacaoAdmin(
         'data_vigencia_inicio',
         'data_registro_inicio',
     ]
+    changelist_default_filters = {
+        REGISTRO_ATIVO_QUERY_PARAM: REGISTRO_ATIVO_VALUE_HISTORICO,
+    }
     search_fields = [
         'serie_id',
         'serie_nome',
@@ -155,6 +162,7 @@ class SerieClassificacaoAdmin(
 
 @admin.register(Classificacao)
 class ClassificacaoAdmin(
+    ChangelistDefaultFilterRedirectMixin,
     SemanticForeignKeyAdminMixin,
     BitemporalObjectActionsMixin,
     BitemporalAdminMixin,
@@ -192,6 +200,9 @@ class ClassificacaoAdmin(
         "data_vigencia_inicio",
         "data_registro_inicio",
     ]
+    changelist_default_filters = {
+        REGISTRO_ATIVO_QUERY_PARAM: REGISTRO_ATIVO_VALUE_HISTORICO,
+    }
     search_fields = ["classificacao_id", "classificacao_nome", "classificacao_descricao"]
     readonly_fields = ["data_registro_inicio_fmt", "data_registro_fim_fmt"]
     date_hierarchy = "data_vigencia_inicio"
@@ -233,6 +244,7 @@ class ClassificacaoAdmin(
 
 @admin.register(NivelHierarquico)
 class NivelHierarquicoAdmin(
+    ChangelistDefaultFilterRedirectMixin,
     SemanticForeignKeyAdminMixin,
     BitemporalObjectActionsMixin,
     BitemporalAdminMixin,
@@ -266,6 +278,9 @@ class NivelHierarquicoAdmin(
         'data_vigencia_inicio',
         'data_registro_inicio',
     ]
+    changelist_default_filters = {
+        REGISTRO_ATIVO_QUERY_PARAM: REGISTRO_ATIVO_VALUE_HISTORICO,
+    }
     search_fields = ['nivel_id', 'nivel_nome', 'nivel_descricao']
     readonly_fields = ['data_registro_inicio_fmt', 'data_registro_fim_fmt']
     date_hierarchy = 'data_vigencia_inicio'
@@ -301,6 +316,7 @@ class NivelHierarquicoAdmin(
 
 @admin.register(ItemClassificacao)
 class ItemClassificacaoAdmin(
+    ChangelistDefaultFilterRedirectMixin,
     SemanticForeignKeyAdminMixin,
     BitemporalObjectActionsMixin,
     BitemporalAdminMixin,
@@ -338,6 +354,9 @@ class ItemClassificacaoAdmin(
         'data_vigencia_inicio',
         'data_registro_inicio',
     ]
+    changelist_default_filters = {
+        REGISTRO_ATIVO_QUERY_PARAM: REGISTRO_ATIVO_VALUE_HISTORICO,
+    }
     search_fields = ['receita_cod', 'receita_nome', 'item_id']
     readonly_fields = ['data_registro_inicio_fmt', 'data_registro_fim_fmt']
     date_hierarchy = 'data_vigencia_inicio'
@@ -731,6 +750,7 @@ class ItemClassificacaoAdmin(
 
 @admin.register(VersaoClassificacao)
 class VersaoClassificacaoAdmin(
+    ChangelistDefaultFilterRedirectMixin,
     CoreChangeSaveFormSubmitMixin,
     BitemporalInactiveReadOnlyMixin,
     AutoExportAdminMixin,
@@ -739,6 +759,9 @@ class VersaoClassificacaoAdmin(
 ):
     list_display = ['versao_id', 'versao_numero', 'versao_nome', 'classificacao', 'data_lancamento', 'data_vigencia_inicio']
     list_filter = [RegistroAtivoFilter, VersaoIdFilter, 'classificacao', 'data_lancamento', 'data_vigencia_inicio']
+    changelist_default_filters = {
+        REGISTRO_ATIVO_QUERY_PARAM: REGISTRO_ATIVO_VALUE_HISTORICO,
+    }
     search_fields = ['versao_id', 'versao_numero', 'versao_nome', 'versao_descricao']
     readonly_fields = ['data_registro_inicio', 'data_registro_fim']
     date_hierarchy = 'data_vigencia_inicio'
@@ -747,6 +770,7 @@ class VersaoClassificacaoAdmin(
 
 @admin.register(VarianteClassificacao)
 class VarianteClassificacaoAdmin(
+    ChangelistDefaultFilterRedirectMixin,
     CoreChangeSaveFormSubmitMixin,
     BitemporalInactiveReadOnlyMixin,
     AutoExportAdminMixin,
@@ -755,6 +779,9 @@ class VarianteClassificacaoAdmin(
 ):
     list_display = ['variante_id', 'variante_nome', 'tipo_variante', 'classificacao', 'versao', 'data_vigencia_inicio']
     list_filter = [RegistroAtivoFilter, VarianteIdFilter, 'tipo_variante', 'classificacao', 'versao', 'data_vigencia_inicio']
+    changelist_default_filters = {
+        REGISTRO_ATIVO_QUERY_PARAM: REGISTRO_ATIVO_VALUE_HISTORICO,
+    }
     search_fields = ['variante_id', 'variante_nome', 'variante_descricao', 'proposito']
     readonly_fields = ['data_registro_inicio', 'data_registro_fim']
     date_hierarchy = 'data_vigencia_inicio'
@@ -795,6 +822,7 @@ def _alias_lexico_format_registro_dt(dt) -> str:
 
 @admin.register(AliasLexico)
 class AliasLexicoAdmin(
+    ChangelistDefaultFilterRedirectMixin,
     CoreChangeSaveFormSubmitMixin,
     BitemporalDateFormatMixin,
     AutoExportAdminMixin,
@@ -817,6 +845,9 @@ class AliasLexicoAdmin(
     readonly_fields = ("data_registro_inicio_fmt", "data_registro_fim_fmt")
     list_display = ("termo", "abreviacao", "status_registro")
     list_filter = (AliasLexicoRegistroAtivoFilter,)
+    changelist_default_filters = {
+        AliasLexicoRegistroAtivoFilter.parameter_name: "ativo",
+    }
     search_fields = ("termo", "abreviacao")
 
     @admin.display(description="Status")

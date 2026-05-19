@@ -195,11 +195,36 @@ class AliasLexicoRegistroAtivoFilter(admin.SimpleListFilter):
     title = "Status do registro"
     parameter_name = "lista_abreviacoes_registro"
 
+    # Sentinela no-op (ver ``ChangelistDefaultFilterRedirectMixin``).
+    VALUE_TODOS = "todos"
+
     def lookups(self, request, model_admin):
         return (
             ("ativo", "Registro ativo"),
             ("inativo", "Registro encerrado"),
         )
+
+    def choices(self, changelist):
+        """
+        Substitui o "Todos" padrão por uma entrada que produz um parâmetro
+        explícito (sentinela ``…=todos``), preservando a intenção do utilizador
+        face ao pré-filtro aplicado pelo ``ChangelistDefaultFilterRedirectMixin``.
+        """
+        yield {
+            "selected": self.value() in (None, self.VALUE_TODOS),
+            "query_string": changelist.get_query_string(
+                {self.parameter_name: self.VALUE_TODOS}
+            ),
+            "display": "Todos",
+        }
+        for lookup, title in self.lookup_choices:
+            yield {
+                "selected": self.value() == str(lookup),
+                "query_string": changelist.get_query_string(
+                    {self.parameter_name: lookup}
+                ),
+                "display": title,
+            }
 
     def queryset(self, request, queryset):
         sent = transaction_time_sentinel_for_query()

@@ -180,3 +180,65 @@ apps/core/
    - Adicionar métodos helper para valores sentinelas
    - Implementar validações customizadas mais complexas
    - Criar views e templates para interface de gestão
+
+
+### Padrões de Changelist no Django Admin
+
+Esta secção documenta padrões transversais aplicados às telas de **listagem** (changelist) do Django Admin neste projeto, para além das configurações pontuais de cada `ModelAdmin`. O objectivo é uniformizar a experiência ao abrir cada changelist: o utilizador deve chegar **já num recorte útil** e poder, a partir daí, navegar com os filtros do sidebar de forma previsível.
+
+#### Pré-filtro padrão por «Status do Registro»
+
+Comportamento: ao abrir uma changelist sem qualquer parâmetro na query string (acesso directo via link/menu, primeira visita), o admin responde com um **redirect HTTP 302** para a **mesma URL** com o parâmetro do filtro `Status do Registro` já aplicado. A partir daí, todo o fluxo segue o padrão do Django Admin (filtros laterais, busca, paginação, `preserved_filters` para save/edit, etc.).
+
+Mapa de defaults por changelist:
+
+| Changelist (ModelAdmin) | Filtro | Valor default | Significado |
+|--------------------------|--------|----------------|--------------|
+| `SerieClassificacao` | `RegistroAtivoFilter` | `registro_ativo=ativo_historico` | «Ativos (Histórico)»: registo activo em transaction time, qualquer vigência |
+| `Classificacao` | `RegistroAtivoFilter` | `registro_ativo=ativo_historico` | idem |
+| `NivelHierarquico` | `RegistroAtivoFilter` | `registro_ativo=ativo_historico` | idem |
+| `ItemClassificacao` | `RegistroAtivoFilter` | `registro_ativo=ativo_historico` | idem |
+| `VersaoClassificacao` | `RegistroAtivoFilter` | `registro_ativo=ativo_historico` | idem |
+| `VarianteClassificacao` | `RegistroAtivoFilter` | `registro_ativo=ativo_historico` | idem |
+| `AliasLexico` | `AliasLexicoRegistroAtivoFilter` | `lista_abreviacoes_registro=ativo` | «Registro ativo»: `data_registro_fim` = sentinela (não há vigência orçamentária neste modelo, logo não existe «Histórico» distinto) |
+
+#### Mecânica
+
+1. **Mixin de redirect**: `ChangelistDefaultFilterRedirectMixin` em `apps/core/admin_mixins.py`. O `ModelAdmin` declara um dicionário `changelist_default_filters = {param: value}`; o mixin sobrepõe `changelist_view(request, …)` e, se o request for `GET` com `request.GET` vazio, devolve um `HttpResponseRedirect` para `request.path + "?" + urlencode(changelist_default_filters)`. Em todas as demais situações (com parâmetros, POST, etc.) delega no `super().changelist_view(...)`.
+
+2. **«Todos» explícito (no-op) no filtro**: a entrada padrão «Todos» do `SimpleListFilter` gera, por defeito, uma URL **sem o parâmetro** — o que reentraria no redirect do mixin e devolveria o utilizador ao default. Para preservar a semântica de «Todos», o `RegistroAtivoFilter` (e o `AliasLexicoRegistroAtivoFilter`) **sobrepõe `choices(changelist)`** para gerar a entrada «Todos» com um valor sentinela explícito (`registro_ativo=todos` ou `lista_abreviacoes_registro=todos`), interpretado como **no-op** no `queryset()` do próprio filtro. Assim:
+   - Primeira visita → GET vazio → redirect aplica o default.
+   - Clique em «Todos» pelo utilizador → GET com `…=todos` → no-op, sem redirect, sem filtro.
+   - Clique em qualquer outra opção → GET com valor explícito → filtro normal.
+
+3. **Popups (`raw_id` lookup)**: não são afectados. A URL do popup contém sempre, no mínimo, `?_popup=1&_to_field=…`, logo `request.GET` nunca é vazio e o redirect não dispara. O pré-filtro `popup_default_registro_ativo_ano_corrente` (ver subsecção «Lupa (raw id) na criação de registros») continua a funcionar de forma independente.
+
+4. **`preserved_filters`**: como o pré-filtro entra na query string, todo o mecanismo padrão do Django Admin (`_changelist_filters=…` após save/edit) preserva o recorte do utilizador entre navegações.
+
+#### Configuração por `ModelAdmin`
+
+Cada `ModelAdmin` que queira pré-filtrar a sua changelist deve:
+
+1. Acrescentar `ChangelistDefaultFilterRedirectMixin` à hierarquia de bases (recomenda-se posição cedo no MRO, para que `changelist_view` seja interceptado antes de qualquer outro mixin).
+2. Declarar `changelist_default_filters = { <param>: <value> }` apontando para o `SimpleListFilter` desejado.
+3. Garantir que esse `SimpleListFilter` tem o tratamento de «Todos» como no-op (override de `choices()` + branch no `queryset()`).
+
+Exemplo:
+
+```python
+class SerieClassificacaoAdmin(
+    ChangelistDefaultFilterRedirectMixin,
+    # … demais mixins …
+    admin.ModelAdmin,
+):
+    changelist_default_filters = {
+        REGISTRO_ATIVO_QUERY_PARAM: REGISTRO_ATIVO_VALUE_HISTORICO,
+    }
+    list_filter = [RegistroAtivoFilter, …]
+```
+
+#### Notas de extensão
+
+- O mixin é **genérico**: aceita múltiplos pares chave/valor em `changelist_default_filters`, podendo combinar mais filtros default no futuro (ex.: `nivel_numero_recente`, `tipo_classificacao`).
+- A escolha do default por changelist é **decisão de domínio** e fica explícita no `ModelAdmin` (não no mixin nem no filtro). O mixin transporta apenas a mecânica.
+- Para mudar o default sem mudar código de mixin/filtro, basta editar `changelist_default_filters` no `ModelAdmin` correspondente.

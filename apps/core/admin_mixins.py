@@ -13,6 +13,7 @@ import unicodedata
 from datetime import date
 from pathlib import Path
 from typing import Any, Dict
+from urllib.parse import urlencode
 
 from django.contrib import admin
 from django.contrib import messages
@@ -103,6 +104,10 @@ REGISTRO_ATIVO_VALUE_ANO_CORRENTE = "ativo_corrente"
 REGISTRO_ATIVO_VALUE_FUTURO = "ativo_futuro"
 REGISTRO_ATIVO_VALUE_HISTORICO = "ativo_historico"
 REGISTRO_ATIVO_VALUE_INATIVO = "inativo"
+# Sentinela no-op para distinguir "primeira visita" (GET vazio) de "clique em
+# Todos pelo utilizador" (GET com este valor) no fluxo do
+# ChangelistDefaultFilterRedirectMixin.
+REGISTRO_ATIVO_VALUE_TODOS = "todos"
 
 
 # Filtro para registros ativos (correntes, históricos e futuros) e inativos em termos de registro/vigência
@@ -122,6 +127,30 @@ class RegistroAtivoFilter(admin.SimpleListFilter):
             (REGISTRO_ATIVO_VALUE_HISTORICO, "Ativos (Histórico)"),
             (REGISTRO_ATIVO_VALUE_INATIVO, "Inativos"),
         )
+
+    def choices(self, changelist):
+        """
+        Sobrescreve a entrada padrão "Todos" do Django para gerar
+        ``?registro_ativo=todos`` (sentinela no-op), em vez de remover o
+        parâmetro. Permite ao ``ChangelistDefaultFilterRedirectMixin``
+        distinguir "primeira visita" (GET vazio → redirect ao default) de
+        "clique em Todos pelo utilizador" (GET com ``…=todos`` → no-op).
+        """
+        yield {
+            "selected": self.value() in (None, REGISTRO_ATIVO_VALUE_TODOS),
+            "query_string": changelist.get_query_string(
+                {self.parameter_name: REGISTRO_ATIVO_VALUE_TODOS}
+            ),
+            "display": "Todos",
+        }
+        for lookup, title in self.lookup_choices:
+            yield {
+                "selected": self.value() == str(lookup),
+                "query_string": changelist.get_query_string(
+                    {self.parameter_name: lookup}
+                ),
+                "display": title,
+            }
 
     def queryset(self, request, queryset):
         today = date.today()
@@ -147,6 +176,44 @@ class RegistroAtivoFilter(admin.SimpleListFilter):
         if self.value() == REGISTRO_ATIVO_VALUE_INATIVO:
             return queryset.exclude(data_registro_fim=TRANSACTION_TIME_SENTINEL)
         return queryset
+
+
+#---------------------------------------------------------------------------------------------------
+# Pré-filtro padrão na changelist via redirect 302
+class ChangelistDefaultFilterRedirectMixin:
+    """
+    Pré-filtra a changelist do Django Admin via redirecionamento HTTP 302.
+
+    Quando a changelist é acessada sem qualquer parâmetro na query string
+    (GET vazio — primeira visita ou link direto do menu), responde com um
+    redirecionamento para a mesma URL, acrescentando os parâmetros declarados em
+    ``changelist_default_filters``. A partir daí, o fluxo segue o padrão
+    do Django Admin: o filtro fica destacado na barra lateral e o usuário
+    pode mudar de opção ou clicar em "Todos".
+
+    Para que o "Todos" preserve a intenção do usuário (e não volte para o
+    valor padrão a cada clique), o ``SimpleListFilter`` correspondente deve
+    gerar uma URL com parâmetro **explícito** (sentinela ``…=todos``) em
+    vez de remover o parâmetro — veja o override de ``RegistroAtivoFilter.choices``.
+
+    Popups (``?_popup=1``) nunca disparam o redirecionamento, pois ``request.GET``
+    já contém pelo menos esse parâmetro.
+
+    Configurar no ``ModelAdmin``:
+
+        class MeuAdmin(ChangelistDefaultFilterRedirectMixin, …, admin.ModelAdmin):
+            changelist_default_filters = {
+                REGISTRO_ATIVO_QUERY_PARAM: REGISTRO_ATIVO_VALUE_HISTORICO,
+            }
+    """
+
+    changelist_default_filters: Dict[str, str] = {}
+
+    def changelist_view(self, request, extra_context=None):
+        defaults = getattr(self, "changelist_default_filters", None) or {}
+        if defaults and request.method == "GET" and not request.GET:
+            return HttpResponseRedirect(f"{request.path}?{urlencode(defaults)}")
+        return super().changelist_view(request, extra_context=extra_context)
 
 #---------------------------------------------------------------------------------------------------
 # Filtros de sidebar (changelist): id local vs ForeignKey
