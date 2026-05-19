@@ -1032,21 +1032,48 @@
               }
             }
 
-            var levelStatus = data.derived_level && data.derived_level.status ? data.derived_level.status : {};
-            if (levelStatus.severity === 'warning') {
-              clearLevelValidationState();
-              var levelHtml = buildAlternativeMessageHtml(levelStatus);
-              if (levelHtml) {
-                showHierarchyWarningHtml(getFieldRow(nivelIdInput), levelHtml);
-              } else if (levelStatus.message) {
-                showHierarchyWarning(getFieldRow(nivelIdInput), levelStatus.message);
-              }
-            } else if (levelStatus.severity === 'error') {
+            var levelData = data.derived_level || {};
+            var levelStatus = levelData.status || {};
+            var levelNotices = (levelData.notices || []).slice();
+            var levelRow = getFieldRow(nivelIdInput);
+            if (levelStatus.severity === 'error') {
               var levelMsg = levelStatus.message || 'Nível hierárquico inválido para o contexto informado.';
               nivelIdInput.setCustomValidity(levelMsg);
-              showHierarchyError(getFieldRow(nivelIdInput), levelMsg);
+              showHierarchyError(levelRow, levelMsg);
             } else {
               clearLevelValidationState();
+              var levelAltHtml =
+                levelStatus.severity === 'warning'
+                  ? buildAlternativeMessageHtml(levelStatus)
+                  : '';
+              var levelAltText =
+                levelStatus.severity === 'warning' && !levelAltHtml
+                  ? (levelStatus.message || '')
+                  : '';
+              if (levelAltHtml || levelAltText || levelNotices.length) {
+                clearHierarchyMessages(levelRow);
+                var levelUl = document.createElement('ul');
+                levelUl.className = 'messagelist hierarchy-autofill-warning';
+                levelUl.style.marginTop = '6px';
+                if (levelAltHtml) {
+                  var levelLiAlt = document.createElement('li');
+                  levelLiAlt.className = 'warning';
+                  levelLiAlt.innerHTML = levelAltHtml;
+                  levelUl.appendChild(levelLiAlt);
+                } else if (levelAltText) {
+                  var levelLiAltTxt = document.createElement('li');
+                  levelLiAltTxt.className = 'warning';
+                  levelLiAltTxt.textContent = levelAltText;
+                  levelUl.appendChild(levelLiAltTxt);
+                }
+                levelNotices.forEach(function(noteText) {
+                  var levelLiNote = document.createElement('li');
+                  levelLiNote.className = 'warning';
+                  levelLiNote.textContent = noteText;
+                  levelUl.appendChild(levelLiNote);
+                });
+                levelRow.appendChild(levelUl);
+              }
             }
 
             clearParentValidationState();

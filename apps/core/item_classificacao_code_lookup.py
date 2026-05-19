@@ -261,21 +261,22 @@ def lookup_hierarchy_by_code_response_data(request: HttpRequest) -> Dict[str, An
     if user_class_scope_filters:
         level_selected_filters = dict(level_base_filters)
         level_selected_filters.update(user_class_scope_filters)
-        level_obj = (
+        level_qs = (
             NivelHierarquico.objects.select_related("classificacao_id")
             .filter(**level_selected_filters)
             .order_by("-data_vigencia_inicio", "-data_registro_inicio", "-pk")
-            .first()
         )
     else:
-        level_obj = (
+        level_qs = (
             NivelHierarquico.objects.select_related("classificacao_id")
             .filter(**level_base_filters)
             .order_by("-data_vigencia_inicio", "-data_registro_inicio", "-pk")
-            .first()
         )
+    level_count = level_qs.count()
+    level_obj = level_qs.first()
 
     alt_level_obj = None
+    alt_level_count = 0
     if class_obj is not None and not level_obj:
         alt_qs = (
             NivelHierarquico.objects.select_related("classificacao_id")
@@ -283,9 +284,27 @@ def lookup_hierarchy_by_code_response_data(request: HttpRequest) -> Dict[str, An
             .order_by("-data_vigencia_inicio", "-data_registro_inicio", "-pk")
             .exclude(classificacao_id_id=class_obj.pk)
         )
+        alt_level_count = alt_qs.count()
         alt_level_obj = alt_qs.first()
 
     chosen_level = level_obj or alt_level_obj
+
+    # Avisos não bloqueantes do nível: quando o resolver bitemporal escolhe
+    # entre N ≥ 2 candidatos ativos e compatíveis com a vigência informada,
+    # informa explicitamente a arbitragem (paridade com `parent.notices`).
+    level_notices: list[str] = []
+    if level_obj is not None and level_count > 1:
+        level_notices.append(
+            f"Foram encontradas {level_count} versões ativas compatíveis "
+            f"do nível {derived_level_number}; foi selecionada a versão mais recente."
+        )
+    elif level_obj is None and alt_level_obj is not None and alt_level_count > 1:
+        level_notices.append(
+            f"Foram encontradas {alt_level_count} versões ativas compatíveis "
+            f"do nível {derived_level_number} noutra classificação; "
+            "foi selecionada a versão mais recente."
+        )
+
     derived_level_payload: Dict[str, Any] = {
         "number": derived_level_number,
         "pk": str(chosen_level.pk) if chosen_level else "",
@@ -293,6 +312,7 @@ def lookup_hierarchy_by_code_response_data(request: HttpRequest) -> Dict[str, An
             f"{chosen_level.nivel_id} - {chosen_level.nivel_nome}" if chosen_level else ""
         ),
         "status": {"severity": "ok", "message": "", "alternative": None},
+        "notices": level_notices,
     }
     if not chosen_level:
         derived_level_payload["status"] = {
@@ -364,7 +384,7 @@ def lookup_hierarchy_by_code_response_data(request: HttpRequest) -> Dict[str, An
         if parent_obj:
             if parent_count > 1:
                 notices.append(
-                    f"Foram encontradas {parent_count} matrizes ativas compatíveis; "
+                    f"Foram encontradas {parent_count} versões ativas compatíveis do item mãe; "
                     "foi selecionada a versão mais recente."
                 )
             parent_payload["found"] = True
@@ -434,7 +454,7 @@ def lookup_hierarchy_by_code_response_data(request: HttpRequest) -> Dict[str, An
                         )
                         if fb_cnt > 1:
                             notices.append(
-                                f"Foram encontradas {fb_cnt} matrizes ativas compatíveis no fallback; "
+                                f"Foram encontradas {fb_cnt} versões ativas compatíveis do item mãe no fallback; "
                                 "foi selecionada a versão mais recente."
                             )
                         parent_payload["found"] = True
@@ -507,7 +527,7 @@ def lookup_hierarchy_by_code_response_data(request: HttpRequest) -> Dict[str, An
                     alt_notices: list[str] = []
                     if parent_alt_cnt > 1:
                         alt_notices.append(
-                            f"Foram encontradas {parent_alt_cnt} matrizes ativas compatíveis noutra classificação; "
+                            f"Foram encontradas {parent_alt_cnt} versões ativas compatíveis do item mãe noutra classificação; "
                             "foi selecionada a versão mais recente."
                         )
                     parent_payload["notices"] = alt_notices

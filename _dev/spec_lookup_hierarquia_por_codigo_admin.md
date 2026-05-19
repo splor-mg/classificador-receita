@@ -105,6 +105,7 @@ Resposta típica: `{"ok": false, "message": "<texto>"}`.
 | `pk` | string | PK do `NivelHierarquico` escolhido, ou `""`. |
 | `display_label` | string | Rótulo `"{nivel_id} - {nivel_nome}"` ou vazio. |
 | `status` | object | `severity`: `ok` \| `warning` \| `error`; `message`; `alternative` (opcional). |
+| `notices` | array de strings | Avisos não bloqueantes do nível (ex.: múltiplas versões ativas compatíveis do nível, com seleção da mais recente). Ver seção **«Avisos (`notices`) — paridade item mãe / nível hierárquico»** abaixo. |
 
 **`alternative` (nível):** quando existe nível noutra classificação mas não na seleccionada, inclui `classificacao` (`pk`, `classificacao_id`, `display_label`, `link_url`) e `message` explicativa.
 
@@ -116,7 +117,7 @@ Resposta típica: `{"ok": false, "message": "<texto>"}`.
 | `found` | bool | Matriz mãe resolvida (incluindo fallbacks documentados no código). |
 | `pk`, `code`, `name`, `display_label`, `link_url` | strings | Dados do item mãe ou vazios. |
 | `status` | object | Igual convenção `severity` / `message` / `alternative`; em erro “detalhe em vez de matriz” pode existir `html` (fragmento com link) além de `message` em texto simples. |
-| `notices` | array de strings | Avisos não bloqueantes (ex.: múltiplas matrizes, fallback de nível). |
+| `notices` | array de strings | Avisos não bloqueantes do item mãe (ex.: múltiplas versões ativas compatíveis, fallback por último nível detalhado, alternativa noutra classificação). Ver seção **«Avisos (`notices`) — paridade item mãe / nível hierárquico»** abaixo. |
 
 **Âmbito de classificação:** quando `classificacao_pk` identifica um registo, as queries de nível e de mãe **primário** filtram pela identidade semântica da classificação (`classificacao_ref` / `classificacao_id` / FK), tal como em `classificacao_identity_filters` no módulo.
 
@@ -131,6 +132,54 @@ Resposta típica: `{"ok": false, "message": "<texto>"}`.
 
 ---
 
+## Avisos (`notices`) — paridade item mãe / nível hierárquico
+
+Sempre que o resolver bitemporal arbitra entre **N ≥ 2** candidatos ativos e compatíveis com a vigência informada para uma FK temporal da hierarquia (`item mãe` ou `nível hierárquico`), o lookup **deve** sinalizar a arbitragem ao usuário por meio de um aviso textual em `notices`, no respectivo bloco do payload (`parent` ou `derived_level`). O frontend **deve** renderizar esses avisos no **mesmo padrão visual** nos dois campos (`<ul class="messagelist hierarchy-autofill-warning">` com `<li class="warning">`), em paridade com a renderização do `alternative` quando coexistirem na mesma `<ul>`.
+
+### Regra de emissão (servidor)
+
+- **N1.** A contagem **N** é a quantidade de candidatos ativos e compatíveis com a vigência informada (mesmo critério da consulta principal), obtida via `qs.count()` antes de `qs.first()`. **N** existe apenas como variável local no Python; **não** é exposta como campo separado no payload — só aparece interpolada no texto do aviso.
+- **N2.** Quando **N ≥ 2** e há registro escolhido, anexar a frase normativa à lista `notices` do respectivo bloco. Quando **N ≤ 1**, **não** emitir aviso.
+- **N3.** Os ramos cobertos são:
+  - **Item mãe — primário:** busca por matriz canônica na classificação selecionada (ou sem escopo, se nenhuma foi fornecida).
+  - **Item mãe — fallback por último nível detalhado:** quando o item mãe pertence a nível anterior ao imediatamente superior.
+  - **Item mãe — alternativa noutra classificação:** quando não há matriz na classificação selecionada, mas existe em outra.
+  - **Nível hierárquico — primário:** busca por `NivelHierarquico` ativo do `nivel_numero` derivado, no escopo da classificação selecionada (ou sem escopo).
+  - **Nível hierárquico — alternativa noutra classificação:** quando não há nível na classificação selecionada, mas existe em outra.
+
+### Textos normativos (pt-BR)
+
+| Cenário | Texto |
+|---------|-------|
+| Item mãe — primário | `Foram encontradas {N} versões ativas compatíveis do item mãe; foi selecionada a versão mais recente.` |
+| Item mãe — fallback | `Foram encontradas {N} versões ativas compatíveis do item mãe no fallback; foi selecionada a versão mais recente.` |
+| Item mãe — alternativa noutra classificação | `Foram encontradas {N} versões ativas compatíveis do item mãe noutra classificação; foi selecionada a versão mais recente.` |
+| Nível hierárquico — primário | `Foram encontradas {N} versões ativas compatíveis do nível {K}; foi selecionada a versão mais recente.` |
+| Nível hierárquico — alternativa noutra classificação | `Foram encontradas {N} versões ativas compatíveis do nível {K} noutra classificação; foi selecionada a versão mais recente.` |
+
+Notas de redação:
+
+- **R1.** O padrão único é **«versões ativas compatíveis do {recurso}»** — `{recurso}` = «item mãe» ou «nível {K}» (com `{K}` igual a `derived_level.number`). Substitui a redação legada baseada em «matrizes ativas compatíveis».
+- **R2.** As frases terminam sempre com **«; foi selecionada a versão mais recente.»**, em sinal explícito da arbitragem por `-data_vigencia_inicio`, `-data_registro_inicio`, `-pk`.
+- **R3.** As frases **não** referenciam ano civil, sentinela nem campos internos: são voltadas para o usuário do Admin.
+
+### Regra de consumo (cliente — `change_form.html`)
+
+- **C1.** Para **cada** dos campos `parent_item_id` e `nivel_id`, ao receber o payload do lookup, montar uma única `<ul class="messagelist hierarchy-autofill-warning">` na respectiva `.form-row` quando houver **`alternative`** (status `warning` com bloco `alternative`) **e/ou** itens em `notices`. Mesma classe CSS e mesmo `marginTop` nos dois campos.
+- **C2.** Ordem dentro da `<ul>`: primeiro o `<li>` do `alternative` (se houver), depois um `<li>` por nota de `notices`, na ordem fornecida pelo servidor.
+- **C3.** Antes de inserir a nova `<ul>`, executar `clearHierarchyMessages(row)` para não acumular avisos de submits anteriores.
+- **C4.** Quando o status do bloco for `error`, manter o tratamento atual (validade customizada + `<ul class="errorlist hierarchy-autofill-error">`); `notices` não são exibidos em conjunto com erros (a UX foca no bloqueio).
+
+---
+
 ## Manutenção
 
 - Alterações de contrato JSON devem manter este ficheiro alinhado ao módulo `item_classificacao_code_lookup.py` e ao JavaScript que consome estes endpoints em `change_form` / `classification_naming.js` (nomes de chaves).
+- A regra de paridade «item mãe / nível hierárquico» (seção acima) **deve** ser preservada em cada nova FK temporal da hierarquia que vier a ser exposta pelo endpoint: criar variáveis locais de contagem (sem expor no payload), emitir `notices` no bloco correspondente, espelhar a renderização no cliente.
+
+### Testes recomendados
+
+- **T-notices.1.** Duas linhas bitemporais ativas e vigentes para o mesmo item mãe (`receita_cod`, `matriz=True`, `nivel_numero = derived − 1`): payload retorna `parent.notices` com a frase do **item mãe — primário**; o cliente renderiza a `<ul>` amarela no campo `parent_item_id`.
+- **T-notices.2.** Duas linhas bitemporais ativas e vigentes para o mesmo `nivel_numero` derivado, na classificação selecionada: payload retorna `derived_level.notices` com a frase do **nível hierárquico — primário**; o cliente renderiza a `<ul>` amarela no campo `nivel_id`.
+- **T-notices.3.** Cenário T-notices.2 sem nível na classificação selecionada, com **duas** linhas em outra classificação: payload retorna `derived_level.notices` com a frase do **nível hierárquico — alternativa noutra classificação** e `derived_level.status.severity = "warning"` com o `alternative`; o cliente renderiza ambos na mesma `<ul>`.
+- **T-notices.4.** Apenas **uma** versão ativa e compatível (caso comum): `notices` permanece vazio em `parent` e `derived_level`; nenhuma `<ul>` amarela aparece nas duas linhas.
