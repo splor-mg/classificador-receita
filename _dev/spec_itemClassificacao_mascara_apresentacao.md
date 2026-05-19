@@ -1,9 +1,13 @@
-# Especificação: Apresentação de `receita_cod` com máscara na changelist de `ItemClassificacao`
+# Especificação: Apresentação de `receita_cod` com máscara em telas do admin de `ItemClassificacao`
 
 Este documento define a política de aplicação de **máscara visual** sobre o
-campo `receita_cod` na **changelist** do Django Admin de `ItemClassificacao`.
-Trata exclusivamente da camada de apresentação dessa coluna; não altera regras
-de validação, de criação, de edição, de lookup ou de sugestão de código filho.
+campo `receita_cod` em **telas do Django Admin** de `ItemClassificacao` —
+incluindo a coluna `receita_cod_formatado` da changelist e o
+`semantic_value_resolver` de FKs semânticas que apontam para
+`ItemClassificacao` no formulário (campo "Item Mãe" / `parent_item_id`).
+Trata exclusivamente da camada de **apresentação**; não altera regras de
+validação, de criação, de edição, de lookup JSON consumido pelo cliente, nem
+de sugestão de código filho.
 
 Tópicos:
 
@@ -39,33 +43,47 @@ contextos em que precisa-se de **uma resposta inequívoca** sobre qual máscara
 aplicar — o motivo está em ["Justificativa de não usar união
 contígua"](#justificativa-de-não-usar-união-contígua).
 
-Porém, **na changelist** essa regra estrita gera uma inconsistência visual
-indesejável: assim que qualquer `NivelHierarquico` sofre split bitemporal (ex.:
-faixa `[2018-01-01, 9999-12-31]` partida em `[2018-01-01, 2026-01-31]` e
-`[2026-02-01, 9999-12-31]`), os itens cuja vigência cruzar o ponto de junção
-deixam de ter uma única linha do nível cobrindo-os integralmente e passam a
-exibir o **código bruto** (sem pontos). Já os itens com vigência inteiramente
-contida em uma das novas faixas seguem **com máscara**.
+Porém, em **telas de admin** essa regra estrita gera uma inconsistência
+visual indesejável: assim que qualquer `NivelHierarquico` sofre split
+bitemporal (ex.: faixa `[2018-01-01, 9999-12-31]` partida em
+`[2018-01-01, 2026-01-31]` e `[2026-02-01, 9999-12-31]`), os itens cuja
+vigência cruzar o ponto de junção deixam de ter uma única linha do nível
+cobrindo-os integralmente e passam a exibir o **código bruto** (sem pontos).
+Já os itens com vigência inteiramente contida em uma das novas faixas
+seguem **com máscara**.
 
-O resultado é uma changelist com algumas linhas formatadas e outras não, sem
-que o usuário tenha como inferir o motivo. Esse é o problema desta spec.
+O sintoma se manifesta em pelo menos dois lugares:
+
+1. **Changelist**: a coluna `receita_cod_formatado` exibe parte das linhas
+   formatadas e parte bruta, sem que o usuário tenha como inferir o motivo.
+2. **Formulário**: o display do campo "Item Mãe" (`parent_item_id`,
+   produzido pelo `semantic_value_resolver` da FK semântica) também sai
+   bruto quando o item mãe está numa janela de vigência afetada.
+
+Esse é o problema desta spec.
 
 ## Decisão
 
-A coluna `receita_cod_formatado` na changelist de `ItemClassificacao`
-**sempre tenta apresentar `receita_cod` com máscara**. Para isso:
+Em **telas de admin** que apresentam `receita_cod` (changelist;
+`semantic_value_resolver` de FKs semânticas que apontam para
+`ItemClassificacao`; subtítulo do change form), o sistema **sempre tenta
+apresentar o código com máscara**. Para isso:
 
 - **D1.** Mantém-se a **regra estrita primária** existente
   (`format_receita_cod_by_vigencia`) como tier 1.
-- **D2.** Adiciona-se uma **resolução secundária** específica de changelist
-  (`_resolve_secondary_digit_mask_for_changelist`), acionada **apenas quando o
-  tier 1 falha**. Detalhada na próxima seção.
-- **D3.** Quando ambos os tiers falham, devolve-se o `receita_cod` bruto. Não
-  há terceiro fallback nem placeholder explícito (UX discreta).
+- **D2.** Adiciona-se uma **resolução secundária** específica de
+  apresentação no admin
+  (`_resolve_secondary_digit_mask_for_admin_display`), acionada **apenas
+  quando o tier 1 falha**. Detalhada na próxima seção.
+- **D3.** Quando ambos os tiers falham, devolve-se o `receita_cod` bruto.
+  Não há terceiro fallback nem placeholder explícito (UX discreta).
 - **D4.** A resolução secundária é **isolada** ao helper
-  `format_receita_cod_for_changelist`. **Não é compartilhada** com formulários,
-  lookups, validações, sugestões de código filho, exports ou qualquer outro
-  consumidor de máscara — esses seguem usando exclusivamente a regra estrita.
+  `format_receita_cod_for_admin_display`. **Não é compartilhada** com
+  validações, lookups JSON cujo valor alimenta lógica do cliente, sugestões
+  de código filho, exports ou qualquer outro consumidor de máscara onde a
+  divergência possa virar comportamento errado de programa (e não apenas
+  inconsistência visual). Esses seguem usando exclusivamente a regra
+  estrita pura (`format_receita_cod_by_vigencia`).
 
 ## Resolução em dois níveis
 
@@ -81,7 +99,7 @@ Igual à regra historicamente aplicada por `format_receita_cod_by_vigencia`:
 - A máscara é considerada **compatível** se: não vazia, sem zeros/falsy, e
   `sum(digit_mask) == len(receita_cod)`.
 
-### Tier 2 — Secundário (exclusivo da changelist)
+### Tier 2 — Secundário (apresentação no admin)
 
 Acionado quando o tier 1 não produz máscara compatível. Para cada `nivel_ref`
 distinto presente no sistema:
@@ -92,9 +110,9 @@ distinto presente no sistema:
   - `data_vigencia_fim ≥ registro.data_vigencia_fim`.
 
   A âncora aqui é o **`data_vigencia_fim` do registro** (e não o
-  `data_vigencia_inicio`), porque a versão semanticamente "canônica" na
-  changelist é a que vale do `data_vigencia_fim` em diante — privilegiar o
-  passado (`data_vigencia_inicio`) numa listagem orientada ao presente/futuro
+  `data_vigencia_inicio`), porque a versão semanticamente "canônica" para
+  apresentação é a que vale do `data_vigencia_fim` em diante — privilegiar
+  o passado (`data_vigencia_inicio`) numa visão orientada ao presente/futuro
   geraria escolha contraintuitiva. Esse ponto é normativo desta spec; vê-lo
   como "data-âncora da apresentação".
 
@@ -159,11 +177,16 @@ cada local do código deve ser explícita.
 
 Arquivos envolvidos:
 
-- `apps/core/admin_formatters.py` — onde vivem `format_receita_cod_by_vigencia`
-  (tier 1 puro, para uso geral), `_resolve_secondary_digit_mask_for_changelist`
-  (tier 2) e `format_receita_cod_for_changelist` (composição dos dois tiers).
-- `apps/core/admin.py`, método `ItemClassificacaoAdmin.receita_cod_formatado` —
-  único consumidor de `format_receita_cod_for_changelist` no momento.
+- `apps/core/admin_formatters.py` — onde vivem
+  `format_receita_cod_by_vigencia` (tier 1 puro, para uso geral),
+  `_resolve_secondary_digit_mask_for_admin_display` (tier 2) e
+  `format_receita_cod_for_admin_display` (composição dos dois tiers).
+- `apps/core/admin.py`:
+  - `ItemClassificacaoAdmin.receita_cod_formatado` — consumidor para a
+    coluna da changelist;
+  - `ItemClassificacaoAdmin.semantic_fk_config["parent_item_id"]
+    ["semantic_value_resolver"]` — consumidor para o display do campo
+    "Item Mãe" no formulário.
 
 Funções utilitárias:
 
@@ -176,14 +199,19 @@ Caching:
 - O atributo `_nivel_digit_cache` (dict mutável) de `ItemClassificacaoAdmin`
   serve a ambos os tiers. As chaves do tier 1 são tuplas
   `(data_vigencia_inicio, data_vigencia_fim)`; as do tier 2 são
-  `("secondary-changelist", data_vigencia_fim)`. Não há colisão.
+  `("secondary-admin-display", data_vigencia_fim)`. Não há colisão.
 
-Política de exposição:
+Política de exposição e nomenclatura:
 
-- O nome `format_receita_cod_for_changelist` é deliberadamente sufixado com
-  `_for_changelist` para sinalizar que **não deve ser chamado fora da
-  changelist**. Tentativas futuras de reuso em outros contextos precisam
-  primeiro revisitar esta spec.
+- O nome `format_receita_cod_for_admin_display` é deliberadamente sufixado
+  com `_for_admin_display` para sinalizar que **só deve ser chamado em
+  contextos de apresentação no admin** — atualmente changelist e
+  `semantic_value_resolver` de FKs semânticas que apontam para
+  `ItemClassificacao`. Tentativas futuras de reuso em outros contextos
+  (mensagens contextuais, modais, payloads JSON que viram parâmetros de
+  programação no cliente) precisam primeiro revisitar esta spec; em
+  particular, **não** deve ser usado em validação ou em fluxos de criação
+  onde a máscara aplicada tem peso normativo (e não meramente visual).
 
 ## Casos de teste recomendados
 
@@ -206,6 +234,12 @@ Política de exposição:
 - **T-6.** Linhas com `data_registro_fim ≠ sentinela` não influenciam nenhuma
   resolução, em nenhum dos tiers.
 - **T-7.** `receita_cod` vazio devolve string vazia sem consultar banco.
+- **T-8.** **Display de `parent_item_id` no formulário** (campo "Item Mãe"):
+  para um item mãe cuja vigência se enquadre no cenário do T-2 (split
+  bitemporal de `NivelHierarquico` que invalida o tier 1), o
+  `semantic_value_resolver` retorna o código formatado via tier 2,
+  garantindo paridade com a coluna da changelist. Não pode regredir a um
+  display bruto enquanto a regra estrita falhar.
 
 ## Referências cruzadas
 

@@ -1,7 +1,8 @@
 """Testes para ``apps.core.admin_formatters``.
 
-Foco: política de apresentação de ``receita_cod`` na changelist de
-``ItemClassificacao`` — resolução em dois níveis (estrita + secundária).
+Foco: política de apresentação de ``receita_cod`` em telas do admin de
+``ItemClassificacao`` (changelist e ``semantic_value_resolver`` de FKs
+semânticas) — resolução em dois níveis (estrita + secundária).
 Ver ``_dev/spec_itemClassificacao_mascara_apresentacao.md``.
 """
 
@@ -11,9 +12,9 @@ from django.test import SimpleTestCase, TestCase
 
 from apps.core.admin_formatters import (
     _apply_digit_mask,
-    _resolve_secondary_digit_mask_for_changelist,
+    _resolve_secondary_digit_mask_for_admin_display,
     format_receita_cod_by_vigencia,
-    format_receita_cod_for_changelist,
+    format_receita_cod_for_admin_display,
 )
 from apps.core.models import (
     Classificacao,
@@ -98,9 +99,12 @@ def _make_nivel(
     )
 
 
-class ChangelistMaskResolutionTests(TestCase):
-    """Resolução de máscara em dois níveis na changelist.
+class AdminDisplayMaskResolutionTests(TestCase):
+    """Resolução de máscara em dois níveis para apresentação no admin.
 
+    Cobre os contextos consumidores de ``format_receita_cod_for_admin_display``:
+    a coluna ``receita_cod_formatado`` da changelist e o
+    ``semantic_value_resolver`` do campo ``parent_item_id`` no formulário.
     Reproduz o cenário do split bitemporal de ``NivelHierarquico`` que motivou
     a criação do tier secundário (print histórico de 2026-05-19).
     """
@@ -122,7 +126,7 @@ class ChangelistMaskResolutionTests(TestCase):
 
     def test_tier1_estrito_sucede_para_janela_contida_em_unica_linha(self):
         cache = {}
-        out = format_receita_cod_for_changelist(
+        out = format_receita_cod_for_admin_display(
             "1100000000000",
             datetime.date(2026, 1, 1),
             SENTINEL_DATE,
@@ -168,16 +172,16 @@ class ChangelistMaskResolutionTests(TestCase):
         )
         self.assertEqual(out_tier1, "1100000000000")
 
-        # Tier 1 + tier 2 (changelist) resolve: NIVEL-3 v2 ([2026-02-01, sent])
-        # contém data_vigencia_fim = sentinela do registro.
-        cache_changelist = {}
-        out_changelist = format_receita_cod_for_changelist(
+        # Tier 1 + tier 2 (admin display) resolve: NIVEL-3 v2
+        # ([2026-02-01, sent]) contém data_vigencia_fim = sentinela do registro.
+        cache_admin = {}
+        out_admin = format_receita_cod_for_admin_display(
             "1100000000000",
             datetime.date(2026, 1, 1),
             SENTINEL_DATE,
-            cache_changelist,
+            cache_admin,
         )
-        self.assertEqual(out_changelist, "1.1.0.0.00.0.0.00.000")
+        self.assertEqual(out_admin, "1.1.0.0.00.0.0.00.000")
 
     def test_tier2_desempate_por_data_vigencia_fim_maior(self):
         # Cria, para NIVEL-3, duas linhas ativas elegíveis na Etapa S1, com
@@ -207,7 +211,7 @@ class ChangelistMaskResolutionTests(TestCase):
 
         cache = {}
         record_vigencia_fim = datetime.date(2027, 6, 30)
-        digit_mask = _resolve_secondary_digit_mask_for_changelist(
+        digit_mask = _resolve_secondary_digit_mask_for_admin_display(
             record_vigencia_fim, cache
         )
         # numero_digitos do NIVEL-3 escolhido deve ser 1 (vence quem tem
@@ -242,7 +246,7 @@ class ChangelistMaskResolutionTests(TestCase):
         )
 
         cache = {}
-        digit_mask = _resolve_secondary_digit_mask_for_changelist(
+        digit_mask = _resolve_secondary_digit_mask_for_admin_display(
             SENTINEL_DATE, cache
         )
         nivel3_index = 2
@@ -259,7 +263,7 @@ class ChangelistMaskResolutionTests(TestCase):
         ).update(data_registro_fim=ts)
 
         cache = {}
-        out = format_receita_cod_for_changelist(
+        out = format_receita_cod_for_admin_display(
             "1100000000000",
             datetime.date(2026, 1, 1),
             SENTINEL_DATE,
@@ -270,7 +274,7 @@ class ChangelistMaskResolutionTests(TestCase):
 
     def test_codigo_vazio_devolve_string_vazia(self):
         cache = {}
-        out = format_receita_cod_for_changelist(
+        out = format_receita_cod_for_admin_display(
             "",
             datetime.date(2026, 1, 1),
             SENTINEL_DATE,

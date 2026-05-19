@@ -29,7 +29,7 @@ from apps.core.forms import (
 )
 from apps.core.admin_formatters import (
     format_receita_cod_by_vigencia,
-    format_receita_cod_for_changelist,
+    format_receita_cod_for_admin_display,
     get_active_vigencia_masks,
 )
 from apps.core.code_mask import resolve_receita_cod_mask_context
@@ -396,6 +396,13 @@ class ItemClassificacaoAdmin(
             "semantic_field": "nivel_id",
             "display_label": lambda obj: f"{obj.nivel_id} - {obj.nivel_nome}",
             "popup_default_registro_ativo_ano_corrente": True,
+            # ``metadata.nivel_numero`` é consumido pelo JS do change form
+            # para ativar/desativar o estado "raiz somente leitura" no campo
+            # ``parent_item_id`` na add view, em paridade com o que o
+            # servidor já faz na change view. Ver
+            # ``_dev/spec_itemClassificacao_validar_hierarquia.md`` —
+            # "Renderização preventiva de ``parent_item_id`` para itens raiz".
+            "metadata_resolver": lambda obj: {"nivel_numero": obj.nivel_numero},
         },
         "base_legal_tecnica_id": {
             "kind": "base_legal_tecnica",
@@ -407,7 +414,13 @@ class ItemClassificacaoAdmin(
             "kind": "item",
             "model": ItemClassificacao,
             "semantic_field": "receita_cod",
-            "semantic_value_resolver": lambda obj: format_receita_cod_by_vigencia(
+            # Apresentação no formulário (campo "Item Mãe"): aplica a mesma
+            # resolução em dois níveis usada na changelist, garantindo que
+            # registros cuja vigência não esteja inteiramente contida em uma
+            # única linha de ``NivelHierarquico`` (cenário típico após split
+            # bitemporal) ainda exibam máscara compatível. Ver
+            # ``_dev/spec_itemClassificacao_mascara_apresentacao.md``.
+            "semantic_value_resolver": lambda obj: format_receita_cod_for_admin_display(
                 obj.receita_cod or "",
                 getattr(obj, "data_vigencia_inicio", None),
                 getattr(obj, "data_vigencia_fim", None),
@@ -504,6 +517,16 @@ class ItemClassificacaoAdmin(
         context["item_validate_intermediate_zeros_url"] = reverse(
             f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_validate_intermediate_canonical_zeros"
         )
+        # URL do endpoint semantic-lookup para resolver, no client, o
+        # ``nivel_numero`` do PK selecionado em ``nivel_id`` e ativar o
+        # estado "raiz somente leitura" no ``parent_item_id`` na add view.
+        # Padrão da URL: ``.../semantic-lookup/nivel/{pk}/``. Ver
+        # ``_dev/spec_itemClassificacao_validar_hierarquia.md``, seção
+        # "Renderização preventiva de ``parent_item_id`` para itens raiz".
+        context["item_nivel_semantic_lookup_url"] = reverse(
+            f"admin:{self._get_semantic_lookup_url_name()}",
+            kwargs={"kind": "nivel", "pk": 0},
+        ).replace("/0/", "/{pk}/")
         if obj is not None:
             masked_codigo = format_receita_cod_by_vigencia(
                 obj.receita_cod or "",
@@ -686,15 +709,14 @@ class ItemClassificacaoAdmin(
         ordering="receita_cod",
     )
     def receita_cod_formatado(self, obj):
-        # Política específica da changelist: aplica resolução em dois níveis
-        # (estrita + secundária ancorada em ``data_vigencia_fim`` do registro)
-        # para que registros cuja vigência não esteja inteiramente contida em
-        # uma única linha ativa de ``NivelHierarquico`` ainda assim recebam
-        # máscara compatível, evitando assimetria visual na listagem. Demais
-        # contextos (formulários, lookups, validações) seguem usando
+        # Apresentação no admin: resolução em dois níveis (estrita +
+        # secundária ancorada em ``data_vigencia_fim`` do registro), comum à
+        # changelist e ao ``semantic_value_resolver`` de ``parent_item_id``.
+        # Validações, lookups JSON consumidos por lógica do cliente e
+        # sugestão de código filho seguem usando
         # ``format_receita_cod_by_vigencia`` — regra estrita pura. Ver
         # ``_dev/spec_itemClassificacao_mascara_apresentacao.md``.
-        return format_receita_cod_for_changelist(
+        return format_receita_cod_for_admin_display(
             obj.receita_cod or "",
             getattr(obj, "data_vigencia_inicio", None),
             getattr(obj, "data_vigencia_fim", None),

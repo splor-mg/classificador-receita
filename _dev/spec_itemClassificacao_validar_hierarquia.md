@@ -190,6 +190,176 @@ Variáveis de contexto: `item_validate_intermediate_zeros_url`, `item_parent_lev
 | Modal | `showCoreAttentionModal` (base), `showCoreLevelJumpModal` (salto ao gravar), `requestParentLevelJumpConfirmation` em `change_form.html`; troca de mãe com código preenchido usa o mesmo modal — ver **(G5)** em `spec_itemClassificacao_criar_filho.md` |
 | Sentinela registo | `transaction_time_sentinel_for_query` em `apps/core/admin_mixins.py` |
 
+## Renderização preventiva de `parent_item_id` para itens raiz (`nivel_numero = 1`)
+
+### Regra subjacente
+
+A regra normativa está em `_dev/spec_itemClassificacao_regras_hierarquia.md`:
+itens com `nivel_numero = 1` devem ter `parent_item_id = NULL`. Esta seção
+descreve **como** essa regra é refletida na renderização do form do Django
+Admin de `ItemClassificacao`, com paridade entre as visões de **alteração**
+(change) e **adição** (add).
+
+### Estado visual canônico do campo `parent_item_id` em itens raiz
+
+Quando o item em edição/criação for de `nivel_numero = 1`, o campo
+`parent_item_id` deve apresentar-se em modo **somente leitura "raiz"**, com:
+
+- valor real (hidden) **vazio**;
+- display congelado com o texto "Sem item mãe" e fundo hachurado/cinza;
+- lupa de busca **oculta** (sem caminho clicável para seleção de mãe);
+- rótulo dinâmico do item mãe **oculto** (não há mãe a exibir);
+- mensagem auxiliar visível: "Item raiz, de nível 1, não possui item mãe.".
+
+Esse é o estado que já aparece hoje na **change view** quando a instância
+persistida tem `instance.nivel_id.nivel_numero == 1` (ver
+`ItemClassificacaoForm.__init__` em `apps/core/forms.py`, atributos
+`data_readonly_root`, `data_empty_display`, `data_root_message` do widget
+`ForeignKeySemanticDisplayRawIdWidget`).
+
+### Comportamento na change view (server-side, inalterado)
+
+O estado é decidido no servidor durante a renderização do form, a partir de
+`self.instance.nivel_id.nivel_numero`. O template
+`apps/core/templates/admin/widgets/foreign_key_semantic_raw_id.html` consome
+os `widget.attrs.data_readonly_root`, `data_empty_display` e
+`data_root_message` e desliga inclusive o `<script>` de resolução semântica
+do hidden. Esse fluxo permanece como está.
+
+### Comportamento na add view (objetivo desta seção)
+
+Na add view o `self.instance` é vazio (sem `nivel_id`), então o estado
+"raiz somente leitura" precisa ser aplicado **dinamicamente no client**,
+reagindo ao preenchimento do campo `Nível Hierárquico`. As fontes possíveis
+desse preenchimento são:
+
+- **manual**: usuário escolhe um `NivelHierarquico` pela lupa (`raw_id`);
+- **automática**: `syncHierarchyFromCode` (em `change_form.html`) deriva o
+  nível a partir do `receita_cod` + classificação + vigência e atribui
+  `nivelIdInput.value`;
+- **postback após erro de validação**: o POST volta com `nivel_id`
+  preenchido, e o navegador renderiza o widget com esse valor inicial.
+
+Em todos os três casos, ao saber o **PK do nível selecionado**, o cliente
+deve resolver o `nivel_numero` correspondente e:
+
+- se `nivel_numero === 1`: aplicar o estado "raiz somente leitura" no
+  widget de `parent_item_id` em paridade com a change view (texto,
+  hachurado, lupa oculta, label oculto, mensagem auxiliar visível,
+  `hidden.value = ""`, `hidden.dataset.readonlyRoot = "1"`);
+- caso contrário: **restaurar** o estado editável (display vazio, fundo
+  normal, lupa visível, sem mensagem auxiliar, `dataset.readonlyRoot`
+  removido). A reversibilidade é normativa: trocar o nível para outro com
+  `nivel_numero > 1` deve devolver o campo ao modo normal.
+
+### Resolução de `nivel_numero` no client
+
+Para resolver `nivel_numero` a partir do PK selecionado no `nivel_id`, o
+projeto **estende o endpoint `semantic-lookup/<kind>/<pk>/`** (definido em
+`apps/core/admin_mixins.py`, mixin `BitemporalForeignKeyLookupActiveOnlyMixin`)
+com um campo opcional `metadata` no payload JSON, configurável por FK via
+`semantic_fk_config[campo]["metadata_resolver"]`. Para `nivel_id` em
+`ItemClassificacaoAdmin`, o resolver devolve `{"nivel_numero": obj.nivel_numero}`.
+
+Contrato do payload (compatível com clientes existentes):
+
+```json
+{
+  "semantic_value": "NIVEL-1",
+  "display_label": "NIVEL-1 - Categoria Econômica",
+  "link_url": "/admin/core/nivelhierarquico/<pk>/change/",
+  "metadata": {"nivel_numero": 1}
+}
+```
+
+Quando o resolver não está declarado para a FK, o campo `metadata` é
+omitido — preservando o payload anterior e a compatibilidade.
+
+### Gatilho da sincronização no client
+
+O JS em `change_form.html` adiciona uma função
+`syncParentRootStateFromNivel(triggerName)` que:
+
+1. lê `nivelIdInput.value`;
+2. se vazio, garante o estado **editável** no `parent_item_id`;
+3. se preenchido, faz fetch para o `semantic-lookup` do `nivel_id` e
+   inspeciona `metadata.nivel_numero` no payload;
+4. aplica `setParentRootReadonly(true|false)` no widget de `parent_item_id`
+   conforme o resultado.
+
+A função é chamada:
+
+- no `init` (após `runCodeDigitValidation('init')`), cobrindo postback com
+  erro e estados pré-preenchidos;
+- no evento `change` do hidden de `nivel_id`;
+- no evento `semantic-fk-changed` do hidden de `nivel_id` (disparado pelo
+  próprio widget após resolver o display semântico).
+
+### Interação com `syncHierarchyFromCode`
+
+`syncHierarchyFromCode` já tem `early-return` quando
+`parentItemIdInput.dataset.readonlyRoot === '1'`. Essa guarda continua sendo
+o ponto único de verdade para "não bater no mãe quando o item é raiz".
+A nova função apenas **alimenta** esse atributo (set/unset), sem mudar a
+guarda existente.
+
+### Regras normativas desta seção
+
+- **R-root.1.** O estado "raiz somente leitura" deve ser sempre
+  consequência do `nivel_numero` do nível selecionado (server-side na
+  change view, client-side na add view). Nunca decidido por outro campo.
+- **R-root.2.** A transição é **reversível**: trocar para um nível com
+  `nivel_numero > 1` deve restaurar o campo editável e remover a mensagem
+  auxiliar.
+- **R-root.3.** O hidden de `parent_item_id` deve ser **limpo** sempre
+  que o estado raiz for ativado (`hidden.value = ""`), garantindo que o
+  POST não carregue um PK residual incompatível com a regra normativa
+  (`parent_item_id = NULL` para nível 1).
+- **R-root.4.** O endpoint `semantic-lookup` é o único contrato usado para
+  resolver `nivel_numero` no client a partir de um **PK** isolado. A
+  derivação a partir do **código** continua a cargo de
+  `lookup-hierarchy-by-code`, cujo payload já expõe `derived_level.number`
+  e deve ser usado como fonte síncrona quando o gatilho da mudança vem
+  do `receita_cod` (ver R-root.5).
+- **R-root.5.** O estado raiz **não** pode ser usado como guarda de
+  early-return em `syncHierarchyFromCode`. A função deve sempre poder
+  recalcular `nivel_id` a partir do novo `receita_cod`; o estado raiz é
+  decisão derivada, não condição de entrada. Especificamente:
+    - `syncHierarchyFromCode` aplica `setParentRootReadonlyState(true)`
+      quando `data.derived_level.number === 1`, e
+      `setParentRootReadonlyState(false)` para `number > 1`, **sem
+      consultar** `data.parent` para essa decisão (o `parent.required`
+      do payload continua sendo a fonte normativa do que fazer com o
+      conteúdo do `parent_item_id`, mas não da renderização raiz);
+    - `syncParentRootStateFromNivel` continua existindo para cobrir as
+      mudanças de `nivel_id` que **não** passam pela derivação por
+      código (ex.: seleção manual pela lupa, postback após erro com
+      `nivel_id` pré-preenchido).
+
+### Casos de teste recomendados
+
+- **T-root.1.** Add view, usuário escolhe NIVEL-1 pela lupa → estado raiz
+  é aplicado (display "Sem item mãe", lupa oculta, mensagem visível).
+- **T-root.2.** Add view, `syncHierarchyFromCode` deriva NIVEL-1 → estado
+  raiz é aplicado automaticamente após a sincronização.
+- **T-root.3.** Add view, usuário troca de NIVEL-1 para NIVEL-2 → estado
+  raiz é desfeito; lupa volta a aparecer; campo aceita seleção de mãe.
+- **T-root.4.** Add view, postback com erro de validação e `nivel_id` já
+  apontando para NIVEL-1 → `syncParentRootStateFromNivel('init')` aplica o
+  estado raiz no primeiro render JS, sem "piscar".
+- **T-root.5.** Change view, instância com `nivel_id.nivel_numero = 1` →
+  estado raiz já aplicado pelo servidor (sem dependência do JS).
+- **T-root.6.** `semantic-lookup/<kind=nivel>/<pk>/` retorna `metadata`
+  contendo `nivel_numero`; demais kinds (`item`, `classificacao`, etc.) não
+  retornam `metadata` (compatibilidade com clientes anteriores).
+- **T-root.7.** Add view, usuário preenche `receita_cod` para um código de
+  nível 1 (ex.: `1000000000000`), TAB → estado raiz ativado. Em seguida,
+  altera o código para um de nível 2 (ex.: `1100000000000`), TAB →
+  `syncHierarchyFromCode` recalcula, `nivel_id` muda para NIVEL-2 e o
+  estado raiz é desativado, voltando a permitir a seleção de mãe e
+  permitindo que a derivação automática do `parent_item_id` ocorra.
+  Verifica explicitamente que **R-root.5** está em vigor.
+
 ## Relação com outras especificações
 
 - **`_dev/spec_itemClassificacao_regras_hierarquia.md`:** regras normativas de `parent_item_id`, prefixo, cauda do pai, salto e zeros no filho, mesma classificação, vigência do mãe contendo a do filho, etc.

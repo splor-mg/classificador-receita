@@ -515,6 +515,14 @@ class SemanticForeignKeyAdminMixin:
         semantic_field = cfg.get("semantic_field")
         display_label_cfg = cfg.get("display_label")
         semantic_value_resolver = cfg.get("semantic_value_resolver")
+        # ``metadata_resolver`` opcional: devolve dict serializável a ser
+        # exposto como ``metadata`` no JSON. Usado, por exemplo, pelo client
+        # do change form de ItemClassificacao para resolver ``nivel_numero``
+        # do PK selecionado em ``nivel_id`` e ativar o estado "raiz somente
+        # leitura" do campo ``parent_item_id`` na add view. Ver
+        # ``_dev/spec_itemClassificacao_validar_hierarquia.md``, seção
+        # "Renderização preventiva de ``parent_item_id`` para itens raiz".
+        metadata_resolver = cfg.get("metadata_resolver")
 
         if not model or not semantic_field:
             return JsonResponse({"semantic_value": "", "display_label": "", "link_url": ""})
@@ -549,13 +557,19 @@ class SemanticForeignKeyAdminMixin:
             else:
                 display_label = semantic_value
 
-            return JsonResponse(
-                {
-                    "semantic_value": semantic_value,
-                    "display_label": display_label,
-                    "link_url": link_url,
-                }
-            )
+            payload = {
+                "semantic_value": semantic_value,
+                "display_label": display_label,
+                "link_url": link_url,
+            }
+            if callable(metadata_resolver):
+                try:
+                    metadata = metadata_resolver(obj)
+                except Exception:
+                    metadata = None
+                if isinstance(metadata, dict) and metadata:
+                    payload["metadata"] = metadata
+            return JsonResponse(payload)
         except Exception:
             return JsonResponse({"semantic_value": "", "display_label": "", "link_url": ""})
 

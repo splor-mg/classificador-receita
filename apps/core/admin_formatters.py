@@ -59,8 +59,8 @@ def format_receita_cod_by_vigencia(codigo, vigencia_inicio, vigencia_fim, cache)
     return codigo
 
 
-def _resolve_secondary_digit_mask_for_changelist(record_vigencia_fim, cache):
-    """Resolve a máscara secundária (apenas para apresentação na *changelist*).
+def _resolve_secondary_digit_mask_for_admin_display(record_vigencia_fim, cache):
+    """Resolve a máscara secundária (para apresentação em telas do admin).
 
     Para cada ``nivel_ref`` distinto, escolhe entre as linhas ativas de
     ``NivelHierarquico`` (``data_registro_fim = TRANSACTION_TIME_SENTINEL``)
@@ -72,16 +72,19 @@ def _resolve_secondary_digit_mask_for_changelist(record_vigencia_fim, cache):
 
     Esta resolução só é invocada quando a regra primária estrita
     (``get_active_digit_mask_for_vigencia``) falha para a janela de vigência do
-    registro. Ela é **exclusiva da changelist** — não deve ser usada em
-    formulários, lookups, validações, sugestões de código filho ou qualquer
-    outro contexto onde a regra estrita é a única política aceitável.
+    registro. Ela é **exclusiva de contextos de apresentação no admin**
+    (changelist; ``semantic_value_resolver`` de FKs semânticas de
+    ``ItemClassificacao`` no formulário; subtítulo do change form). **Não**
+    deve ser usada em validações, lookups JSON que alimentam programação no
+    cliente, sugestões de código filho ou qualquer outro contexto onde a
+    regra estrita é a única política aceitável.
 
     Ver spec ``_dev/spec_itemClassificacao_mascara_apresentacao.md``.
     """
     if not record_vigencia_fim:
         return None
 
-    cache_key = ("secondary-changelist", record_vigencia_fim)
+    cache_key = ("secondary-admin-display", record_vigencia_fim)
     if cache_key in cache:
         return cache[cache_key]
 
@@ -112,26 +115,38 @@ def _resolve_secondary_digit_mask_for_changelist(record_vigencia_fim, cache):
     return digit_mask
 
 
-def format_receita_cod_for_changelist(codigo, vigencia_inicio, vigencia_fim, cache):
-    """Formata ``receita_cod`` para apresentação na changelist de ``ItemClassificacao``.
+def format_receita_cod_for_admin_display(codigo, vigencia_inicio, vigencia_fim, cache):
+    """Formata ``receita_cod`` para **apresentação em telas do admin**.
 
     Aplica resolução em dois níveis:
 
     * **Primário (estrito)**: idêntico a ``format_receita_cod_by_vigencia`` —
       exige uma única linha ativa de ``NivelHierarquico`` cuja vigência contenha
       integralmente a janela do registro, por ``nivel_ref``.
-    * **Secundário (apenas changelist)**: aciona-se quando o primário não
+    * **Secundário (admin display)**: aciona-se quando o primário não
       produz uma máscara compatível. Por ``nivel_ref``, escolhe a linha ativa
       ancorada em ``record.data_vigencia_fim``, preferindo maior
       ``data_vigencia_fim`` própria e desempatando por ``data_registro_inicio``
-      mais recente (ver ``_resolve_secondary_digit_mask_for_changelist``).
+      mais recente
+      (ver ``_resolve_secondary_digit_mask_for_admin_display``).
 
     Quando ambos os níveis falham, devolve ``codigo`` bruto — comportamento
-    discreto, igual ao adotado fora da changelist.
+    discreto, igual ao adotado fora de apresentação.
 
-    Justificativa de existência (em contraste com ``format_receita_cod_by_vigencia``):
-    a changelist mistura linhas de vigências distintas. Sem este helper, ao
-    haver split bitemporal num ``NivelHierarquico`` qualquer, registros cuja
+    **Onde usar**: contextos de **apresentação** no admin —
+    ``receita_cod_formatado`` da changelist; ``semantic_value_resolver`` de
+    FKs semânticas que apontam para ``ItemClassificacao`` (ex.:
+    ``parent_item_id``); subtítulo do change form. **Onde NÃO usar**:
+    validações, lookups JSON cujo valor é consumido por lógica do cliente,
+    sugestão de código filho — esses devem continuar com
+    ``format_receita_cod_by_vigencia`` (regra estrita pura), pois ali
+    qualquer divergência entre vigências leva a comportamento errado de
+    programa, não apenas a inconsistência visual.
+
+    Justificativa de existência (em contraste com
+    ``format_receita_cod_by_vigencia``): em telas de admin, registros com
+    vigências distintas convivem na mesma página. Sem este helper, ao haver
+    split bitemporal num ``NivelHierarquico`` qualquer, registros cuja
     vigência não esteja inteiramente contida numa única linha do nível
     apareceriam **sem máscara**, enquanto outros (alinhados à nova faixa)
     apareceriam **com máscara** — assimetria visual confusa. Ver spec
@@ -145,7 +160,7 @@ def format_receita_cod_for_changelist(codigo, vigencia_inicio, vigencia_fim, cac
     if formatted is not None:
         return formatted
 
-    secondary_mask = _resolve_secondary_digit_mask_for_changelist(vigencia_fim, cache)
+    secondary_mask = _resolve_secondary_digit_mask_for_admin_display(vigencia_fim, cache)
     formatted = _apply_digit_mask(codigo, secondary_mask)
     if formatted is not None:
         return formatted

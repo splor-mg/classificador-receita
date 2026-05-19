@@ -316,6 +316,7 @@
     var itemParentLevelJumpWarnUrl = '{{ item_parent_level_jump_warn_url|default:"" }}';
     var itemValidateIntermediateZerosUrl = '{{ item_validate_intermediate_zeros_url|default:"" }}';
     var itemSuggestChildCodeUrl = '{{ item_suggest_child_code_url|default:"" }}';
+    var itemNivelSemanticLookupUrl = '{{ item_nivel_semantic_lookup_url|default:"" }}';
     var itemClassificacaoDigitLimitLookupUrl = '{{ item_classificacao_digit_limit_lookup_url|default:"" }}';
     var receitaCodDigitLimitCache = {};
     var receitaCodResolvedDigitMask = null;
@@ -910,9 +911,14 @@
         if (!isAddMode || !itemHierarchyLookupUrl || !nivelIdInput || !parentItemIdInput) {
           return Promise.resolve({ isValid: true });
         }
-        if (parentItemIdInput.dataset.readonlyRoot === '1') {
-          return Promise.resolve({ isValid: true });
-        }
+        // Importante: NÃO usar ``parentItemIdInput.dataset.readonlyRoot === '1'``
+        // como early-return aqui. Esse atributo apenas reflete o estado visual
+        // do widget de ``parent_item_id`` em itens raiz; bloquear a função
+        // inteira impediria recálculo legítimo do ``nivel_id`` após uma
+        // troca do ``receita_cod`` que mude o nível derivado (ex.: de 1 para
+        // 2). Ver ``_dev/spec_itemClassificacao_validar_hierarquia.md``,
+        // seção "Renderização preventiva de ``parent_item_id`` para itens
+        // raiz", regra R-root.5.
         if (triggerName === 'init' && document.querySelector('.errornote')) {
           return Promise.resolve({ isValid: true });
         }
@@ -1030,6 +1036,21 @@
                 nivelIdInput.value = data.derived_level.pk;
                 nivelIdInput.dispatchEvent(new Event('change', { bubbles: true }));
               }
+            }
+
+            // Aplica o estado "raiz somente leitura" no widget de
+            // ``parent_item_id`` de forma síncrona com a derivação do nível,
+            // a partir de ``derived_level.number`` retornado pelo backend.
+            // Isso garante coerência imediata mesmo que o fetch paralelo de
+            // ``syncParentRootStateFromNivel`` ainda esteja em curso. Ver
+            // ``_dev/spec_itemClassificacao_validar_hierarquia.md``,
+            // regra R-root.5.
+            var derivedLevelNumber =
+              data.derived_level && typeof data.derived_level.number !== 'undefined'
+                ? Number(data.derived_level.number)
+                : null;
+            if (derivedLevelNumber !== null) {
+              setParentRootReadonlyState(derivedLevelNumber === 1);
             }
 
             var levelData = data.derived_level || {};
@@ -1491,13 +1512,134 @@
         window.setTimeout(runClassificationNamingInit, 0);
       }
 
+      // Estado "raiz somente leitura" do campo ``parent_item_id``,
+      // espelhando o que ``ItemClassificacaoForm.__init__`` já faz
+      // server-side na change view quando o nível do item é 1. Aqui
+      // mantemos paridade na add view, reagindo dinamicamente ao
+      // ``nivel_id`` selecionado (pela lupa, por
+      // ``syncHierarchyFromCode`` ou por postback após erro).
+      //
+      // Ver: ``_dev/spec_itemClassificacao_validar_hierarquia.md`` —
+      // "Renderização preventiva de ``parent_item_id`` para itens raiz".
+      function setParentRootReadonlyState(active) {
+        if (!parentItemIdInput) {
+          return;
+        }
+        var displayEl = document.getElementById('id_parent_item_id_display');
+        var lookupAnchor = document.getElementById('lookup_id_parent_item_id');
+        var labelStrong = document.getElementById('id_parent_item_id_label');
+        var rootMessageId = 'id_parent_item_id_root_message';
+        var rootMessage = document.getElementById(rootMessageId);
+
+        if (active) {
+          parentItemIdInput.value = '';
+          parentItemIdInput.dataset.readonlyRoot = '1';
+          if (displayEl) {
+            displayEl.value = 'Sem item mãe';
+            displayEl.dataset.readonlyRoot = '1';
+            displayEl.style.background =
+              'repeating-linear-gradient(135deg, #f4f4f4, #f4f4f4 8px, #ececec 8px, #ececec 16px)';
+            displayEl.style.color = '#666';
+            displayEl.style.borderColor = '#d7d7d7';
+          }
+          if (lookupAnchor) {
+            lookupAnchor.style.display = 'none';
+          }
+          if (labelStrong) {
+            labelStrong.style.display = 'none';
+          }
+          if (!rootMessage && displayEl && displayEl.parentNode) {
+            rootMessage = document.createElement('span');
+            rootMessage.id = rootMessageId;
+            rootMessage.style.display = 'inline-block';
+            rootMessage.style.marginRight = '14px';
+            rootMessage.style.color = '#666';
+            rootMessage.style.fontSize = '0.92em';
+            rootMessage.textContent =
+              'Item raiz, de nível 1, não possui item mãe.';
+            if (lookupAnchor && lookupAnchor.parentNode === displayEl.parentNode) {
+              lookupAnchor.parentNode.insertBefore(rootMessage, lookupAnchor.nextSibling);
+            } else {
+              displayEl.parentNode.insertBefore(rootMessage, displayEl.nextSibling);
+            }
+          }
+          if (rootMessage) {
+            rootMessage.style.display = 'inline-block';
+          }
+          clearParentValidationState();
+        } else {
+          if (parentItemIdInput.dataset.readonlyRoot !== '1' && !rootMessage) {
+            return;
+          }
+          delete parentItemIdInput.dataset.readonlyRoot;
+          if (displayEl) {
+            delete displayEl.dataset.readonlyRoot;
+            displayEl.value = '';
+            displayEl.style.background = '';
+            displayEl.style.color = '';
+            displayEl.style.borderColor = '';
+          }
+          if (lookupAnchor) {
+            lookupAnchor.style.display = '';
+          }
+          if (rootMessage) {
+            rootMessage.style.display = 'none';
+          }
+          if (labelStrong) {
+            labelStrong.style.display = 'none';
+          }
+        }
+      }
+
+      function syncParentRootStateFromNivel(triggerName) {
+        if (!isAddMode || !nivelIdInput || !parentItemIdInput) {
+          return;
+        }
+        var pk = (nivelIdInput.value || '').trim();
+        if (!pk) {
+          setParentRootReadonlyState(false);
+          return;
+        }
+        if (!itemNivelSemanticLookupUrl) {
+          return;
+        }
+        var url = itemNivelSemanticLookupUrl.replace('{pk}', encodeURIComponent(pk));
+        fetch(url, { method: 'GET', credentials: 'same-origin' })
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            var nivelNumero =
+              data && data.metadata && typeof data.metadata.nivel_numero !== 'undefined'
+                ? data.metadata.nivel_numero
+                : null;
+            setParentRootReadonlyState(nivelNumero === 1);
+          })
+          .catch(function() { /* silencioso: mantém estado anterior */ });
+      }
+
       if (nivelIdInput) {
         nivelIdInput.addEventListener('input', function() {
           clearLevelValidationState();
         });
         nivelIdInput.addEventListener('change', function() {
           clearLevelValidationState();
+          syncParentRootStateFromNivel('nivel_change');
         });
+        nivelIdInput.addEventListener('semantic-fk-changed', function() {
+          syncParentRootStateFromNivel('nivel_semantic_changed');
+        });
+
+        // O popup raw-id nem sempre dispara ``change`` no hidden; monitoramos
+        // o valor efetivo, em paralelo aos eventos acima.
+        var lastNivelPk = (nivelIdInput.value || '').trim();
+        window.setInterval(function() {
+          var currentPk = (nivelIdInput.value || '').trim();
+          if (currentPk !== lastNivelPk) {
+            lastNivelPk = currentPk;
+            syncParentRootStateFromNivel('nivel_poll');
+          }
+        }, 350);
+
+        syncParentRootStateFromNivel('init');
       }
 
       var vigenciaInicioInput = document.querySelector('input[name="data_vigencia_inicio"]');
