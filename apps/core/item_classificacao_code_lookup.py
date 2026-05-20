@@ -583,7 +583,7 @@ def lookup_hierarchy_by_code_response_data(request: HttpRequest) -> Dict[str, An
                         "severity": "error",
                         "message": (
                             "Não existe item mãe ativo e vigente como matriz para o código informado "
-                            "nem na classificação selecionada, nem em noutra classificação compatível."
+                            "nem na classificação selecionada, nem em outra classificação compatível."
                         ),
                         "alternative": None,
                     }

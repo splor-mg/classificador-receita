@@ -125,15 +125,48 @@ Campo considerado vazio: ausência de dígitos após remover pontuação de más
 Quando o usuário altera `parent_item_id` e `receita_cod` **não** está vazio (**G2**):
 
 1. **Não** substituir o código automaticamente.
-2. Exibir **modal de atenção** centrado (mesmo componente visual do aviso de salto de nível ao gravar: `showCoreAttentionModal` em `change_form.html` — ícone ⚠️, título «Atenção!», botões Cancelar/OK), com texto orientativo, por exemplo: *«O código canônico da natureza de receita já está preenchido. Deseja atualizar o código com base no novo item mãe selecionado?»*
-3. Se o usuário **confirmar** → executar o mesmo fluxo de sugestão (**endpoint** + pré-preenchimentos de **Passo 6**), **substituindo** o valor atual de `receita_cod` (e campos derivados: `nivel_id`, avisos, nomenclatura **P-mãe**, etc.).
-4. Se **cancelar** → manter `receita_cod` e demais campos como estão; apenas a nova mãe permanece selecionada.
+2. **Antes** de exibir qualquer modal, o cliente **deve** guardar um *snapshot* da mãe **anterior** (PK, rótulo de exibição do widget semântico e estado de polling do raw-id) e chamar o endpoint `suggest-child-code-by-parent/` para a **nova** mãe selecionada.
+   - o snapshot **deve** ser derivado do **PK observado imediatamente antes** da troca (ex.: `lastParentItemPk` no polling), cruzado com `lastConfirmedParentSnapshot` quando o PK coincidir;
+   - o snapshot **deve sobreviver** a estados intermediários do popup da lupa (raw-id do Django admin), nos quais o hidden de `parent_item_id` pode ficar **momentaneamente vazio** entre o valor antigo e o novo — **não** substituir nem apagar o snapshot confirmado nesses transientes;
+   - após preenchimento programático da mãe (ex.: `syncHierarchyFromCode`, **G6**), o cliente **deve** consolidar o snapshot com o PK assim que o hidden for escrito (e, quando disponível, `parent.name` do payload de hierarquia), mesmo que o display semântico ainda não tenha sido renderizado.
+3. Se o endpoint retornar **erro** (`ok: false`, incluindo **E1**, **E2**, **E3** e demais códigos de falha da sugestão):
+   - **reverter** automaticamente `parent_item_id` para a mãe anterior (PK + display);
+   - **não** abrir o modal;
+   - exibir a mensagem de erro **inline** sob o campo «Item Mãe» (mesmo padrão visual dos erros de sugestão com código vazio);
+   - **não** alterar `receita_cod`, `nivel_id`, `classificacao_id` nem demais campos do formulário.
+4. Se o endpoint retornar **sucesso** (`ok: true`), exibir **modal de atenção** centrado (mesma família visual do aviso de salto de nível ao gravar — ícone ⚠️, título «Atenção!»; ver também `_dev/spec_itemClassificacao_validar_hierarquia.md`, seção «Modal de confirmação (G5)»), **somente após** receber a resposta, com:
+   - corpo dinâmico:
+     ```
+     Deseja atualizar o código de natureza de receita atual?
+       - atual: <receita_cod_display do formulário>
+       - novo:  <receita_cod_display retornado pelo endpoint>
+     ```
+   - os códigos exibidos **devem** usar **máscara de apresentação** (`receita_cod_display` / valor já formatado no campo), **nunca** apenas dígitos canônicos crus;
+   - botões: **Cancelar** | **Manter Atual** | **Atualizar**.
+5. **Cancelar** (inclui tecla **Escape** e clique no **overlay**):
+   - reverter `parent_item_id` para a mãe anterior (PK + display);
+   - se o snapshot tiver **PK** mas **display** ou rótulo vazios, o cliente **deve** re-buscar o rótulo semântico pelo endpoint `semantic-lookup/item/{pk}/` (mesmo contrato do widget `foreign_key_semantic_raw_id.html`) antes de concluir a reversão visual;
+   - manter `receita_cod`, `nivel_id` e `classificacao_id` **inalterados**;
+   - re-aplicar nomenclatura (**P-mãe**) coerente com a mãe **anterior** — ver `_dev/spec_itemClassificacao_criar_nome.md`, seção «P-mãe durante confirmação (G5)».
+6. **Manter Atual**:
+   - manter a **nova** mãe selecionada;
+   - manter `receita_cod`, `nivel_id` e `classificacao_id` **exatamente** como estavam **antes** da troca de mãe que disparou **(G5)**;
+   - **não** executar a sugestão nem atualizar campos derivados dela;
+   - aplicar **P-mãe** para a **nova** mãe (sem alterar o código).
+7. **Atualizar**:
+   - manter a **nova** mãe selecionada;
+   - executar o mesmo fluxo de sugestão já obtido (**Passo 6**), **substituindo** `receita_cod` e campos derivados (`nivel_id`, `classificacao_id`, vigência quando vazia, avisos, nomenclatura via `applyNamingAfterParentSuggest`, etc.).
 
 *Notas de implementação (cliente):*
 
-- Na confirmação (**Sim**), ignora o cache de «última mãe já sugerida» usado para evitar pedidos duplicados com código vazio.
-- Se a mãe atual for a mesma da última sugestão aplicada com sucesso, **não** repetir o modal (evita dupla confirmação por eventos duplicados do raw-id).
-- Ignorar nova troca de mãe enquanto um pedido de sugestão estiver em andamento.
+- **Snapshot e popup da lupa:** manter `parentFkTransitionFromPk` (ou equivalente) quando o polling detectar PK vazio transitório após um PK não vazio; só limpar `lastConfirmedParentSnapshot` quando a remoção for real (hidden vazio **sem** troca iminente para outro PK). Durante **(G5)** em andamento, **não** atualizar o snapshot confirmado a partir de leituras transitórias.
+- **Restauração sem display:** `restoreParentItemSnapshot` aplica PK + textos em cache; se faltar display/rótulo, chamar `semantic-lookup` (`kind=item`) e repovoar display, `label_link` e `nome_mae` como o widget já faz.
+- Durante a chamada ao endpoint e enquanto o modal estiver aberto, **P-mãe** fica **suspenso** — ver `_dev/spec_itemClassificacao_criar_nome.md`.
+- Em **Atualizar**, ignorar o cache interno de «última mãe para a qual a sugestão foi **aplicada** com sucesso», usado para evitar pedidos duplicados quando `receita_cod` está vazio (**G1**).
+- Em **Manter Atual**, **não** registrar a nova mãe nesse cache de sugestão aplicada (pois o código **não** foi recalculado para ela).
+- Se a mãe atual for a mesma da última sugestão **aplicada** com sucesso e o código já reflete essa sugestão, **não** repetir o modal (evita dupla confirmação por eventos duplicados do raw-id).
+- Ignorar nova troca de mãe enquanto um pedido de sugestão ou um modal **(G5)** estiver em andamento.
+- O componente `showCoreAttentionModal` deve ser estendido (ou substituído por variante dedicada) para retorno **tri-estado** (`cancel` | `keep` | `update`).
 
 ### (G6) Alteração programática de `parent_item_id` (sem sugestão de filho)
 
@@ -350,7 +383,8 @@ Alinhado ao `spec_itemClassificacao_foreignKeys_lookup.md`.
 5. `OCUPADO_VIGENTE(L) = {1..9}` sem buraco → **(E1)**.
 6. Mãe no último nível → **(E2)**.
 7. `receita_cod` já preenchido + mesma mãe → não sugere automaticamente (**G1**).
-8. `receita_cod` preenchido + troca de mãe **pelo usuário** → modal de atenção → OK recalcula código; Cancelar mantém código (**G5**).
+8. `receita_cod` preenchido + troca de mãe **pelo usuário** → endpoint antes do modal → **Cancelar** reverte mãe e nomenclatura; **Manter Atual** mantém nova mãe e código; **Atualizar** recalcula código e campos derivados (**G5**).
+8b. Endpoint retorna erro (**E1**/**E2**/**E3**) antes do modal → reverte mãe anterior + erro inline; modal **não** abre (**G5**).
 9. Lookup de hierarquia altera mãe com código preenchido → **sem** `confirm` nem sugestão (**G6**).
 10. Paridade servidor + JS (integração).
 11. Payload de sucesso deriva `classificacao.pk` de `derived_level.classificacao_id`, não diretamente de `parent_item_id.classificacao_id`.

@@ -528,6 +528,10 @@ class ItemClassificacaoAdmin(
             f"admin:{self._get_semantic_lookup_url_name()}",
             kwargs={"kind": "nivel", "pk": 0},
         ).replace("/0/", "/{pk}/")
+        context["item_parent_semantic_lookup_url"] = reverse(
+            f"admin:{self._get_semantic_lookup_url_name()}",
+            kwargs={"kind": "item", "pk": 0},
+        ).replace("/0/", "/{pk}/")
         if obj is not None:
             masked_codigo = format_receita_cod_by_vigencia(
                 obj.receita_cod or "",

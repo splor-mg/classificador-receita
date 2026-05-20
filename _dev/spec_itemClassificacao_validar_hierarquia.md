@@ -154,6 +154,25 @@ O utilizador pode ver `level_jump: true` e `intermediate_count: 0`: o primeiro d
 - Pergunta final: **“Deseja continuar e gravar o registo?”** (sem “mesmo assim”).
 - Botões Cancelar / OK; overlay clicável cancela.
 
+#### Modal de confirmação **(G5)** — troca de mãe com código já preenchido
+
+Fluxo normativo detalhado em `_dev/spec_itemClassificacao_criar_filho.md`, seção **(G5)**. Resumo de UX (modo **add**, `change_form.html`):
+
+- **Pré-condição:** o modal **só** abre **após** resposta bem-sucedida de `suggest-child-code-by-parent/`. Se o endpoint falhar (**E1**, **E2**, **E3**, etc.), reverte a mãe anterior e exibe erro inline — **sem** modal.
+- Título: **«Atenção!»** (mesmo padrão visual: ícone ⚠️, classes `core-level-jump-modal-*`).
+- Corpo dinâmico:
+  ```
+  Deseja atualizar o código de natureza de receita atual?
+    - atual: <código mascarado do formulário>
+    - novo:  <receita_cod_display da sugestão>
+  ```
+- Botões: **Cancelar** | **Manter Atual** | **Atualizar**.
+- **Cancelar**, tecla **Escape** e clique no **overlay** são equivalentes: revertem `parent_item_id` à mãe anterior; `receita_cod`, `nivel_id` e `classificacao_id` permanecem inalterados. Se o snapshot tiver PK mas display/rótulo vazios, re-fetch via `semantic-lookup/item/{pk}/` (paridade com o widget).
+- O snapshot da mãe anterior **não** deve ser apagado por PK vazio transitório do popup da lupa (ver **(G5)** em `spec_itemClassificacao_criar_filho.md`).
+- **Manter Atual:** nova mãe permanece; `receita_cod`, `nivel_id` e `classificacao_id` permanecem inalterados.
+- **Atualizar:** nova mãe permanece; aplica sugestão completa (código e campos derivados).
+- Componente: variante tri-botão de `showCoreAttentionModal` ou função dedicada (ex.: `showCoreParentChangeConfirmModal`); distinto do modal de salto de nível ao gravar (`showCoreLevelJumpModal`).
+
 ### 5. Debug temporário (removido na entrega deste spec)
 
 Foi implementado um bloco condicionado a `?debug=1` que acrescentava `intermediate_debug` ao JSON para sondar um PK fixo (ex. 3966). **Foi removido** do `admin.py` após o diagnóstico (classificação do form vs. do pai). Este item documenta o **histórico** para quem ler commits antigos.
@@ -187,7 +206,7 @@ Variáveis de contexto: `item_validate_intermediate_zeros_url`, `item_parent_lev
 | View JSON | `warn_parent_level_jump_view` (`admin.py`) → `warn_parent_level_jump_json_dict` (`parent_item_validation.py`) |
 | Análise intermediários | `analyze_intermediate_items_for_level_jump` |
 | Validação domínio pai/filho | `validate_item_parent_item_rules` |
-| Modal | `showCoreAttentionModal` (base), `showCoreLevelJumpModal` (salto ao gravar), `requestParentLevelJumpConfirmation` em `change_form.html`; troca de mãe com código preenchido usa o mesmo modal — ver **(G5)** em `spec_itemClassificacao_criar_filho.md` |
+| Modal | `showCoreAttentionModal` (base binária), variante tri-botão **(G5)** ou `showCoreParentChangeConfirmModal`, `showCoreLevelJumpModal` (salto ao gravar), `requestParentLevelJumpConfirmation` em `change_form.html`; troca de mãe com código preenchido — ver **(G5)** em `spec_itemClassificacao_criar_filho.md` e seção «Modal de confirmação (G5)» acima |
 | Sentinela registo | `transaction_time_sentinel_for_query` em `apps/core/admin_mixins.py` |
 
 ## Renderização preventiva de `parent_item_id` para itens raiz (`nivel_numero = 1`)

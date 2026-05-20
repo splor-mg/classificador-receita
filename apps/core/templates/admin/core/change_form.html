@@ -317,6 +317,7 @@
     var itemValidateIntermediateZerosUrl = '{{ item_validate_intermediate_zeros_url|default:"" }}';
     var itemSuggestChildCodeUrl = '{{ item_suggest_child_code_url|default:"" }}';
     var itemNivelSemanticLookupUrl = '{{ item_nivel_semantic_lookup_url|default:"" }}';
+    var itemParentSemanticLookupUrl = '{{ item_parent_semantic_lookup_url|default:"" }}';
     var itemClassificacaoDigitLimitLookupUrl = '{{ item_classificacao_digit_limit_lookup_url|default:"" }}';
     var receitaCodDigitLimitCache = {};
     var receitaCodResolvedDigitMask = null;
@@ -900,6 +901,16 @@
         } finally {
           window.setTimeout(function() {
             window.__suppressChildCodeSuggestOnParentChange = false;
+            if (!parentChangeG5InFlight && !parentSuggestInFlight && normalized) {
+              commitConfirmedParentSnapshot(captureCurrentParentSnapshot());
+              enrichParentSnapshotFromSemantic(lastConfirmedParentSnapshot).then(function(enriched) {
+                if (!parentChangeG5InFlight && !parentSuggestInFlight) {
+                  commitConfirmedParentSnapshot(enriched);
+                }
+              });
+            } else if (!parentChangeG5InFlight && !parentSuggestInFlight && !normalized) {
+              lastConfirmedParentSnapshot = emptyParentSnapshot();
+            }
           }, 0);
         }
       }
@@ -1133,6 +1144,7 @@
               } else if (typeof syncParentItemPkForPolling === 'function') {
                 syncParentItemPkForPolling(newParentPk);
               }
+              commitParentSnapshotFromHierarchy(newParentPk, parentNomeMae);
               if (
                 parentNomeMae &&
                 typeof window.applyClassificationNamingAfterParentResolved === 'function'
@@ -1306,7 +1318,274 @@
       }
 
       var parentSuggestInFlight = false;
+      var parentChangeG5InFlight = false;
+      var parentFkTransitionFromPk = '';
+      var lastObservedParentItemPk = '';
       var lastParentSuggestSuccessPk = '';
+      var lastConfirmedParentSnapshot = { pk: '', display: '', labelText: '', labelHref: '', nomeMae: '' };
+
+      function emptyParentSnapshot() {
+        return { pk: '', display: '', labelText: '', labelHref: '', nomeMae: '' };
+      }
+
+      function cloneParentSnapshot(snapshot) {
+        snapshot = snapshot || emptyParentSnapshot();
+        return {
+          pk: snapshot.pk || '',
+          display: snapshot.display || '',
+          labelText: snapshot.labelText || '',
+          labelHref: snapshot.labelHref || '',
+          nomeMae: snapshot.nomeMae || ''
+        };
+      }
+
+      function nomeMaeFromDisplayLabel(labelText) {
+        var text = (labelText || '').trim();
+        if (!text) {
+          return '';
+        }
+        var sep = ' - ';
+        var idx = text.indexOf(sep);
+        if (idx >= 0) {
+          return text.slice(idx + sep.length).trim();
+        }
+        return text;
+      }
+
+      function captureCurrentParentSnapshot() {
+        if (!parentItemIdInput) {
+          return emptyParentSnapshot();
+        }
+        var displayEl = document.getElementById('id_parent_item_id_display');
+        var labelLink = document.getElementById(parentItemIdInput.id + '_label_link');
+        var labelText = labelLink ? (labelLink.textContent || '') : '';
+        return {
+          pk: (parentItemIdInput.value || '').trim(),
+          display: displayEl ? (displayEl.value || '') : '',
+          labelText: labelText,
+          labelHref: labelLink ? (labelLink.href || '') : '',
+          nomeMae: extractNomeMaeFromParentLabel() || nomeMaeFromDisplayLabel(labelText)
+        };
+      }
+
+      function commitConfirmedParentSnapshot(snapshot) {
+        snapshot = snapshot ? cloneParentSnapshot(snapshot) : captureCurrentParentSnapshot();
+        if (!snapshot.pk) {
+          return;
+        }
+        lastConfirmedParentSnapshot = snapshot;
+      }
+
+      function refreshConfirmedParentSnapshot() {
+        if (parentChangeG5InFlight || parentSuggestInFlight) {
+          return;
+        }
+        commitConfirmedParentSnapshot(captureCurrentParentSnapshot());
+      }
+
+      function buildPreviousSnapshotForParentChange(previousPk) {
+        previousPk = (previousPk || '').trim();
+        if (!previousPk) {
+          return cloneParentSnapshot(lastConfirmedParentSnapshot);
+        }
+        if (lastConfirmedParentSnapshot.pk === previousPk) {
+          return cloneParentSnapshot(lastConfirmedParentSnapshot);
+        }
+        return {
+          pk: previousPk,
+          display: '',
+          labelText: '',
+          labelHref: '',
+          nomeMae: ''
+        };
+      }
+
+      function fetchParentSemanticDisplay(pk) {
+        return new Promise(function(resolve) {
+          if (!itemParentSemanticLookupUrl || !pk) {
+            resolve(null);
+            return;
+          }
+          var url = itemParentSemanticLookupUrl.replace('{pk}', encodeURIComponent(String(pk)));
+          fetch(url, { method: 'GET', credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) { resolve(data || null); })
+            .catch(function() { resolve(null); });
+        });
+      }
+
+      function applyParentSemanticPayloadToDom(pk, data) {
+        if (!parentItemIdInput || !pk) {
+          return emptyParentSnapshot();
+        }
+        var displayEl = document.getElementById('id_parent_item_id_display');
+        var labelLink = document.getElementById(parentItemIdInput.id + '_label_link');
+        var labelStrong = document.getElementById('id_parent_item_id_label');
+        var semanticValue = data && typeof data.semantic_value !== 'undefined' ? data.semantic_value : '';
+        var labelText =
+          data && typeof data.display_label !== 'undefined' && data.display_label !== null
+            ? data.display_label
+            : (semanticValue || '');
+        if (displayEl && semanticValue) {
+          displayEl.value = semanticValue;
+        }
+        if (labelLink) {
+          if (data && data.link_url) {
+            labelLink.href = data.link_url;
+          }
+          labelLink.textContent = labelText || '';
+        }
+        if (labelStrong) {
+          labelStrong.style.display = labelText ? '' : 'none';
+        }
+        return {
+          pk: String(pk),
+          display: displayEl ? (displayEl.value || semanticValue || '') : (semanticValue || ''),
+          labelText: labelText || '',
+          labelHref: labelLink && data && data.link_url ? labelLink.href : '',
+          nomeMae: nomeMaeFromDisplayLabel(labelText)
+        };
+      }
+
+      function enrichParentSnapshotFromSemantic(snapshot) {
+        snapshot = cloneParentSnapshot(snapshot);
+        if (!snapshot.pk) {
+          return Promise.resolve(snapshot);
+        }
+        if (snapshot.display && snapshot.labelText) {
+          if (!snapshot.nomeMae) {
+            snapshot.nomeMae = nomeMaeFromDisplayLabel(snapshot.labelText);
+          }
+          return Promise.resolve(snapshot);
+        }
+        return fetchParentSemanticDisplay(snapshot.pk).then(function(data) {
+          if (!data) {
+            return snapshot;
+          }
+          return applyParentSemanticPayloadToDom(snapshot.pk, data);
+        });
+      }
+
+      function applyParentSnapshotToDom(snapshot) {
+        snapshot = cloneParentSnapshot(snapshot);
+        if (!parentItemIdInput) {
+          return snapshot;
+        }
+        var displayEl = document.getElementById('id_parent_item_id_display');
+        var labelLink = document.getElementById(parentItemIdInput.id + '_label_link');
+        var labelStrong = document.getElementById('id_parent_item_id_label');
+        parentItemIdInput.value = snapshot.pk || '';
+        if (displayEl) {
+          displayEl.value = snapshot.display || '';
+        }
+        if (labelLink) {
+          labelLink.textContent = snapshot.labelText || '';
+          if (snapshot.labelHref) {
+            labelLink.href = snapshot.labelHref;
+          }
+        }
+        if (labelStrong) {
+          labelStrong.style.display = snapshot.labelText ? '' : 'none';
+        }
+        if (typeof syncParentItemPkForPolling === 'function') {
+          syncParentItemPkForPolling(snapshot.pk || '');
+        }
+        return snapshot;
+      }
+
+      function restoreParentItemSnapshot(snapshot) {
+        snapshot = cloneParentSnapshot(snapshot || emptyParentSnapshot());
+        if (!parentItemIdInput) {
+          return Promise.resolve(snapshot);
+        }
+        window.__suppressChildCodeSuggestOnParentChange = true;
+        try {
+          applyParentSnapshotToDom(snapshot);
+        } finally {
+          window.setTimeout(function() {
+            window.__suppressChildCodeSuggestOnParentChange = false;
+          }, 0);
+        }
+        return enrichParentSnapshotFromSemantic(snapshot).then(function(enriched) {
+          if (
+            enriched.pk &&
+            (enriched.display !== snapshot.display || enriched.labelText !== snapshot.labelText)
+          ) {
+            window.__suppressChildCodeSuggestOnParentChange = true;
+            try {
+              applyParentSnapshotToDom(enriched);
+            } finally {
+              window.setTimeout(function() {
+                window.__suppressChildCodeSuggestOnParentChange = false;
+              }, 0);
+            }
+          }
+          return enriched;
+        });
+      }
+
+      function commitParentSnapshotFromHierarchy(parentPk, parentNomeMae) {
+        var pk = String(parentPk || '').trim();
+        if (!pk) {
+          return;
+        }
+        var snap = captureCurrentParentSnapshot();
+        snap.pk = pk;
+        if (parentNomeMae) {
+          snap.nomeMae = String(parentNomeMae).trim();
+        }
+        commitConfirmedParentSnapshot(snap);
+        if (!snap.display || !snap.labelText) {
+          enrichParentSnapshotFromSemantic(snap).then(function(enriched) {
+            if (!parentChangeG5InFlight && !parentSuggestInFlight) {
+              commitConfirmedParentSnapshot(enriched);
+            }
+          });
+        }
+      }
+
+      function applyPmaeForParentSnapshot(snapshot) {
+        if (!snapshot || !snapshot.pk) {
+          return;
+        }
+        if (
+          snapshot.nomeMae &&
+          typeof window.applyClassificationNamingAfterParentResolved === 'function'
+        ) {
+          window.applyClassificationNamingAfterParentResolved(snapshot.pk, snapshot.nomeMae);
+          return;
+        }
+        applyNamingAfterParentSuggest(snapshot.pk);
+      }
+
+      function fetchChildCodeSuggestForParent(parentPk) {
+        var vig = getCurrentVigenciaIsoValues();
+        var params = new URLSearchParams({ parent_item_id: parentPk });
+        if (vig.vigenciaInicio && vig.vigenciaFim) {
+          params.set('vigencia_inicio', vig.vigenciaInicio);
+          params.set('vigencia_fim', vig.vigenciaFim);
+        }
+        return fetch(itemSuggestChildCodeUrl + '?' + params.toString(), {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          credentials: 'same-origin'
+        })
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (!data || !data.ok) {
+              return {
+                ok: false,
+                message: (data && data.message) || 'Não foi possível sugerir o código do item filho.'
+              };
+            }
+            return { ok: true, data: data };
+          })
+          .catch(function() {
+            return {
+              ok: false,
+              message: 'Falha ao comunicar com o servidor para sugerir o código do item filho.'
+            };
+          });
+      }
 
       function applyChildCodeSuggestPayload(data, parentPk, parentRow, codRow, vig) {
         window.__suppressHierarchyLookupFromCode = true;
@@ -1380,6 +1659,7 @@
 
         lastParentSuggestSuccessPk = parentPk;
         applyNamingAfterParentSuggest(parentPk);
+        refreshConfirmedParentSnapshot();
       }
 
       function suggestChildCodeFromParent(triggerName, options) {
@@ -1396,7 +1676,7 @@
         if (!parentPk) {
           return Promise.resolve(false);
         }
-        if (parentSuggestInFlight) {
+        if (parentSuggestInFlight || parentChangeG5InFlight) {
           return Promise.resolve(false);
         }
         if (!forceUpdate && parentPk === lastParentSuggestSuccessPk) {
@@ -1409,22 +1689,13 @@
         clearChildCodeSuggestMessages(codRow);
 
         var vig = getCurrentVigenciaIsoValues();
-        var params = new URLSearchParams({ parent_item_id: parentPk });
-        if (vig.vigenciaInicio && vig.vigenciaFim) {
-          params.set('vigencia_inicio', vig.vigenciaInicio);
-          params.set('vigencia_fim', vig.vigenciaFim);
-        }
 
         parentSuggestInFlight = true;
         window.__blockNamingParentChange = true;
-        return fetch(itemSuggestChildCodeUrl + '?' + params.toString(), {
-          headers: { 'X-Requested-With': 'XMLHttpRequest' },
-          credentials: 'same-origin'
-        })
-          .then(function(r) { return r.json(); })
-          .then(function(data) {
-            if (!data || !data.ok) {
-              var msg = (data && data.message) || 'Não foi possível sugerir o código do item filho.';
+        return fetchChildCodeSuggestForParent(parentPk)
+          .then(function(result) {
+            if (!result.ok) {
+              var msg = result.message;
               showChildCodeSuggestError(parentRow, msg);
               if (parentItemIdInput.setCustomValidity) {
                 parentItemIdInput.setCustomValidity(msg);
@@ -1432,15 +1703,8 @@
               return false;
             }
 
-            applyChildCodeSuggestPayload(data, parentPk, parentRow, codRow, vig);
+            applyChildCodeSuggestPayload(result.data, parentPk, parentRow, codRow, vig);
             return true;
-          })
-          .catch(function() {
-            showChildCodeSuggestError(
-              parentRow,
-              'Falha ao comunicar com o servidor para sugerir o código do item filho.'
-            );
-            return false;
           })
           .finally(function() {
             parentSuggestInFlight = false;
@@ -1450,17 +1714,21 @@
 
       var pendingParentChangeConfirmPk = '';
 
-      function onParentItemSelectionChanged() {
+      function onParentItemSelectionChanged(changeContext) {
         if (window.__suppressChildCodeSuggestOnParentChange) {
           return;
         }
         clearParentValidationState();
-        if (parentSuggestInFlight) {
+        if (parentSuggestInFlight || parentChangeG5InFlight) {
           return;
         }
         var parentPk = (parentItemIdInput.value || '').trim();
         if (!parentPk) {
           pendingParentChangeConfirmPk = '';
+          if (!parentChangeG5InFlight && !parentSuggestInFlight) {
+            lastConfirmedParentSnapshot = emptyParentSnapshot();
+            parentFkTransitionFromPk = '';
+          }
           return;
         }
 
@@ -1471,27 +1739,77 @@
         }
 
         if (parentPk === lastParentSuggestSuccessPk) {
+          refreshConfirmedParentSnapshot();
+          return;
+        }
+        if (parentPk === lastConfirmedParentSnapshot.pk) {
           return;
         }
         if (pendingParentChangeConfirmPk === parentPk) {
           return;
         }
-        pendingParentChangeConfirmPk = parentPk;
 
-        showCoreAttentionModal({
-          message:
-            'O código canônico da natureza de receita já está preenchido. ' +
-            'Deseja atualizar o código com base no novo item mãe seleccionado?'
-        }).then(function(ok) {
-          pendingParentChangeConfirmPk = '';
-          if (!ok) {
-            return;
-          }
-          suggestChildCodeFromParent('parent_change', { force: true });
-        });
+        var previousPk = (changeContext && changeContext.previousPk)
+          ? String(changeContext.previousPk).trim()
+          : (lastObservedParentItemPk || '').trim();
+        var previousSnapshot = buildPreviousSnapshotForParentChange(previousPk);
+        if (!previousSnapshot.pk && changeContext && changeContext.snapshot && changeContext.snapshot.pk) {
+          previousSnapshot = cloneParentSnapshot(changeContext.snapshot);
+        }
+        pendingParentChangeConfirmPk = parentPk;
+        parentChangeG5InFlight = true;
+        window.__blockNamingParentChange = true;
+
+        var parentRow = getParentItemFieldRow();
+        var atualCod = (receitaCodInput.value || '').trim();
+        clearChildCodeSuggestMessages(parentRow);
+
+        fetchChildCodeSuggestForParent(parentPk)
+          .then(function(result) {
+            pendingParentChangeConfirmPk = '';
+            if (!result.ok) {
+              return restoreParentItemSnapshot(previousSnapshot).then(function(restored) {
+                showChildCodeSuggestError(parentRow, result.message);
+                if (parentItemIdInput.setCustomValidity) {
+                  parentItemIdInput.setCustomValidity(result.message);
+                }
+                applyPmaeForParentSnapshot(restored);
+                commitConfirmedParentSnapshot(restored);
+                lastObservedParentItemPk = restored.pk || '';
+              });
+            }
+
+            var novoCod = result.data.receita_cod_display || result.data.receita_cod || '';
+            return showCoreParentChangeConfirmModal(atualCod, novoCod).then(function(choice) {
+              if (choice === 'cancel') {
+                return restoreParentItemSnapshot(previousSnapshot).then(function(restored) {
+                  applyPmaeForParentSnapshot(restored);
+                  commitConfirmedParentSnapshot(restored);
+                });
+              }
+              if (choice === 'keep') {
+                applyPmaeForParentSnapshot(captureCurrentParentSnapshot());
+                refreshConfirmedParentSnapshot();
+                return;
+              }
+              if (choice === 'update') {
+                var codRow = getReceitaCodFieldRow(receitaCodInput);
+                clearChildCodeSuggestMessages(codRow);
+                var vig = getCurrentVigenciaIsoValues();
+                applyChildCodeSuggestPayload(result.data, parentPk, parentRow, codRow, vig);
+              }
+            }).then(function() {
+              lastObservedParentItemPk = (parentItemIdInput.value || '').trim();
+            });
+          })
+          .finally(function() {
+            parentChangeG5InFlight = false;
+            window.__blockNamingParentChange = false;
+          });
       }
 
       if (parentItemIdInput) {
+        refreshConfirmedParentSnapshot();
         parentItemIdInput.addEventListener('input', function() {
           clearParentValidationState();
         });
@@ -1508,20 +1826,40 @@
 
         // Raw-id / semantic FK: o popup nem sempre dispara `change` no hidden.
         var lastParentItemPk = (parentItemIdInput.value || '').trim();
+        lastObservedParentItemPk = lastParentItemPk;
         syncParentItemPkForPolling = function(pk) {
           lastParentItemPk = pk || '';
+          lastObservedParentItemPk = pk || '';
         };
         window.setInterval(function() {
           var currentPk = (parentItemIdInput.value || '').trim();
           if (currentPk !== lastParentItemPk) {
-            lastParentItemPk = currentPk;
-            if (currentPk) {
-              onParentItemSelectionChanged();
-            } else {
-              lastParentSuggestSuccessPk = '';
+            var previousPk = lastParentItemPk;
+            if (!currentPk) {
+              if (previousPk && !parentChangeG5InFlight && !parentSuggestInFlight) {
+                parentFkTransitionFromPk = previousPk;
+              }
+              lastParentItemPk = currentPk;
+              if (!previousPk && !parentChangeG5InFlight && !parentSuggestInFlight) {
+                lastParentSuggestSuccessPk = '';
+                lastConfirmedParentSnapshot = emptyParentSnapshot();
+                parentFkTransitionFromPk = '';
+              }
+              return;
             }
+            var effectivePreviousPk = parentFkTransitionFromPk || previousPk;
+            parentFkTransitionFromPk = '';
+            lastParentItemPk = currentPk;
+            onParentItemSelectionChanged({
+              previousPk: effectivePreviousPk,
+              snapshot: buildPreviousSnapshotForParentChange(effectivePreviousPk)
+            });
+          } else if (!parentChangeG5InFlight) {
+            lastObservedParentItemPk = currentPk;
           }
         }, 350);
+
+        window.setTimeout(refreshConfirmedParentSnapshot, 500);
       }
 
       function runClassificationNamingInit() {
@@ -1842,6 +2180,111 @@
           document.body.appendChild(overlay);
           document.addEventListener('keydown', onKey);
           btnOk.focus();
+        });
+      }
+
+      function buildParentChangeConfirmModalBody(body, atualCod, novoCod) {
+        var ask = document.createElement('p');
+        ask.textContent = 'Deseja atualizar o código de natureza de receita atual?';
+        body.appendChild(ask);
+
+        var ul = document.createElement('ul');
+        ul.style.marginTop = '8px';
+        ul.style.marginBottom = '0';
+        ul.style.paddingLeft = '1.25em';
+
+        var liAtual = document.createElement('li');
+        liAtual.textContent = 'atual: ' + (atualCod || '(vazio)');
+        ul.appendChild(liAtual);
+
+        var liNovo = document.createElement('li');
+        liNovo.textContent = 'novo: ' + (novoCod || '(indisponível)');
+        ul.appendChild(liNovo);
+
+        body.appendChild(ul);
+      }
+
+      function showCoreParentChangeConfirmModal(atualCod, novoCod) {
+        return new Promise(function(resolve) {
+          var overlayId = 'core-level-jump-modal-overlay';
+          var existing = document.getElementById(overlayId);
+          if (existing) {
+            existing.remove();
+          }
+          function close(choice) {
+            document.removeEventListener('keydown', onKey);
+            overlay.remove();
+            resolve(choice);
+          }
+          function onKey(ev) {
+            if (ev.key === 'Escape') {
+              close('cancel');
+            }
+          }
+          var overlay = document.createElement('div');
+          overlay.id = overlayId;
+          overlay.className = 'core-level-jump-modal-overlay';
+          overlay.setAttribute('role', 'dialog');
+          overlay.setAttribute('aria-modal', 'true');
+          overlay.setAttribute('aria-labelledby', 'core-level-jump-modal-title');
+
+          var box = document.createElement('div');
+          box.className = 'core-level-jump-modal-box';
+
+          var header = document.createElement('div');
+          header.className = 'core-level-jump-modal-header';
+          var icon = document.createElement('span');
+          icon.className = 'core-level-jump-modal-icon';
+          icon.setAttribute('aria-hidden', 'true');
+          icon.textContent = '⚠️';
+          var h = document.createElement('h3');
+          h.id = 'core-level-jump-modal-title';
+          h.textContent = 'Atenção!';
+          header.appendChild(icon);
+          header.appendChild(h);
+
+          var body = document.createElement('div');
+          body.className = 'core-level-jump-modal-body';
+          buildParentChangeConfirmModalBody(body, atualCod, novoCod);
+
+          var actions = document.createElement('div');
+          actions.className = 'core-level-jump-modal-actions';
+
+          var btnCancel = document.createElement('button');
+          btnCancel.type = 'button';
+          btnCancel.className = 'core-level-jump-btn-cancel';
+          btnCancel.textContent = 'Cancelar';
+
+          var btnKeep = document.createElement('button');
+          btnKeep.type = 'button';
+          btnKeep.className = 'core-level-jump-btn-cancel';
+          btnKeep.textContent = 'Manter Atual';
+
+          var btnUpdate = document.createElement('button');
+          btnUpdate.type = 'button';
+          btnUpdate.className = 'core-level-jump-btn-ok';
+          btnUpdate.textContent = 'Atualizar';
+
+          btnCancel.addEventListener('click', function() { close('cancel'); });
+          btnKeep.addEventListener('click', function() { close('keep'); });
+          btnUpdate.addEventListener('click', function() { close('update'); });
+          overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) {
+              close('cancel');
+            }
+          });
+
+          actions.appendChild(btnCancel);
+          actions.appendChild(btnKeep);
+          actions.appendChild(btnUpdate);
+
+          box.appendChild(header);
+          box.appendChild(body);
+          box.appendChild(actions);
+          overlay.appendChild(box);
+          document.body.appendChild(overlay);
+          document.addEventListener('keydown', onKey);
+          btnUpdate.focus();
         });
       }
 

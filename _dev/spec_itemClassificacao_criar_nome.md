@@ -58,6 +58,26 @@ Disparado quando `parent_item_id` recebe ou altera valor (incluindo após `syncH
 - **P-orq.4.** Troca de item mãe: considera-se **nova** resolução quando `parent.pk` mudar **ou** quando `parent.name` (`nome_mae`) for distinto do último aplicado em **P-mãe** (comparação após *trim* + *case fold*). Nesse caso **P-mãe** **deve** rodar de novo mesmo que o `pk` no input já estivesse atualizado antes do `change`.
 - **P-mãe.2-bis (complemento na troca de mãe).** Se `receita_nome` for **sugestão incompleta** (**G1.2**) do radical da **mãe anterior** (ex.: `Impostos sobre o Patrimônio - ` após trocar para mãe cujo radical abreviado é `ITCD`), **não** preservar o prefixo antigo como se fosse complemento (**A9.2**): substituir por **`(novo_radical_abreviado) + sufixo_canônico`** (**(N5)**) apenas. A preservação de **A9.2** aplica-se somente quando há **complemento** não vazio após o traço **e** o valor **não** for só sugestão incompleta da mãe anterior.
 
+### P-mãe durante confirmação **(G5)** — troca de mãe com código já preenchido
+
+Referência: `_dev/spec_itemClassificacao_criar_filho.md`, seção **(G5)**.
+
+Quando `receita_cod` **não** está vazio e o usuário troca `parent_item_id`, o cliente chama `suggest-child-code-by-parent/` **antes** de exibir o modal de confirmação. Durante esse intervalo e **enquanto o modal estiver aberto**, **P-mãe** fica **suspenso** (ex.: flag `__blockNamingParentChange` ou equivalente), para que `receita_nome` e rádios de radical **não** sejam alterados antes da decisão do usuário.
+
+Após o fechamento do modal (ou após reversão automática por erro do endpoint):
+
+| Ação do usuário | Quando aplicar **P-mãe** | Mãe efetiva | `receita_cod` |
+|-----------------|--------------------------|-------------|---------------|
+| Erro do endpoint (**E1**/**E2**/**E3**) — reversão automática | Re-aplicar para a mãe **anterior** (restaurada) | Anterior | Inalterado |
+| **Cancelar** (incl. Escape / overlay) | Re-aplicar para a mãe **anterior** (restaurada) | Anterior | Inalterado |
+| **Manter Atual** | Aplicar para a **nova** mãe | Nova | Inalterado |
+| **Atualizar** | Via `applyNamingAfterParentSuggest` após aplicar a sugestão (**Passo 6** de `criar_filho.md`) | Nova | Substituído pela sugestão |
+
+- **P-G5.1.** Em **Cancelar** e em reversão por erro do endpoint, **não** alterar `nivel_id` nem `classificacao_id`.
+- **P-G5.2.** Em **Manter Atual**, **não** alterar `nivel_id` nem `classificacao_id`; **P-mãe** **deve** rodar para a nova mãe, pois o item mãe efetivo mudou mesmo sem recálculo do código.
+- **P-G5.3.** O listener genérico de `change` em `parent_item_id` (`classification_naming.js`) **deve** respeitar a suspensão de **P-mãe** durante **(G5)**; a orquestração explícita após o modal **substitui** qualquer efeito adiado desse listener.
+- **P-G5.4.** Na reversão (**Cancelar** ou erro do endpoint), se o snapshot tiver `nome_mae` conhecido, usá-lo em **P-mãe**; senão, obter `nome_mae` do rótulo após o re-fetch semântico do PK (mesmo fluxo do widget de `parent_item_id`).
+
 **Exemplo P-orq / P-mãe.2-bis**  
 - Código `…52.0.0…` → mãe `Impostos sobre o Patrimônio`, `receita_nome` = `Impostos sobre o Patrimônio - ` (ou radical abreviado equivalente + traço).  
 - Código alterado para `…52.0.9…` → mãe `ITCD`; após hierarquia, **P-mãe** com `nome_mae` = `ITCD` do payload → `receita_nome` = `ITCD - ` (ou radical abreviado de `ITCD` + **(N5)**), **não** manter `Impostos sobre o Patrimônio - `.
