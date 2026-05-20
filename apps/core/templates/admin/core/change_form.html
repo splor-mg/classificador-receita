@@ -1004,6 +1004,46 @@
         }
       }
 
+      function validateSelectedNivelMatchesDerivedNumber(derivedLevelNumber) {
+        var nivelPk = (nivelIdInput.value || '').trim();
+        if (!nivelPk || derivedLevelNumber == null || !itemNivelSemanticLookupUrl) {
+          return Promise.resolve({ isValid: true });
+        }
+        var lookupUrl = itemNivelSemanticLookupUrl.replace(
+          '{pk}',
+          encodeURIComponent(nivelPk)
+        );
+        return fetch(lookupUrl, { method: 'GET', credentials: 'same-origin' })
+          .then(function(r) { return r.json(); })
+          .then(function(meta) {
+            var selectedNum =
+              meta && meta.metadata && typeof meta.metadata.nivel_numero !== 'undefined'
+                ? Number(meta.metadata.nivel_numero)
+                : null;
+            if (selectedNum === null || Number.isNaN(selectedNum)) {
+              return { isValid: true };
+            }
+            if (selectedNum !== Number(derivedLevelNumber)) {
+              clearLevelValidationState();
+              var msg =
+                'O nível hierárquico selecionado (nível ' + selectedNum +
+                ') não corresponde ao nível indicado pelo código canônico (nível ' +
+                derivedLevelNumber +
+                '). Ajuste o nível ou o código para que coincidam.';
+              nivelIdInput.setCustomValidity(msg);
+              showHierarchyError(getFieldRow(nivelIdInput), msg);
+              if (nivelIdInput.reportValidity) {
+                nivelIdInput.reportValidity();
+              }
+              return { isValid: false };
+            }
+            return { isValid: true };
+          })
+          .catch(function() {
+            return { isValid: true };
+          });
+      }
+
       function syncHierarchyFromCode(triggerName) {
         if (!isAddMode || !itemHierarchyLookupUrl || !nivelIdInput || !parentItemIdInput) {
           return Promise.resolve({ isValid: true });
@@ -1130,7 +1170,13 @@
               }
             }
 
-            if (data.derived_level && data.derived_level.pk) {
+            var isSubmitTrigger = triggerName === 'submit';
+            var derivedLevelNumber =
+              data.derived_level && typeof data.derived_level.number !== 'undefined'
+                ? Number(data.derived_level.number)
+                : null;
+
+            if (!isSubmitTrigger && data.derived_level && data.derived_level.pk) {
               clearLevelValidationState();
               if (nivelIdInput.value !== data.derived_level.pk) {
                 nivelIdInput.value = data.derived_level.pk;
@@ -1138,18 +1184,10 @@
               }
             }
 
-            // Aplica o estado "raiz somente leitura" no widget de
-            // ``parent_item_id`` de forma síncrona com a derivação do nível,
-            // a partir de ``derived_level.number`` retornado pelo backend.
-            // Isso garante coerência imediata mesmo que o fetch paralelo de
-            // ``syncParentRootStateFromNivel`` ainda esteja em curso. Ver
-            // ``_dev/spec_itemClassificacao_validar_hierarquia.md``,
-            // regra R-root.5.
-            var derivedLevelNumber =
-              data.derived_level && typeof data.derived_level.number !== 'undefined'
-                ? Number(data.derived_level.number)
-                : null;
-            if (derivedLevelNumber !== null) {
+            // Aplica o estado "raiz somente leitura" a partir do nível derivado
+            // (blur/init). No submit o nível do formulário é preservado — ver
+            // ``_dev/spec_itemClassificacao_validar_hierarquia.md`` (R-nivel-submit).
+            if (derivedLevelNumber !== null && !isSubmitTrigger) {
               setParentRootReadonlyState(derivedLevelNumber === 1);
             }
 
@@ -1161,6 +1199,12 @@
               var levelMsg = levelStatus.message || 'Nível hierárquico inválido para o contexto informado.';
               nivelIdInput.setCustomValidity(levelMsg);
               showHierarchyError(levelRow, levelMsg);
+              if (isSubmitTrigger) {
+                if (nivelIdInput.reportValidity) {
+                  nivelIdInput.reportValidity();
+                }
+                return { isValid: false };
+              }
             } else {
               clearLevelValidationState();
               var levelAltHtml =
@@ -1197,6 +1241,7 @@
               }
             }
 
+            function continueHierarchyParentSync() {
             clearParentValidationState();
             var parent = data.parent || {};
             if (!parent.required) {
@@ -1309,6 +1354,20 @@
               parentItemIdInput.reportValidity();
             }
             return { isValid: false };
+            }
+
+            if (isSubmitTrigger && derivedLevelNumber !== null) {
+              return validateSelectedNivelMatchesDerivedNumber(derivedLevelNumber)
+                .then(function(matchResult) {
+                  if (!matchResult.isValid) {
+                    return matchResult;
+                  }
+                  setParentRootReadonlyState(derivedLevelNumber === 1);
+                  return continueHierarchyParentSync();
+                });
+            }
+
+            return continueHierarchyParentSync();
           })
           .catch(function() {
             clearParentValidationState();

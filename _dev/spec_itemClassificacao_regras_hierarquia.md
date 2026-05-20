@@ -16,6 +16,7 @@ Definir a regra de negócio para o campo `parent_item_id` na hierarquia de `item
 - Para item com `nivel_numero = 1`, `parent_item_id` deve ser nulo.
 - O `parent_item_id` deve ter `matriz = true` (não pode ser detalhe).
 - O `parent_item_id` deve estar no nível imediatamente anterior (`nivel_numero_mãe = nivel_numero_filho - 1`).
+- O `nivel_id` informado deve coincidir com o nível inferido do `receita_cod` (último segmento discriminado na máscara da classificação/vigência); divergência → erro em `nivel_id` (admin: **R-nivel-submit** em `spec_itemClassificacao_validar_hierarquia.md`; servidor: `validate_item_nivel_id_receita_cod_derivation`).
 - mãe e filho devem pertencer à mesma `classificacao_id`.
 - Campos com "zeros canônicos" são considerados como não discriminados ("não detalhados").
 - O `parent_item_id` deve referenciar registro com vigência compatível com o filho: **a vigência do mãe deve conter integralmente a vigência do filho** (único eixo temporal exigido para este vínculo na validação de domínio).
@@ -45,6 +46,7 @@ Para um filho no nível `N`:
 - Filho nível 7 com mãe semanticamente correto, mas vigência incompatível -> rejeita.
 - Filho nível 7 com mãe semanticamente correto e vigência compatível -> aceita.
 - Filho cujo mãe não está com registro ativo no sistema hoje, mas cuja vigência ainda contém a vigência do filho -> aceita.
+- Filho com código que deriva nível 7 e `nivel_id` apontando para nível 3 -> rejeita (`nivel_id`).
 
 Ver também: `_dev/spec_itemClassificacao_validar_hierarquia.md` (admin: aviso de salto de nível e listagem de itens intermediários antes do submit); `_dev/spec_itemClassificacao_foreignKeys_lookup.md` (endpoints JSON de lookup de código e hierarquia no admin).
 

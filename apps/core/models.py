@@ -644,9 +644,12 @@ class ItemClassificacao(BitemporalModel):
         nivel = self.nivel_id
 
         from apps.core.parent_item_validation import (
+            validate_item_nivel_id_receita_cod_derivation,
             validate_item_parent_item_rules,
             validate_item_receita_cod_level_consistency,
         )
+
+        validate_item_nivel_id_receita_cod_derivation(self)
 
         # Nível 1: não pode ter pai
         if nivel.nivel_numero == 1 and self.parent_item_id is not None:

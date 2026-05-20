@@ -186,13 +186,33 @@ Foi implementado um bloco condicionado a `?debug=1` que acrescentava `intermedia
 Fluxo no `submit` (modo **add**):
 
 1. `runCodeDigitValidation`
-2. `syncHierarchyFromCode` — lookup de nível/mãe canónica
+2. `syncHierarchyFromCode` — lookup de nível/mãe canónica; **valida** coerência de `nivel_id` com o nível derivado do código (**R-nivel-submit**); **não** substitui o PK de `nivel_id` no submit
 3. `validateIntermediateCanonicalZerosOnSubmit` — fluxo B (bloqueio; sem modal se falhar)
 4. naming
 5. `requestParentLevelJumpConfirmation` — fluxo A (modal só se B passou)
-6. submit nativo → `clean()` / `validate_item_parent_item_rules` (mesma regra B no servidor)
+6. submit nativo → `clean()` / `validate_item_parent_item_rules` / `validate_item_nivel_id_receita_cod_derivation` (mesma regra de coerência código↔nível no servidor)
 
 **Item mãe no lookup por código:** em `syncHierarchyFromCode`, alteração do `receita_cod` (blur/change de classificação/init) **atualiza** `parent_item_id` quando o lookup devolve `parent.found`. Preservar mãe sem substituir aplica-se só no **Salvar** (`submit`): falha do lookup ou PK diferente não limpa nem bloqueia, para permitir mãe escolhida na lupa e validação de salto/zeros. Após erro do Django (`.errornote`), `syncHierarchyFromCode('init')` **não** corre.
+
+### Coerência `nivel_id` × código no submit (**R-nivel-submit**)
+
+| Gatilho | Comportamento de `nivel_id` |
+|---------|------------------------------|
+| `code_blur`, `classificacao_change`, `init` | O cliente **pode** preencher/substituir `nivel_id` pelo PK de `derived_level` devolvido por `lookup-hierarchy-by-code` (autofill). |
+| `submit` | O cliente **não** altera o valor de `nivel_id` escolhido no formulário. Compara `metadata.nivel_numero` do PK selecionado com `derived_level.number` do lookup. Se divergirem, bloqueia o submit com `<ul class="errorlist hierarchy-autofill-error">` no campo **Nível Hierárquico** e mensagem normativa (ver abaixo). |
+| Servidor (`full_clean` / `validate_item_parent_item_rules`) | `validate_item_nivel_id_receita_cod_derivation` em `parent_item_validation.py` aplica a mesma regra; erro em `nivel_id` no POST. |
+
+**Mensagem normativa (exemplo):**
+
+> O nível hierárquico selecionado (nível **S**) não corresponde ao nível indicado pelo código canônico (nível **D**). Ajuste o nível ou o código para que coincidam.
+
+**Inferência de D:** `derive_nivel_numero_from_receita_cod_digits` (mesma lógica de último segmento discriminado que `lookup-hierarchy-by-code`).
+
+**Casos de teste recomendados:**
+
+- **T-nivel-submit.1.** Add: código que deriva nível 7, usuário escolhe NIVEL-3 na lupa → Salvar → erro vermelho em `nivel_id`, registro **não** gravado com nível 7.
+- **T-nivel-submit.2.** Mesmo código com NIVEL-7 selecionado → Salvar prossegue (sujeito aos demais fluxos A/B).
+- **T-nivel-submit.3.** Blur no código após escolha manual de nível incorreto → autofill ainda pode alinhar `nivel_id` ao derivado (fora do submit).
 
 Variáveis de contexto: `item_validate_intermediate_zeros_url`, `item_parent_level_jump_warn_url`.
 
@@ -205,7 +225,7 @@ Variáveis de contexto: `item_validate_intermediate_zeros_url`, `item_parent_lev
 | Rota customizada | `ItemClassificacaoAdmin.get_urls` → `warn-parent-level-jump/` |
 | View JSON | `warn_parent_level_jump_view` (`admin.py`) → `warn_parent_level_jump_json_dict` (`parent_item_validation.py`) |
 | Análise intermediários | `analyze_intermediate_items_for_level_jump` |
-| Validação domínio pai/filho | `validate_item_parent_item_rules` |
+| Validação domínio pai/filho | `validate_item_parent_item_rules`, `validate_item_nivel_id_receita_cod_derivation`, `derive_nivel_numero_from_receita_cod_digits` |
 | Modal | `showCoreAttentionModal` (base binária), variante tri-botão **(G5)** ou `showCoreParentChangeConfirmModal`, `showCoreLevelJumpModal` (salto ao gravar), `requestParentLevelJumpConfirmation` em `change_form.html`; troca de mãe com código preenchido — ver **(G5)** em `spec_itemClassificacao_criar_filho.md`; limpar formulário na add — ver `_dev/spec_itemClassificacao_formulario.md` (**R-clear**) |
 | Sentinela registo | `transaction_time_sentinel_for_query` em `apps/core/admin_mixins.py` |
 
@@ -342,18 +362,20 @@ guarda existente.
   do `receita_cod` (ver R-root.5).
 - **R-root.5.** O estado raiz **não** pode ser usado como guarda de
   early-return em `syncHierarchyFromCode`. A função deve sempre poder
-  recalcular `nivel_id` a partir do novo `receita_cod`; o estado raiz é
+  consultar `derived_level` a partir do novo `receita_cod`; o estado raiz é
   decisão derivada, não condição de entrada. Especificamente:
-    - `syncHierarchyFromCode` aplica `setParentRootReadonlyState(true)`
-      quando `data.derived_level.number === 1`, e
-      `setParentRootReadonlyState(false)` para `number > 1`, **sem
-      consultar** `data.parent` para essa decisão (o `parent.required`
-      do payload continua sendo a fonte normativa do que fazer com o
-      conteúdo do `parent_item_id`, mas não da renderização raiz);
-    - `syncParentRootStateFromNivel` continua existindo para cobrir as
-      mudanças de `nivel_id` que **não** passam pela derivação por
-      código (ex.: seleção manual pela lupa, postback após erro com
-      `nivel_id` pré-preenchido).
+    - Fora do **submit** (`code_blur`, `classificacao_change`, `init`): o cliente
+      **pode** recalcular o PK de `nivel_id` a partir de `derived_level.pk` e
+      aplica `setParentRootReadonlyState(true|false)` conforme
+      `data.derived_level.number`, **sem** consultar `data.parent` para essa
+      renderização.
+    - No **submit** (**R-nivel-submit**): o PK de `nivel_id` **não** é
+      substituído; valida-se coerência com `derived_level.number` e só então
+      aplica-se `setParentRootReadonlyState` com o nível já validado (igual ao
+      derivado).
+    - `syncParentRootStateFromNivel` continua existindo para cobrir mudanças de
+      `nivel_id` que **não** passam pela derivação por código (ex.: seleção
+      manual pela lupa, postback após erro com `nivel_id` pré-preenchido).
 
 ### Casos de teste recomendados
 

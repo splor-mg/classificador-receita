@@ -76,6 +76,124 @@ def split_receita_cod_segments_tolerant(
     return parts
 
 
+def derive_nivel_numero_from_receita_cod_digits(
+    receita_cod: str, mask: List[int]
+) -> tuple[Optional[int], Optional[str]]:
+    """
+    Infere ``nivel_numero`` (1-based) a partir do código canônico e da máscara.
+
+    Retorna ``(nivel_numero, mensagem_erro)``. Em erro de código, ``mensagem_erro``
+    descreve o problema (campo alvo no caller: ``receita_cod``).
+    """
+    c_cod = _receita_cod_digits_only(receita_cod)
+    if not c_cod:
+        return None, None
+
+    total_digits = sum(mask)
+    normalized = c_cod
+    if len(normalized) < total_digits:
+        normalized = normalized.ljust(total_digits, "0")
+    elif len(normalized) > total_digits:
+        extra_tail = normalized[total_digits:]
+        if extra_tail and set(extra_tail) != {"0"}:
+            return (
+                None,
+                (
+                    f"Código canônico com {len(normalized)} dígitos excede o limite "
+                    f"de {total_digits} para a classificação e vigência informadas."
+                ),
+            )
+        normalized = normalized[:total_digits]
+
+    segments: List[str] = []
+    pos = 0
+    for width in mask:
+        segments.append(normalized[pos : pos + width])
+        pos += width
+
+    deepest_index = -1
+    for idx, seg in enumerate(segments):
+        if not _canonical_zero_segment(seg):
+            deepest_index = idx
+    if deepest_index < 0:
+        return (
+            None,
+            "Código canônico inválido: não há nível detalhado diferente de zero.",
+        )
+
+    for idx in range(deepest_index + 1, len(segments)):
+        if not _canonical_zero_segment(segments[idx]):
+            return (
+                None,
+                (
+                    "Código canônico inválido: há detalhamento após o nível derivado. "
+                    "Ajuste os zeros canônicos."
+                ),
+            )
+
+    return deepest_index + 1, None
+
+
+def nivel_id_receita_cod_derivation_error_message(
+    selected_nivel_numero: int, derived_nivel_numero: int
+) -> str:
+    return (
+        f"O nível hierárquico selecionado (nível {selected_nivel_numero}) não corresponde "
+        f"ao nível indicado pelo código canônico (nível {derived_nivel_numero}). "
+        "Ajuste o nível ou o código para que coincidam."
+    )
+
+
+def validate_item_nivel_id_receita_cod_derivation(instance) -> None:
+    """
+    O ``nivel_id`` informado deve coincidir com o nível inferido do ``receita_cod``.
+
+    Ver ``_dev/spec_itemClassificacao_validar_hierarquia.md`` (coerência no submit).
+    """
+    nivel = getattr(instance, "nivel_id", None)
+    if nivel is None:
+        return
+
+    nivel_n = getattr(nivel, "nivel_numero", None)
+    if nivel_n is None:
+        return
+
+    c_cod = (getattr(instance, "receita_cod", None) or "").strip()
+    if not c_cod:
+        return
+
+    child_class = getattr(instance, "classificacao_id", None)
+    class_pk = getattr(child_class, "pk", None) if child_class is not None else None
+    vig_ini = getattr(instance, "data_vigencia_inicio", None)
+    vig_fim = getattr(instance, "data_vigencia_fim", None)
+
+    mask = digit_mask_for_classificacao_vigencia(class_pk, vig_ini, vig_fim)
+    if mask is None:
+        raise ValidationError(
+            {
+                "receita_cod": (
+                    "Não foi possível determinar a máscara de dígitos por nível "
+                    "para esta classificação e vigência; verifique `nivel_hierarquico`."
+                )
+            }
+        )
+
+    derived_n, cod_err = derive_nivel_numero_from_receita_cod_digits(c_cod, mask)
+    if cod_err:
+        raise ValidationError({"receita_cod": cod_err})
+    if derived_n is None:
+        return
+
+    if derived_n != nivel_n:
+        raise ValidationError(
+            {
+                "nivel_id": nivel_id_receita_cod_derivation_error_message(
+                    nivel_n, derived_n
+                )
+            }
+        )
+
+
 def validate_item_receita_cod_level_consistency(instance) -> None:
     """
     Regra mínima para fechar o buraco de validação do nível 1.
@@ -272,6 +390,8 @@ def validate_item_parent_item_rules(instance) -> None:
 
     Levanta `ValidationError` com chaves de campo quando aplicável.
     """
+    validate_item_nivel_id_receita_cod_derivation(instance)
+
     nivel = getattr(instance, "nivel_id", None)
     if nivel is None:
         return
