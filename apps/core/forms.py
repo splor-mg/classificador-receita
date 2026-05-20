@@ -353,7 +353,8 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
                 attrs={
                     "maxlength": "25",
                     "inputmode": "numeric",
-                    "style": "width:26ch;",
+                    # Paridade com FK semânticos (display 37ch em foreign_key_semantic_raw_id.html).
+                    "style": "width:37ch;",
                 }
             ),
             "receita_nome": TextInput(attrs={"style": "width:110em;"}),
