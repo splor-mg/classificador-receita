@@ -208,16 +208,23 @@ Constantes em `apps.core.admin_mixins`: `REGISTRO_ATIVO_VALUE_HISTORICO` → `at
 
 #### Mecânica
 
-1. **Mixin de redirect**: `ChangelistDefaultFilterRedirectMixin` em `apps/core/admin_mixins.py`. O `ModelAdmin` declara um dicionário `changelist_default_filters = {param: value}`; o mixin sobrepõe `changelist_view(request, …)` e, se o request for `GET` com `request.GET` vazio, devolve um `HttpResponseRedirect` para `request.path + "?" + urlencode(changelist_default_filters)`. Em todas as demais situações (com parâmetros, POST, etc.) delega no `super().changelist_view(...)`.
+1. **Mixin de redirect**: `ChangelistDefaultFilterRedirectMixin` em `apps/core/admin_mixins.py`. O `ModelAdmin` declara um dicionário `changelist_default_filters = {param: value}`; o mixin sobrepõe `changelist_view(request, …)` e, se o request for `GET` com `request.GET` vazio **e** não existir flag de sessão «não reaplicar default» para esse model, devolve um `HttpResponseRedirect` para `request.path + "?" + urlencode(changelist_default_filters)`. Em todas as demais situações (com parâmetros, POST, etc.) delega no `super().changelist_view(...)`.
 
 2. **«Todos» explícito (no-op) no filtro**: a entrada padrão «Todos» do `SimpleListFilter` gera, por defeito, uma URL **sem o parâmetro** — o que reentraria no redirect do mixin e devolveria o utilizador ao default. Para preservar a semântica de «Todos», o `RegistroAtivoFilter` (e o `AliasLexicoRegistroAtivoFilter`) **sobrepõe `choices(changelist)`** para gerar a entrada «Todos» com um valor sentinela explícito (`registro_ativo=todos` ou `lista_abreviacoes_registro=todos`), interpretado como **no-op** no `queryset()` do próprio filtro. Assim:
    - Primeira visita → GET vazio → redirect aplica o default.
    - Clique em «Todos» pelo utilizador → GET com `…=todos` → no-op, sem redirect, sem filtro.
    - Clique em qualquer outra opção → GET com valor explícito → filtro normal.
 
-3. **Popups (`raw_id` lookup)**: não são afectados. A URL do popup contém sempre, no mínimo, `?_popup=1&_to_field=…`, logo `request.GET` nunca é vazio e o redirect não dispara. O pré-filtro `popup_default_registro_ativo_ano_corrente` (ver subsecção «Lupa (raw id) na criação de registros») continua a funcionar de forma independente.
+3. **«Limpar todos os filtros» (Django Admin 6+)** — compatível com o botão nativo da sidebar (`Clear all filters` / «Limpar todos os filtros»):
+   - O mixin usa `ChangelistWithClearAllSkipDefault` (`get_changelist`) para acrescentar à URL de limpar o parâmetro interno `__changelist_skip_default=1` (não é filtro de negócio).
+   - Ao receber esse parâmetro: grava em sessão `admin_changelist_skip_default:<app>.<model>`, responde com **302** para a mesma changelist **sem** query string.
+   - No GET vazio seguinte (com a flag activa): **não** reaplica o default; a lista fica **sem** filtros na URL (não se usa `…=todos` como substituto de «limpar tudo»).
+   - A flag de sessão é **removida** quando o utilizador aplica qualquer parâmetro activo (filtros de sidebar, busca `q`, hierarquia de datas, etc.). Paginação (`p`), ordenação (`o`), «mostrar tudo» (`all`), facetas (`_facets`) e popups **não** limpam a flag — o recorte «sem default» mantém-se ao paginar/ordenar a lista já limpa.
+   - Para voltar ao default após ter limpado tudo: nova entrada «fria» com sessão sem flag (ex.: novo browser) ou escolher explicitamente uma opção de filtro na sidebar (ex. «Ativos (Ano Corrente)»).
 
-4. **`preserved_filters`**: como o pré-filtro entra na query string, todo o mecanismo padrão do Django Admin (`_changelist_filters=…` após save/edit) preserva o recorte do utilizador entre navegações.
+4. **Popups (`raw_id` lookup)**: não são afectados. A URL do popup contém sempre, no mínimo, `?_popup=1&_to_field=…`, logo `request.GET` nunca é vazio e o redirect não dispara. O pré-filtro `popup_default_registro_ativo_ano_corrente` (ver subsecção «Lupa (raw id) na criação de registros») continua a funcionar de forma independente.
+
+5. **`preserved_filters`**: como o pré-filtro entra na query string, todo o mecanismo padrão do Django Admin (`_changelist_filters=…` após save/edit) preserva o recorte do utilizador entre navegações.
 
 #### Configuração por `ModelAdmin`
 

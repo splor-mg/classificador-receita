@@ -208,7 +208,8 @@ class AliasLexicoRegistroAtivoFilter(admin.SimpleListFilter):
         """
         Substitui o "Todos" padrão por uma entrada que produz um parâmetro
         explícito (sentinela ``…=todos``), preservando a intenção do utilizador
-        face ao pré-filtro aplicado pelo ``ChangelistDefaultFilterRedirectMixin``.
+        face ao pré-filtro aplicado pelo ``ChangelistDefaultFilterRedirectMixin``
+        (clique em «Todos»; «Limpar todos os filtros» usa fluxo à parte — ver spec).
         """
         yield {
             "selected": self.value() in (None, self.VALUE_TODOS),

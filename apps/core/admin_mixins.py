@@ -17,6 +17,15 @@ from urllib.parse import urlencode
 
 from django.contrib import admin
 from django.contrib import messages
+from django.contrib.admin.options import IS_FACETS_VAR, IS_POPUP_VAR, TO_FIELD_VAR
+from django.contrib.admin.views.main import (
+    ALL_VAR,
+    ERROR_FLAG,
+    ChangeList,
+    ORDER_VAR,
+    PAGE_VAR,
+    SEARCH_VAR,
+)
 from django.db import models as django_models
 from django.db.models import Max
 from django.http import HttpResponseRedirect, JsonResponse
@@ -109,6 +118,23 @@ REGISTRO_ATIVO_VALUE_INATIVO = "inativo"
 # ChangelistDefaultFilterRedirectMixin.
 REGISTRO_ATIVO_VALUE_TODOS = "todos"
 
+# Parâmetro interno (one-shot) para «Limpar todos os filtros» no Django Admin 6+.
+# Não é filtro de negócio; o mixin grava sessão e redirecciona para URL sem query.
+CHANGELIST_SKIP_DEFAULT_PARAM = "__changelist_skip_default"
+CHANGELIST_SKIP_DEFAULT_VALUE = "1"
+CHANGELIST_SKIP_DEFAULT_PASSIVE_PARAMS = frozenset(
+    {
+        CHANGELIST_SKIP_DEFAULT_PARAM,
+        PAGE_VAR,
+        ERROR_FLAG,
+        ORDER_VAR,
+        ALL_VAR,
+        IS_FACETS_VAR,
+        IS_POPUP_VAR,
+        TO_FIELD_VAR,
+    }
+)
+
 
 # Filtro para registros ativos (correntes, históricos e futuros) e inativos em termos de registro/vigência
 class RegistroAtivoFilter(admin.SimpleListFilter):
@@ -180,21 +206,43 @@ class RegistroAtivoFilter(admin.SimpleListFilter):
 
 #---------------------------------------------------------------------------------------------------
 # Pré-filtro padrão na changelist via redirect 302
+class ChangelistWithClearAllSkipDefault(ChangeList):
+    """Acrescenta parâmetro one-shot ao link «Limpar todos os filtros» (Django 6+)."""
+
+    def get_queryset(self, request, exclude_parameters=None):
+        qs = super().get_queryset(request, exclude_parameters=exclude_parameters)
+        if self.clear_all_filters_qs:
+            extra = urlencode(
+                {CHANGELIST_SKIP_DEFAULT_PARAM: CHANGELIST_SKIP_DEFAULT_VALUE}
+            )
+            base = self.clear_all_filters_qs
+            self.clear_all_filters_qs = (
+                f"{base}&{extra}" if "?" in base else f"{base}?{extra}"
+            )
+        return qs
+
+
 class ChangelistDefaultFilterRedirectMixin:
     """
     Pré-filtra a changelist do Django Admin via redirecionamento HTTP 302.
 
     Quando a changelist é acessada sem qualquer parâmetro na query string
-    (GET vazio — primeira visita ou link direto do menu), responde com um
+    (GET vazio — primeira visita ou link directo do menu), responde com um
     redirecionamento para a mesma URL, acrescentando os parâmetros declarados em
     ``changelist_default_filters``. A partir daí, o fluxo segue o padrão
-    do Django Admin: o filtro fica destacado na barra lateral e o usuário
-    pode mudar de opção ou clicar em "Todos".
+    do Django Admin: o filtro fica destacado na barra lateral e o utilizador
+    pode mudar de opção ou clicar em «Todos».
 
-    Para que o "Todos" preserve a intenção do usuário (e não volte para o
-    valor padrão a cada clique), o ``SimpleListFilter`` correspondente deve
-    gerar uma URL com parâmetro **explícito** (sentinela ``…=todos``) em
-    vez de remover o parâmetro — veja o override de ``RegistroAtivoFilter.choices``.
+    «Limpar todos os filtros» (Django Admin 6+): o link inclui
+    ``__changelist_skip_default=1``; o mixin grava flag de sessão por model,
+    redirecciona para a URL sem query e **não** reaplica o default — a lista
+    fica sem filtros na URL (sem sentinela ``…=todos``). A flag é limpa quando
+    o utilizador aplica qualquer parâmetro activo (filtros, busca, etc.);
+    paginação/ordenação só (`p`, `o`, …) não limpam a flag.
+
+    Para que «Todos» no sidebar preserve a intenção do utilizador (e não volte
+    para o valor padrão a cada clique), o ``SimpleListFilter`` correspondente
+    deve gerar URL com sentinela ``…=todos`` — ver ``RegistroAtivoFilter.choices``.
 
     Popups (``?_popup=1``) nunca disparam o redirecionamento, pois ``request.GET``
     já contém pelo menos esse parâmetro.
@@ -209,11 +257,39 @@ class ChangelistDefaultFilterRedirectMixin:
 
     changelist_default_filters: Dict[str, str] = {}
 
+    def get_changelist(self, request, **kwargs):
+        return ChangelistWithClearAllSkipDefault
+
+    def _changelist_skip_default_session_key(self) -> str:
+        opts = self.model._meta
+        return f"admin_changelist_skip_default:{opts.app_label}.{opts.model_name}"
+
+    def _should_reset_changelist_skip_default(self, request) -> bool:
+        """True se o GET trouxer filtros/busca (não só paginação/ordenação)."""
+        return any(
+            k for k in request.GET if k not in CHANGELIST_SKIP_DEFAULT_PASSIVE_PARAMS
+        )
+
     def changelist_view(self, request, extra_context=None):
         defaults = getattr(self, "changelist_default_filters", None) or {}
-        if defaults and request.method == "GET" and not request.GET:
-            return HttpResponseRedirect(f"{request.path}?{urlencode(defaults)}")
-        return super().changelist_view(request, extra_context=extra_context)
+        if not defaults or request.method != "GET":
+            return super().changelist_view(request, extra_context=extra_context)
+
+        session_key = self._changelist_skip_default_session_key()
+
+        if CHANGELIST_SKIP_DEFAULT_PARAM in request.GET:
+            request.session[session_key] = True
+            return HttpResponseRedirect(request.path)
+
+        if request.GET:
+            if self._should_reset_changelist_skip_default(request):
+                request.session.pop(session_key, None)
+            return super().changelist_view(request, extra_context=extra_context)
+
+        if request.session.get(session_key):
+            return super().changelist_view(request, extra_context=extra_context)
+
+        return HttpResponseRedirect(f"{request.path}?{urlencode(defaults)}")
 
 #---------------------------------------------------------------------------------------------------
 # Filtros de sidebar (changelist): id local vs ForeignKey
