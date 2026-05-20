@@ -911,6 +911,9 @@
         if (!isAddMode || !itemHierarchyLookupUrl || !nivelIdInput || !parentItemIdInput) {
           return Promise.resolve({ isValid: true });
         }
+        if (window.__suppressHierarchyLookupFromCode) {
+          return Promise.resolve({ isValid: true });
+        }
         // Importante: NÃO usar ``parentItemIdInput.dataset.readonlyRoot === '1'``
         // como early-return aqui. Esse atributo apenas reflete o estado visual
         // do widget de ``parent_item_id`` em itens raiz; bloquear a função
@@ -1299,39 +1302,52 @@
       var lastParentSuggestSuccessPk = '';
 
       function applyChildCodeSuggestPayload(data, parentPk, parentRow, codRow, vig) {
-        clearParentValidationState();
-        var displayCod = data.receita_cod_display || data.receita_cod || '';
-        if (displayCod) {
-          receitaCodInput.value = displayCod;
-          receitaCodInput.dispatchEvent(new Event('change', { bubbles: true }));
-        }
+        window.__suppressHierarchyLookupFromCode = true;
+        try {
+          clearParentValidationState();
+          var displayCod = data.receita_cod_display || data.receita_cod || '';
+          if (displayCod && receitaCodInput.value !== displayCod) {
+            receitaCodInput.value = displayCod;
+            receitaCodInput.dispatchEvent(new Event('change', { bubbles: true }));
+          }
 
-        var classificacaoInput = document.getElementById('id_classificacao_id');
-        if (classificacaoInput && data.classificacao && data.classificacao.pk) {
-          classificacaoInput.value = data.classificacao.pk;
-          classificacaoInput.dispatchEvent(new Event('change', { bubbles: true }));
-        }
+          if (nivelIdInput && data.derived_level && data.derived_level.pk) {
+            var nivelPk = String(data.derived_level.pk);
+            if (nivelIdInput.value !== nivelPk) {
+              nivelIdInput.value = nivelPk;
+              nivelIdInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+          }
 
-        if (nivelIdInput && data.derived_level && data.derived_level.pk) {
-          nivelIdInput.value = data.derived_level.pk;
-          nivelIdInput.dispatchEvent(new Event('change', { bubbles: true }));
-        }
+          var classificacaoInput = document.getElementById('id_classificacao_id');
+          if (classificacaoInput && data.classificacao && data.classificacao.pk) {
+            var classificacaoPk = String(data.classificacao.pk);
+            if (classificacaoInput.value !== classificacaoPk) {
+              classificacaoInput.value = classificacaoPk;
+              classificacaoInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+          }
 
-        var vigInicioInput = document.querySelector('input[name="data_vigencia_inicio"]');
-        var vigFimInput = document.querySelector('input[name="data_vigencia_fim"]');
-        var vigPayload = data.vigencia || {};
-        var parentVig = data.parent || {};
-        if (!vig.vigenciaInicio) {
-          setAdminDateInput(
-            vigInicioInput,
-            vigPayload.inicio || parentVig.vigencia_inicio || ''
-          );
-        }
-        if (!vig.vigenciaFim) {
-          setAdminDateInput(
-            vigFimInput,
-            vigPayload.fim || parentVig.vigencia_fim || ''
-          );
+          var vigInicioInput = document.querySelector('input[name="data_vigencia_inicio"]');
+          var vigFimInput = document.querySelector('input[name="data_vigencia_fim"]');
+          var vigPayload = data.vigencia || {};
+          var parentVig = data.parent || {};
+          if (!vig.vigenciaInicio) {
+            setAdminDateInput(
+              vigInicioInput,
+              vigPayload.inicio || parentVig.vigencia_inicio || ''
+            );
+          }
+          if (!vig.vigenciaFim) {
+            setAdminDateInput(
+              vigFimInput,
+              vigPayload.fim || parentVig.vigencia_fim || ''
+            );
+          }
+        } finally {
+          window.setTimeout(function() {
+            window.__suppressHierarchyLookupFromCode = false;
+          }, 0);
         }
 
         syncItemIdPreview();

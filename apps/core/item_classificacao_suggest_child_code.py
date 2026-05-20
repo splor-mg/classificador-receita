@@ -16,7 +16,6 @@ from django.urls import reverse
 from apps.core.admin_formatters import format_receita_cod_by_vigencia
 from apps.core.admin_mixins import transaction_time_sentinel_for_query
 from apps.core.item_classificacao_code_lookup import (
-    _classificacao_identity_filters,
     _classificacao_payload_from_obj,
     _parse_admin_get_date,
 )
@@ -237,27 +236,45 @@ def _scan_filhos_nm_plus_one(
 
 
 def _resolve_nivel_for_level(
-    classificacao_obj: Any,
-    classificacao_pk: int,
     level_number: int,
     vig_ini: date,
     vig_fim: date,
     reg_sent: Any,
-) -> Optional[NivelHierarquico]:
+) -> Tuple[Optional[NivelHierarquico], int]:
+    """Resolve ``NivelHierarquico`` por ``nivel_numero`` e vigência, sem restringir à
+    classificação do item mãe (ver `_dev/spec_itemClassificacao_criar_filho.md`).
+
+    Retorna ``(nivel_obj, count)`` em que ``count`` é o total de candidatos
+    ativos/vigentes; quando ``count > 1`` a chamada externa deve emitir aviso
+    não bloqueante de ambiguidade e usar a versão mais recente devolvida.
+    """
     filters: Dict[str, Any] = {
         "nivel_numero": level_number,
         "data_registro_fim": reg_sent,
         "data_vigencia_inicio__lte": vig_fim,
         "data_vigencia_fim__gte": vig_ini,
     }
-    filters.update(
-        _classificacao_identity_filters(classificacao_obj, fallback_pk=classificacao_pk)
-    )
-    return (
-        NivelHierarquico.objects.filter(**filters)
+    qs = (
+        NivelHierarquico.objects.select_related("classificacao_id")
+        .filter(**filters)
         .order_by("-data_vigencia_inicio", "-data_registro_inicio", "-pk")
-        .first()
     )
+    return qs.first(), qs.count()
+
+
+def _resolved_level_and_classificacao_payloads(
+    nivel_obj: NivelHierarquico,
+    level_number: int,
+) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
+    derived_level: Dict[str, Any] = {
+        "number": level_number,
+        "pk": str(nivel_obj.pk),
+        "display_label": f"{nivel_obj.nivel_id} - {nivel_obj.nivel_nome}",
+    }
+    classificacao_payload = _classificacao_payload_from_obj(
+        getattr(nivel_obj, "classificacao_id", None)
+    )
+    return derived_level, classificacao_payload
 
 
 def suggest_child_code_for_parent(
@@ -387,21 +404,32 @@ def suggest_child_code_for_parent(
         {},
     )
 
-    nivel_obj = _resolve_nivel_for_level(
-        classificacao_obj,
-        classificacao_pk,
+    nivel_obj, nivel_count = _resolve_nivel_for_level(
         level_target,
         v1_ini,
         v1_fim,
         reg_sent,
     )
-    derived_level: Dict[str, Any] = {
-        "number": level_target,
-        "pk": str(nivel_obj.pk) if nivel_obj else "",
-        "display_label": (
-            f"{nivel_obj.nivel_id} - {nivel_obj.nivel_nome}" if nivel_obj else ""
-        ),
-    }
+    if not nivel_obj:
+        return {
+            "ok": False,
+            "code": "level_not_resolvable",
+            "message": (
+                f"Não existe nível hierárquico ativo e vigente para o nível {level_target} "
+                "na vigência considerada."
+            ),
+        }
+
+    if nivel_count > 1:
+        notices.append(
+            f"Foram encontradas {nivel_count} versões ativas compatíveis "
+            f"do nível {level_target}; foi selecionada a versão mais recente."
+        )
+
+    derived_level, classificacao_payload = _resolved_level_and_classificacao_payloads(
+        nivel_obj,
+        level_target,
+    )
 
     existing = (
         ItemClassificacao.objects.filter(
@@ -433,8 +461,6 @@ def suggest_child_code_for_parent(
                 f"{existing.receita_cod} - {existing.receita_nome or existing.item_id or ''}"
             ).strip(" -"),
         }
-
-    classificacao_payload = _classificacao_payload_from_obj(classificacao_obj)
 
     return {
         "ok": True,

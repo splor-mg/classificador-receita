@@ -37,7 +37,7 @@ Dado um **item mãe** selecionado na tela de adição, com `receita_cod` do form
 - Tela **add** de `ItemClassificacao` no admin.
 - Gatilho: seleção de `parent_item_id` (lupa ou equivalente) com `receita_cod` **vazio** (*trim* / só pontuação = vazio).
 - Sugestão de `receita_cod` (dígitos canônicos, sem pontos no POST interno; formatação visual conforme máscara no cliente).
-- Pré-preenchimento **recomendado** no mesmo passo: `classificacao_id` (da mãe), `nivel_id` (= **`L`** resolvido), e datas de vigência do formulário **se ainda vazias** (ver **(V3)**).
+- Pré-preenchimento **recomendado** no mesmo passo: `nivel_id` (= **`L`** resolvido), `classificacao_id` (= classificação do `nivel_id` resolvido, não diretamente da mãe), e datas de vigência do formulário **se ainda vazias** (ver **(V3)**).
 - Aviso informativo (não bloqueante na sugestão) quando **`L > NM+1`** — salto de nível em relação à mãe; confirmação no submit conforme `spec_itemClassificacao_validar_hierarquia.md`.
 - Mensagens de erro **(E1)** e aviso não bloqueante se o código sugerido já existir (ver **§ Decisões em aberto — DD3**).
 
@@ -63,6 +63,8 @@ Dado um **item mãe** selecionado na tela de adição, com `receita_cod` do form
 - **(T8) `vigência compatível (gravação)`:** intervalo do **novo** filho deve estar **contido** no da mãe (`spec_itemClassificacao_regras_hierarquia.md`) — validação no `clean()` / domínio, não só na sugestão.
 - **(T9) `valor de segmento`:** texto do segmento na posição do nível; comparado **numericamente** (`int(segmento)`), com saída **zero-padded** à largura `mask[L-1]`.
 - **(T10) `capacidade do nível L`:** `10^w - 1` onde `w = mask[L-1]` (ex.: `w=1` → valores `1..9`; `w=2` → `1..99`). O valor **0** / zero canônico **não** é candidato a detalhamento.
+- **(T11) `classificação do filho`:** `classificacao_id` do formulário de criação deve ser derivado do `NivelHierarquico` resolvido para **`L`** (`nivel_id.classificacao_id`). Se esse nível não for resolvido, a sugestão falha explicitamente (**E3**).
+- **(T12) `resolução do nível alvo`:** o `NivelHierarquico` correspondente ao nível **`L`** sugerido deve ser buscado **apenas** por `nivel_numero = L`, `data_registro_fim` = sentinela e vigência compatível **(T7)** com **(V1)**. **Não** restringir pela `classificacao_id` da mãe. Em caso de múltiplos candidatos, ordenar por `-data_vigencia_inicio, -data_registro_inicio, -pk`, escolher o primeiro e emitir aviso não bloqueante de ambiguidade.
 
 ---
 
@@ -138,6 +140,12 @@ Quando o usuário altera `parent_item_id` e `receita_cod` **não** está vazio (
 Quando `parent_item_id` for alterado **por script** (ex.: resposta de `lookup-hierarchy-by-code` em `change_form.html`), **não** executar **(G1)** nem **(G5)** — evita ciclo código→mãe→código.
 
 **Implementação (cliente):** flag `window.__suppressChildCodeSuggestOnParentChange` ativa em `setParentItemIdProgrammatically(...)`; `onParentItemSelectionChanged` retorna imediatamente se a flag estiver ativa; o polling do raw-id sincroniza o último PK observado para não disparar novamente após a escrita programática.
+
+### (G7) Aplicação programática da sugestão de filho
+
+Ao aplicar a resposta de `suggest-child-code-by-parent/`, o cliente escreve `receita_cod`, `nivel_id`, `classificacao_id` e vigência por script. Durante esse bloco, deve suprimir o lookup inverso `receita_cod` → hierarquia (`syncHierarchyFromCode`) para evitar ciclo sugestão→`change`→lookup inverso→reescrita dos mesmos campos.
+
+**Implementação (cliente):** flag temporária `window.__suppressHierarchyLookupFromCode`; `syncHierarchyFromCode` retorna imediatamente quando a flag está ativa; a flag é desligada ao final da aplicação programática.
 
 ### (G3) Mãe inválida para sugestão
 
@@ -221,7 +229,8 @@ Aceitar se `1 ≤ candidato ≤ capacidade(L)` e `candidato ∉ OCUPADO_VIGENTE`
 
 ### Passo 6 — Pré-preenchimentos
 
-- `classificacao_id` ← mãe; `nivel_id` ← nível `L` na classificação da mãe; vigência **(V3)**.
+- Resolver `nivel_id` para o nível **`L`** por `nivel_numero = L`, `data_registro_fim` = sentinela e vigência compatível **(T7)** com **(V1)** — **sem** filtrar pela `classificacao_id` da mãe (**T12**). Se houver mais de um candidato, escolher o mais recente (`-data_vigencia_inicio, -data_registro_inicio, -pk`) e adicionar aviso de ambiguidade em `notices`. Se não houver nenhum, retornar **(E3)**.
+- `classificacao_id` ← `nivel_id.classificacao_id` (pode diferir da classificação da mãe quando o `NivelHierarquico` selecionado for de outra classificação); vigência **(V3)**.
 - Se `L > NM+1` → aviso em `notices` (salto sugerido).
 - **Não** alterar `matriz` / `receita_nome` (**P-mãe** depois).
 
@@ -286,6 +295,12 @@ Nenhum segmento ≠ zero em **RAMO** para `K ≥ 6`; **FILHOS** vazio → `L = 6
 
 **Mensagem:** não é possível sugerir filho hierárquico — a mãe já ocupa o último nível da máscara.
 
+### (E3) Nível alvo não resolvido
+
+**Condição:** o algoritmo determinou o nível alvo **`L`**, mas não existe `NivelHierarquico` ativo (`data_registro_fim` = sentinela) e com vigência compatível **(T7)** com **(V1)** para `nivel_numero = L` — em **nenhuma** classificação (a busca em **T12** não filtra pela classificação da mãe).
+
+**Mensagem:** informar que não existe nível hierárquico ativo e vigente para o nível sugerido na vigência considerada. Sem esse nível, o formulário não deve preencher `nivel_id` nem `classificacao_id`.
+
 ---
 
 ## Contrato HTTP (proposto)
@@ -309,7 +324,7 @@ Alinhado ao `spec_itemClassificacao_foreignKeys_lookup.md`.
 | `receita_cod` | Dígitos canônicos sugeridos. |
 | `receita_cod_display` | Código formatado para o campo (máscara + vigência). |
 | `derived_level` | `number`, `pk`, `display_label` do nível **L**. |
-| `classificacao` | Payload opcional no estilo do lookup (PK, rótulo de exibição). |
+| `classificacao` | Payload no estilo do lookup (PK, rótulo de exibição) da classificação do `derived_level`, isto é, `derived_level.classificacao_id`. |
 | `strategy` | `expansion` \| `gap` \| `first` — auditoria. |
 | `strategy_origin` | `radical_deep` \| `direct_child` — origem do nível `L` (**Passo 2**). |
 | `level_target` | Número do nível `L` sugerido. |
@@ -320,8 +335,8 @@ Alinhado ao `spec_itemClassificacao_foreignKeys_lookup.md`.
 | Campo | Descrição |
 |-------|-----------|
 | `ok` | `false` |
-| `code` | `capacity_exhausted` \| `parent_last_level` \| `invalid_parent` \| … |
-| `message` | Texto para o usuário (**E1**, **E2**, …). |
+| `code` | `capacity_exhausted` \| `parent_last_level` \| `level_not_resolvable` \| `invalid_parent` \| … |
+| `message` | Texto para o usuário (**E1**, **E2**, **E3**, …). |
 
 ---
 
@@ -338,6 +353,9 @@ Alinhado ao `spec_itemClassificacao_foreignKeys_lookup.md`.
 8. `receita_cod` preenchido + troca de mãe **pelo usuário** → modal de atenção → OK recalcula código; Cancelar mantém código (**G5**).
 9. Lookup de hierarquia altera mãe com código preenchido → **sem** `confirm` nem sugestão (**G6**).
 10. Paridade servidor + JS (integração).
+11. Payload de sucesso deriva `classificacao.pk` de `derived_level.classificacao_id`, não diretamente de `parent_item_id.classificacao_id`.
+12. Nível **`L`** inexistente em qualquer `NivelHierarquico` ativo e vigente compatível com **(V1)** → erro `level_not_resolvable` (**E3**).
+13. Existe `NivelHierarquico` para o nível **`L`** apenas em classificação distinta da mãe (mesma vigência) → sugestão devolve esse nível, `classificacao` do payload reflete essa outra classificação, e `notices` inclui aviso quando há mais de uma versão compatível.
 
 ---
 

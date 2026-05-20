@@ -1,5 +1,7 @@
 """Testes da sugestão de código filho (spec itemClassificacao_criar_filho)."""
 
+from types import SimpleNamespace
+
 from django.test import SimpleTestCase
 
 from apps.core.item_classificacao_suggest_child_code import (
@@ -7,6 +9,7 @@ from apps.core.item_classificacao_suggest_child_code import (
     _choose_segment_value,
     _level_capacity,
     _radical_digits,
+    _resolved_level_and_classificacao_payloads,
     _segment_int_at_level,
 )
 
@@ -71,3 +74,24 @@ class SuggestChildCodeAlgorithmTests(SimpleTestCase):
         parent_parts = ["1", "1", "1", "2", "50", "0", "0", "00", "000"]
         cod = _assemble_child_receita_cod(mask, parent_parts, 8, 2)
         self.assertEqual(cod, "1112500002000")
+
+    def test_classificacao_payload_comes_from_resolved_level(self) -> None:
+        class_from_level = SimpleNamespace(
+            pk=42,
+            classificacao_id="CLASS-NIVEL",
+            classificacao_nome="Classificação do nível",
+        )
+        nivel = SimpleNamespace(
+            pk=7,
+            nivel_id="NIVEL-6",
+            nivel_nome="Sexto nível",
+            classificacao_id=class_from_level,
+        )
+
+        derived_level, classificacao = _resolved_level_and_classificacao_payloads(nivel, 6)
+
+        self.assertEqual(derived_level["pk"], "7")
+        self.assertEqual(derived_level["number"], 6)
+        self.assertIsNotNone(classificacao)
+        self.assertEqual(classificacao["pk"], "42")
+        self.assertEqual(classificacao["classificacao_id"], "CLASS-NIVEL")
