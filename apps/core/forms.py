@@ -346,6 +346,16 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
         model = ItemClassificacao
         fields = "__all__"
         widgets = {
+            # No browser, permitimos comprimento visual maior para edição/colagem
+            # do código mascarado (com pontos). A validação normativa permanece
+            # no backend (8-13 dígitos), em ``clean()``.
+            "receita_cod": TextInput(
+                attrs={
+                    "maxlength": "25",
+                    "inputmode": "numeric",
+                    "style": "width:26ch;",
+                }
+            ),
             "receita_nome": TextInput(attrs={"style": "width:110em;"}),
         }
 

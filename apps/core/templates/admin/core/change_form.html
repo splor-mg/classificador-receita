@@ -381,7 +381,9 @@
     }
 
     function stripReceitaCodFormatting(value) {
-      return String(value || '').replace(/\./g, '').trim();
+      // Normalização canônica para lógica de código: manter apenas dígitos.
+      // Aceita colagem com máscara ou texto misto e extrai somente 0-9.
+      return String(value || '').replace(/\D+/g, '');
     }
 
     function buildItemSemanticId(rawReceitaCod) {
@@ -651,6 +653,11 @@
     var nivelIdInput = document.getElementById('id_nivel_id');
     var parentItemIdInput = document.getElementById('id_parent_item_id');
     if (receitaCodInput) {
+      // O valor visual pode conter pontos da máscara; o limite normativo de
+      // 8-13 dígitos é validado no backend e no pipeline JS (blur/submit).
+      // Aqui garantimos apenas espaço suficiente para edição/colagem da forma
+      // mascarada no browser.
+      receitaCodInput.maxLength = 25;
       var hasAutoAdjustedOnce = false;
       var disableFutureAutoAdjust = false;
 
@@ -1672,11 +1679,26 @@
       }
 
       receitaCodInput.addEventListener('focus', function() {
-        var raw = stripReceitaCodFormatting(receitaCodInput.value);
-        if (raw !== receitaCodInput.value) {
-          receitaCodInput.value = raw;
-        }
+        // Protocolo B1: após a primeira aplicação de máscara, o foco não
+        // desformata o campo. Mantemos a visualização como está.
         syncItemIdPreview();
+      });
+
+      // Não bloqueamos teclas em keydown para evitar falsos positivos por
+      // layout/IME/teclado do SO. A normalização para dígitos é garantida
+      // no fluxo de colagem e na validação/reformatação em blur/submit.
+
+      receitaCodInput.addEventListener('paste', function(event) {
+        // Colagem resiliente: aceita código com ou sem máscara e insere apenas
+        // os dígitos no campo. A canonicidade visual é restabelecida no blur.
+        if (!event || !event.clipboardData) return;
+        var rawText = event.clipboardData.getData('text') || '';
+        var onlyDigits = stripReceitaCodFormatting(rawText);
+        event.preventDefault();
+        var start = receitaCodInput.selectionStart || 0;
+        var end = receitaCodInput.selectionEnd || start;
+        receitaCodInput.setRangeText(onlyDigits, start, end, 'end');
+        receitaCodInput.dispatchEvent(new Event('input', { bubbles: true }));
       });
 
       receitaCodInput.addEventListener('blur', function() {

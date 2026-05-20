@@ -5,9 +5,10 @@ campo `receita_cod` em **telas do Django Admin** de `ItemClassificacao` —
 incluindo a coluna `receita_cod_formatado` da changelist e o
 `semantic_value_resolver` de FKs semânticas que apontam para
 `ItemClassificacao` no formulário (campo "Item Mãe" / `parent_item_id`).
-Trata exclusivamente da camada de **apresentação**; não altera regras de
-validação, de criação, de edição, de lookup JSON consumido pelo cliente, nem
-de sugestão de código filho.
+Também define, em seção própria, o comportamento de **edição do input
+`receita_cod`** no formulário de add/change (protocolo B1: máscara preservada
+após primeira aplicação, saneamento no blur, e aceitação de colagem com/sem
+pontuação).
 
 Tópicos:
 
@@ -15,6 +16,7 @@ Tópicos:
 - [Decisão](#decisão)
 - [Resolução em dois níveis](#resolução-em-dois-níveis)
 - [Justificativa de não usar união contígua](#justificativa-de-não-usar-união-contígua)
+- [Edição do input `receita_cod` no formulário (B1)](#edição-do-input-receita_cod-no-formulário-b1)
 - [Implementação](#implementação)
 - [Casos de teste recomendados](#casos-de-teste-recomendados)
 - [Referências cruzadas](#referências-cruzadas)
@@ -172,6 +174,57 @@ Em resumo:
 
 São políticas **complementares**, não conflitantes. A escolha entre elas em
 cada local do código deve ser explícita.
+
+## Edição do input `receita_cod` no formulário (B1)
+
+Esta seção regula a UX do campo editável `receita_cod` no formulário de
+criação/edição de `ItemClassificacao` (admin add/change), sem alterar o
+contrato de persistência (BD continua a guardar apenas dígitos).
+
+### Escopo e princípios
+
+- **B1.1.** O protocolo de blur permanece como autoridade de normalização:
+  ao perder foco, o campo deve passar por saneamento, validação de tamanho
+  (conforme classificação/vigência resolvidas) e reaplicação da máscara.
+- **B1.2.** Após a máscara ter sido aplicada com sucesso ao menos uma vez na
+  sessão do formulário, o foco subsequente no campo **não** deve remover os
+  pontos (máscara permanece visível durante edição).
+- **B1.3.** Mudanças que alterem a estrutura de máscara (ex. troca de
+  `classificacao_id` com outra `estrutura_codigo`) continuam a disparar
+  atualização e reaplicação da máscara.
+- **B1.4.** Na ausência de máscara resolvível no momento da edição, o campo
+  exibe dígitos; quando a máscara passar a ser resolvível, o blur volta a
+  formatar normalmente.
+
+### Digitação e colagem
+
+- **B1.5. (digitação)** O input deve aceitar apenas dígitos como entrada
+  semântica do usuário. Caracteres de pontuação/separação (`.`, `,`, espaço,
+  `-`, etc.) digitados manualmente são ignorados.
+- **B1.6. (colagem)** O sistema deve aceitar colagem tanto de código mascarado
+  quanto de código sem máscara. O texto colado é primeiro normalizado para
+  **somente dígitos** (strip de pontuação/espaços), e depois submetido ao
+  mesmo pipeline de formatação do blur.
+- **B1.7.** O blur corrige colocação indevida de pontos (pontos em posições
+  inválidas, pontos excedentes, separadores misturados), produzindo a forma
+  canônica da máscara quando houver máscara compatível.
+
+### Persistência e limites
+
+- **B1.8.** O submit continua a enviar `receita_cod` sem pontuação
+  (normalização final para dígitos), preservando o contrato do model/BD.
+- **B1.9.** O limite de comprimento do campo no widget de formulário pode ser
+  maior para acomodar visualização mascarada e operações de colar (com ou sem
+  pontuação), sem alterar a validação normativa de 8–13 dígitos no backend.
+
+### Interações com fluxos existentes
+
+- **B1.10.** O protocolo de sugestão automática de código filho, quando
+  preencher `receita_cod` com valor de apresentação (`receita_cod_display`),
+  deve deixar o campo em estado "máscara já aplicada".
+- **B1.11.** O lookup inverso por código e os demais fluxos dependentes de
+  `receita_cod` continuam a operar sobre a versão normalizada (somente
+  dígitos), independentemente da forma visual no input.
 
 ## Implementação
 
