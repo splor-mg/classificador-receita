@@ -12,6 +12,7 @@ Esta especificação define **como o fluxo deve funcionar** no formulário Djang
 | `_dev/spec_itemClassificacao_foreignKeys_lookup.md` | Lookup inverso (código → mãe/nível); executa **depois** de `receita_cod` preenchido. |
 | `_dev/spec_itemClassificacao_criar_nome.md` | **P-mãe** (nomenclatura) após mãe/código definidos. |
 | `_dev/spec_itemClassificacao_validar_hierarquia.md` | Aviso de salto de nível no **submit** quando `L > NM+1`; intermediários. |
+| `_dev/spec_itemClassificacao_formulario.md` | Largura de `receita_cod`; ação «Limpar formulário» (vassourinha) na add. |
 | `_dev/toDo.md` | Alerta «código já existente» e «próximo dígito» — spec futura; ver **§ Decisões em aberto**. |
 
 ---

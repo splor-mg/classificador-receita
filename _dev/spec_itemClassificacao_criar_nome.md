@@ -89,6 +89,7 @@ Após o fechamento do modal (ou após reversão automática por erro do endpoint
 - **Lista de abreviações:** no modo **Abreviado**, aplicam-se, quando couber, as noções de *segmento*, *abreviação*, *sigla* e *conectivos* de `_dev/spec_lista_abreviacoes.md`. A lista fixa de conectivos (**fonte única**) está em `apps/core/classification_naming_connectives.py` (`LEXICO_CONNECTIVOS_FIXOS`; alias `NOME_CLASSIFICACAO_CONNECTIVOS_FIXOS`). O motor de inferência (`alias_lexico_infer.py`) importa a mesma lista — não duplicar.
 - **Léxico ativo:** `queryset_alias_lexico_ativos()` e `iter_alias_lexico_ativos_ordenados()` em `apps/core/alias_lexico_service.py`.
 - **Resolução do item mãe:** `_dev/spec_itemClassificacao_foreignKeys_lookup.md` (rótulo `receita_cod - receita_nome` para extrair `nome_mae`).
+- **Formulário admin (UI):** `_dev/spec_itemClassificacao_formulario.md` (largura de `receita_cod`; limpar formulário na add).
 
 ---
 

@@ -90,6 +90,40 @@
     border: 1px solid #417690;
     color: #fff;
   }
+  /* Input + ícone limpar: alinhamento vertical como a lupa dos FK semânticos. */
+  .core-receita-cod-inline-wrap {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    vertical-align: middle;
+    gap: 0;
+  }
+  /* Paridade com .related-lookup: ícone SVG solto, sem caixa. */
+  .core-receita-cod-clear-btn {
+    display: inline-block;
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    margin-right: 14px;
+    margin-left: 2px;
+    padding: 0;
+    border: none;
+    background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7%2021-4.3-4.3c-1-1-1-2.5%200-3.4l9.6-9.6c1-1%202.5-1%203.4%200l5.6%205.6c1%201%201%202.5%200%203.4L13%2021'/%3E%3Cpath d='M22%2021H7'/%3E%3Cpath d='m5%2011%209%209'/%3E%3C/svg%3E") center center / 18px 18px no-repeat;
+    box-shadow: none;
+    cursor: pointer;
+    text-decoration: none;
+    text-indent: -9999px;
+    overflow: hidden;
+    vertical-align: middle;
+  }
+  .core-receita-cod-clear-btn:hover {
+    opacity: 0.7;
+  }
+  .core-receita-cod-clear-btn:focus-visible {
+    outline: 2px solid #417690;
+    outline-offset: 2px;
+    opacity: 1;
+  }
 </style>
 {% endif %}
 {% if opts and opts.model_name == 'aliaslexico' %}
@@ -2182,6 +2216,75 @@
           btnOk.focus();
         });
       }
+
+      function isAddFormWithUserData() {
+        if (!isAddMode) {
+          return false;
+        }
+        if (receitaCodInput && stripReceitaCodFormatting(receitaCodInput.value)) {
+          return true;
+        }
+        var receitaNomeEl = document.querySelector(
+          'input[name="receita_nome"], textarea[name="receita_nome"]'
+        );
+        if (receitaNomeEl && (receitaNomeEl.value || '').trim()) {
+          return true;
+        }
+        return false;
+      }
+
+      function reloadAddItemClassificacaoForm() {
+        window.location.assign(window.location.pathname + window.location.search);
+      }
+
+      function requestAddFormClearConfirmation() {
+        if (!isAddFormWithUserData()) {
+          reloadAddItemClassificacaoForm();
+          return;
+        }
+        showCoreAttentionModal({
+          messages: [
+            'Deseja limpar o formulário e recomeçar?',
+            'Os dados já preenchidos serão perdidos.'
+          ],
+          okLabel: 'Limpar'
+        }).then(function(confirmed) {
+          if (confirmed) {
+            reloadAddItemClassificacaoForm();
+          }
+        });
+      }
+
+      function setupAddFormClearControl() {
+        if (!isAddMode || !receitaCodInput) {
+          return;
+        }
+        if (document.getElementById('core-receita-cod-clear-btn')) {
+          return;
+        }
+        var btn = document.createElement('a');
+        btn.href = '#';
+        btn.id = 'core-receita-cod-clear-btn';
+        btn.className = 'core-receita-cod-clear-btn';
+        btn.setAttribute('role', 'button');
+        btn.setAttribute('title', 'Limpar formulário e recomeçar');
+        btn.setAttribute('aria-label', 'Limpar formulário e recomeçar');
+        btn.addEventListener('click', function(ev) {
+          ev.preventDefault();
+          requestAddFormClearConfirmation();
+        });
+        var parent = receitaCodInput.parentNode;
+        if (!parent) {
+          return;
+        }
+        var wrap = document.createElement('span');
+        wrap.className = 'core-receita-cod-inline-wrap';
+        parent.insertBefore(wrap, receitaCodInput);
+        wrap.appendChild(receitaCodInput);
+        wrap.appendChild(btn);
+      }
+
+      setupAddFormClearControl();
 
       function buildParentChangeConfirmModalBody(body, atualCod, novoCod) {
         var ask = document.createElement('p');

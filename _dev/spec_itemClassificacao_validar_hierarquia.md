@@ -206,7 +206,7 @@ Variáveis de contexto: `item_validate_intermediate_zeros_url`, `item_parent_lev
 | View JSON | `warn_parent_level_jump_view` (`admin.py`) → `warn_parent_level_jump_json_dict` (`parent_item_validation.py`) |
 | Análise intermediários | `analyze_intermediate_items_for_level_jump` |
 | Validação domínio pai/filho | `validate_item_parent_item_rules` |
-| Modal | `showCoreAttentionModal` (base binária), variante tri-botão **(G5)** ou `showCoreParentChangeConfirmModal`, `showCoreLevelJumpModal` (salto ao gravar), `requestParentLevelJumpConfirmation` em `change_form.html`; troca de mãe com código preenchido — ver **(G5)** em `spec_itemClassificacao_criar_filho.md` e seção «Modal de confirmação (G5)» acima |
+| Modal | `showCoreAttentionModal` (base binária), variante tri-botão **(G5)** ou `showCoreParentChangeConfirmModal`, `showCoreLevelJumpModal` (salto ao gravar), `requestParentLevelJumpConfirmation` em `change_form.html`; troca de mãe com código preenchido — ver **(G5)** em `spec_itemClassificacao_criar_filho.md`; limpar formulário na add — ver `_dev/spec_itemClassificacao_formulario.md` (**R-clear**) |
 | Sentinela registo | `transaction_time_sentinel_for_query` em `apps/core/admin_mixins.py` |
 
 ## Renderização preventiva de `parent_item_id` para itens raiz (`nivel_numero = 1`)

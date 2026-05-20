@@ -139,6 +139,8 @@ Campos configurados (via `popup_default_registro_ativo_ano_corrente` em `semanti
 | `NivelHierarquico` | `classificacao_id` |
 | `ItemClassificacao` | `classificacao_id`, `parent_item_id` (item mãe), `nivel_id` |
 
+Formulário admin de `ItemClassificacao`: largura de `receita_cod` (**37ch**, paridade com FK semânticos) e ação «Limpar formulário e recomeçar» (ícone vassourinha, somente **add**) — ver `_dev/spec_itemClassificacao_formulario.md`.
+
 Não se aplica à vista de **alterar** nem a FKs sem essa flag (ex.: base legal técnica em classificação/item). O critério «Ano Corrente» é o já definido em `RegistroAtivoFilter` (sobreposição da vigência com o ano civil corrente e registo ativo em tempo de transação), não «vigente apenas no dia de hoje».
 
 ### Migrations
