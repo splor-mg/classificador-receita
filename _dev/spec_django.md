@@ -190,17 +190,19 @@ Esta secção documenta padrões transversais aplicados às telas de **listagem*
 
 Comportamento: ao abrir uma changelist sem qualquer parâmetro na query string (acesso directo via link/menu, primeira visita), o admin responde com um **redirect HTTP 302** para a **mesma URL** com o parâmetro do filtro `Status do Registro` já aplicado. A partir daí, todo o fluxo segue o padrão do Django Admin (filtros laterais, busca, paginação, `preserved_filters` para save/edit, etc.).
 
-Mapa de defaults por changelist:
+Cada changelist define o seu próprio default **explicitamente** no respectivo `ModelAdmin` (`changelist_default_filters`). Não há valor global único: a tabela abaixo é a fonte de verdade do contrato por entidade.
 
-| Changelist (ModelAdmin) | Filtro | Valor default | Significado |
-|--------------------------|--------|----------------|--------------|
-| `SerieClassificacao` | `RegistroAtivoFilter` | `registro_ativo=ativo_historico` | «Ativos (Histórico)»: registo activo em transaction time, qualquer vigência |
-| `Classificacao` | `RegistroAtivoFilter` | `registro_ativo=ativo_historico` | idem |
-| `NivelHierarquico` | `RegistroAtivoFilter` | `registro_ativo=ativo_historico` | idem |
-| `ItemClassificacao` | `RegistroAtivoFilter` | `registro_ativo=ativo_historico` | idem |
-| `VersaoClassificacao` | `RegistroAtivoFilter` | `registro_ativo=ativo_historico` | idem |
-| `VarianteClassificacao` | `RegistroAtivoFilter` | `registro_ativo=ativo_historico` | idem |
-| `AliasLexico` | `AliasLexicoRegistroAtivoFilter` | `lista_abreviacoes_registro=ativo` | «Registro ativo»: `data_registro_fim` = sentinela (não há vigência orçamentária neste modelo, logo não existe «Histórico» distinto) |
+| Changelist (ModelAdmin) | Filtro | Valor default (query string) | Rótulo na sidebar | Significado |
+|--------------------------|--------|------------------------------|-------------------|-------------|
+| `SerieClassificacao` | `RegistroAtivoFilter` | `registro_ativo=ativo_historico` | Ativos (Histórico) | Registo activo em transaction time, qualquer vigência |
+| `Classificacao` | `RegistroAtivoFilter` | `registro_ativo=ativo_historico` | Ativos (Histórico) | idem |
+| `NivelHierarquico` | `RegistroAtivoFilter` | `registro_ativo=ativo_corrente` | Ativos (Ano Corrente) | Registo activo e vigência com sobreposição ao ano civil corrente |
+| `ItemClassificacao` | `RegistroAtivoFilter` | `registro_ativo=ativo_corrente` | Ativos (Ano Corrente) | idem |
+| `VersaoClassificacao` | `RegistroAtivoFilter` | `registro_ativo=ativo_corrente` | Ativos (Ano Corrente) | idem |
+| `VarianteClassificacao` | `RegistroAtivoFilter` | `registro_ativo=ativo_historico` | Ativos (Histórico) | Registo activo em transaction time, qualquer vigência |
+| `AliasLexico` | `AliasLexicoRegistroAtivoFilter` | `lista_abreviacoes_registro=ativo` | Registro ativo | `data_registro_fim` = sentinela (sem vigência orçamentária; default próprio desta changelist) |
+
+Constantes em `apps.core.admin_mixins`: `REGISTRO_ATIVO_VALUE_HISTORICO` → `ativo_historico`; `REGISTRO_ATIVO_VALUE_ANO_CORRENTE` → `ativo_corrente` (não usar `ativo_ano_corrente` na URL).
 
 #### Mecânica
 
@@ -223,18 +225,18 @@ Cada `ModelAdmin` que queira pré-filtrar a sua changelist deve:
 2. Declarar `changelist_default_filters = { <param>: <value> }` apontando para o `SimpleListFilter` desejado.
 3. Garantir que esse `SimpleListFilter` tem o tratamento de «Todos» como no-op (override de `choices()` + branch no `queryset()`).
 
-Exemplo:
+Exemplos (um default por `ModelAdmin`):
 
 ```python
-class SerieClassificacaoAdmin(
-    ChangelistDefaultFilterRedirectMixin,
-    # … demais mixins …
-    admin.ModelAdmin,
-):
-    changelist_default_filters = {
-        REGISTRO_ATIVO_QUERY_PARAM: REGISTRO_ATIVO_VALUE_HISTORICO,
-    }
-    list_filter = [RegistroAtivoFilter, …]
+# SerieClassificacao, Classificacao, VarianteClassificacao → Ativos (Histórico)
+changelist_default_filters = {
+    REGISTRO_ATIVO_QUERY_PARAM: REGISTRO_ATIVO_VALUE_HISTORICO,
+}
+
+# NivelHierarquico, ItemClassificacao, VersaoClassificacao → Ativos (Ano Corrente)
+changelist_default_filters = {
+    REGISTRO_ATIVO_QUERY_PARAM: REGISTRO_ATIVO_VALUE_ANO_CORRENTE,
+}
 ```
 
 #### Notas de extensão

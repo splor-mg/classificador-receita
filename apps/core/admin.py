@@ -72,6 +72,7 @@ from apps.core.admin_filters import (
 from apps.core.admin_mixins import (
     RegistroAtivoFilter,
     REGISTRO_ATIVO_QUERY_PARAM,
+    REGISTRO_ATIVO_VALUE_ANO_CORRENTE,
     REGISTRO_ATIVO_VALUE_HISTORICO,
     ChangelistDefaultFilterRedirectMixin,
     CoreChangeSaveFormSubmitMixin,
@@ -280,7 +281,7 @@ class NivelHierarquicoAdmin(
         'data_registro_inicio',
     ]
     changelist_default_filters = {
-        REGISTRO_ATIVO_QUERY_PARAM: REGISTRO_ATIVO_VALUE_HISTORICO,
+        REGISTRO_ATIVO_QUERY_PARAM: REGISTRO_ATIVO_VALUE_ANO_CORRENTE,
     }
     search_fields = ['nivel_id', 'nivel_nome', 'nivel_descricao']
     readonly_fields = ['data_registro_inicio_fmt', 'data_registro_fim_fmt']
@@ -356,7 +357,7 @@ class ItemClassificacaoAdmin(
         'data_registro_inicio',
     ]
     changelist_default_filters = {
-        REGISTRO_ATIVO_QUERY_PARAM: REGISTRO_ATIVO_VALUE_HISTORICO,
+        REGISTRO_ATIVO_QUERY_PARAM: REGISTRO_ATIVO_VALUE_ANO_CORRENTE,
     }
     search_fields = ['receita_cod', 'receita_nome', 'item_id']
     readonly_fields = ['data_registro_inicio_fmt', 'data_registro_fim_fmt']
@@ -791,7 +792,7 @@ class VersaoClassificacaoAdmin(
     list_display = ['versao_id', 'versao_numero', 'versao_nome', 'classificacao', 'data_lancamento', 'data_vigencia_inicio']
     list_filter = [RegistroAtivoFilter, VersaoIdFilter, 'classificacao', 'data_lancamento', 'data_vigencia_inicio']
     changelist_default_filters = {
-        REGISTRO_ATIVO_QUERY_PARAM: REGISTRO_ATIVO_VALUE_HISTORICO,
+        REGISTRO_ATIVO_QUERY_PARAM: REGISTRO_ATIVO_VALUE_ANO_CORRENTE,
     }
     search_fields = ['versao_id', 'versao_numero', 'versao_nome', 'versao_descricao']
     readonly_fields = ['data_registro_inicio', 'data_registro_fim']
