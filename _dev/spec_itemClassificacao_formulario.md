@@ -8,7 +8,7 @@ Esta especificação define regras de **apresentação** e **ações de UI** no 
 
 | Spec | Relação |
 |------|---------|
-| `_dev/spec_itemClassificacao_criar_filho.md` | Sugestão de código e modal **(G5)** na troca de item mãe. |
+| `_dev/spec_itemClassificacao_criar_filho.md` | Sugestão de código; modal **(G5)** na troca de item mãe; atalho **«+ Criar Código Filho»** na change (**v2** — estilo verde, `isDirty`/rebaseline, aviso único no clique). |
 | `_dev/spec_itemClassificacao_criar_nome.md` | Protocolo **P-mãe** e rádios de radical (somente add). |
 | `_dev/spec_itemClassificacao_foreignKeys_lookup.md` | Lookup por `receita_cod` e FKs semânticas. |
 | `_dev/spec_itemClassificacao_validar_hierarquia.md` | Modais de salto de nível no submit; item raiz. |
@@ -124,3 +124,11 @@ Ao confirmar (ou quando não há confirmação):
 4. Entrar na add a partir de changelist filtrada → após limpar, **Voltar/Cancelar** do admin ainda retorna à lista com filtros coerentes.
 5. Change view → **não** exibe vassourinha.
 6. `receita_cod` na add e na change com largura alinhada aos FK (`37ch`).
+
+## Testes manuais recomendados (change — atalho filho)
+
+Ver checklist completo em `_dev/spec_itemClassificacao_criar_filho.md` (secção v2). Resumo:
+
+1. Change **sem** editar → «+ Criar Código Filho» verde no estado normal; clique **sem** `confirm` de alterações não guardadas (Matriz).
+2. Editar um campo → clique → **um** `confirm` de alterações não guardadas; depois modal «Continuar».
+3. Detalhe → modal de bloqueio; Matriz inactiva ou sem sugestão → botão desactivado.

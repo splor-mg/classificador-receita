@@ -44,7 +44,7 @@ Dado um **item mãe** selecionado na tela de adição, com `receita_cod` do form
 
 ### Fora de escopo (v1)
 
-- Alteração (`change`) de registro existente.
+- Alteração (`change`) de registro existente **como gatilho de sugestão** (a sugestão automática na change continua fora; ver **v2** abaixo para o **atalho** change → add).
 - Geração de `item_id`, `receita_nome`, `matriz`, bases legais.
 - Persistência (`save`); apenas pré-preenchimento e validação de UI.
 - Protocolo completo «código já existente → link e próximo dígito» (item separado no `_dev/toDo.md`).
@@ -103,9 +103,11 @@ Conjunto usado na regra **(B)** (nível a nível, profundidade máxima):
 
 *Nota:* a máscara **(T3)** continua sendo resolvida pela classificação/vigência da **mãe**; códigos de outras classificações que compartilhem estrutura de níveis compatível são segmentados com essa máscara. Se no futuro houver máscaras incompatíveis entre classificações com o mesmo radical, documentar exceção — fora do v1.
 
-### (V3) Pré-preenchimento de vigência no formulário
+### (V3) Pré-preenchimento de vigência no formulário (fluxo normal add / lupa)
 
 Se, no momento da sugestão, `data_vigencia_inicio` e/ou `data_vigencia_fim` do formulário estiverem vazios, o cliente **pode** copiar as datas da mãe para esses campos (comportamento adotado nesta spec por aderência ao `_dev/toDo.md`). Isso não dispensa **(T8)** no servidor.
+
+**Nota:** o atalho **change → add** (**v2**, **(V3′)**) usa regras **distintas** e **prioritárias** sobre **(V3)** para as datas iniciais do filho; ver secção «Atalho desde change (v2)».
 
 ---
 
@@ -416,6 +418,135 @@ Registradas de forma explícita; o restante do documento já adota o comportamen
 
 ---
 
+## Atalho desde change (v2) — «+ Criar Código Filho»
+
+Esta secção define o atalho na tela de **edição/visualização** (`change`) de `ItemClassificacao` que abre a **add** com o registo actual como **item mãe** e dispara o mesmo protocolo de sugestão de código (**G1**, endpoint `suggest-child-code-by-parent/`, `applyChildCodeSuggestPayload` no cliente). **Não** duplica o algoritmo de código; apenas navega e inicializa o formulário de criação.
+
+**Implementação:** `apps/core/item_classificacao_child_from_change.py`, `ItemClassificacaoAdmin.get_changeform_initial_data` / `render_change_form`, bloco `object-tools` e JavaScript em `apps/core/templates/admin/core/change_form.html`.
+
+**Specs relacionadas:** `_dev/spec_itemClassificacao_regras_hierarquia.md` (mãe `matriz = true`); `_dev/spec_itemClassificacao_formulario.md` (`_changelist_filters` na URL de retorno).
+
+### Escopo (v2)
+
+- Botão **«+ Criar Código Filho»** na **change** de `ItemClassificacao` (não popup).
+- Modal de **confirmação** antes de navegar para a add (registo **activo** e **matriz**).
+- Modal de **bloqueio** (somente informativo) quando o registo actual é **Detalhe** (`matriz = false`).
+- URL da add com `parent_item_id=<pk>` e `from_change_parent=1`.
+- Pré-preenchimento na add: mãe, vigência **(V3′)**, display semântico da mãe, sugestão **(G1)** com `force`.
+
+### Fora de escopo (v2)
+
+- Sugestão de código **na própria change** (sem navegar para a add).
+- Alterar `matriz` automaticamente; o utilizador deve editar o registo actual.
+- **(G5)** na entrada pelo atalho (ver abaixo).
+
+### Posição do botão (UI)
+
+- Barra **`object-tools`** do Django Admin, **à esquerda** do botão **«Histórico»** (topo direito da change), classe `core-create-child-code-link`, texto **`+ Criar Código Filho`**.
+- **Aparência:** fundo verde (`#2e7d32`), texto e símbolo «+» brancos, **sempre** visíveis (estado normal — não apenas `:hover`). Hover/focus ligeiramente mais escuro (`#1b5e20`). CSS com especificidade sobre o tema do admin (`ul.object-tools a.core-create-child-code-link`).
+- Não usar a `submit-row` inferior (reservada a Bloquear / Excluir / Salvar).
+
+### Estados do botão
+
+| Estado do registo actual | Botão | Ao clicar |
+|--------------------------|-------|-----------|
+| **Activo** (`data_registro_fim` = sentinela) + **Matriz** + pode sugerir filho | Activado (verde) | Modal confirmação → add |
+| **Activo** + **Detalhe** | Activado (verde) | Modal **bloqueio** — só «Entendi»; **sem** navegação |
+| **Inactivo** | Desactivado (`aria-disabled`, opacidade) | Nada |
+| Último nível hierárquico / impossível sugerir (**E2** e afins) | Desactivado + `title` explicativo | Nada |
+| Sem permissão `add` em `ItemClassificacao` | Oculto | — |
+
+A verificação de «pode sugerir filho» no servidor reutiliza `suggest_child_code_for_parent` (pré-visualização) ou critério equivalente (**último nível** da máscara).
+
+### Modal de bloqueio — Detalhe
+
+Quando `matriz = false` e o utilizador clica no botão:
+
+1. Exibir modal (família `showCoreAttentionModal`, ícone ⚠️, título «Atenção!»).
+2. Corpo (sentido obrigatório): para registar um **item filho** a partir deste código, o registo actual deve estar como **Matriz**; altere «Matriz / Detalhe» neste registo antes de criar um código filho.
+3. Um botão **«Entendi»** (fecha o modal).
+4. **Proibido** navegar para a add.
+
+### Modal de confirmação — Matriz activa
+
+1. Se houver **alterações não guardadas feitas pelo utilizador** na change, o cliente **deve** aplicar o aviso de `setupUnsavedChangesWarning` (`window.__coreConfirmUnsavedIfDirty`) **antes** do modal de confirmação. **Um único canal** no clique do botão (handler dedicado); o botão **não** está em `guardedLinks` (evita `confirm` duplicado).
+2. Modal (título **«Criar Código Filho»** — «Código» com C maiúsculo):
+   - «Você será encaminhado para a tela de criação de novo Item (Código) de Classificação.»
+   - «O código atual (**&lt;código canónico&gt;**) será o assumido como código mãe do novo código a ser criado.» — **&lt;código canónico&gt;** = valor **dinâmico** do registo actual (máscara de apresentação): preferir o campo `receita_cod` visível no formulário; fallback `data-receita-cod-display` no botão (servidor: `format_receita_cod_by_vigencia` do objeto da change).
+   - «Deseja continuar?»
+3. Botões: **Cancelar** | **Continuar**.
+4. **Continuar** → `window.location` para a URL da add (secção URL).
+
+### Alterações não guardadas (`isDirty`) na change
+
+O mecanismo global `setupUnsavedChangesWarning` mantém-se para Cancelar / Bloquear / Excluir. Para **«Criar Código Filho»**, reutiliza-se `__coreConfirmUnsavedIfDirty` no handler do botão.
+
+**Falso positivo a evitar:** na carga da change de `ItemClassificacao`, `runCodeDigitValidation('init')` (máscara de `receita_cod`), polling de FKs e init na add podem alterar o DOM **sem** acção do utilizador e marcar `isDirty` incorrectamente.
+
+**Mecânica (cliente):**
+
+1. Após `runCodeDigitValidation('init')` (e `syncHierarchyFromCode('init')` na add, quando aplicável), chamar `window.__coreRebaselineFormDirtySnapshot()` — redefine `initialState` e `originalState` de cada campo visível para o valor **actual** pós-init.
+2. Repetir o rebaseline com `setTimeout` (~750 ms) para absorver polling de raw-id (350 ms) e `refreshConfirmedParentSnapshot` (~500 ms).
+3. Durante escrita programática pontual em `receita_cod` (formatação de máscara), usar `window.__coreSuppressDirtyRecompute` para não disparar `recomputeDirty` intermédio.
+4. Após `initChildCodeFromChangeParent` na add, novo rebaseline.
+
+Com isso, abrir a change **sem editar** e clicar em «Criar Código Filho» **não** exibe o `confirm` de alterações não guardadas; editar um campo e clicar **sim** exibe o aviso antes do modal de navegação.
+
+### URL da add
+
+```
+/admin/core/itemclassificacao/add/?parent_item_id=<pk>&from_change_parent=1
+```
+
+- Preservar `_changelist_filters` da request actual quando existir (retorno coerente na add — `spec_itemClassificacao_formulario.md`).
+- `from_change_parent=1` é parâmetro **interno** de fluxo (não é filtro de negócio).
+
+### (V3′) Vigência do filho na entrada pelo atalho
+
+Ao abrir a add via atalho, `get_changeform_initial_data` **deve** preencher `data_vigencia_inicio` e `data_vigencia_fim` do filho a partir da vigência do **item mãe** (registo da change), com comparações em **data civil** (fuso local do Django para datetimes aware).
+
+Constante de implementação: `vigencia_filho_from_item_mae(parent)` em `item_classificacao_child_from_change.py`.
+
+| Regra | Condição (mãe) | `data_vigencia_inicio` do filho | `data_vigencia_fim` do filho |
+|-------|----------------|----------------------------------|------------------------------|
+| **Fim** | sempre | — | **sempre** = `data_vigencia_fim` da mãe |
+| **Início A** | `inicio_mae > 01/01/<ano civil corrente>` | `inicio_mae` | (regra Fim) |
+| **Início B** | `fim_mae <= 01/01/<ano civil corrente>` (inclui `fim_mae = 01/01/<ano corrente>`) | `inicio_mae` | (regra Fim) |
+| **Início C** | `inicio_mae <= 01/01/<ano corrente>` **e** `fim_mae > 01/01/<ano corrente>` | `01/01/<ano corrente>` | (regra Fim) |
+
+Ordem de avaliação no código: **A** → **B** → **C** (mutuamente exclusivos na prática).
+
+O cliente na add **não deve** sobrescrever essas datas no `applyChildCodeSuggestPayload` quando os campos já estiverem preenchidos (mesmo critério de «só preencher vigência se vazio» em **(V3)**). O endpoint `suggest-child-code-by-parent/` **deve** receber na query as datas já presentes no formulário (**V1** na sugestão).
+
+### Inicialização na add (após redirect)
+
+Ordem recomendada no cliente (`initChildCodeFromChangeParent`):
+
+1. Ler `parent_item_id` já no hidden (initial do servidor).
+2. `enrichParentSnapshotFromSemantic` + `applyParentSnapshotToDom` (paridade com a lupa).
+3. `suggestChildCodeFromParent('from_change_parent', { force: true })` — **(G1)** com `receita_cod` vazio.
+4. Durante o bloco, `__suppressChildCodeSuggestOnParentChange = true` para não disparar **(G5)**.
+
+### Relação com **(G5)**
+
+**(G5) não se aplica** na chegada pelo atalho: na add, `receita_cod` inicia vazio e a mãe é escrita programaticamente sem troca manual.
+
+**(G5) aplica-se apenas** se, **depois** na add, o utilizador **trocar** o item mãe (lupa) **com** `receita_cod` já preenchido — fluxo já especificado em **(G5)**.
+
+### Casos de teste (v2)
+
+1. Change activa + matriz → Confirmar → add com mãe, vigência **(V3′)** e código sugerido.
+2. Change Detalhe → modal bloqueio, permanece na change.
+3. Change inactiva → botão desactivado.
+4. Mãe com `fim_mae < 01/01/ano` → `inicio_filho = inicio_mae`; `fim_filho = fim_mae`.
+5. Mãe com `fim_mae = 01/01/ano` → `inicio_filho = inicio_mae` (regra B).
+6. Mãe com vigência sobreposta ao ano corrente → `inicio_filho = 01/01/ano`.
+7. `inicio_mae` no futuro → `inicio_filho = inicio_mae`.
+8. Change com alterações não guardadas → aviso antes do modal de confirmação.
+9. Change **sem** editar, após carga completa (rebaseline) → **sem** aviso de alterações não guardadas ao clicar no botão; botão verde no estado normal (não só hover).
+
+---
+
 ## Manutenção
 
-- Alterações de contrato JSON ou de critérios de vigência devem manter este arquivo alinhado ao módulo de lookup/sugestão e ao JavaScript do `change_form`.
+- Alterações de contrato JSON, critérios de vigência ou do atalho v2 devem manter este arquivo alinhado a `item_classificacao_child_from_change.py`, ao módulo de lookup/sugestão e ao JavaScript do `change_form`.

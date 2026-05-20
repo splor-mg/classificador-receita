@@ -37,6 +37,11 @@ from apps.core.item_classificacao_code_lookup import (
     lookup_hierarchy_by_code_response_data,
     lookup_parent_by_code_response_data,
 )
+from apps.core.item_classificacao_child_from_change import (
+    apply_change_parent_initial_data,
+    build_create_child_code_button_context,
+    is_add_from_change_parent_request,
+)
 from apps.core.item_classificacao_suggest_child_code import (
     suggest_child_code_by_parent_response_data,
 )
@@ -541,6 +546,8 @@ class ItemClassificacaoAdmin(
             )
             nome = obj.receita_nome or obj.item_id or ""
             context["subtitle"] = f"{masked_codigo} - {nome}".strip(" -")
+            if change:
+                context.update(build_create_child_code_button_context(request, obj))
         else:
             context["classification_naming_messages"] = classification_naming_messages_dict()
             context["item_abbreviated_radical_lookup_url"] = reverse(
@@ -549,7 +556,12 @@ class ItemClassificacaoAdmin(
             context["item_suggest_child_code_url"] = reverse(
                 f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_suggest_child_code_by_parent"
             )
+            context["item_init_child_from_change"] = is_add_from_change_parent_request(request)
         return super().render_change_form(request, context, add, change, form_url, obj)
+
+    def get_changeform_initial_data(self, request):
+        initial = super().get_changeform_initial_data(request)
+        return apply_change_parent_initial_data(request, initial)
 
     def lookup_abbreviated_radical_view(self, request):
         nome_mae = (request.GET.get("nome_mae") or "").strip()

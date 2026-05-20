@@ -1,9 +1,48 @@
 {% extends "admin/change_form.html" %}
 {% load i18n admin_urls %}
 
+{% block object-tools-items %}
+{% if opts.model_name == 'itemclassificacao' and change and not is_popup and item_show_create_child_code_button %}
+  <li>
+    <a
+      href="{{ item_create_child_code_add_url }}"
+      id="core-create-child-code-button"
+      class="core-create-child-code-link"
+      data-add-url="{{ item_create_child_code_add_url }}"
+      data-is-matriz="{% if item_create_child_code_is_matriz %}1{% else %}0{% endif %}"
+      data-receita-cod-display="{{ item_create_child_code_receita_cod_display|default:''|escape }}"
+      {% if not item_create_child_code_enabled %}aria-disabled="true" tabindex="-1"{% endif %}
+      {% if item_create_child_code_disabled_title %}title="{{ item_create_child_code_disabled_title }}"{% endif %}
+    >+ {% translate "Criar Código Filho" %}</a>
+  </li>
+{% endif %}
+{{ block.super }}
+{% endblock %}
+
 {% block extrastyle %}
 {{ block.super }}
 {% if opts and opts.model_name == 'itemclassificacao' %}
+<style id="core-itemclassificacao-create-child-code">
+  #content ul.object-tools a.core-create-child-code-link,
+  ul.object-tools a.core-create-child-code-link {
+    background: #2e7d32 !important;
+    border-color: #1b5e20 !important;
+    color: #fff !important;
+  }
+  #content ul.object-tools a.core-create-child-code-link:hover,
+  #content ul.object-tools a.core-create-child-code-link:focus,
+  ul.object-tools a.core-create-child-code-link:hover,
+  ul.object-tools a.core-create-child-code-link:focus {
+    background: #1b5e20 !important;
+    border-color: #1b5e20 !important;
+    color: #fff !important;
+  }
+  ul.object-tools a.core-create-child-code-link[aria-disabled="true"] {
+    opacity: 0.55;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+</style>
 <style id="core-itemclassificacao-level-jump-modal">
   .core-level-jump-modal-overlay {
     position: fixed;
@@ -350,6 +389,7 @@
     var itemParentLevelJumpWarnUrl = '{{ item_parent_level_jump_warn_url|default:"" }}';
     var itemValidateIntermediateZerosUrl = '{{ item_validate_intermediate_zeros_url|default:"" }}';
     var itemSuggestChildCodeUrl = '{{ item_suggest_child_code_url|default:"" }}';
+    var itemInitChildFromChange = "{{ item_init_child_from_change|yesno:'true,false' }}" === "true";
     var itemNivelSemanticLookupUrl = '{{ item_nivel_semantic_lookup_url|default:"" }}';
     var itemParentSemanticLookupUrl = '{{ item_parent_semantic_lookup_url|default:"" }}';
     var itemClassificacaoDigitLimitLookupUrl = '{{ item_classificacao_digit_limit_lookup_url|default:"" }}';
@@ -776,8 +816,13 @@
             showReceitaCodWarning(fieldRow, payload.warning);
           }
           if (receitaCodInput.value !== formatted) {
-            receitaCodInput.value = formatted;
-            receitaCodInput.dispatchEvent(new Event('change', { bubbles: true }));
+            window.__coreSuppressDirtyRecompute = true;
+            try {
+              receitaCodInput.value = formatted;
+              receitaCodInput.dispatchEvent(new Event('change', { bubbles: true }));
+            } finally {
+              window.__coreSuppressDirtyRecompute = false;
+            }
           }
           if (triggerName === 'submit' && receitaCodInput.reportValidity) {
             receitaCodInput.reportValidity();
@@ -1896,6 +1941,33 @@
         window.setTimeout(refreshConfirmedParentSnapshot, 500);
       }
 
+      function initChildCodeFromChangeParent() {
+        if (!isAddMode || !itemInitChildFromChange || !parentItemIdInput) {
+          return;
+        }
+        var parentPk = (parentItemIdInput.value || '').trim();
+        if (!parentPk) {
+          return;
+        }
+        window.__suppressChildCodeSuggestOnParentChange = true;
+        enrichParentSnapshotFromSemantic({ pk: parentPk })
+          .then(function(enriched) {
+            applyParentSnapshotToDom(enriched);
+            commitConfirmedParentSnapshot(enriched);
+            lastParentItemPk = parentPk;
+            lastObservedParentItemPk = parentPk;
+            return suggestChildCodeFromParent('from_change_parent', { force: true });
+          })
+          .finally(function() {
+            window.setTimeout(function() {
+              window.__suppressChildCodeSuggestOnParentChange = false;
+            }, 0);
+            if (typeof window.__coreRebaselineFormDirtySnapshot === 'function') {
+              window.__coreRebaselineFormDirtySnapshot();
+            }
+          });
+      }
+
       function runClassificationNamingInit() {
         if (typeof window.initClassificationNaming === 'function') {
           window.initClassificationNaming(isAddMode, itemAbbreviatedRadicalLookupUrl || '');
@@ -2120,12 +2192,26 @@
         }, 350);
       }
 
-      runCodeDigitValidation('init').then(function(result) {
-        syncItemIdPreview();
-        if (result && result.isValid) {
-          syncHierarchyFromCode('init');
+      function schedulePostInitDirtyRebaseline() {
+        function rebaselineDirtyIfReady() {
+          if (typeof window.__coreRebaselineFormDirtySnapshot === 'function') {
+            window.__coreRebaselineFormDirtySnapshot();
+          }
         }
-      });
+        runCodeDigitValidation('init')
+          .then(function(result) {
+            syncItemIdPreview();
+            if (result && result.isValid && isAddMode) {
+              return syncHierarchyFromCode('init');
+            }
+          })
+          .finally(function() {
+            window.setTimeout(rebaselineDirtyIfReady, 0);
+          });
+        window.setTimeout(rebaselineDirtyIfReady, 750);
+      }
+
+      schedulePostInitDirtyRebaseline();
 
       function showCoreAttentionModal(options) {
         options = options || {};
@@ -2646,6 +2732,80 @@
         });
       }
     }
+
+    function setupCreateChildCodeButton() {
+      var btn = document.getElementById('core-create-child-code-button');
+      if (!btn) {
+        return;
+      }
+      btn.addEventListener('click', function(event) {
+        event.preventDefault();
+        if (btn.getAttribute('aria-disabled') === 'true') {
+          return;
+        }
+        var addUrl = btn.getAttribute('data-add-url') || btn.getAttribute('href') || '';
+        if (!addUrl) {
+          return;
+        }
+
+        function navigateToAdd() {
+          window.location.href = addUrl;
+        }
+
+        function getCurrentReceitaCodDisplayForChildModal() {
+          if (receitaCodInput) {
+            var fromField = (receitaCodInput.value || '').trim();
+            if (fromField) {
+              return fromField;
+            }
+          }
+          return (btn.getAttribute('data-receita-cod-display') || '').trim();
+        }
+
+        function showNavigateConfirmModal() {
+          if (typeof showCoreAttentionModal !== 'function') {
+            navigateToAdd();
+            return;
+          }
+          var codigoAtual = getCurrentReceitaCodDisplayForChildModal() || '—';
+          showCoreAttentionModal({
+            title: 'Criar Código Filho',
+            messages: [
+              'Você será encaminhado para a tela de criação de novo Item (Código) de Classificação.',
+              'O código atual (' + codigoAtual + ') será o assumido como código mãe do novo código a ser criado.'
+            ],
+            confirmQuestion: 'Deseja continuar?',
+            okLabel: 'Continuar',
+            cancelLabel: 'Cancelar'
+          }).then(function(confirmed) {
+            if (confirmed) {
+              navigateToAdd();
+            }
+          });
+        }
+
+        if (btn.getAttribute('data-is-matriz') === '0') {
+          showCoreAttentionModal({
+            title: 'Atenção!',
+            messages: [
+              'Para registar um item filho a partir deste código, o registo actual deve estar marcado como Matriz (agregador).',
+              'Altere o campo «Matriz / Detalhe» para Matriz neste registo antes de criar um código filho.'
+            ],
+            okLabel: 'Entendi'
+          });
+          return;
+        }
+
+        if (typeof window.__coreConfirmUnsavedIfDirty === 'function') {
+          window.__coreConfirmUnsavedIfDirty(showNavigateConfirmModal);
+        } else {
+          showNavigateConfirmModal();
+        }
+      });
+    }
+
+    setupCreateChildCodeButton();
+    window.setTimeout(initChildCodeFromChangeParent, 150);
   }
 
   if (document.readyState === 'loading') {
@@ -2770,7 +2930,22 @@
       }
     });
 
+    function rebaselineFormDirtySnapshot() {
+      fields.forEach(function(field) {
+        if (field.type === 'hidden') {
+          return;
+        }
+        var state = getFieldState(field);
+        field.dataset.initialState = state;
+        field.dataset.originalState = state;
+      });
+      recomputeDirty();
+    }
+
     function recomputeDirty() {
+      if (window.__coreSuppressDirtyRecompute) {
+        return;
+      }
       isDirty = fields.some(function(field) {
         if (field.type === 'hidden') {
           return false;
@@ -2787,10 +2962,13 @@
       field.addEventListener('input', recomputeDirty);
     });
 
-    // Garante que isDirty reflita imediatamente diferenças em relação
-    // ao snapshot original (orig_field_*), mesmo antes de qualquer
-    // interação do usuário após o carregamento da página.
     recomputeDirty();
+
+    window.__coreRebaselineFormDirtySnapshot = rebaselineFormDirtySnapshot;
+    window.__coreIsFormDirty = function() {
+      recomputeDirty();
+      return isDirty;
+    };
 
     // Marca submissão para não mostrar alerta ao salvar
     document.addEventListener('submit', function() {
@@ -2806,6 +2984,20 @@
         event.preventDefault();
       }
     }
+
+    window.__coreConfirmUnsavedIfDirty = function(onProceed) {
+      if (typeof onProceed !== 'function') {
+        return;
+      }
+      if ((!isDirty && !formHasErrorsOnLoad) || isSubmitting) {
+        onProceed();
+        return;
+      }
+      var message = 'Há alterações não salvas. Se continuar, as alterações serão perdidas. Deseja realmente sair sem salvar?';
+      if (window.confirm(message)) {
+        onProceed();
+      }
+    };
 
     var guardedLinks = [
       document.getElementById('core-cancel-link'),
