@@ -286,7 +286,15 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
                 "Itens de nível 1 só podem ser salvos como Matriz.",
             )
 
-        receita_cod = (cleaned.get("receita_cod") or "").strip().replace(".", "")
+        receita_cod_raw = (cleaned.get("receita_cod") or "").strip()
+        if receita_cod_raw and not receita_cod_raw.replace(".", "").isdigit():
+            self.add_error(
+                "receita_cod",
+                "O código canônico deve conter apenas dígitos (0-9).",
+            )
+            return cleaned
+
+        receita_cod = receita_cod_raw.replace(".", "")
         classificacao = cleaned.get("classificacao_id")
         expected_digits, estrutura = self._get_receita_cod_digit_rule(classificacao)
 

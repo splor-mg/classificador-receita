@@ -2181,15 +2181,94 @@
         });
       }
 
+      function isReceitaCodTextInsertionInputType(inputType) {
+        return (
+          inputType === 'insertText' ||
+          inputType === 'insertFromDrop' ||
+          inputType === 'insertReplacementText' ||
+          inputType === 'insertCompositionText'
+        );
+      }
+
+      function setReceitaCodInputFromDigitsOnly(digits) {
+        var display = '';
+        if (digits) {
+          var formatted = formatReceitaCodValue(digits);
+          display = formatted && formatted !== digits ? formatted : digits;
+        }
+        var el = receitaCodInput;
+        var selStart = el.selectionStart || 0;
+        var digitsBefore = stripReceitaCodFormatting(
+          (el.value || '').slice(0, selStart)
+        ).length;
+        if (el.value === display) {
+          return;
+        }
+        window.__coreSuppressReceitaCodDigitFilter = true;
+        try {
+          el.value = display;
+          var pos = display.length;
+          if (digitsBefore < digits.length) {
+            pos = 0;
+            var counted = 0;
+            for (var i = 0; i < display.length; i++) {
+              if (/\d/.test(display.charAt(i))) {
+                counted++;
+                if (counted > digitsBefore) {
+                  pos = i;
+                  break;
+                }
+              }
+              pos = i + 1;
+            }
+          }
+          el.setSelectionRange(pos, pos);
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+        } finally {
+          window.__coreSuppressReceitaCodDigitFilter = false;
+        }
+      }
+
+      function enforceReceitaCodDigitsOnlyOnInput() {
+        if (window.__coreSuppressReceitaCodDigitFilter) {
+          return;
+        }
+        var value = receitaCodInput.value || '';
+        if (!value) {
+          return;
+        }
+        // B1.5: rejeita letras e separadores inválidos (`.` da máscara é permitido).
+        if (!/[^0-9.]/.test(value)) {
+          return;
+        }
+        setReceitaCodInputFromDigitsOnly(stripReceitaCodFormatting(value));
+      }
+
       receitaCodInput.addEventListener('focus', function() {
         // Protocolo B1: após a primeira aplicação de máscara, o foco não
         // desformata o campo. Mantemos a visualização como está.
         syncItemIdPreview();
       });
 
-      // Não bloqueamos teclas em keydown para evitar falsos positivos por
-      // layout/IME/teclado do SO. A normalização para dígitos é garantida
-      // no fluxo de colagem e na validação/reformatação em blur/submit.
+      receitaCodInput.addEventListener('beforeinput', function(event) {
+        // B1.5: bloqueia inserção de não-dígitos; colagem tratada no handler paste.
+        if (window.__coreSuppressReceitaCodDigitFilter || !event) {
+          return;
+        }
+        if (!isReceitaCodTextInsertionInputType(event.inputType || '')) {
+          return;
+        }
+        if (!event.data) {
+          return;
+        }
+        if (/[^\d]/.test(event.data)) {
+          event.preventDefault();
+        }
+      });
+
+      receitaCodInput.addEventListener('compositionend', function() {
+        enforceReceitaCodDigitsOnlyOnInput();
+      });
 
       receitaCodInput.addEventListener('paste', function(event) {
         // Colagem resiliente: aceita código com ou sem máscara e insere apenas
@@ -2214,6 +2293,7 @@
       });
 
       receitaCodInput.addEventListener('input', function() {
+        enforceReceitaCodDigitsOnlyOnInput();
         if (hasAutoAdjustedOnce) {
           disableFutureAutoAdjust = true;
         }

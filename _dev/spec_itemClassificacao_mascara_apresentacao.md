@@ -198,9 +198,12 @@ contrato de persistência (BD continua a guardar apenas dígitos).
 
 ### Digitação e colagem
 
-- **B1.5. (digitação)** O input deve aceitar apenas dígitos como entrada
+- **B1.5. (digitação)** O input deve aceitar apenas dígitos **0-9** como entrada
   semântica do usuário. Caracteres de pontuação/separação (`.`, `,`, espaço,
-  `-`, etc.) digitados manualmente são ignorados.
+  `-`, letras, etc.) digitados manualmente são **bloqueados** (`beforeinput` no
+  cliente) ou removidos no `input`/`compositionend` (fallback IME). Os pontos
+  da máscara visual vêm apenas do blur/sugestão/programação — não da digitação
+  manual de separadores.
 - **B1.6. (colagem)** O sistema deve aceitar colagem tanto de código mascarado
   quanto de código sem máscara. O texto colado é primeiro normalizado para
   **somente dígitos** (strip de pontuação/espaços), e depois submetido ao
@@ -228,7 +231,15 @@ contrato de persistência (BD continua a guardar apenas dígitos).
 
 ## Implementação
 
-Arquivos envolvidos:
+Arquivos envolvidos (formulário / B1):
+
+- `apps/core/templates/admin/core/change_form.html` — `beforeinput` (B1.5),
+  `enforceReceitaCodDigitsOnlyOnInput`, colagem em `paste` (B1.6), blur
+  (`runCodeDigitValidation`, B1.1).
+- `apps/core/forms.py` — `ItemClassificacaoForm.clean`: rejeita `receita_cod`
+  com caracteres fora de `0-9` (após remover pontos de máscara no POST).
+
+Arquivos envolvidos (apresentação tier 1/2):
 
 - `apps/core/admin_formatters.py` — onde vivem
   `format_receita_cod_by_vigencia` (tier 1 puro, para uso geral),
@@ -287,6 +298,11 @@ Política de exposição e nomenclatura:
 - **T-6.** Linhas com `data_registro_fim ≠ sentinela` não influenciam nenhuma
   resolução, em nenhum dos tiers.
 - **T-7.** `receita_cod` vazio devolve string vazia sem consultar banco.
+- **T-B1.5.** Digitar letra ou vírgula no `receita_cod` → caractere não entra
+  (ou é removido no mesmo instante); digitar dígitos continua possível.
+- **T-B1.6.** Colar `1.1.1.2,50` → apenas dígitos permanecem; blur reaplica máscara.
+- **T-B1.8.** Submit com valor mascarado no input → POST/gravação só com dígitos.
+
 - **T-8.** **Display de `parent_item_id` no formulário** (campo "Item Mãe"):
   para um item mãe cuja vigência se enquadre no cenário do T-2 (split
   bitemporal de `NivelHierarquico` que invalida o tier 1), o

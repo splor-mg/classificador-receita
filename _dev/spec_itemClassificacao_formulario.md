@@ -37,6 +37,7 @@ O input editável **Código Canônico da Natureza de Receita** (`receita_cod`) n
 **Notas:**
 
 - `maxlength="25"` no widget permanece para edição/colagem do código **mascarado** no browser; a validação normativa de 8–13 dígitos canônicos segue no backend e no pipeline JS.
+- Entrada do usuário: apenas dígitos **0-9** (pontuação da máscara não é digitável manualmente) — ver **B1.5** em `_dev/spec_itemClassificacao_mascara_apresentacao.md`.
 - O campo auxiliar readonly `item_id` mantém largura própria (`20em`); esta spec **não** exige unificar `item_id` com `37ch`.
 
 ---
