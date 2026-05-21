@@ -29,6 +29,173 @@ from apps.core.models import (
 )
 from apps.core.parent_item_validation import digit_mask_for_classificacao_vigencia
 
+RECEITA_COD_CHANGE_BLOCK_MESSAGE = (
+    "Uma vez criado, o código canônico não pode ser substituído na mesma linha de registro. "
+    "Não é possível gravar outro código neste item por meio de Salvar ou Editar vigência."
+)
+
+
+def normalize_receita_cod_digits(raw: Optional[str]) -> str:
+    return (raw or "").replace(".", "").strip()
+
+
+def receita_cod_changed_vs_instance(
+    posted_receita_cod: Optional[str], instance: ItemClassificacao
+) -> bool:
+    """True quando COD-2 ≠ COD-1 (spec editar_codigo — T-cod.0)."""
+    cod2 = normalize_receita_cod_digits(posted_receita_cod)
+    cod1 = normalize_receita_cod_digits(getattr(instance, "receita_cod", None))
+    return bool(cod2) and cod2 != cod1
+
+
+def _vigencia_intervals_overlap(
+    inicio_a: date, fim_a: date, inicio_b: date, fim_b: date
+) -> bool:
+    return inicio_a <= fim_b and fim_a >= inicio_b
+
+
+def _mask_compatible_for_code(code: str) -> tuple[bool, Optional[str]]:
+    ctx = resolve_receita_cod_mask_context(None, input_length=len(code), on_date=date.today())
+    mask = ctx.get("digit_mask") or []
+    total = sum(mask) if mask else ctx.get("numero_digitos")
+    if total and len(code) == total:
+        return True, None
+    if total:
+        if ctx.get("source") == "fallback_default_latest_active_today":
+            msg = (
+                f"Código informado tem {len(code)} dígitos, mas a estrutura mais recente "
+                f"da classificação é de {total} dígitos."
+            )
+        else:
+            msg = (
+                f"Código informado tem {len(code)} dígitos, mas o limite da classificação "
+                f"é {total} dígitos."
+            )
+        return False, msg
+    return False, (
+        f"Código informado tem {len(code)} dígitos, mas não foi possível validar a estrutura."
+    )
+
+
+def _format_codigo_display(
+    code: str,
+    vig_inicio: Optional[date],
+    vig_fim: Optional[date],
+) -> str:
+    return format_receita_cod_by_vigencia(code, vig_inicio, vig_fim, {}) or code
+
+
+def _item_admin_change_url(obj: ItemClassificacao) -> str:
+    return reverse(
+        f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change",
+        args=[obj.pk],
+    )
+
+
+def _item_admin_add_url_with_code(code: str) -> str:
+    from urllib.parse import urlencode
+
+    base = reverse(
+        f"admin:{ItemClassificacao._meta.app_label}_{ItemClassificacao._meta.model_name}_add"
+    )
+    return f"{base}?{urlencode({'receita_cod': code})}"
+
+
+def _pick_navigation_record(records: list[ItemClassificacao]) -> ItemClassificacao:
+    return max(
+        records,
+        key=lambda r: (
+            r.data_vigencia_fim,
+            r.data_vigencia_inicio,
+            r.pk,
+        ),
+    )
+
+
+def resolve_code_navigation_response_data(request: HttpRequest) -> Dict[str, Any]:
+    """
+    Classifica COD-2 para navegação na change (C1–C4).
+    Ver ``_dev/spec_itemClassificacao_editar_codigo.md``.
+    """
+    code = normalize_receita_cod_digits(request.GET.get("code"))
+    vig_inicio = _parse_admin_get_date(request.GET.get("vigencia_inicio"))
+    vig_fim = _parse_admin_get_date(request.GET.get("vigencia_fim"))
+    exclude_pk_raw = (request.GET.get("exclude_pk") or "").strip()
+
+    if not code:
+        return {"ok": False, "scenario": "C1", "message": "Informe o código canônico."}
+    if not vig_inicio or not vig_fim:
+        return {
+            "ok": False,
+            "scenario": "C1",
+            "message": "Informe o período de vigência do registro em edição.",
+        }
+    if vig_fim < vig_inicio:
+        return {"ok": False, "scenario": "C1", "message": "Período de vigência inválido."}
+
+    compatible, mask_msg = _mask_compatible_for_code(code)
+    if not compatible:
+        return {"ok": False, "scenario": "C1", "message": mask_msg or "Código incompatível com a máscara."}
+
+    sentinel = transaction_time_sentinel_for_query()
+    qs = ItemClassificacao.objects.filter(
+        receita_cod=code,
+        data_registro_fim=sentinel,
+    )
+    if exclude_pk_raw.isdigit():
+        qs = qs.exclude(pk=int(exclude_pk_raw))
+
+    records = list(qs)
+    codigo_display = _format_codigo_display(code, vig_inicio, vig_fim)
+
+    if not records:
+        return {
+            "ok": True,
+            "scenario": "C4",
+            "codigo_display": codigo_display,
+            "target": {
+                "view": "add",
+                "pk": "",
+                "change_url": "",
+                "add_url": _item_admin_add_url_with_code(code),
+            },
+        }
+
+    overlapping = [
+        r
+        for r in records
+        if _vigencia_intervals_overlap(
+            r.data_vigencia_inicio,
+            r.data_vigencia_fim,
+            vig_inicio,
+            vig_fim,
+        )
+    ]
+
+    if overlapping:
+        target_obj = _pick_navigation_record(overlapping)
+        scenario = "C2"
+    else:
+        target_obj = _pick_navigation_record(records)
+        scenario = "C3"
+
+    codigo_display = _format_codigo_display(
+        target_obj.receita_cod or code,
+        target_obj.data_vigencia_inicio,
+        target_obj.data_vigencia_fim,
+    )
+    return {
+        "ok": True,
+        "scenario": scenario,
+        "codigo_display": codigo_display,
+        "target": {
+            "view": "change",
+            "pk": str(target_obj.pk),
+            "change_url": _item_admin_change_url(target_obj),
+            "add_url": "",
+        },
+    }
+
 
 def _parse_admin_get_date(raw: Optional[str]) -> Optional[date]:
     value = (raw or "").strip()

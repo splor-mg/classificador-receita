@@ -44,6 +44,42 @@ class BitemporalChangeHandler:
         self.model = admin_instance.model
         self.logger = logging.getLogger(__name__)
 
+    def _block_receita_cod_substitution_on_change(
+        self, request, obj: Any, form
+    ) -> bool:
+        """
+        Impede confirmação bitemporal quando ``receita_cod`` foi substituído na change
+        (``spec_itemClassificacao_editar_codigo.md`` — G-cod.save).
+        """
+        from apps.core.item_classificacao_code_lookup import (
+            RECEITA_COD_CHANGE_BLOCK_MESSAGE,
+            normalize_receita_cod_digits,
+            receita_cod_changed_vs_instance,
+        )
+
+        if self.model.__name__ != "ItemClassificacao":
+            return False
+
+        posted = request.POST.get("receita_cod")
+        orig_raw = request.POST.get("orig_field_receita_cod")
+        if orig_raw is not None:
+            cod1 = normalize_receita_cod_digits(orig_raw)
+            cod2 = normalize_receita_cod_digits(posted)
+            blocked = bool(cod2) and cod2 != cod1
+        else:
+            blocked = receita_cod_changed_vs_instance(posted, obj)
+
+        if not blocked:
+            return False
+
+        form.add_error("receita_cod", RECEITA_COD_CHANGE_BLOCK_MESSAGE)
+        self.admin.message_user(
+            request,
+            RECEITA_COD_CHANGE_BLOCK_MESSAGE,
+            level=messages.ERROR,
+        )
+        return True
+
     def _get_business_id_and_name(self, obj: Any, form) -> Dict[str, Any]:
         """
         Tenta identificar automaticamente campos de ID e Nome de negócio
@@ -709,6 +745,9 @@ class BitemporalChangeHandler:
 
         if not form.is_valid():
             return None
+
+        if self._block_receita_cod_substitution_on_change(request, obj, form):
+            return self._render_change_form_with_data(request, obj, form, object_id)
 
         # Se usuário clicou em Voltar na tela de confirmação, volta para edição.
         # Precisa vir antes de has_changed() porque o usuário pode ter desfeito

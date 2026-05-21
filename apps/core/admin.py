@@ -36,6 +36,7 @@ from apps.core.code_mask import resolve_receita_cod_mask_context
 from apps.core.item_classificacao_code_lookup import (
     lookup_hierarchy_by_code_response_data,
     lookup_parent_by_code_response_data,
+    resolve_code_navigation_response_data,
 )
 from apps.core.item_classificacao_child_from_change import (
     apply_change_parent_initial_data,
@@ -498,6 +499,11 @@ class ItemClassificacaoAdmin(
                 self.admin_site.admin_view(self.suggest_child_code_by_parent_view),
                 name=f"{self.model._meta.app_label}_{self.model._meta.model_name}_suggest_child_code_by_parent",
             ),
+            path(
+                "resolve-code-navigation/",
+                self.admin_site.admin_view(self.resolve_code_navigation_view),
+                name=f"{self.model._meta.app_label}_{self.model._meta.model_name}_resolve_code_navigation",
+            ),
         ]
         return custom + urls
 
@@ -548,6 +554,13 @@ class ItemClassificacaoAdmin(
             context["subtitle"] = f"{masked_codigo} - {nome}".strip(" -")
             if change:
                 context.update(build_create_child_code_button_context(request, obj))
+                context["item_change_codigo_origem_digits"] = (obj.receita_cod or "").replace(
+                    ".", ""
+                )
+                context["item_change_codigo_origem_display"] = masked_codigo
+                context["item_code_navigation_resolve_url"] = reverse(
+                    f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_resolve_code_navigation"
+                )
         else:
             context["classification_naming_messages"] = classification_naming_messages_dict()
             context["item_abbreviated_radical_lookup_url"] = reverse(
@@ -561,7 +574,15 @@ class ItemClassificacaoAdmin(
 
     def get_changeform_initial_data(self, request):
         initial = super().get_changeform_initial_data(request)
-        return apply_change_parent_initial_data(request, initial)
+        initial = apply_change_parent_initial_data(request, initial)
+        if request.path.rstrip("/").endswith("/add"):
+            raw_cod = (request.GET.get("receita_cod") or "").replace(".", "").strip()
+            if raw_cod:
+                initial["receita_cod"] = raw_cod
+        return initial
+
+    def resolve_code_navigation_view(self, request):
+        return JsonResponse(resolve_code_navigation_response_data(request))
 
     def lookup_abbreviated_radical_view(self, request):
         nome_mae = (request.GET.get("nome_mae") or "").strip()

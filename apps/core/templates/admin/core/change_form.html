@@ -393,6 +393,10 @@
     var itemNivelSemanticLookupUrl = '{{ item_nivel_semantic_lookup_url|default:"" }}';
     var itemParentSemanticLookupUrl = '{{ item_parent_semantic_lookup_url|default:"" }}';
     var itemClassificacaoDigitLimitLookupUrl = '{{ item_classificacao_digit_limit_lookup_url|default:"" }}';
+    var itemChangeCodigoOrigemDigits = '{{ item_change_codigo_origem_digits|default:""|escapejs }}';
+    var itemChangeCodigoOrigemDisplay = '{{ item_change_codigo_origem_display|default:""|escapejs }}';
+    var itemCodeNavigationResolveUrl = '{{ item_code_navigation_resolve_url|default:"" }}';
+    var itemChangeObjectPk = '{{ object_id|default:""|escapejs }}';
     var receitaCodDigitLimitCache = {};
     var receitaCodResolvedDigitMask = null;
     var addDefaultVigencia = getCurrentVigenciaIsoValues();
@@ -2283,12 +2287,149 @@
         receitaCodInput.dispatchEvent(new Event('input', { bubbles: true }));
       });
 
+      function isReceitaCodAlteredOnChange() {
+        if (isAddMode || !receitaCodInput) {
+          return false;
+        }
+        var cod2 = stripReceitaCodFormatting(receitaCodInput.value);
+        var cod1 = itemChangeCodigoOrigemDigits || '';
+        return !!cod2 && cod2 !== cod1;
+      }
+
+      function restoreReceitaCodOrigem() {
+        if (!receitaCodInput) {
+          return;
+        }
+        var digits = itemChangeCodigoOrigemDigits || '';
+        if (digits) {
+          setReceitaCodInputFromDigitsOnly(digits);
+        } else if (itemChangeCodigoOrigemDisplay) {
+          receitaCodInput.value = itemChangeCodigoOrigemDisplay;
+        } else {
+          receitaCodInput.value = '';
+        }
+        receitaCodInput.setCustomValidity('');
+        clearReceitaCodMessages(getReceitaCodFieldRow(receitaCodInput));
+        syncItemIdPreview();
+        if (typeof window.__coreRebaselineReceitaCodNavigationDirtyState === 'function') {
+          window.__coreRebaselineReceitaCodNavigationDirtyState();
+        }
+      }
+
+      function showReceitaCodChangeBlockModal() {
+        return showCoreAttentionModal({
+          singleButton: true,
+          okLabel: 'Entendi',
+          messages: [
+            'Uma vez criado, o código canônico não pode ser substituído na mesma linha de registro. Não é possível gravar outro código neste item por meio de Salvar ou Editar vigência.',
+            'Para abrir outro código já cadastrado: confirme a alteração ao sair do campo Código Canônico (TAB ou clique fora) e escolha a opção no aviso, ou localize o item na lista do admin.',
+            'Para cadastrar um código novo: use Adicionar Item de Classificação.',
+            'Para desfazer o que foi digitado nesta tela: use o ícone Restaurar código original ao lado do campo.'
+          ]
+        });
+      }
+
+      function showChangeReceitaCodNavigationModal(scenario, codigoDisplay, target) {
+        var cod = codigoDisplay || stripReceitaCodFormatting(receitaCodInput.value);
+        var messages = [];
+        if (scenario === 'C3') {
+          messages.push('O ' + cod + ' digitado tem vigência diversa do código atual.');
+        } else if (scenario === 'C4') {
+          messages.push('Não foi encontrado registro para o ' + cod + '.');
+        }
+        var question = scenario === 'C4'
+          ? 'Deseja ser direcionado para a tela de criação de um novo código?'
+          : 'Deseja ser direcionado para a tela de edição do ' + cod + '?';
+        return showCoreAttentionModal({
+          messages: messages,
+          confirmQuestion: question,
+          okLabel: 'Sim',
+          cancelLabel: 'Cancelar'
+        }).then(function(confirmed) {
+          if (!confirmed) {
+            restoreReceitaCodOrigem();
+            return;
+          }
+          var url = '';
+          if (scenario === 'C4' && target && target.add_url) {
+            url = target.add_url;
+          } else if (target && target.change_url) {
+            url = target.change_url;
+          }
+          if (!url) {
+            restoreReceitaCodOrigem();
+            return;
+          }
+          function go() {
+            window.location.assign(url);
+          }
+          if (typeof window.__coreRebaselineReceitaCodNavigationDirtyState === 'function') {
+            window.__coreRebaselineReceitaCodNavigationDirtyState();
+          }
+          if (typeof window.__coreConfirmUnsavedIfDirty === 'function') {
+            window.__coreConfirmUnsavedIfDirty(go);
+          } else {
+            go();
+          }
+        });
+      }
+
+      function runChangeReceitaCodNavigationBlur() {
+        if (!itemCodeNavigationResolveUrl || !isReceitaCodAlteredOnChange()) {
+          return Promise.resolve();
+        }
+        var vig = getCurrentVigenciaIsoValues();
+        var cod2 = stripReceitaCodFormatting(receitaCodInput.value);
+        if (!cod2 || !vig.vigenciaInicio || !vig.vigenciaFim) {
+          return Promise.resolve();
+        }
+        var params = new URLSearchParams({
+          code: cod2,
+          vigencia_inicio: vig.vigenciaInicio,
+          vigencia_fim: vig.vigenciaFim
+        });
+        if (itemChangeObjectPk) {
+          params.set('exclude_pk', itemChangeObjectPk);
+        }
+        return fetch(itemCodeNavigationResolveUrl + '?' + params.toString(), {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          credentials: 'same-origin'
+        })
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (!data) {
+              return;
+            }
+            if (!data.ok) {
+              var fieldRow = getReceitaCodFieldRow(receitaCodInput);
+              if (data.message) {
+                showReceitaCodError(fieldRow, data.message);
+              }
+              return;
+            }
+            return showChangeReceitaCodNavigationModal(
+              data.scenario,
+              data.codigo_display,
+              data.target
+            );
+          })
+          .catch(function() {});
+      }
+
       receitaCodInput.addEventListener('blur', function() {
         runCodeDigitValidation('blur').then(function(result) {
           syncItemIdPreview();
-          if (result && result.isValid) {
-            syncHierarchyFromCode('code_blur');
+          if (!result || !result.isValid) {
+            return;
           }
+          if (isAddMode) {
+            syncHierarchyFromCode('code_blur');
+            return;
+          }
+          if (!isReceitaCodAlteredOnChange()) {
+            return;
+          }
+          runChangeReceitaCodNavigationBlur();
         });
       });
 
@@ -2367,7 +2508,7 @@
           }
           function onKey(ev) {
             if (ev.key === 'Escape') {
-              close(false);
+              close(!!options.singleButton);
             }
           }
           var overlay = document.createElement('div');
@@ -2414,22 +2555,30 @@
 
           var actions = document.createElement('div');
           actions.className = 'core-level-jump-modal-actions';
-          var btnCancel = document.createElement('button');
-          btnCancel.type = 'button';
-          btnCancel.className = 'core-level-jump-btn-cancel';
-          btnCancel.textContent = options.cancelLabel || 'Cancelar';
           var btnOk = document.createElement('button');
           btnOk.type = 'button';
           btnOk.className = 'core-level-jump-btn-ok';
           btnOk.textContent = options.okLabel || 'OK';
-          btnCancel.addEventListener('click', function() { close(false); });
           btnOk.addEventListener('click', function() { close(true); });
-          overlay.addEventListener('click', function(e) {
-            if (e.target === overlay) {
-              close(false);
-            }
-          });
-          actions.appendChild(btnCancel);
+          if (!options.singleButton) {
+            var btnCancel = document.createElement('button');
+            btnCancel.type = 'button';
+            btnCancel.className = 'core-level-jump-btn-cancel';
+            btnCancel.textContent = options.cancelLabel || 'Cancelar';
+            btnCancel.addEventListener('click', function() { close(false); });
+            actions.appendChild(btnCancel);
+            overlay.addEventListener('click', function(e) {
+              if (e.target === overlay) {
+                close(false);
+              }
+            });
+          } else {
+            overlay.addEventListener('click', function(e) {
+              if (e.target === overlay) {
+                close(true);
+              }
+            });
+          }
           actions.appendChild(btnOk);
 
           box.appendChild(header);
@@ -2510,6 +2659,40 @@
       }
 
       setupAddFormClearControl();
+
+      function setupChangeReceitaCodRevertControl() {
+        if (isAddMode || !receitaCodInput) {
+          return;
+        }
+        if (document.getElementById('core-receita-cod-revert-btn')) {
+          return;
+        }
+        var btn = document.createElement('a');
+        btn.href = '#';
+        btn.id = 'core-receita-cod-revert-btn';
+        btn.className = 'core-receita-cod-clear-btn';
+        btn.setAttribute('role', 'button');
+        btn.setAttribute('title', 'Restaurar código original');
+        btn.setAttribute('aria-label', 'Restaurar código original');
+        btn.addEventListener('click', function(ev) {
+          ev.preventDefault();
+          restoreReceitaCodOrigem();
+        });
+        var parent = receitaCodInput.parentNode;
+        if (!parent) {
+          return;
+        }
+        var wrap = parent.querySelector('.core-receita-cod-inline-wrap');
+        if (!wrap) {
+          wrap = document.createElement('span');
+          wrap.className = 'core-receita-cod-inline-wrap';
+          parent.insertBefore(wrap, receitaCodInput);
+          wrap.appendChild(receitaCodInput);
+        }
+        wrap.appendChild(btn);
+      }
+
+      setupChangeReceitaCodRevertControl();
 
       function buildParentChangeConfirmModalBody(body, atualCod, novoCod) {
         var ask = document.createElement('p');
@@ -2799,6 +2982,11 @@
             return;
           }
           var initialSubmitter = event.submitter || defaultSubmitButton;
+          if (!isAddMode && isReceitaCodAlteredOnChange()) {
+            event.preventDefault();
+            showReceitaCodChangeBlockModal();
+            return;
+          }
           event.preventDefault();
           if (isSubmitValidationRunning) {
             return;
@@ -2808,11 +2996,39 @@
           if (defaultSubmitButton) {
             defaultSubmitButton.disabled = true;
           }
+          function finalizeNativeFormSubmit() {
+            receitaCodInput.value = stripReceitaCodFormatting(receitaCodInput.value);
+            syncItemIdPreview();
+            allowNativeSubmit = true;
+            if (defaultSubmitButton) {
+              defaultSubmitButton.disabled = false;
+            }
+            if (initialSubmitter && initialSubmitter.name) {
+              var submitterHidden = document.createElement('input');
+              submitterHidden.type = 'hidden';
+              submitterHidden.name = initialSubmitter.name;
+              submitterHidden.value = initialSubmitter.value || '1';
+              submitterHidden.setAttribute('data-temp-submitter', '1');
+              adminForm.appendChild(submitterHidden);
+            }
+            if (typeof HTMLFormElement !== 'undefined' && HTMLFormElement.prototype.submit) {
+              HTMLFormElement.prototype.submit.call(adminForm);
+            } else if (adminForm.requestSubmit) {
+              adminForm.requestSubmit(initialSubmitter || undefined);
+            } else {
+              adminForm.submit();
+            }
+          }
+
           runCodeDigitValidation('submit')
             .then(function(result) {
               if (!result || !result.isValid) {
                 receitaCodInput.setCustomValidity('');
                 focusSubmitValidationErrors(adminForm);
+                return;
+              }
+              if (!isAddMode) {
+                finalizeNativeFormSubmit();
                 return;
               }
               return syncHierarchyFromCode('submit').then(function(hierarchyResult) {
@@ -2832,33 +3048,11 @@
                     }
                   }
                   return requestParentLevelJumpConfirmation().then(function(confirmed) {
-                  if (!confirmed) {
-                    return;
-                  }
-                  receitaCodInput.value = stripReceitaCodFormatting(receitaCodInput.value);
-                  syncItemIdPreview();
-                  allowNativeSubmit = true;
-                  if (defaultSubmitButton) {
-                    defaultSubmitButton.disabled = false;
-                  }
-                  if (initialSubmitter && initialSubmitter.name) {
-                    var submitterHidden = document.createElement('input');
-                    submitterHidden.type = 'hidden';
-                    submitterHidden.name = initialSubmitter.name;
-                    submitterHidden.value = initialSubmitter.value || '1';
-                    submitterHidden.setAttribute('data-temp-submitter', '1');
-                    adminForm.appendChild(submitterHidden);
-                  }
-                  if (typeof HTMLFormElement !== 'undefined' && HTMLFormElement.prototype.submit) {
-                    HTMLFormElement.prototype.submit.call(adminForm);
-                  } else {
-                    if (adminForm.requestSubmit) {
-                      adminForm.requestSubmit();
-                    } else {
-                      adminForm.submit();
+                    if (!confirmed) {
+                      return;
                     }
-                  }
-                });
+                    finalizeNativeFormSubmit();
+                  });
                 });
               });
             })
@@ -3136,6 +3330,21 @@
       if (window.confirm(message)) {
         onProceed();
       }
+    };
+
+    window.__coreRebaselineReceitaCodNavigationDirtyState = function() {
+      fields.forEach(function(field) {
+        if (field.type === 'hidden') {
+          return;
+        }
+        if (field.name !== 'receita_cod' && field.name !== 'item_id') {
+          return;
+        }
+        var state = getFieldState(field);
+        field.dataset.initialState = state;
+        field.dataset.originalState = state;
+      });
+      recomputeDirty();
     };
 
     var guardedLinks = [

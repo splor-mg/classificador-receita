@@ -13,6 +13,7 @@ Esta especificação define regras de **apresentação** e **ações de UI** no 
 | `_dev/spec_itemClassificacao_foreignKeys_lookup.md` | Lookup por `receita_cod` e FKs semânticas. |
 | `_dev/spec_itemClassificacao_validar_hierarquia.md` | Modais de salto de nível no submit; item raiz. |
 | `_dev/spec_itemClassificacao_mascara_apresentacao.md` | Máscara de exibição de códigos. |
+| `_dev/spec_itemClassificacao_editar_codigo.md` | Edição de `receita_cod` na **change**; borracha **(R-revert)** (restaura código original — distinto de **(R-clear)**). |
 
 ---
 
@@ -21,7 +22,7 @@ Esta especificação define regras de **apresentação** e **ações de UI** no 
 | Inclui | Não inclui |
 |--------|------------|
 | Largura do campo `receita_cod` (add e change) | Regras de validação de dígitos ou hierarquia |
-| Ação **Limpar formulário** (ícone vassourinha) na tela **add** | Mesma ação na tela **change** (edição) |
+| Ação **Limpar formulário** (ícone vassourinha) na tela **add** | Borracha na **change** — `_dev/spec_itemClassificacao_editar_codigo.md` **(R-revert)** |
 | Confirmação e recarga da URL de add | Persistência ou exclusão de registros |
 
 ---
@@ -123,7 +124,7 @@ Ao confirmar (ou quando não há confirmação):
 2. Preencher código e classificação → vassourinha → modal → **Cancelar** → dados permanecem.
 3. Mesmo cenário → **Limpar** → formulário vazio; URL mantém `?…` de changelist se existia.
 4. Entrar na add a partir de changelist filtrada → após limpar, **Voltar/Cancelar** do admin ainda retorna à lista com filtros coerentes.
-5. Change view → **não** exibe vassourinha.
+5. Change view → **não** exibe vassourinha **(R-clear)**; borracha **(R-revert)** — `spec_itemClassificacao_editar_codigo.md`.
 6. `receita_cod` na add e na change com largura alinhada aos FK (`37ch`).
 
 ## Testes manuais recomendados (change — atalho filho)

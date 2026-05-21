@@ -327,6 +327,15 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
             cleaned["receita_cod"] = receita_cod
 
         is_add = not (self.instance and getattr(self.instance, "pk", None))
+        if not is_add and self.instance and getattr(self.instance, "pk", None):
+            from apps.core.item_classificacao_code_lookup import (
+                RECEITA_COD_CHANGE_BLOCK_MESSAGE,
+                receita_cod_changed_vs_instance,
+            )
+
+            if receita_cod and receita_cod_changed_vs_instance(receita_cod, self.instance):
+                self.add_error("receita_cod", RECEITA_COD_CHANGE_BLOCK_MESSAGE)
+
         if is_add:
             receita_nome = (cleaned.get("receita_nome") or "").strip()
             base_mode = normalize_receita_nome_base_mode(cleaned.get("receita_nome_base_mode"))
