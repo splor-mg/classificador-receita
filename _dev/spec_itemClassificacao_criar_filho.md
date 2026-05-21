@@ -472,7 +472,7 @@ Quando `matriz = false` e o utilizador clica no botão:
 1. Se houver **alterações não guardadas feitas pelo utilizador** na change, o cliente **deve** aplicar o aviso de `setupUnsavedChangesWarning` (`window.__coreConfirmUnsavedIfDirty`) **antes** do modal de confirmação. **Um único canal** no clique do botão (handler dedicado); o botão **não** está em `guardedLinks` (evita `confirm` duplicado).
 2. Modal (título **«Criar Código Filho»** — «Código» com C maiúsculo):
    - «Você será encaminhado para a tela de criação de novo Item (Código) de Classificação.»
-   - «O código atual (**&lt;código canónico&gt;**) será o assumido como código mãe do novo código a ser criado.» — **&lt;código canónico&gt;** = valor **dinâmico** do registo actual (máscara de apresentação): preferir o campo `receita_cod` visível no formulário; fallback `data-receita-cod-display` no botão (servidor: `format_receita_cod_by_vigencia` do objeto da change).
+   - «O código atual (**&lt;código canónico&gt;**) será o assumido como mãe do novo código a ser criado.» — **&lt;código canónico&gt;** = valor **dinâmico** do registo actual (máscara de apresentação): preferir o campo `receita_cod` visível no formulário; fallback `data-receita-cod-display` no botão (servidor: `format_receita_cod_by_vigencia` do objeto da change).
    - «Deseja continuar?»
 3. Botões: **Cancelar** | **Continuar**.
 4. **Continuar** → `window.location` para a URL da add (secção URL).
