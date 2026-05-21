@@ -12,6 +12,8 @@ from apps.core.admin_mixins import (
     CHANGELIST_SKIP_DEFAULT_VALUE,
     REGISTRO_ATIVO_QUERY_PARAM,
     REGISTRO_ATIVO_VALUE_ANO_CORRENTE,
+    clear_stale_changelist_skip_default_flags,
+    parse_admin_changelist_model_key,
 )
 from apps.core.models import ItemClassificacao
 
@@ -90,4 +92,43 @@ class ChangelistDefaultFilterRedirectTests(SimpleTestCase):
         self.assertIs(
             self.model_admin.get_changelist(request),
             ChangelistWithClearAllSkipDefault,
+        )
+
+    def test_parse_admin_changelist_model_key(self) -> None:
+        self.assertEqual(
+            parse_admin_changelist_model_key("/admin/core/itemclassificacao/"),
+            "core.itemclassificacao",
+        )
+        self.assertIsNone(
+            parse_admin_changelist_model_key("/admin/core/itemclassificacao/5/change/")
+        )
+        self.assertIsNone(parse_admin_changelist_model_key("/admin/"))
+
+    def test_clear_stale_flags_keeps_active_changelist(self) -> None:
+        request = self._request()
+        request.session[self.session_key] = True
+        request.session["admin_changelist_skip_default:core.serieclassificacao"] = True
+        clear_stale_changelist_skip_default_flags(
+            request, active_model_key="core.itemclassificacao"
+        )
+        self.assertTrue(request.session.get(self.session_key))
+        self.assertNotIn(
+            "admin_changelist_skip_default:core.serieclassificacao", request.session
+        )
+
+    def test_clear_stale_flags_on_non_changelist_path(self) -> None:
+        request = self._request()
+        request.session[self.session_key] = True
+        clear_stale_changelist_skip_default_flags(request, active_model_key=None)
+        self.assertNotIn(self.session_key, request.session)
+
+    def test_reentry_after_leave_changelist_redirects_to_default(self) -> None:
+        request = self._request()
+        request.session[self.session_key] = True
+        clear_stale_changelist_skip_default_flags(request, active_model_key=None)
+        response = self.model_admin.changelist_view(request)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(
+            f"{REGISTRO_ATIVO_QUERY_PARAM}={REGISTRO_ATIVO_VALUE_ANO_CORRENTE}",
+            response["Location"],
         )

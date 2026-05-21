@@ -12,7 +12,7 @@ import logging
 import unicodedata
 from datetime import date
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from urllib.parse import urlencode
 
 from django.contrib import admin
@@ -122,6 +122,7 @@ REGISTRO_ATIVO_VALUE_TODOS = "todos"
 # Não é filtro de negócio; o mixin grava sessão e redirecciona para URL sem query.
 CHANGELIST_SKIP_DEFAULT_PARAM = "__changelist_skip_default"
 CHANGELIST_SKIP_DEFAULT_VALUE = "1"
+CHANGELIST_SKIP_DEFAULT_SESSION_PREFIX = "admin_changelist_skip_default:"
 CHANGELIST_SKIP_DEFAULT_PASSIVE_PARAMS = frozenset(
     {
         CHANGELIST_SKIP_DEFAULT_PARAM,
@@ -134,6 +135,39 @@ CHANGELIST_SKIP_DEFAULT_PASSIVE_PARAMS = frozenset(
         TO_FIELD_VAR,
     }
 )
+
+
+def changelist_skip_default_session_key(app_label: str, model_name: str) -> str:
+    return f"{CHANGELIST_SKIP_DEFAULT_SESSION_PREFIX}{app_label}.{model_name}"
+
+
+def parse_admin_changelist_model_key(path: str) -> Optional[str]:
+    """
+    Devolve ``app_label.model_name`` se ``path`` for a changelist desse model
+    (``/admin/<app>/<model>/`` sem segmento de acção), senão ``None``.
+    """
+    parts = path.strip("/").split("/")
+    if len(parts) != 3 or parts[0] != "admin":
+        return None
+    return f"{parts[1]}.{parts[2]}"
+
+
+def clear_stale_changelist_skip_default_flags(
+    request, *, active_model_key: Optional[str] = None
+) -> None:
+    """
+    Remove flags «modo sem filtro padrão» de models cuja changelist **não** está
+    a ser visitada. Chamado pelo middleware antes de cada view do admin.
+    """
+    if not hasattr(request, "session"):
+        return
+    prefix = CHANGELIST_SKIP_DEFAULT_SESSION_PREFIX
+    for key in list(request.session.keys()):
+        if not key.startswith(prefix):
+            continue
+        model_key = key[len(prefix) :]
+        if active_model_key is None or model_key != active_model_key:
+            request.session.pop(key, None)
 
 
 # Filtro para registros ativos (correntes, históricos e futuros) e inativos em termos de registro/vigência
@@ -236,8 +270,12 @@ class ChangelistDefaultFilterRedirectMixin:
     «Limpar todos os filtros» (Django Admin 6+): o link inclui
     ``__changelist_skip_default=1``; o mixin grava flag de sessão por model,
     redirecciona para a URL sem query e **não** reaplica o default — a lista
-    fica sem filtros na URL (sem sentinela ``…=todos``). A flag é limpa quando
-    o utilizador aplica qualquer parâmetro activo (filtros, busca, etc.);
+    fica sem filtros na URL (sem sentinela ``…=todos``). A flag mantém-se
+    enquanto o utilizador permanece **na changelist** desse model (paginação,
+    ordenação, refresh). É invalidada ao sair da changelist (outro model, add,
+    change, índice do admin, etc.) — ver middleware
+    ``AdminChangelistSkipDefaultScopeMiddleware``. Também é removida quando o
+    utilizador aplica qualquer parâmetro activo (filtros, busca, etc.);
     paginação/ordenação só (`p`, `o`, …) não limpam a flag.
 
     Para que «Todos» no sidebar preserve a intenção do utilizador (e não volte
@@ -262,7 +300,7 @@ class ChangelistDefaultFilterRedirectMixin:
 
     def _changelist_skip_default_session_key(self) -> str:
         opts = self.model._meta
-        return f"admin_changelist_skip_default:{opts.app_label}.{opts.model_name}"
+        return changelist_skip_default_session_key(opts.app_label, opts.model_name)
 
     def _should_reset_changelist_skip_default(self, request) -> bool:
         """True se o GET trouxer filtros/busca (não só paginação/ordenação)."""
