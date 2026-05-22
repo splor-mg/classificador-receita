@@ -1,9 +1,7 @@
 ----------------------------------------------------------------------------------------------------
 # lista 
 
-- **visualização** - **changelist** - implementar padrão de, em todas changelist's, a visualização inicial vir, por padrão, como Ativos (Ano Corrente) 
 
-- **itemClassificacao** - criar a partir de item pai - 
 
 - **itemClassificacao** - criar código já existente - Na tela de criação, se o campo de código canônico for preenchido com código que já existe com registro ativo e vigente para período de vigência compatível com o do formulário, deve haver mensagem de alerta informando que já existe tal código vigente <link para o registro já existente>. Clique aqui para navegar para próximo dígito disponível. 
    Lembrar que, a vigência do formulário deve ser entendida da seguinte forma: 
@@ -12,9 +10,18 @@
    -> Se o campo classificação estiver preenchido, deve ser entendido como a vigência correspondente ao do campo classificação 
 
    Me fale o que entendeu
-  
-- verificar se protocolo permite registrar itemClassificação, mesmo tendo informado campo Classificação, classificacao_id, FK, com vigência que não compreende a vigência que constou nos campos de data de vigência do formulário
+
+- quando se remove filtros em lupa de seleção de FK, não está sendo mais possível selecionar de fato a FK
+
+- **furo de vigência de FK** - verificar se protocolo permite registrar itemClassificação, mesmo tendo informado campo Classificação, classificacao_id, FK, com vigência que não compreende a vigência que constou nos campos de data de vigência do formulário
 - **itemClassificacao** - colocar navegação para, próximo item, para navegar para o item do mesmo nivel, ou item imediatamente anterior; Ou próxima matriz, sendo que navegará para item de mesmo nível imediatamente seguinte em relação ao item _ pai desse registro
+
+- criar glossário para zensical com conteceitos centrais no projeto, tais como:
+   - bitemporalidade: falar onde ponde encontrar mais detalhes
+   - sentinela [valor sentinela / data sentinela]
+   - natureza de receita
+   - data de vigência [vigência] vs data de registro
+
 
 
 
@@ -52,6 +59,8 @@
 
 
 -------- feito
+x **itemClassificacao** - criar a partir de item pai - 
+x **visualização** - **changelist** - implementar padrão de, em todas changelist's, a visualização inicial vir, por padrão, como Ativos (Ano Corrente) 
 x verificar a ordenação do db de ItemClassificação, já que as novas receitas criadas, independente do código, estão vindo por último
 x verificar consistência de não permitir a criação de item sem que exista matriz anterior existente?. Seria pelo campo `item_pai`?
       x pré-preenchimento de códigos até chegar a 13 dígitos e erro se houver mais dígitos que o máximo
