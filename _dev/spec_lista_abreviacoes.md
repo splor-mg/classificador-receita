@@ -234,11 +234,11 @@ Quando **B.1** **não** se verifica (existe pelo menos um `i` sem correspondênc
   1711550000000	`Cota-Parte do Imposto sobre Operações de Crédito, Câmbio e Seguro, ou Relativas a Títulos ou Valores Mobiliários - Comercialização do Ouro`  
   1711550100000	`Cota-Parte IOF-Ouro - Principal`
 
-  | Papel | Segmento |
-  |-------|----------|
-  | mãe 1 | `Cota-Parte do Imposto sobre Operações de Crédito, Câmbio e Seguro, ou Relativas a Títulos ou Valores Mobiliários` |
-  | mãe 2 | `Comercialização do Ouro` |
-  | filho 1 | `Cota-Parte IOF-Ouro` |
+  | Papel   | Segmento                                                                                                           |
+  | ------- | ------------------------------------------------------------------------------------------------------------------ |
+  | mãe 1   | `Cota-Parte do Imposto sobre Operações de Crédito, Câmbio e Seguro, ou Relativas a Títulos ou Valores Mobiliários` |
+  | mãe 2   | `Comercialização do Ouro`                                                                                          |
+  | filho 1 | `Cota-Parte IOF-Ouro`                                                                                              |
 
   Em `S_f`: `W_f` inclui entre outras `Cota`, `Parte`, `IOF`, `Ouro`; ambos `S_{m,1}` e `S_{m,2}` têm correspondência lexical com `W_f`.
 

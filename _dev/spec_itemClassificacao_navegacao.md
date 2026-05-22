@@ -4,49 +4,49 @@ Esta especificação define quatro protocolos de **navegação estrutural** na v
 
 **Protocolos:**
 
-| ID | Nome |
-|----|------|
-| **(G-nav.next-code)** | Próximo código |
-| **(G-nav.next-level)** | Próximo nível |
-| **(G-nav.prev-code)** | Código anterior |
-| **(G-nav.prev-level)** | Nível anterior |
+| ID                     | Nome            |
+| ---------------------- | --------------- |
+| **(G-nav.next-code)**  | Próximo código  |
+| **(G-nav.next-level)** | Próximo nível   |
+| **(G-nav.prev-code)**  | Código anterior |
+| **(G-nav.prev-level)** | Nível anterior  |
 
 **Implementação de referência (alvo):** `apps/core/templates/admin/core/change_form.html` (barra **(G-nav.ui-toolbar)**, botões **(G-nav.ui-controls)**, `__coreConfirmUnsavedIfDirty`, aviso de classificação); novo endpoint JSON em `ItemClassificacaoAdmin` (família `lookup-*` / `resolve-structural-navigation` em `apps/core/item_classificacao_code_lookup.py`).
 
 **Specs relacionadas (não substituídas):**
 
-| Spec | Relação |
-|------|---------|
-| `_dev/spec_itemClassificacao_editar_codigo.md` | **(T6)**, **(T7)**, **(T-cod.1)**, **(T-cod.2)**, **V1**, desempate; navegação por digitação (**G-cod.blur**) |
-| `_dev/spec_itemClassificacao_criar_filho.md` | Aviso de alterações não guardadas ao sair da change (**v2**) |
-| `_dev/spec_itemClassificacao_formulario.md` | Preservar `_changelist_filters` no redirecionamento |
-| `_dev/spec_itemClassificacao_mascara_apresentacao.md` | **B1** — máscara aplicada a `COD-EDIT` na change |
-| `_dev/spec_itemClassificacao_regras_hierarquia.md` | Zero canônico; vínculo pai–filho (não relaxado na persistência) |
+| Spec                                                  | Relação                                                                                                       |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `_dev/spec_itemClassificacao_editar_codigo.md`        | **(T6)**, **(T7)**, **(T-cod.1)**, **(T-cod.2)**, **V1**, desempate; navegação por digitação (**G-cod.blur**) |
+| `_dev/spec_itemClassificacao_criar_filho.md`          | Aviso de alterações não guardadas ao sair da change (**v2**)                                                  |
+| `_dev/spec_itemClassificacao_formulario.md`           | Preservar `_changelist_filters` no redirecionamento                                                           |
+| `_dev/spec_itemClassificacao_mascara_apresentacao.md` | **B1** — máscara aplicada a `COD-EDIT` na change                                                              |
+| `_dev/spec_itemClassificacao_regras_hierarquia.md`    | Zero canônico; vínculo pai–filho (não relaxado na persistência)                                               |
 
 ---
 
 ## Escopo
 
-| Inclui | Não inclui |
-|--------|------------|
-| View **change** de `ItemClassificacao` | View **add** |
+| Inclui                                                                         | Não inclui                                                  |
+| ------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| View **change** de `ItemClassificacao`                                         | View **add**                                                |
 | Barra **(G-nav.ui-toolbar)** e quatro botões **(G-nav.ui-controls)** na change | Navegação por **blur** / modais **M2–M4** (`editar_codigo`) |
-| Destino apenas **(T-cod.2)** → `change` do registro desempatado | Destino **add** ou **(T-cod.3)** |
-| Navegação entre `classificacao_id` diferentes (intencional) | Alterar `receita_cod` do registro aberto |
-| Aviso na UI se a classificação do destino divergir | Regras de `parent_item_id` na gravação |
-| Endpoint `resolve-structural-navigation` (recomendado) | Atalhos de teclado (fora desta versão) |
+| Destino apenas **(T-cod.2)** → `change` do registro desempatado                | Destino **add** ou **(T-cod.3)**                            |
+| Navegação entre `classificacao_id` diferentes (intencional)                    | Alterar `receita_cod` do registro aberto                    |
+| Aviso na UI se a classificação do destino divergir                             | Regras de `parent_item_id` na gravação                      |
+| Endpoint `resolve-structural-navigation` (recomendado)                         | Atalhos de teclado (fora desta versão)                      |
 
 ---
 
 ## Notação
 
-| Símbolo | Significado |
-|---------|-------------|
-| **COD-EDIT** | Código canônico do registro em edição (dígitos `0-9`, sem pontuação de máscara). Equivalente a **COD-1** em `editar_codigo` na carga da página (não o valor eventualmente digitado no input). |
-| **NV-EDIT** | Nível hierárquico derivado de **COD-EDIT** (ver abaixo). |
-| **V1** | Vigência do registro aberto: `data_vigencia_inicio` e `data_vigencia_fim` do `instance` na change. |
-| **MASK-EDIT** | Máscara de segmentos (larguras por nível) da `estrutura_codigo` **efetivamente utilizada** para formatar/apresentar **COD-EDIT** na change ao iniciar a navegação (mesma fonte que `runCodeDigitValidation` / máscara visível no campo). |
-| **`<código>`** | **COD-EDIT** ou destino formatado com **MASK-EDIT** para exibição. |
+| Símbolo        | Significado                                                                                                                                                                                                                              |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **COD-EDIT**   | Código canônico do registro em edição (dígitos `0-9`, sem pontuação de máscara). Equivalente a **COD-1** em `editar_codigo` na carga da página (não o valor eventualmente digitado no input).                                            |
+| **NV-EDIT**    | Nível hierárquico derivado de **COD-EDIT** (ver abaixo).                                                                                                                                                                                 |
+| **V1**         | Vigência do registro aberto: `data_vigencia_inicio` e `data_vigencia_fim` do `instance` na change.                                                                                                                                       |
+| **MASK-EDIT**  | Máscara de segmentos (larguras por nível) da `estrutura_codigo` **efetivamente utilizada** para formatar/apresentar **COD-EDIT** na change ao iniciar a navegação (mesma fonte que `runCodeDigitValidation` / máscara visível no campo). |
+| **`<código>`** | **COD-EDIT** ou destino formatado com **MASK-EDIT** para exibição.                                                                                                                                                                       |
 
 **Normalização:** remover `.` e espaços; comparar e segmentar apenas dígitos, com padding à direita com `0` até o comprimento total `sum(MASK-EDIT)` quando necessário para alinhar segmentos.
 
@@ -125,12 +125,12 @@ valor zero previsto pela respectiva `estrutura_codigo`.
 
 ## Nomes dos códigos encontrados
 
-| Protocolo | Código encontrado | Nível do destino |
-|-----------|-------------------|------------------|
-| **(G-nav.next-code)** | `COD-PROX` | `NV-COD-PROX` |
-| **(G-nav.next-level)** | `COD-PROX-NV` | `NV-COD-PROX-NV` |
-| **(G-nav.prev-code)** | `COD-ANT` | `NV-COD-ANT` |
-| **(G-nav.prev-level)** | `COD-NV-ANT` | `NV-COD-NV-ANT` |
+| Protocolo              | Código encontrado | Nível do destino |
+| ---------------------- | ----------------- | ---------------- |
+| **(G-nav.next-code)**  | `COD-PROX`        | `NV-COD-PROX`    |
+| **(G-nav.next-level)** | `COD-PROX-NV`     | `NV-COD-PROX-NV` |
+| **(G-nav.prev-code)**  | `COD-ANT`         | `NV-COD-ANT`     |
+| **(G-nav.prev-level)** | `COD-NV-ANT`      | `NV-COD-NV-ANT`  |
 
 `NV-*` do destino: **NV-EDIT** calculado para o `receita_cod` destino com a mesma **MASK-EDIT**.
 
@@ -142,13 +142,13 @@ valor zero previsto pela respectiva `estrutura_codigo`.
 
 Barra de navegação estrutural **somente** na view **change** de `ItemClassificacao`, **não** na add.
 
-| Regra | Descrição |
-|-------|-----------|
-| **(G-nav.ui-toolbar.1)** | Inserir uma faixa horizontal **entre** o cabeçalho do objeto (título `h1` com código e nome do registro) e o primeiro `.form-row` do formulário (campo `receita_cod`). |
+| Regra                    | Descrição                                                                                                                                                                                                                                            |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **(G-nav.ui-toolbar.1)** | Inserir uma faixa horizontal **entre** o cabeçalho do objeto (título `h1` com código e nome do registro) e o primeiro `.form-row` do formulário (campo `receita_cod`).                                                                               |
 | **(G-nav.ui-toolbar.2)** | Na **mesma faixa vertical** que `ul.object-tools` («+ Criar Código Filho», «Histórico»): alinhar a barra de navegação **à esquerda** e manter `object-tools` **à direita** (layout `flex`, `justify-content: space-between`, `align-items: center`). |
-| **(G-nav.ui-toolbar.3)** | **Não** colocar os controlos dentro de `ul.object-tools`, na linha do input `receita_cod` (reservada a **(R-revert)**) nem na `submit-row` inferior. |
-| **(G-nav.ui-toolbar.4)** | Margem inferior da faixa suficiente para separar visualmente o grupo de ícones do rótulo «Código Canônico da Natureza de Receita». |
-| **(G-nav.ui-toolbar.5)** | Em viewport estreita, a faixa pode quebrar linha abaixo do título, mantendo-se **acima** do campo `receita_cod`. |
+| **(G-nav.ui-toolbar.3)** | **Não** colocar os controlos dentro de `ul.object-tools`, na linha do input `receita_cod` (reservada a **(R-revert)**) nem na `submit-row` inferior.                                                                                                 |
+| **(G-nav.ui-toolbar.4)** | Margem inferior da faixa suficiente para separar visualmente o grupo de ícones do rótulo «Código Canônico da Natureza de Receita».                                                                                                                   |
+| **(G-nav.ui-toolbar.5)** | Em viewport estreita, a faixa pode quebrar linha abaixo do título, mantendo-se **acima** do campo `receita_cod`.                                                                                                                                     |
 
 **Implementação (alvo):** bloco dedicado em `change_form.html` (ex.: `div.core-structural-nav-toolbar`) injectado após o título do registro / antes do formulário, com CSS de especificidade sobre o tema do admin.
 
@@ -160,12 +160,12 @@ Quatro `button type="button"` em grupo contíguo (`role="group"`, `aria-label="N
 
 **Ordem fixa (esquerda → direita):**
 
-| # | Símbolo visível | Protocolo | `id` sugerido |
-|---|-----------------|-----------|----------------|
-| 1 | `«` ou `<<` | **(G-nav.prev-level)** | `core-nav-prev-level` |
-| 2 | `<` | **(G-nav.prev-code)** | `core-nav-prev-code` |
-| 3 | `>` | **(G-nav.next-code)** | `core-nav-next-code` |
-| 4 | `»` ou `>>` | **(G-nav.next-level)** | `core-nav-next-level` |
+| #   | Símbolo visível | Protocolo              | `id` sugerido         |
+| --- | --------------- | ---------------------- | --------------------- |
+| 1   | `«` ou `<<`     | **(G-nav.prev-level)** | `core-nav-prev-level` |
+| 2   | `<`             | **(G-nav.prev-code)**  | `core-nav-prev-code`  |
+| 3   | `>`             | **(G-nav.next-code)**  | `core-nav-next-code`  |
+| 4   | `»` ou `>>`     | **(G-nav.next-level)** | `core-nav-next-level` |
 
 **Metáfora:** seta **simples** = deslocamento ao longo da árvore (código anterior / próximo código); seta **dobrada** = deslocamento entre **irmãos** no nível **NV-EDIT** (nível anterior / próximo nível). **Não** representam «primeiro/último» nem paginação do admin.
 
@@ -178,22 +178,22 @@ Quatro `button type="button"` em grupo contíguo (`role="group"`, `aria-label="N
 
 **`title` e `aria-label` (obrigatórios em cada botão):**
 
-| Botão | `aria-label` | `title` (ativo) | `title` (desabilitado) |
-|-------|----------------|-----------------|-------------------------|
-| Nível anterior | `Nível anterior` | `Nível anterior — abrir o código irmão anterior no mesmo nível hierárquico` | `Nível anterior — não há código irmão anterior navegável nesta vigência` |
-| Código anterior | `Código anterior` | `Código anterior — abrir o código estruturalmente anterior na árvore` | `Código anterior — não há código anterior navegável nesta vigência` |
-| Próximo código | `Próximo código` | `Próximo código — abrir o código estruturalmente seguinte na árvore` | `Próximo código — não há código seguinte navegável nesta vigência` |
-| Próximo nível | `Próximo nível` | `Próximo nível — abrir o código irmão seguinte no mesmo nível hierárquico` | `Próximo nível — não há código irmão seguinte navegável nesta vigência` |
+| Botão           | `aria-label`      | `title` (ativo)                                                             | `title` (desabilitado)                                                   |
+| --------------- | ----------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Nível anterior  | `Nível anterior`  | `Nível anterior — abrir o código irmão anterior no mesmo nível hierárquico` | `Nível anterior — não há código irmão anterior navegável nesta vigência` |
+| Código anterior | `Código anterior` | `Código anterior — abrir o código estruturalmente anterior na árvore`       | `Código anterior — não há código anterior navegável nesta vigência`      |
+| Próximo código  | `Próximo código`  | `Próximo código — abrir o código estruturalmente seguinte na árvore`        | `Próximo código — não há código seguinte navegável nesta vigência`       |
+| Próximo nível   | `Próximo nível`   | `Próximo nível — abrir o código irmão seguinte no mesmo nível hierárquico`  | `Próximo nível — não há código irmão seguinte navegável nesta vigência`  |
 
 O texto visível do botão pode ser apenas o símbolo (`<`, `>`, `<<`, `>>` ou entidades tipográficas `«` `»`); a semântica acessível vem de `aria-label` / `title`, não do glifo isolado.
 
 **Estados e pré-condições:**
 
-| Estado | Comportamento |
-|--------|----------------|
-| Sem candidato para o protocolo | Botão desabilitado; `title` da coluna «desabilitado»; não dispara navegação. |
-| Registro inactivo (**não** **(T6)**) | Todos os quatro desabilitados (navegação só a partir de registo activo em edição). |
-| Candidato disponível | Clique → pipeline **(G-nav.ui-unsaved)** → **(G-nav.ui-warning-class)** (se aplicável) → `location.assign(change_url)`. |
+| Estado                               | Comportamento                                                                                                           |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| Sem candidato para o protocolo       | Botão desabilitado; `title` da coluna «desabilitado»; não dispara navegação.                                            |
+| Registro inactivo (**não** **(T6)**) | Todos os quatro desabilitados (navegação só a partir de registo activo em edição).                                      |
+| Candidato disponível                 | Clique → pipeline **(G-nav.ui-unsaved)** → **(G-nav.ui-warning-class)** (se aplicável) → `location.assign(change_url)`. |
 
 Os botões **não** submetem o formulário. Não duplicar handlers em `guardedLinks` do aviso global de saída.
 
@@ -222,10 +222,10 @@ Botões: **Cancelar** | **Continuar**. **Cancelar** mantém a change atual. **Co
 
 `GET …/admin/core/itemclassificacao/resolve-structural-navigation/`
 
-| Parâmetro | Obrigatório | Descrição |
-|-----------|-------------|-----------|
-| `pk` | Sim | PK do registro em edição (origem). |
-| `direction` | Sim | `next_code` \| `next_level` \| `prev_code` \| `prev_level` |
+| Parâmetro   | Obrigatório | Descrição                                                  |
+| ----------- | ----------- | ---------------------------------------------------------- |
+| `pk`        | Sim         | PK do registro em edição (origem).                         |
+| `direction` | Sim         | `next_code` \| `next_level` \| `prev_code` \| `prev_level` |
 
 O servidor obtém **COD-EDIT**, **V1**, **MASK-EDIT** e **NV-EDIT** a partir do `instance` e da máscara efetiva na change.
 

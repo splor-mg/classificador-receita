@@ -6,24 +6,24 @@ Esta especificação define regras de **apresentação** e **ações de UI** no 
 
 **Specs relacionadas (não substituídas):**
 
-| Spec | Relação |
-|------|---------|
-| `_dev/spec_itemClassificacao_criar_filho.md` | Sugestão de código; modal **(G5)** na troca de item mãe; atalho **«+ Criar Código Filho»** na change (**v2** — estilo verde, `isDirty`/rebaseline, aviso único no clique). |
-| `_dev/spec_itemClassificacao_criar_nome.md` | Protocolo **P-mãe** e rádios de radical (somente add). |
-| `_dev/spec_itemClassificacao_foreignKeys_lookup.md` | Lookup por `receita_cod` e FKs semânticas. |
-| `_dev/spec_itemClassificacao_validar_hierarquia.md` | Modais de salto de nível no submit; item raiz. |
-| `_dev/spec_itemClassificacao_mascara_apresentacao.md` | Máscara de exibição de códigos. |
-| `_dev/spec_itemClassificacao_editar_codigo.md` | Edição de `receita_cod` na **change**; borracha **(R-revert)** (restaura código original — distinto de **(R-clear)**). |
+| Spec                                                  | Relação                                                                                                                                                                    |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `_dev/spec_itemClassificacao_criar_filho.md`          | Sugestão de código; modal **(G5)** na troca de item mãe; atalho **«+ Criar Código Filho»** na change (**v2** — estilo verde, `isDirty`/rebaseline, aviso único no clique). |
+| `_dev/spec_itemClassificacao_criar_nome.md`           | Protocolo **P-mãe** e rádios de radical (somente add).                                                                                                                     |
+| `_dev/spec_itemClassificacao_foreignKeys_lookup.md`   | Lookup por `receita_cod` e FKs semânticas.                                                                                                                                 |
+| `_dev/spec_itemClassificacao_validar_hierarquia.md`   | Modais de salto de nível no submit; item raiz.                                                                                                                             |
+| `_dev/spec_itemClassificacao_mascara_apresentacao.md` | Máscara de exibição de códigos.                                                                                                                                            |
+| `_dev/spec_itemClassificacao_editar_codigo.md`        | Edição de `receita_cod` na **change**; borracha **(R-revert)** (restaura código original — distinto de **(R-clear)**).                                                     |
 
 ---
 
 ## Escopo
 
-| Inclui | Não inclui |
-|--------|------------|
-| Largura do campo `receita_cod` (add e change) | Regras de validação de dígitos ou hierarquia |
+| Inclui                                                         | Não inclui                                                                             |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Largura do campo `receita_cod` (add e change)                  | Regras de validação de dígitos ou hierarquia                                           |
 | Ação **Limpar formulário** (ícone vassourinha) na tela **add** | Borracha na **change** — `_dev/spec_itemClassificacao_editar_codigo.md` **(R-revert)** |
-| Confirmação e recarga da URL de add | Persistência ou exclusão de registros |
+| Confirmação e recarga da URL de add                            | Persistência ou exclusão de registros                                                  |
 
 ---
 
@@ -65,10 +65,10 @@ Na tela **Adicionar Item de Classificação**, permitir que o usuário **recomec
 
 ### (R-clear.3) Quando pedir confirmação
 
-| Situação | Comportamento |
-|----------|----------------|
-| Formulário **sem** dados preenchidos pelo usuário (estado inicial após carga/recarga da add) | **Recarrega** direto, **sem** modal. |
-| Formulário **com** dados preenchidos | Exibe modal de confirmação **antes** de recarregar. |
+| Situação                                                                                     | Comportamento                                       |
+| -------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| Formulário **sem** dados preenchidos pelo usuário (estado inicial após carga/recarga da add) | **Recarrega** direto, **sem** modal.                |
+| Formulário **com** dados preenchidos                                                         | Exibe modal de confirmação **antes** de recarregar. |
 
 **«Dados preenchidos»** — considera-se que há conteúdo relevante **somente** quando **qualquer** condição abaixo for verdadeira:
 
@@ -109,12 +109,12 @@ Ao confirmar (ou quando não há confirmação):
 
 ## Referências de código (mapa rápido)
 
-| Peça | Local |
-|------|--------|
-| Largura `receita_cod` | `ItemClassificacaoForm` em `apps/core/forms.py` |
-| Ícone vassourinha + confirmação + reload | `change_form.html` (bloco `isAddMode`, junto a `receita_cod`) |
-| Modal reutilizável | `showCoreAttentionModal` / variante dedicada no mesmo template |
-| Largura FK semânticos | `foreign_key_semantic_raw_id.html` (`37ch`) |
+| Peça                                     | Local                                                          |
+| ---------------------------------------- | -------------------------------------------------------------- |
+| Largura `receita_cod`                    | `ItemClassificacaoForm` em `apps/core/forms.py`                |
+| Ícone vassourinha + confirmação + reload | `change_form.html` (bloco `isAddMode`, junto a `receita_cod`)  |
+| Modal reutilizável                       | `showCoreAttentionModal` / variante dedicada no mesmo template |
+| Largura FK semânticos                    | `foreign_key_semantic_raw_id.html` (`37ch`)                    |
 
 ---
 

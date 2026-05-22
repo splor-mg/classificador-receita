@@ -6,14 +6,14 @@ Esta especificação define **como o fluxo deve funcionar** no formulário Djang
 
 **Specs relacionadas (não substituídas):**
 
-| Spec | Relação |
-|------|---------|
-| `_dev/spec_itemClassificacao_regras_hierarquia.md` | Filho direto = nível **NM+1**; zeros canônicos na cauda; vigência do filho contida na da mãe ao gravar. |
-| `_dev/spec_itemClassificacao_foreignKeys_lookup.md` | Lookup inverso (código → mãe/nível); executa **depois** de `receita_cod` preenchido. |
-| `_dev/spec_itemClassificacao_criar_nome.md` | **P-mãe** (nomenclatura) após mãe/código definidos. |
-| `_dev/spec_itemClassificacao_validar_hierarquia.md` | Aviso de salto de nível no **submit** quando `L > NM+1`; intermediários. |
-| `_dev/spec_itemClassificacao_formulario.md` | Largura de `receita_cod`; ação «Limpar formulário» (vassourinha) na add. |
-| `_dev/toDo.md` | Alerta «código já existente» e «próximo dígito» — spec futura; ver **§ Decisões em aberto**. |
+| Spec                                                | Relação                                                                                                 |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `_dev/spec_itemClassificacao_regras_hierarquia.md`  | Filho direto = nível **NM+1**; zeros canônicos na cauda; vigência do filho contida na da mãe ao gravar. |
+| `_dev/spec_itemClassificacao_foreignKeys_lookup.md` | Lookup inverso (código → mãe/nível); executa **depois** de `receita_cod` preenchido.                    |
+| `_dev/spec_itemClassificacao_criar_nome.md`         | **P-mãe** (nomenclatura) após mãe/código definidos.                                                     |
+| `_dev/spec_itemClassificacao_validar_hierarquia.md` | Aviso de salto de nível no **submit** quando `L > NM+1`; intermediários.                                |
+| `_dev/spec_itemClassificacao_formulario.md`         | Largura de `receita_cod`; ação «Limpar formulário» (vassourinha) na add.                                |
+| `_dev/toDo.md`                                      | Alerta «código já existente» e «próximo dígito» — spec futura; ver **§ Decisões em aberto**.            |
 
 ---
 
@@ -208,10 +208,10 @@ Dado o **radical** da mãe, percorrer **`K = NM+1 … len(mask)`** e, para cada 
 
 **`K*`** = **menor** `K` (primeiro encontrado de `NM+1` para cima) com `OCUPADO_VIGENTE(K)` não vazio.
 
-| Situação | Nível alvo `L` | Fonte de ocupação |
-|----------|----------------|-------------------|
-| Existe `K*` | `L = K*` | `OCUPADO_*(K*)` via **RAMO** |
-| Não existe `K*` | `L = NM+1` | **FILHOS** **(V2a)** no segmento `NM+1` |
+| Situação        | Nível alvo `L` | Fonte de ocupação                       |
+| --------------- | -------------- | --------------------------------------- |
+| Existe `K*`     | `L = K*`       | `OCUPADO_*(K*)` via **RAMO**            |
+| Não existe `K*` | `L = NM+1`     | **FILHOS** **(V2a)** no segmento `NM+1` |
 
 Em ambos os casos aplicam-se **(A)**, **(H)** ou **(E1)** sobre o conjunto escolhido.
 
@@ -276,9 +276,9 @@ Aceitar se `1 ≤ candidato ≤ capacidade(L)` e `candidato ∉ OCUPADO_VIGENTE`
 
 ### Exemplo **(A)** — filhos diretos no nível 6 (`FILHOS`)
 
-| Código | Papel |
-|--------|--------|
-| `1.1.1.2.50.0.0.00.000` | Mãe (NM=5) |
+| Código                  | Papel                          |
+| ----------------------- | ------------------------------ |
+| `1.1.1.2.50.0.0.00.000` | Mãe (NM=5)                     |
 | `1.1.1.2.50.1.0.00.000` | Filho direto (segmento L6 = 1) |
 | `1.1.1.2.50.2.0.00.000` | Filho direto (segmento L6 = 2) |
 
@@ -286,20 +286,20 @@ Sem detalhe em **RAMO** nos níveis 7–9 → usa **FILHOS** em `L=6` → `OCUPA
 
 ### Exemplo **(B)** — detalhe no nível 9 (`RAMO`, outra classificação)
 
-| Código | Papel |
-|--------|--------|
-| `1.1.1.2.50.0.0.00.000` | Mãe (NM=5), `CLASS-RECEITA-UNIAO-2018` |
+| Código                  | Papel                                                                            |
+| ----------------------- | -------------------------------------------------------------------------------- |
+| `1.1.1.2.50.0.0.00.000` | Mãe (NM=5), `CLASS-RECEITA-UNIAO-2018`                                           |
 | `1.1.1.2.50.0.0.00.001` | Outro item, `CLASS-RECEITA-MG-2018`, `parent_item_id` = mãe, segmento L9 = `001` |
 
 **RAMO** (níveis 6–7 sem detalhe; primeiro detalhe em L9) → `K* = 9`, `OCUPADO_VIGENTE(9) = {1}` → candidato `2` → sugestão `1.1.1.2.50.0.0.00.002` (`1112500000002`), `L = 9`.
 
 ### Exemplo **(C)** — primeiro detalhe no nível 8 (ignora detalhe mais profundo em L9)
 
-| Código | Papel |
-|--------|--------|
-| `1.1.1.2.50.0.0.00.000` | Mãe (NM=5) |
+| Código                  | Papel                 |
+| ----------------------- | --------------------- |
+| `1.1.1.2.50.0.0.00.000` | Mãe (NM=5)            |
 | `1.1.1.2.50.0.0.00.001` | Detalhe em L9 (`001`) |
-| `1.1.1.2.50.0.0.01.000` | Detalhe em L8 (`01`) |
+| `1.1.1.2.50.0.0.01.000` | Detalhe em L8 (`01`)  |
 
 Níveis 6–7 sem detalhe; **primeiro** com detalhe = L8 → `OCUPADO_VIGENTE(8) = {1}` → candidato `2` → `1.1.1.2.50.0.0.02.000` (`1112500002000`), `L = 8` (não usa L9).
 
@@ -346,33 +346,33 @@ Alinhado ao `spec_itemClassificacao_foreignKeys_lookup.md`.
 - **Rota (proposta):** `GET …/admin/core/itemclassificacao/suggest-child-code-by-parent/`
 - **Parâmetros GET:**
 
-| Parâmetro | Obrigatório | Descrição |
-|-----------|-------------|-----------|
-| `parent_item_id` | Sim | PK do item mãe. |
-| `vigencia_inicio` | Não | Se omitido, usa vigência da mãe. |
-| `vigencia_fim` | Não | Idem. |
+| Parâmetro         | Obrigatório | Descrição                        |
+| ----------------- | ----------- | -------------------------------- |
+| `parent_item_id`  | Sim         | PK do item mãe.                  |
+| `vigencia_inicio` | Não         | Se omitido, usa vigência da mãe. |
+| `vigencia_fim`    | Não         | Idem.                            |
 
 ### Resposta sucesso (`ok: true`)
 
-| Campo | Descrição |
-|-------|-----------|
-| `ok` | `true` |
-| `receita_cod` | Dígitos canônicos sugeridos. |
-| `receita_cod_display` | Código formatado para o campo (máscara + vigência). |
-| `derived_level` | `number`, `pk`, `display_label` do nível **L**. |
-| `classificacao` | Payload no estilo do lookup (PK, rótulo de exibição) da classificação do `derived_level`, isto é, `derived_level.classificacao_id`. |
-| `strategy` | `expansion` \| `gap` \| `first` — auditoria. |
-| `strategy_origin` | `radical_deep` \| `direct_child` — origem do nível `L` (**Passo 2**). |
-| `level_target` | Número do nível `L` sugerido. |
-| `notices` | Lista de avisos (ex.: filho com `nivel_numero ≠ L` ignorado). |
+| Campo                 | Descrição                                                                                                                           |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `ok`                  | `true`                                                                                                                              |
+| `receita_cod`         | Dígitos canônicos sugeridos.                                                                                                        |
+| `receita_cod_display` | Código formatado para o campo (máscara + vigência).                                                                                 |
+| `derived_level`       | `number`, `pk`, `display_label` do nível **L**.                                                                                     |
+| `classificacao`       | Payload no estilo do lookup (PK, rótulo de exibição) da classificação do `derived_level`, isto é, `derived_level.classificacao_id`. |
+| `strategy`            | `expansion` \| `gap` \| `first` — auditoria.                                                                                        |
+| `strategy_origin`     | `radical_deep` \| `direct_child` — origem do nível `L` (**Passo 2**).                                                               |
+| `level_target`        | Número do nível `L` sugerido.                                                                                                       |
+| `notices`             | Lista de avisos (ex.: filho com `nivel_numero ≠ L` ignorado).                                                                       |
 
 ### Resposta erro (`ok: false`)
 
-| Campo | Descrição |
-|-------|-----------|
-| `ok` | `false` |
-| `code` | `capacity_exhausted` \| `parent_last_level` \| `level_not_resolvable` \| `invalid_parent` \| … |
-| `message` | Texto para o usuário (**E1**, **E2**, **E3**, …). |
+| Campo     | Descrição                                                                                      |
+| --------- | ---------------------------------------------------------------------------------------------- |
+| `ok`      | `false`                                                                                        |
+| `code`    | `capacity_exhausted` \| `parent_last_level` \| `level_not_resolvable` \| `invalid_parent` \| … |
+| `message` | Texto para o usuário (**E1**, **E2**, **E3**, …).                                              |
 
 ---
 
@@ -448,13 +448,13 @@ Esta secção define o atalho na tela de **edição/visualização** (`change`) 
 
 ### Estados do botão
 
-| Estado do registo actual | Botão | Ao clicar |
-|--------------------------|-------|-----------|
-| **Activo** (`data_registro_fim` = sentinela) + **Matriz** + pode sugerir filho | Activado (verde) | Modal confirmação → add |
-| **Activo** + **Detalhe** | Activado (verde) | Modal **bloqueio** — só «Entendi»; **sem** navegação |
-| **Inactivo** | Desactivado (`aria-disabled`, opacidade) | Nada |
-| Último nível hierárquico / impossível sugerir (**E2** e afins) | Desactivado + `title` explicativo | Nada |
-| Sem permissão `add` em `ItemClassificacao` | Oculto | — |
+| Estado do registo actual                                                       | Botão                                    | Ao clicar                                            |
+| ------------------------------------------------------------------------------ | ---------------------------------------- | ---------------------------------------------------- |
+| **Activo** (`data_registro_fim` = sentinela) + **Matriz** + pode sugerir filho | Activado (verde)                         | Modal confirmação → add                              |
+| **Activo** + **Detalhe**                                                       | Activado (verde)                         | Modal **bloqueio** — só «Entendi»; **sem** navegação |
+| **Inactivo**                                                                   | Desactivado (`aria-disabled`, opacidade) | Nada                                                 |
+| Último nível hierárquico / impossível sugerir (**E2** e afins)                 | Desactivado + `title` explicativo        | Nada                                                 |
+| Sem permissão `add` em `ItemClassificacao`                                     | Oculto                                   | —                                                    |
 
 A verificação de «pode sugerir filho» no servidor reutiliza `suggest_child_code_for_parent` (pré-visualização) ou critério equivalente (**último nível** da máscara).
 
@@ -507,12 +507,12 @@ Ao abrir a add via atalho, `get_changeform_initial_data` **deve** preencher `dat
 
 Constante de implementação: `vigencia_filho_from_item_mae(parent)` em `item_classificacao_child_from_change.py`.
 
-| Regra | Condição (mãe) | `data_vigencia_inicio` do filho | `data_vigencia_fim` do filho |
-|-------|----------------|----------------------------------|------------------------------|
-| **Fim** | sempre | — | **sempre** = `data_vigencia_fim` da mãe |
-| **Início A** | `inicio_mae > 01/01/<ano civil corrente>` | `inicio_mae` | (regra Fim) |
-| **Início B** | `fim_mae <= 01/01/<ano civil corrente>` (inclui `fim_mae = 01/01/<ano corrente>`) | `inicio_mae` | (regra Fim) |
-| **Início C** | `inicio_mae <= 01/01/<ano corrente>` **e** `fim_mae > 01/01/<ano corrente>` | `01/01/<ano corrente>` | (regra Fim) |
+| Regra        | Condição (mãe)                                                                    | `data_vigencia_inicio` do filho | `data_vigencia_fim` do filho            |
+| ------------ | --------------------------------------------------------------------------------- | ------------------------------- | --------------------------------------- |
+| **Fim**      | sempre                                                                            | —                               | **sempre** = `data_vigencia_fim` da mãe |
+| **Início A** | `inicio_mae > 01/01/<ano civil corrente>`                                         | `inicio_mae`                    | (regra Fim)                             |
+| **Início B** | `fim_mae <= 01/01/<ano civil corrente>` (inclui `fim_mae = 01/01/<ano corrente>`) | `inicio_mae`                    | (regra Fim)                             |
+| **Início C** | `inicio_mae <= 01/01/<ano corrente>` **e** `fim_mae > 01/01/<ano corrente>`       | `01/01/<ano corrente>`          | (regra Fim)                             |
 
 Ordem de avaliação no código: **A** → **B** → **C** (mutuamente exclusivos na prática).
 

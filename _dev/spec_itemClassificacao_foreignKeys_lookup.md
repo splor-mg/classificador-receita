@@ -21,22 +21,22 @@ Relacionado: regras de domínio de `parent_item_id` em `_dev/spec_itemClassifica
 
 ### Parâmetros GET
 
-| Parâmetro | Obrigatório | Descrição |
-|-----------|-------------|-----------|
-| `code` | Sim | Código Receita **sem pontos** (espaços são ignorados; `.` removidos). |
-| `vigencia_inicio` | Sim | Início da vigência do **filho** (formato enviado pelo front; comparado como string nas queries de filtro de data). |
-| `vigencia_fim` | Sim | Fim da vigência do filho (idem). |
+| Parâmetro         | Obrigatório | Descrição                                                                                                          |
+| ----------------- | ----------- | ------------------------------------------------------------------------------------------------------------------ |
+| `code`            | Sim         | Código Receita **sem pontos** (espaços são ignorados; `.` removidos).                                              |
+| `vigencia_inicio` | Sim         | Início da vigência do **filho** (formato enviado pelo front; comparado como string nas queries de filtro de data). |
+| `vigencia_fim`    | Sim         | Fim da vigência do filho (idem).                                                                                   |
 
 Se faltar qualquer um dos três, a resposta é o objeto “vazio” abaixo (sem erro explícito).
 
 ### Resposta JSON (sempre 200 com este shape)
 
-| Campo | Tipo | Significado |
-|-------|------|-------------|
-| `pk` | string | PK do `ItemClassificacao` encontrado, ou `""`. |
+| Campo            | Tipo   | Significado                                                                          |
+| ---------------- | ------ | ------------------------------------------------------------------------------------ |
+| `pk`             | string | PK do `ItemClassificacao` encontrado, ou `""`.                                       |
 | `semantic_value` | string | `receita_cod` formatado com `format_receita_cod_by_vigencia` para exibição, ou `""`. |
-| `display_label` | string | `"{cod} - {nome}"` ou `""`. |
-| `link_url` | string | URL do change do admin do item, ou `""`. |
+| `display_label`  | string | `"{cod} - {nome}"` ou `""`.                                                          |
+| `link_url`       | string | URL do change do admin do item, ou `""`.                                             |
 
 ### Critério de seleção (quando há `code` + vigência)
 
@@ -55,28 +55,28 @@ Se faltar qualquer um dos três, a resposta é o objeto “vazio” abaixo (sem 
 
 ### Parâmetros GET
 
-| Parâmetro | Obrigatório | Descrição |
-|-----------|-------------|-----------|
-| `code` | Sim | Código canônico **só com dígitos** (`.` removidos). |
-| `vigencia_inicio` | Sim | Data (`YYYY-MM-DD` ou `DD/MM/YYYY`). |
-| `vigencia_fim` | Sim | Data (mesmos formatos). |
-| `classificacao_pk` | Não | PK da `Classificacao` escolhida no formulário. Ausente = sem restrição de classificação nas queries de nível/mãe (salvo onde o código reintroduz busca noutra classificação). |
+| Parâmetro          | Obrigatório | Descrição                                                                                                                                                                     |
+| ------------------ | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `code`             | Sim         | Código canônico **só com dígitos** (`.` removidos).                                                                                                                           |
+| `vigencia_inicio`  | Sim         | Data (`YYYY-MM-DD` ou `DD/MM/YYYY`).                                                                                                                                          |
+| `vigencia_fim`     | Sim         | Data (mesmos formatos).                                                                                                                                                       |
+| `classificacao_pk` | Não         | PK da `Classificacao` escolhida no formulário. Ausente = sem restrição de classificação nas queries de nível/mãe (salvo onde o código reintroduz busca noutra classificação). |
 
 ### Erros (`ok: false`)
 
 Resposta típica: `{"ok": false, "message": "<texto>"}`.
 
-| Situação | Mensagem (resumo) |
-|----------|-------------------|
-| `code` vazio | Informe o código canônico. |
-| Vigência em falta | Informe o período de vigência… |
-| `vigencia_fim < vigencia_inicio` | Período inválido… |
-| `classificacao_pk` inválido (não inteiro ou sem registo) | Classificação inválida. |
-| Código com caracteres não numéricos | …apenas dígitos. |
-| Sem máscara de níveis para o contexto | Não foi possível determinar a estrutura… |
-| Código mais longo que o total de dígitos e cauda não é só zeros | Código excede o limite… |
-| Sem segmento detalhado ≠ zero | …não há nível detalhado diferente de zero. |
-| Detalhamento após o nível derivado | …há detalhamento após o nível derivado… |
+| Situação                                                        | Mensagem (resumo)                          |
+| --------------------------------------------------------------- | ------------------------------------------ |
+| `code` vazio                                                    | Informe o código canônico.                 |
+| Vigência em falta                                               | Informe o período de vigência…             |
+| `vigencia_fim < vigencia_inicio`                                | Período inválido…                          |
+| `classificacao_pk` inválido (não inteiro ou sem registo)        | Classificação inválida.                    |
+| Código com caracteres não numéricos                             | …apenas dígitos.                           |
+| Sem máscara de níveis para o contexto                           | Não foi possível determinar a estrutura…   |
+| Código mais longo que o total de dígitos e cauda não é só zeros | Código excede o limite…                    |
+| Sem segmento detalhado ≠ zero                                   | …não há nível detalhado diferente de zero. |
+| Detalhamento após o nível derivado                              | …há detalhamento após o nível derivado…    |
 
 ### Sucesso (`ok: true`)
 
@@ -99,25 +99,25 @@ Resposta típica: `{"ok": false, "message": "<texto>"}`.
 
 #### `derived_level`
 
-| Campo | Tipo | Significado |
-|-------|------|-------------|
-| `number` | int | `nivel_numero` inferido (1-based). |
-| `pk` | string | PK do `NivelHierarquico` escolhido, ou `""`. |
-| `display_label` | string | Rótulo `"{nivel_id} - {nivel_nome}"` ou vazio. |
-| `status` | object | `severity`: `ok` \| `warning` \| `error`; `message`; `alternative` (opcional). |
-| `notices` | array de strings | Avisos não bloqueantes do nível (ex.: múltiplas versões ativas compatíveis do nível, com seleção da mais recente). Ver seção **«Avisos (`notices`) — paridade item mãe / nível hierárquico»** abaixo. |
+| Campo           | Tipo             | Significado                                                                                                                                                                                           |
+| --------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `number`        | int              | `nivel_numero` inferido (1-based).                                                                                                                                                                    |
+| `pk`            | string           | PK do `NivelHierarquico` escolhido, ou `""`.                                                                                                                                                          |
+| `display_label` | string           | Rótulo `"{nivel_id} - {nivel_nome}"` ou vazio.                                                                                                                                                        |
+| `status`        | object           | `severity`: `ok` \| `warning` \| `error`; `message`; `alternative` (opcional).                                                                                                                        |
+| `notices`       | array de strings | Avisos não bloqueantes do nível (ex.: múltiplas versões ativas compatíveis do nível, com seleção da mais recente). Ver seção **«Avisos (`notices`) — paridade item mãe / nível hierárquico»** abaixo. |
 
 **`alternative` (nível):** quando existe nível noutra classificação mas não na seleccionada, inclui `classificacao` (`pk`, `classificacao_id`, `display_label`, `link_url`) e `message` explicativa.
 
 #### `parent`
 
-| Campo | Tipo | Significado |
-|-------|------|-------------|
-| `required` | bool | `true` se `derived_level.number > 1`. |
-| `found` | bool | Matriz mãe resolvida (incluindo fallbacks documentados no código). |
-| `pk`, `code`, `name`, `display_label`, `link_url` | strings | Dados do item mãe ou vazios. |
-| `status` | object | Igual convenção `severity` / `message` / `alternative`; em erro “detalhe em vez de matriz” pode existir `html` (fragmento com link) além de `message` em texto simples. |
-| `notices` | array de strings | Avisos não bloqueantes do item mãe (ex.: múltiplas versões ativas compatíveis, fallback por último nível detalhado, alternativa noutra classificação). Ver seção **«Avisos (`notices`) — paridade item mãe / nível hierárquico»** abaixo. |
+| Campo                                             | Tipo             | Significado                                                                                                                                                                                                                               |
+| ------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `required`                                        | bool             | `true` se `derived_level.number > 1`.                                                                                                                                                                                                     |
+| `found`                                           | bool             | Matriz mãe resolvida (incluindo fallbacks documentados no código).                                                                                                                                                                        |
+| `pk`, `code`, `name`, `display_label`, `link_url` | strings          | Dados do item mãe ou vazios.                                                                                                                                                                                                              |
+| `status`                                          | object           | Igual convenção `severity` / `message` / `alternative`; em erro “detalhe em vez de matriz” pode existir `html` (fragmento com link) além de `message` em texto simples.                                                                   |
+| `notices`                                         | array de strings | Avisos não bloqueantes do item mãe (ex.: múltiplas versões ativas compatíveis, fallback por último nível detalhado, alternativa noutra classificação). Ver seção **«Avisos (`notices`) — paridade item mãe / nível hierárquico»** abaixo. |
 
 **Âmbito de classificação:** quando `classificacao_pk` identifica um registo, as queries de nível e de mãe **primário** filtram pela identidade semântica da classificação (`classificacao_ref` / `classificacao_id` / FK), tal como em `classificacao_identity_filters` no módulo.
 
@@ -149,12 +149,12 @@ Sempre que o resolver bitemporal arbitra entre **N ≥ 2** candidatos ativos e c
 
 ### Textos normativos (pt-BR)
 
-| Cenário | Texto |
-|---------|-------|
-| Item mãe — primário | `Foram encontradas {N} versões ativas compatíveis do item mãe; foi selecionada a versão mais recente.` |
-| Item mãe — fallback | `Foram encontradas {N} versões ativas compatíveis do item mãe no fallback; foi selecionada a versão mais recente.` |
-| Item mãe — alternativa noutra classificação | `Foram encontradas {N} versões ativas compatíveis do item mãe noutra classificação; foi selecionada a versão mais recente.` |
-| Nível hierárquico — primário | `Foram encontradas {N} versões ativas compatíveis do nível {K}; foi selecionada a versão mais recente.` |
+| Cenário                                              | Texto                                                                                                                        |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Item mãe — primário                                  | `Foram encontradas {N} versões ativas compatíveis do item mãe; foi selecionada a versão mais recente.`                       |
+| Item mãe — fallback                                  | `Foram encontradas {N} versões ativas compatíveis do item mãe no fallback; foi selecionada a versão mais recente.`           |
+| Item mãe — alternativa noutra classificação          | `Foram encontradas {N} versões ativas compatíveis do item mãe noutra classificação; foi selecionada a versão mais recente.`  |
+| Nível hierárquico — primário                         | `Foram encontradas {N} versões ativas compatíveis do nível {K}; foi selecionada a versão mais recente.`                      |
 | Nível hierárquico — alternativa noutra classificação | `Foram encontradas {N} versões ativas compatíveis do nível {K} noutra classificação; foi selecionada a versão mais recente.` |
 
 Notas de redação:

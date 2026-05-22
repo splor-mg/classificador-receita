@@ -10,14 +10,14 @@ Lookups JSON de **código / hierarquia** no mesmo admin (lupa de mãe por códig
 
 ## Glossário (implementação)
 
-| Termo | Significado no código |
-|--------|-------------------------|
-| `LP` | `nivel_numero` do **item mãe** (`parent.nivel_id.nivel_numero`). |
-| `L` / `L_filho` | `nivel_numero` do **nível do item em criação** (registo `NivelHierarquico` cujo PK vem no campo `nivel_id` do formulário). |
-| Salto de nível | `LP < L_filho − 1` (mãe **não** é o nível imediatamente abaixo do filho). |
-| Radical (intermediários) | Primeiros `sum(mask[0:LP])` **dígitos** do `receita_cod` do mãe (apenas caracteres numéricos; o BD armazena sem pontuação de máscara). |
-| Zero canônico | Segmento em que todos os caracteres são `'0'` (função `_canonical_zero_segment`). |
-| Registo ativo | `data_registro_fim` igual ao sentinela de tempo de transação retornado por `transaction_time_sentinel_for_query()` (mesma convenção do admin bitemporal). |
+| Termo                    | Significado no código                                                                                                                                     |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LP`                     | `nivel_numero` do **item mãe** (`parent.nivel_id.nivel_numero`).                                                                                          |
+| `L` / `L_filho`          | `nivel_numero` do **nível do item em criação** (registo `NivelHierarquico` cujo PK vem no campo `nivel_id` do formulário).                                |
+| Salto de nível           | `LP < L_filho − 1` (mãe **não** é o nível imediatamente abaixo do filho).                                                                                 |
+| Radical (intermediários) | Primeiros `sum(mask[0:LP])` **dígitos** do `receita_cod` do mãe (apenas caracteres numéricos; o BD armazena sem pontuação de máscara).                    |
+| Zero canônico            | Segmento em que todos os caracteres são `'0'` (função `_canonical_zero_segment`).                                                                         |
+| Registo ativo            | `data_registro_fim` igual ao sentinela de tempo de transação retornado por `transaction_time_sentinel_for_query()` (mesma convenção do admin bitemporal). |
 
 ## Três fluxos distintos (importante para manutenção)
 
@@ -57,13 +57,13 @@ Objetivo: montar `intermediate_count`, `intermediate_rows` e rótulos de nível 
 
 ### Parâmetros GET (origem: `change_form.html`, `requestParentLevelJumpConfirmation`)
 
-| Parâmetro | Origem no formulário | Uso |
-|-----------|----------------------|-----|
-| `parent_item_id` | Valor do campo mãe (PK) | Carrega `ItemClassificacao` pai. |
-| `nivel_id` | PK do nível do **item novo** | `child_n` = `nivel_numero` desse nível. |
-| `classificacao_id` | PK da classificação selecionada | **Filtro da query** de intermediários (`classificacao_id_id`). |
-| `vigencia_inicio`, `vigencia_fim` | Datas do formulário (ISO `YYYY-MM-DD`) | **Sobreposição de vigência** na análise de intermediários e formatação de códigos mascarados no JSON. |
-| `receita_cod` | Dígitos do código do filho (sem pontos) | Máscara no JSON; `exclude_receita_cod` na análise (não listar o próprio rascunho se coincidir com um PK existente). |
+| Parâmetro                         | Origem no formulário                    | Uso                                                                                                                 |
+| --------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `parent_item_id`                  | Valor do campo mãe (PK)                 | Carrega `ItemClassificacao` pai.                                                                                    |
+| `nivel_id`                        | PK do nível do **item novo**            | `child_n` = `nivel_numero` desse nível.                                                                             |
+| `classificacao_id`                | PK da classificação selecionada         | **Filtro da query** de intermediários (`classificacao_id_id`).                                                      |
+| `vigencia_inicio`, `vigencia_fim` | Datas do formulário (ISO `YYYY-MM-DD`)  | **Sobreposição de vigência** na análise de intermediários e formatação de códigos mascarados no JSON.               |
+| `receita_cod`                     | Dígitos do código do filho (sem pontos) | Máscara no JSON; `exclude_receita_cod` na análise (não listar o próprio rascunho se coincidir com um PK existente). |
 
 Se faltar qualquer um dos obrigatórios da primeira linha (pai, nível, classificação, vigência), a view devolve `{"ok": true, "level_jump": false}` e o front segue o submit sem modal.
 
@@ -196,11 +196,11 @@ Fluxo no `submit` (modo **add**):
 
 ### Coerência `nivel_id` × código no submit (**R-nivel-submit**)
 
-| Gatilho | Comportamento de `nivel_id` |
-|---------|------------------------------|
-| `code_blur`, `classificacao_change`, `init` | O cliente **pode** preencher/substituir `nivel_id` pelo PK de `derived_level` devolvido por `lookup-hierarchy-by-code` (autofill). |
-| `submit` | O cliente **não** altera o valor de `nivel_id` escolhido no formulário. Compara `metadata.nivel_numero` do PK selecionado com `derived_level.number` do lookup. Se divergirem, bloqueia o submit com `<ul class="errorlist hierarchy-autofill-error">` no campo **Nível Hierárquico** e mensagem normativa (ver abaixo). |
-| Servidor (`full_clean` / `validate_item_parent_item_rules`) | `validate_item_nivel_id_receita_cod_derivation` em `parent_item_validation.py` aplica a mesma regra; erro em `nivel_id` no POST. |
+| Gatilho                                                     | Comportamento de `nivel_id`                                                                                                                                                                                                                                                                                              |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `code_blur`, `classificacao_change`, `init`                 | O cliente **pode** preencher/substituir `nivel_id` pelo PK de `derived_level` devolvido por `lookup-hierarchy-by-code` (autofill).                                                                                                                                                                                       |
+| `submit`                                                    | O cliente **não** altera o valor de `nivel_id` escolhido no formulário. Compara `metadata.nivel_numero` do PK selecionado com `derived_level.number` do lookup. Se divergirem, bloqueia o submit com `<ul class="errorlist hierarchy-autofill-error">` no campo **Nível Hierárquico** e mensagem normativa (ver abaixo). |
+| Servidor (`full_clean` / `validate_item_parent_item_rules`) | `validate_item_nivel_id_receita_cod_derivation` em `parent_item_validation.py` aplica a mesma regra; erro em `nivel_id` no POST.                                                                                                                                                                                         |
 
 **Mensagem normativa (exemplo):**
 
@@ -220,14 +220,14 @@ Variáveis de contexto: `item_validate_intermediate_zeros_url`, `item_parent_lev
 
 ## Referências de código (mapa rápido)
 
-| Peça | Arquivo / símbolo |
-|------|---------------------|
-| Rota customizada | `ItemClassificacaoAdmin.get_urls` → `warn-parent-level-jump/` |
-| View JSON | `warn_parent_level_jump_view` (`admin.py`) → `warn_parent_level_jump_json_dict` (`parent_item_validation.py`) |
-| Análise intermediários | `analyze_intermediate_items_for_level_jump` |
-| Validação domínio pai/filho | `validate_item_parent_item_rules`, `validate_item_nivel_id_receita_cod_derivation`, `derive_nivel_numero_from_receita_cod_digits` |
-| Modal | `showCoreAttentionModal` (base binária), variante tri-botão **(G5)** ou `showCoreParentChangeConfirmModal`, `showCoreLevelJumpModal` (salto ao gravar), `requestParentLevelJumpConfirmation` em `change_form.html`; troca de mãe com código preenchido — ver **(G5)** em `spec_itemClassificacao_criar_filho.md`; limpar formulário na add — ver `_dev/spec_itemClassificacao_formulario.md` (**R-clear**) |
-| Sentinela registo | `transaction_time_sentinel_for_query` em `apps/core/admin_mixins.py` |
+| Peça                        | Arquivo / símbolo                                                                                                                                                                                                                                                                                                                                                                                          |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rota customizada            | `ItemClassificacaoAdmin.get_urls` → `warn-parent-level-jump/`                                                                                                                                                                                                                                                                                                                                              |
+| View JSON                   | `warn_parent_level_jump_view` (`admin.py`) → `warn_parent_level_jump_json_dict` (`parent_item_validation.py`)                                                                                                                                                                                                                                                                                              |
+| Análise intermediários      | `analyze_intermediate_items_for_level_jump`                                                                                                                                                                                                                                                                                                                                                                |
+| Validação domínio pai/filho | `validate_item_parent_item_rules`, `validate_item_nivel_id_receita_cod_derivation`, `derive_nivel_numero_from_receita_cod_digits`                                                                                                                                                                                                                                                                          |
+| Modal                       | `showCoreAttentionModal` (base binária), variante tri-botão **(G5)** ou `showCoreParentChangeConfirmModal`, `showCoreLevelJumpModal` (salto ao gravar), `requestParentLevelJumpConfirmation` em `change_form.html`; troca de mãe com código preenchido — ver **(G5)** em `spec_itemClassificacao_criar_filho.md`; limpar formulário na add — ver `_dev/spec_itemClassificacao_formulario.md` (**R-clear**) |
+| Sentinela registo           | `transaction_time_sentinel_for_query` em `apps/core/admin_mixins.py`                                                                                                                                                                                                                                                                                                                                       |
 
 ## Renderização preventiva de `parent_item_id` para itens raiz (`nivel_numero = 1`)
 

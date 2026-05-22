@@ -133,10 +133,10 @@ Em formulários de **adicionar** (`…_add`) para `Classificacao`, `NivelHierarq
 
 Campos configurados (via `popup_default_registro_ativo_ano_corrente` em `semantic_fk_config`):
 
-| ModelAdmin (origem) | FK |
-|---------------------|-----|
-| `Classificacao` | `serie_id` (Série de Classificação) |
-| `NivelHierarquico` | `classificacao_id` |
+| ModelAdmin (origem) | FK                                                          |
+| ------------------- | ----------------------------------------------------------- |
+| `Classificacao`     | `serie_id` (Série de Classificação)                         |
+| `NivelHierarquico`  | `classificacao_id`                                          |
 | `ItemClassificacao` | `classificacao_id`, `parent_item_id` (item mãe), `nivel_id` |
 
 Formulário admin de `ItemClassificacao`: largura de `receita_cod` (**37ch**, paridade com FK semânticos) e ação «Limpar formulário e recomeçar» (ícone vassourinha, somente **add**) — ver `_dev/spec_itemClassificacao_formulario.md`.
@@ -190,11 +190,11 @@ Esta secção documenta padrões transversais aplicados às telas de **listagem*
 
 #### Conceitos (ciclo de vida do filtro padrão)
 
-| Conceito | Comportamento esperado |
-|----------|------------------------|
-| **Entrada na changelist** | Navegação «fria» (menu, índice do admin, outro model, add/change/history, etc.) para `/admin/<app>/<model>/` com query **sem** filtros de negócio → **aplica** o `changelist_default_filters` desse `ModelAdmin` (redirect 302). |
-| **Modo sem filtro padrão** | Após «Limpar todos os filtros», o utilizador permanece na **mesma** changelist **sem** filtros na URL e **sem** reaplicar o default (nem ao paginar/ordenar). |
-| **Reentrada** | Depois de sair da changelist (qualquer URL admin que não seja `/admin/<app>/<model>/` exactamente), voltar à lista → **reaplica** o filtro padrão (como na primeira entrada). |
+| Conceito                   | Comportamento esperado                                                                                                                                                                                                           |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Entrada na changelist**  | Navegação «fria» (menu, índice do admin, outro model, add/change/history, etc.) para `/admin/<app>/<model>/` com query **sem** filtros de negócio → **aplica** o `changelist_default_filters` desse `ModelAdmin` (redirect 302). |
+| **Modo sem filtro padrão** | Após «Limpar todos os filtros», o utilizador permanece na **mesma** changelist **sem** filtros na URL e **sem** reaplicar o default (nem ao paginar/ordenar).                                                                    |
+| **Reentrada**              | Depois de sair da changelist (qualquer URL admin que não seja `/admin/<app>/<model>/` exactamente), voltar à lista → **reaplica** o filtro padrão (como na primeira entrada).                                                    |
 
 Comportamento **não** desejado: o default reaplicar-se a cada clique na sidebar enquanto o utilizador tenta limpar ou escolher «Todos»; nem a flag de «limpei tudo» persistir entre visitas distintas à mesma changelist.
 
@@ -204,15 +204,15 @@ Comportamento: na **entrada** (ver tabela acima), o admin responde com um **redi
 
 Cada changelist define o seu próprio default **explicitamente** no respectivo `ModelAdmin` (`changelist_default_filters`). Não há valor global único: a tabela abaixo é a fonte de verdade do contrato por entidade.
 
-| Changelist (ModelAdmin) | Filtro | Valor default (query string) | Rótulo na sidebar | Significado |
-|--------------------------|--------|------------------------------|-------------------|-------------|
-| `SerieClassificacao` | `RegistroAtivoFilter` | `registro_ativo=ativo_historico` | Ativos (Histórico) | Registo activo em transaction time, qualquer vigência |
-| `Classificacao` | `RegistroAtivoFilter` | `registro_ativo=ativo_historico` | Ativos (Histórico) | idem |
-| `NivelHierarquico` | `RegistroAtivoFilter` | `registro_ativo=ativo_corrente` | Ativos (Ano Corrente) | Registo activo e vigência com sobreposição ao ano civil corrente |
-| `ItemClassificacao` | `RegistroAtivoFilter` | `registro_ativo=ativo_corrente` | Ativos (Ano Corrente) | idem |
-| `VersaoClassificacao` | `RegistroAtivoFilter` | `registro_ativo=ativo_corrente` | Ativos (Ano Corrente) | idem |
-| `VarianteClassificacao` | `RegistroAtivoFilter` | `registro_ativo=ativo_historico` | Ativos (Histórico) | Registo activo em transaction time, qualquer vigência |
-| `AliasLexico` | `AliasLexicoRegistroAtivoFilter` | `lista_abreviacoes_registro=ativo` | Registro ativo | `data_registro_fim` = sentinela (sem vigência orçamentária; default próprio desta changelist) |
+| Changelist (ModelAdmin) | Filtro                           | Valor default (query string)       | Rótulo na sidebar     | Significado                                                                                   |
+| ----------------------- | -------------------------------- | ---------------------------------- | --------------------- | --------------------------------------------------------------------------------------------- |
+| `SerieClassificacao`    | `RegistroAtivoFilter`            | `registro_ativo=ativo_historico`   | Ativos (Histórico)    | Registo activo em transaction time, qualquer vigência                                         |
+| `Classificacao`         | `RegistroAtivoFilter`            | `registro_ativo=ativo_historico`   | Ativos (Histórico)    | idem                                                                                          |
+| `NivelHierarquico`      | `RegistroAtivoFilter`            | `registro_ativo=ativo_corrente`    | Ativos (Ano Corrente) | Registo activo e vigência com sobreposição ao ano civil corrente                              |
+| `ItemClassificacao`     | `RegistroAtivoFilter`            | `registro_ativo=ativo_corrente`    | Ativos (Ano Corrente) | idem                                                                                          |
+| `VersaoClassificacao`   | `RegistroAtivoFilter`            | `registro_ativo=ativo_corrente`    | Ativos (Ano Corrente) | idem                                                                                          |
+| `VarianteClassificacao` | `RegistroAtivoFilter`            | `registro_ativo=ativo_historico`   | Ativos (Histórico)    | Registo activo em transaction time, qualquer vigência                                         |
+| `AliasLexico`           | `AliasLexicoRegistroAtivoFilter` | `lista_abreviacoes_registro=ativo` | Registro ativo        | `data_registro_fim` = sentinela (sem vigência orçamentária; default próprio desta changelist) |
 
 Constantes em `apps.core.admin_mixins`: `REGISTRO_ATIVO_VALUE_HISTORICO` → `ativo_historico`; `REGISTRO_ATIVO_VALUE_ANO_CORRENTE` → `ativo_corrente` (não usar `ativo_ano_corrente` na URL).
 

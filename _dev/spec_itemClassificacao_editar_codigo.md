@@ -6,48 +6,48 @@ Esta especificação define o comportamento quando o usuário **altera** o campo
 
 **Dois eixos de comportamento:**
 
-| Eixo | Gatilho | Efeito |
-|------|---------|--------|
-| **Navegação** **(G-cod.blur)** | `blur` em `receita_cod` com **COD-2 ≠ COD-1** | Modais **M2–M4**: redirecionar ou restaurar **COD-1**. |
+| Eixo                              | Gatilho                                                       | Efeito                                                          |
+| --------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------- |
+| **Navegação** **(G-cod.blur)**    | `blur` em `receita_cod` com **COD-2 ≠ COD-1**                 | Modais **M2–M4**: redirecionar ou restaurar **COD-1**.          |
 | **Persistência** **(G-cod.save)** | **Salvar** ou lápis **Editar vigência** com **COD-2 ≠ COD-1** | **Não** abrir `bitemporal_confirm.html`; modal **M-cod-block**. |
 
 **Implementação de referência (alvo):** `apps/core/templates/admin/core/change_form.html` (`showCoreAttentionModal`, blur, validação de dígitos); `apps/core/admin_handlers.py` (`BitemporalChangeHandler`); novo endpoint JSON em `ItemClassificacaoAdmin` (família `lookup-*-by-code` / `resolve-code-navigation` em `apps/core/item_classificacao_code_lookup.py`).
 
 **Specs relacionadas (não substituídas, salvo onde indicado):**
 
-| Spec | Relação |
-|------|---------|
-| `_dev/spec_itemClassificacao_formulario.md` | Largura `37ch`; **(R-clear)** só na **add**; **(R-revert)** na **change** (esta spec). |
-| `_dev/spec_itemClassificacao_mascara_apresentacao.md` | **B1** — normalização e máscara no blur. |
-| `_dev/spec_itemClassificacao_foreignKeys_lookup.md` | Lookups na **add**; na **change** com código alterado, **não** reconciliar hierarquia no blur (**G-cod.blur**). |
-| `_dev/spec_itemClassificacao_criar_filho.md` | **(T6)**, **(T7)**; aviso de alterações não guardadas na navegação (**v2**). |
-| `_dev/spec_itemClassificacao_navegacao.md` | Botões **(G-nav.\*)** na change; distinto de **(G-cod.blur)**. |
-| `_dev/spec_itemClassificacao_criar_nome.md` | Protocolos da add após redirecionamento (**C4**). |
-| `_dev/toDo.md` | Alerta «código já existente» na add — fora desta spec. |
+| Spec                                                  | Relação                                                                                                         |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `_dev/spec_itemClassificacao_formulario.md`           | Largura `37ch`; **(R-clear)** só na **add**; **(R-revert)** na **change** (esta spec).                          |
+| `_dev/spec_itemClassificacao_mascara_apresentacao.md` | **B1** — normalização e máscara no blur.                                                                        |
+| `_dev/spec_itemClassificacao_foreignKeys_lookup.md`   | Lookups na **add**; na **change** com código alterado, **não** reconciliar hierarquia no blur (**G-cod.blur**). |
+| `_dev/spec_itemClassificacao_criar_filho.md`          | **(T6)**, **(T7)**; aviso de alterações não guardadas na navegação (**v2**).                                    |
+| `_dev/spec_itemClassificacao_navegacao.md`            | Botões **(G-nav.\*)** na change; distinto de **(G-cod.blur)**.                                                  |
+| `_dev/spec_itemClassificacao_criar_nome.md`           | Protocolos da add após redirecionamento (**C4**).                                                               |
+| `_dev/toDo.md`                                        | Alerta «código já existente» na add — fora desta spec.                                                          |
 
 ---
 
 ## Escopo
 
-| Inclui | Não inclui |
-|--------|------------|
-| View **change** de `ItemClassificacao` | Fluxos na view **add** (sugestão de filho, **R-clear**, lookups normais) |
-| **(G-cod.blur)** — blur, cenários **C1–C4**, modais **M2–M4** | `readonly` permanente em `receita_cod` |
-| **(G-cod.save)** — bloqueio de **Salvar** e **Editar vigência** | Persistir **COD-2** no mesmo registro (domínio + UI) |
-| Borracha na change — **(R-revert)** | «Limpar formulário inteiro» da add — **(R-clear)** |
-| Endpoint `resolve-code-navigation` (recomendado) | Detalhe interno de estratégias bitemporais além do bloqueio |
+| Inclui                                                          | Não inclui                                                               |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| View **change** de `ItemClassificacao`                          | Fluxos na view **add** (sugestão de filho, **R-clear**, lookups normais) |
+| **(G-cod.blur)** — blur, cenários **C1–C4**, modais **M2–M4**   | `readonly` permanente em `receita_cod`                                   |
+| **(G-cod.save)** — bloqueio de **Salvar** e **Editar vigência** | Persistir **COD-2** no mesmo registro (domínio + UI)                     |
+| Borracha na change — **(R-revert)**                             | «Limpar formulário inteiro» da add — **(R-clear)**                       |
+| Endpoint `resolve-code-navigation` (recomendado)                | Detalhe interno de estratégias bitemporais além do bloqueio              |
 
 ---
 
 ## Notação
 
-| Símbolo | Significado |
-|---------|-------------|
-| **COD-1** | Código canônico (somente dígitos `0-9`) do registro em edição **ao carregar** a change; snapshot até sair da página ou **(R-revert)**. |
-| **COD-2** | Código canônico normalizado do input no momento da avaliação (**B1**: sem pontuação de máscara). |
-| **(T-cod.0) Código alterado na change** | **COD-2** não vazio **e** **COD-2 ≠ COD-1**. |
-| **V1** | Vigência do registro aberto: `data_vigencia_inicio` e `data_vigencia_fim` do `instance` na change. |
-| **`<código>`** | `receita_cod` **formatado** (máscara) para exibição em modais. |
+| Símbolo                                 | Significado                                                                                                                            |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **COD-1**                               | Código canônico (somente dígitos `0-9`) do registro em edição **ao carregar** a change; snapshot até sair da página ou **(R-revert)**. |
+| **COD-2**                               | Código canônico normalizado do input no momento da avaliação (**B1**: sem pontuação de máscara).                                       |
+| **(T-cod.0) Código alterado na change** | **COD-2** não vazio **e** **COD-2 ≠ COD-1**.                                                                                           |
+| **V1**                                  | Vigência do registro aberto: `data_vigencia_inicio` e `data_vigencia_fim` do `instance` na change.                                     |
+| **`<código>`**                          | `receita_cod` **formatado** (máscara) para exibição em modais.                                                                         |
 
 **Normalização (obrigatória em todos os eixos):** remover `.` e espaços; comparar apenas dígitos. Não usar somente `form.has_changed()` em `receita_cod` — máscara e `padEnd` podem marcar alteração sem mudança semântica; a autoridade é **COD-1** vs **COD-2**.
 
@@ -70,14 +70,14 @@ Esta especificação define o comportamento quando o usuário **altera** o campo
 
 ### Ordem do pipeline
 
-| Etapa | Condição | Ação |
-|-------|----------|------|
-| 0 | View **add** | **Encerrar** — esta spec não se aplica. |
-| 0 | View **change** | Prosseguir. |
-| 1 | `blur` em `receita_cod` | Início do pipeline. |
-| 2 | **B1** + `runCodeDigitValidation` | Se inválido → **C1**; **não** abrir **M2–M4**. |
-| 3 | **não** **(T-cod.0)** | **Encerrar** — sem modal de navegação. |
-| 4 | **(T-cod.0)** e dígitos válidos | Classificar **C2–C4** e abrir modal correspondente. |
+| Etapa | Condição                          | Ação                                                |
+| ----- | --------------------------------- | --------------------------------------------------- |
+| 0     | View **add**                      | **Encerrar** — esta spec não se aplica.             |
+| 0     | View **change**                   | Prosseguir.                                         |
+| 1     | `blur` em `receita_cod`           | Início do pipeline.                                 |
+| 2     | **B1** + `runCodeDigitValidation` | Se inválido → **C1**; **não** abrir **M2–M4**.      |
+| 3     | **não** **(T-cod.0)**             | **Encerrar** — sem modal de navegação.              |
+| 4     | **(T-cod.0)** e dígitos válidos   | Classificar **C2–C4** e abrir modal correspondente. |
 
 ### `syncHierarchyFromCode`
 
@@ -95,9 +95,9 @@ Esse fluxo pressupõe **atualizar a mesma entidade**. Trocar `receita_cod` no fo
 
 ### **(G-cod.save.1) Gatilhos bloqueados**
 
-| Gatilho | Identificação |
-|---------|----------------|
-| **Salvar** | `submit` do formulário de change com `name="_save"` (botão padrão do admin). |
+| Gatilho             | Identificação                                                                                                       |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **Salvar**          | `submit` do formulário de change com `name="_save"` (botão padrão do admin).                                        |
 | **Editar vigência** | `submit` com `name="_edit_vigencia"` e `value="1"` (lápis ao lado de `data_vigencia_inicio` / `data_vigencia_fim`). |
 
 Qualquer outro botão de submit da change que dispare o mesmo POST para `BitemporalChangeHandler` com alterações no formulário **deve** respeitar a mesma regra se incluir `receita_cod` alterado.
@@ -132,12 +132,12 @@ Com **COD-2** restaurado para **COD-1**, **Salvar** e **Editar vigência** volta
 
 ## Borracha na change **(R-revert)**
 
-| Regra | Descrição |
-|-------|-----------|
-| **(R-revert.1)** | Controle à direita de `receita_cod`, mesmo layout da add (**(R-clear.2)**). |
-| **(R-revert.2)** | Restaura **somente** `receita_cod` (valor + máscara) para **COD-1**; sem recarregar a página. |
-| **(R-revert.3)** | Ação imediata, **sem** modal. |
-| **(R-revert.4)** | `title` / `aria-label`: «Restaurar código original». |
+| Regra            | Descrição                                                                                                                                                                                                                                                                                        |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **(R-revert.1)** | Controle à direita de `receita_cod`, mesmo layout da add (**(R-clear.2)**).                                                                                                                                                                                                                      |
+| **(R-revert.2)** | Restaura **somente** `receita_cod` (valor + máscara) para **COD-1**; sem recarregar a página.                                                                                                                                                                                                    |
+| **(R-revert.3)** | Ação imediata, **sem** modal.                                                                                                                                                                                                                                                                    |
+| **(R-revert.4)** | `title` / `aria-label`: «Restaurar código original».                                                                                                                                                                                                                                             |
 | **(R-revert.5)** | Após restaurar: `clearReceitaCodMessages` no `.form-row` do campo (remove erro **C1**, avisos e warnings inline); `setCustomValidity('')`; `syncItemIdPreview()`; `__coreRebaselineReceitaCodNavigationDirtyState()` para `receita_cod` e `item_id` deixarem de contar como alteração não salva. |
 
 **Implementação:** `restoreReceitaCodOrigem()` em `change_form.html` (também usada ao **Cancelar** modais **M2–M4**).
@@ -148,23 +148,23 @@ Com **COD-2** restaurado para **COD-1**, **Salvar** e **Editar vigência** volta
 
 Após **(G-cod.blur)** etapas 2–3, aplicar a **primeira** linha válida:
 
-| ID | Condições | UI |
-|----|-----------|-----|
-| **C1** | **não** **(T-cod.4)** | Erro inline (`showReceitaCodError`), mesmo texto da add quando o comprimento não casa com a estrutura. |
-| **C2** | **(T-cod.4)**; **(T-cod.1)**; **(T-cod.2)** | **M2** |
-| **C3** | **(T-cod.4)**; **(T-cod.1)**; **(T-cod.3)** | **M3** |
-| **C4** | **(T-cod.4)**; **não** **(T-cod.1)** | **M4** |
+| ID     | Condições                                   | UI                                                                                                     |
+| ------ | ------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| **C1** | **não** **(T-cod.4)**                       | Erro inline (`showReceitaCodError`), mesmo texto da add quando o comprimento não casa com a estrutura. |
+| **C2** | **(T-cod.4)**; **(T-cod.1)**; **(T-cod.2)** | **M2**                                                                                                 |
+| **C3** | **(T-cod.4)**; **(T-cod.1)**; **(T-cod.3)** | **M3**                                                                                                 |
+| **C4** | **(T-cod.4)**; **não** **(T-cod.1)**        | **M4**                                                                                                 |
 
 ### Endpoint `resolve-code-navigation` (recomendado)
 
 `GET …/admin/core/itemclassificacao/resolve-code-navigation/`
 
-| Parâmetro | Obrigatório | Descrição |
-|-----------|-------------|-----------|
-| `code` | Sim | **COD-2** (dígitos). |
-| `vigencia_inicio` | Sim | Início de **V1**. |
-| `vigencia_fim` | Sim | Fim de **V1**. |
-| `exclude_pk` | Não | PK do registro em edição. |
+| Parâmetro         | Obrigatório | Descrição                 |
+| ----------------- | ----------- | ------------------------- |
+| `code`            | Sim         | **COD-2** (dígitos).      |
+| `vigencia_inicio` | Sim         | Início de **V1**.         |
+| `vigencia_fim`    | Sim         | Fim de **V1**.            |
+| `exclude_pk`      | Não         | PK do registro em edição. |
 
 Resposta sugerida: `{ "ok": true, "scenario": "C2"|"C3"|"C4", "codigo_display": "...", "target": { "view": "change"|"add", "pk": "", "change_url": "", "add_url": "" } }` ou `{ "ok": false, "scenario": "C1", "message": "..." }`.
 
@@ -210,10 +210,10 @@ Não foi encontrado registro para o <código>.
 Deseja ser direcionado para a tela de criação de um novo código?
 ```
 
-| Cenário | «Sim» |
-|---------|--------|
-| **C2**, **C3** | `change` do PK desempatado. |
-| **C4** | `add` com `receita_cod` pré-preenchido; protocolos da add (**B1**, `syncHierarchyFromCode`, **(V3)**, **P-mãe**). |
+| Cenário        | «Sim»                                                                                                             |
+| -------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **C2**, **C3** | `change` do PK desempatado.                                                                                       |
+| **C4**         | `add` com `receita_cod` pré-preenchido; protocolos da add (**B1**, `syncHierarchyFromCode`, **(V3)**, **P-mãe**). |
 
 ### **M-cod-block** — bloqueio de persistência **(G-cod.save)**
 
