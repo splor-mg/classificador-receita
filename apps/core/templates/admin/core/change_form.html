@@ -43,6 +43,67 @@
     pointer-events: none;
   }
 </style>
+{% if change and item_structural_nav_enabled %}
+<style id="core-itemclassificacao-structural-nav">
+  .core-structural-nav-toolbar-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    margin: 0 0 1rem 0;
+    clear: both;
+  }
+  .core-structural-nav-toolbar-row ul.object-tools {
+    float: none;
+    margin: 0;
+    padding: 0;
+    position: static;
+    top: auto;
+    right: auto;
+  }
+  .core-structural-nav-btn-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .core-structural-nav-btn-group .core-structural-nav-sep {
+    display: inline-flex;
+    align-items: center;
+    margin: 0 0.2rem;
+    padding: 0 0.1rem;
+    color: #aaa;
+    font-size: 0.95rem;
+    line-height: 1;
+    user-select: none;
+  }
+  button.core-structural-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    padding: 0.1rem 0.25rem;
+    font-size: 1.05rem;
+    line-height: 1;
+    color: #333;
+    background: transparent;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    box-sizing: border-box;
+  }
+  button.core-structural-nav-btn:hover:not(:disabled),
+  button.core-structural-nav-btn:focus-visible:not(:disabled) {
+    background: rgba(0, 0, 0, 0.06);
+    outline: none;
+  }
+  button.core-structural-nav-btn:disabled,
+  button.core-structural-nav-btn[aria-disabled="true"] {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+</style>
+{% endif %}
 <style id="core-itemclassificacao-level-jump-modal">
   .core-level-jump-modal-overlay {
     position: fixed;
@@ -396,6 +457,14 @@
     var itemChangeCodigoOrigemDigits = '{{ item_change_codigo_origem_digits|default:""|escapejs }}';
     var itemChangeCodigoOrigemDisplay = '{{ item_change_codigo_origem_display|default:""|escapejs }}';
     var itemCodeNavigationResolveUrl = '{{ item_code_navigation_resolve_url|default:"" }}';
+    var itemStructuralNavUrl = '{{ item_structural_navigation_url|default:""|escapejs }}';
+    var itemStructuralNavPk = '{{ item_structural_nav_origin_pk|default:""|escapejs }}';
+    var itemStructuralNavAvailability = {};
+    try {
+      itemStructuralNavAvailability = JSON.parse('{{ item_structural_nav_availability_json|default:"{}"|escapejs }}');
+    } catch (structuralNavAvailErr) {
+      itemStructuralNavAvailability = {};
+    }
     var itemChangeObjectPk = '{{ object_id|default:""|escapejs }}';
     var receitaCodDigitLimitCache = {};
     var receitaCodResolvedDigitMask = null;
@@ -3137,7 +3206,163 @@
       });
     }
 
+    function setupStructuralNavigationToolbar() {
+      if (isAddMode || !itemStructuralNavUrl || !itemStructuralNavPk) {
+        return;
+      }
+      var objectTools = document.querySelector('#content ul.object-tools');
+      if (!objectTools || document.getElementById('core-structural-nav-toolbar-row')) {
+        return;
+      }
+
+      var buttonDefs = [
+        {
+          id: 'core-nav-prev-level',
+          direction: 'prev_level',
+          glyph: '\u00AB',
+          ariaLabel: 'Nível anterior',
+          titleActive: 'Nível anterior — abrir o código irmão anterior',
+          titleDisabled: 'Nível anterior — não há código irmão anterior navegável nesta vigência'
+        },
+        {
+          id: 'core-nav-prev-code',
+          direction: 'prev_code',
+          glyph: '\u2039',
+          ariaLabel: 'Código anterior',
+          titleActive: 'Código anterior — abrir o código anterior na árvore',
+          titleDisabled: 'Código anterior — não há código anterior navegável nesta vigência'
+        },
+        {
+          id: 'core-nav-next-code',
+          direction: 'next_code',
+          glyph: '\u203A',
+          ariaLabel: 'Próximo código',
+          titleActive: 'Próximo código — abrir o próximo código vigente nessa estrutura',
+          titleDisabled: 'Próximo código — não há código seguinte navegável nesta vigência'
+        },
+        {
+          id: 'core-nav-next-level',
+          direction: 'next_level',
+          glyph: '\u00BB',
+          ariaLabel: 'Próximo nível',
+          titleActive: 'Próximo nível — abrir o código irmão seguinte vigente nessa estrutura',
+          titleDisabled: 'Próximo nível — não há código irmão seguinte navegável nesta vigência'
+        }
+      ];
+
+      var row = document.createElement('div');
+      row.id = 'core-structural-nav-toolbar-row';
+      row.className = 'core-structural-nav-toolbar-row';
+
+      var group = document.createElement('div');
+      group.className = 'core-structural-nav-btn-group';
+      group.setAttribute('role', 'group');
+      group.setAttribute('aria-label', 'Navegação estrutural do código canônico');
+
+      function setButtonEnabled(btn, def, enabled) {
+        btn.disabled = !enabled;
+        btn.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+        btn.title = enabled ? def.titleActive : def.titleDisabled;
+      }
+
+      buttonDefs.forEach(function(def, index) {
+        if (index === 2) {
+          var sep = document.createElement('span');
+          sep.className = 'core-structural-nav-sep';
+          sep.setAttribute('aria-hidden', 'true');
+          sep.textContent = '|';
+          group.appendChild(sep);
+        }
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.id = def.id;
+        btn.className = 'core-structural-nav-btn';
+        btn.setAttribute('data-direction', def.direction);
+        btn.setAttribute('aria-label', def.ariaLabel);
+        btn.textContent = def.glyph;
+        var enabled = !!itemStructuralNavAvailability[def.direction];
+        setButtonEnabled(btn, def, enabled);
+
+        btn.addEventListener('click', function(event) {
+          event.preventDefault();
+          if (btn.disabled) {
+            return;
+          }
+          var direction = def.direction;
+          var params = new URLSearchParams({
+            pk: itemStructuralNavPk,
+            direction: direction
+          });
+          var changelistFilters = new URLSearchParams(window.location.search).get('_changelist_filters');
+          if (changelistFilters) {
+            params.set('_changelist_filters', changelistFilters);
+          }
+
+          function navigateToTarget(url) {
+            function go() {
+              window.location.assign(url);
+            }
+            if (typeof window.__coreConfirmUnsavedIfDirty === 'function') {
+              window.__coreConfirmUnsavedIfDirty(go);
+            } else {
+              go();
+            }
+          }
+
+          function showClassificacaoWarningModal(target, proceedFn) {
+            if (!target || !target.classificacao_changed) {
+              proceedFn();
+              return;
+            }
+            var destClass = target.classificacao_display || target.classificacao_id || '—';
+            var originClass = target.origin_classificacao_display || '—';
+            var dirLabel = def.ariaLabel.toLowerCase();
+            showCoreAttentionModal({
+              messages: [
+                'O código de destino (' + dirLabel + ') pertence à classificação ' + destClass +
+                  ', diferente da classificação ' + originClass + ' do registro atual.'
+              ],
+              confirmQuestion: 'Deseja continuar?',
+              okLabel: 'Continuar',
+              cancelLabel: 'Cancelar'
+            }).then(function(confirmed) {
+              if (confirmed) {
+                proceedFn();
+              }
+            });
+          }
+
+          fetch(itemStructuralNavUrl + '?' + params.toString(), {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json' }
+          })
+            .then(function(resp) { return resp.json(); })
+            .then(function(data) {
+              if (!data || !data.ok || !data.target || !data.target.change_url) {
+                return;
+              }
+              var changeUrl = data.target.change_url;
+              showClassificacaoWarningModal(data.target, function() {
+                navigateToTarget(changeUrl);
+              });
+            })
+            .catch(function() {});
+        });
+
+        group.appendChild(btn);
+      });
+
+      row.appendChild(group);
+      var parent = objectTools.parentNode;
+      if (parent) {
+        parent.insertBefore(row, objectTools);
+        row.appendChild(objectTools);
+      }
+    }
+
     setupCreateChildCodeButton();
+    setupStructuralNavigationToolbar();
     window.setTimeout(initChildCodeFromChangeParent, 150);
   }
 

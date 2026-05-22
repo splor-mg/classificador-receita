@@ -21,6 +21,7 @@ Esta especificação define o comportamento quando o usuário **altera** o campo
 | `_dev/spec_itemClassificacao_mascara_apresentacao.md` | **B1** — normalização e máscara no blur. |
 | `_dev/spec_itemClassificacao_foreignKeys_lookup.md` | Lookups na **add**; na **change** com código alterado, **não** reconciliar hierarquia no blur (**G-cod.blur**). |
 | `_dev/spec_itemClassificacao_criar_filho.md` | **(T6)**, **(T7)**; aviso de alterações não guardadas na navegação (**v2**). |
+| `_dev/spec_itemClassificacao_navegacao.md` | Botões **(G-nav.\*)** na change; distinto de **(G-cod.blur)**. |
 | `_dev/spec_itemClassificacao_criar_nome.md` | Protocolos da add após redirecionamento (**C4**). |
 | `_dev/toDo.md` | Alerta «código já existente» na add — fora desta spec. |
 

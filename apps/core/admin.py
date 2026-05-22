@@ -38,6 +38,10 @@ from apps.core.item_classificacao_code_lookup import (
     lookup_parent_by_code_response_data,
     resolve_code_navigation_response_data,
 )
+from apps.core.item_classificacao_structural_navigation import (
+    resolve_structural_navigation_response_data,
+    structural_navigation_availability,
+)
 from apps.core.item_classificacao_child_from_change import (
     apply_change_parent_initial_data,
     build_create_child_code_button_context,
@@ -504,6 +508,11 @@ class ItemClassificacaoAdmin(
                 self.admin_site.admin_view(self.resolve_code_navigation_view),
                 name=f"{self.model._meta.app_label}_{self.model._meta.model_name}_resolve_code_navigation",
             ),
+            path(
+                "resolve-structural-navigation/",
+                self.admin_site.admin_view(self.resolve_structural_navigation_view),
+                name=f"{self.model._meta.app_label}_{self.model._meta.model_name}_resolve_structural_navigation",
+            ),
         ]
         return custom + urls
 
@@ -561,6 +570,14 @@ class ItemClassificacaoAdmin(
                 context["item_code_navigation_resolve_url"] = reverse(
                     f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_resolve_code_navigation"
                 )
+                context["item_structural_nav_enabled"] = True
+                context["item_structural_navigation_url"] = reverse(
+                    f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_resolve_structural_navigation"
+                )
+                context["item_structural_nav_availability_json"] = json.dumps(
+                    structural_navigation_availability(obj)
+                )
+                context["item_structural_nav_origin_pk"] = str(obj.pk)
         else:
             context["classification_naming_messages"] = classification_naming_messages_dict()
             context["item_abbreviated_radical_lookup_url"] = reverse(
@@ -583,6 +600,22 @@ class ItemClassificacaoAdmin(
 
     def resolve_code_navigation_view(self, request):
         return JsonResponse(resolve_code_navigation_response_data(request))
+
+    def resolve_structural_navigation_view(self, request):
+        pk_raw = (request.GET.get("pk") or "").strip()
+        if not pk_raw.isdigit():
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "reason": "invalid_pk",
+                    "message": "Informe o PK do registro em edição.",
+                }
+            )
+        obj = get_object_or_404(
+            ItemClassificacao.objects.select_related("classificacao_id"),
+            pk=int(pk_raw),
+        )
+        return JsonResponse(resolve_structural_navigation_response_data(request, obj=obj))
 
     def lookup_abbreviated_radical_view(self, request):
         nome_mae = (request.GET.get("nome_mae") or "").strip()
