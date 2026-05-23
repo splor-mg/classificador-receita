@@ -38,7 +38,7 @@ def lista_abreviacoes_registro_fim_sentinela() -> datetime.datetime:
 def lista_abreviacoes_registro_inicio_novo() -> datetime.datetime:
     """
     Spec ``_dev/spec_lista_abreviacoes.md`` *(L)*: ``data_registro_início`` = 01/01/<ano civil corrente>
-    às 00:00:00 na timezone actual do Django.
+    às 00:00:00 na timezone atual do Django.
     """
     y = timezone.localdate().year
     return timezone.make_aware(

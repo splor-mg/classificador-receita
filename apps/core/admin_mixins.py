@@ -114,7 +114,7 @@ REGISTRO_ATIVO_VALUE_FUTURO = "ativo_futuro"
 REGISTRO_ATIVO_VALUE_HISTORICO = "ativo_historico"
 REGISTRO_ATIVO_VALUE_INATIVO = "inativo"
 # Sentinela no-op para distinguir "primeira visita" (GET vazio) de "clique em
-# Todos pelo utilizador" (GET com este valor) no fluxo do
+# Todos pelo usuário" (GET com este valor) no fluxo do
 # ChangelistDefaultFilterRedirectMixin.
 REGISTRO_ATIVO_VALUE_TODOS = "todos"
 
@@ -194,7 +194,7 @@ class RegistroAtivoFilter(admin.SimpleListFilter):
         ``?registro_ativo=todos`` (sentinela no-op), em vez de remover o
         parâmetro. Permite ao ``ChangelistDefaultFilterRedirectMixin``
         distinguir "primeira visita" (GET vazio → redirect ao default) de
-        "clique em Todos pelo utilizador" (GET com ``…=todos`` → no-op).
+        "clique em Todos pelo usuário" (GET com ``…=todos`` → no-op).
         """
         yield {
             "selected": self.value() in (None, REGISTRO_ATIVO_VALUE_TODOS),
@@ -264,21 +264,21 @@ class ChangelistDefaultFilterRedirectMixin:
     (GET vazio — primeira visita ou link directo do menu), responde com um
     redirecionamento para a mesma URL, acrescentando os parâmetros declarados em
     ``changelist_default_filters``. A partir daí, o fluxo segue o padrão
-    do Django Admin: o filtro fica destacado na barra lateral e o utilizador
+    do Django Admin: o filtro fica destacado na barra lateral e o usuário
     pode mudar de opção ou clicar em «Todos».
 
     «Limpar todos os filtros» (Django Admin 6+): o link inclui
     ``__changelist_skip_default=1``; o mixin grava flag de sessão por model,
     redirecciona para a URL sem query e **não** reaplica o default — a lista
     fica sem filtros na URL (sem sentinela ``…=todos``). A flag mantém-se
-    enquanto o utilizador permanece **na changelist** desse model (paginação,
+    enquanto o usuário permanece **na changelist** desse model (paginação,
     ordenação, refresh). É invalidada ao sair da changelist (outro model, add,
     change, índice do admin, etc.) — ver middleware
     ``AdminChangelistSkipDefaultScopeMiddleware``. Também é removida quando o
-    utilizador aplica qualquer parâmetro activo (filtros, busca, etc.);
+    usuário aplica qualquer parâmetro activo (filtros, busca, etc.);
     paginação/ordenação só (`p`, `o`, …) não limpam a flag.
 
-    Para que «Todos» no sidebar preserve a intenção do utilizador (e não volte
+    Para que «Todos» no sidebar preserve a intenção do usuário (e não volte
     para o valor padrão a cada clique), o ``SimpleListFilter`` correspondente
     deve gerar URL com sentinela ``…=todos`` — ver ``RegistroAtivoFilter.choices``.
 
@@ -539,7 +539,7 @@ class SemanticForeignKeyAdminMixin:
 
         ``popup_default_registro_ativo_ano_corrente`` (bool): na vista **adicionar**,
         o ``href`` da lupa (changelist do modelo relacionado) inclui o parâmetro do
-        ``RegistroAtivoFilter`` equivalente a «Ativos (Ano Corrente)», para o utilizador
+        ``RegistroAtivoFilter`` equivalente a «Ativos (Ano Corrente)», para o usuário
         poder alterar na barra lateral (ex.: «Todos»).
     """
 
@@ -1117,7 +1117,7 @@ class AutoExportAdminMixin:
         """
         Customize Django's default change response to avoid showing a
         contradictory "was changed successfully" message when no changes
-        were actually detected.
+        were atually detected.
         """
         if getattr(request, "_autoexport_no_changes", False):
             opts = self.opts

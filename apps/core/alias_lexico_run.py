@@ -347,7 +347,7 @@ def renumber_alias_lexico_refs_alphabetical() -> int:
     Renumera ``alias_lexico_ref`` para ``1..N`` na ordem do registry (``LOWER(termo)``,
     ``data_registro_inicio``). Duas fases para respeitar ``unique`` em ``alias_lexico_ref``.
 
-    Actualiza **todas** as linhas de ``lista_abreviacoes`` (``scope=all`` do export).
+    atualiza **todas** as linhas de ``lista_abreviacoes`` (``scope=all`` do export).
     """
     rows = list(AliasLexico.objects.all())
     if not rows:

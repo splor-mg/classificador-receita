@@ -201,7 +201,7 @@ Os botões **não** submetem o formulário. Não duplicar handlers em `guardedLi
 
 Paridade com `_dev/spec_itemClassificacao_criar_filho.md` (**Alterações não guardadas**):
 
-1. No clique de qualquer **(G-nav.\*)**, se o formulário tiver alterações não guardadas pelo utilizador, chamar `window.__coreConfirmUnsavedIfDirty(go)` **antes** de redirecionar.
+1. No clique de qualquer **(G-nav.\*)**, se o formulário tiver alterações não guardadas pelo usuário, chamar `window.__coreConfirmUnsavedIfDirty(go)` **antes** de redirecionar.
 2. Um único canal por botão (evitar `confirm` duplicado com `guardedLinks`).
 3. Rebaseline de dirty state: `__coreRebaselineFormDirtySnapshot()` após init da change (e `setTimeout` ~750 ms), como em **criar filho**, para não disparar falso positivo só por máscara/FK init.
 4. Se **apenas** `receita_cod` / `item_id` estiverem «sujos» por navegação por blur não confirmada, aplicar o mesmo critério de `editar_codigo` (**M2–M4**) quando fizer sentido; caso contrário, aviso antes de sair.

@@ -139,11 +139,11 @@ Amostras: até `sample_limit` (no admin: **3**) para o JSON.
 
 **Decisão:** `ItemClassificacaoAdmin` define `busca_intermediarios_class_pk = class_id_int` (GET) e passa esse valor para `analyze_intermediate_items_for_level_jump`.
 
-**Risco consciente:** se o utilizador escolher no form uma classificação **diferente** da do pai, a lista reflete o form (pode ser vazia ou incoerente com o vínculo real). Em produção, mãe e filho devem pertencer à **mesma** classificação (`spec_itemClassificacao_regras_hierarquia.md`); o caso acima foi guiado por **seed / teste** com PKs distintos.
+**Risco consciente:** se o usuário escolher no form uma classificação **diferente** da do pai, a lista reflete o form (pode ser vazia ou incoerente com o vínculo real). Em produção, mãe e filho devem pertencer à **mesma** classificação (`spec_itemClassificacao_regras_hierarquia.md`); o caso acima foi guiado por **seed / teste** com PKs distintos.
 
 ### 3. Modal ≠ mesma regra que a listagem
 
-O utilizador pode ver `level_jump: true` e `intermediate_count: 0`: o primeiro depende só de **níveis**; o segundo da **query** acima. A especificação deixa isso explícito para evitar confusão em suporte e QA.
+O usuário pode ver `level_jump: true` e `intermediate_count: 0`: o primeiro depende só de **níveis**; o segundo da **query** acima. A especificação deixa isso explícito para evitar confusão em suporte e QA.
 
 ### 4. Texto e UX do modal (`change_form.html`)
 

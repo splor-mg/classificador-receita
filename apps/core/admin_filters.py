@@ -207,7 +207,7 @@ class AliasLexicoRegistroAtivoFilter(admin.SimpleListFilter):
     def choices(self, changelist):
         """
         Substitui o "Todos" padrão por uma entrada que produz um parâmetro
-        explícito (sentinela ``…=todos``), preservando a intenção do utilizador
+        explícito (sentinela ``…=todos``), preservando a intenção do usuário
         face ao pré-filtro aplicado pelo ``ChangelistDefaultFilterRedirectMixin``
         (clique em «Todos»; «Limpar todos os filtros» usa fluxo à parte — ver spec).
         """

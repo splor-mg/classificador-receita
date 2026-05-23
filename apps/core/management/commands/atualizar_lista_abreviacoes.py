@@ -190,7 +190,7 @@ class Command(BaseCommand):
                             self.stdout.write(
                                 self.style.WARNING(
                                     f"\nO termo {termo_c!r} já existe na lista de abreviações "
-                                    f"(abreviação actual: {cur!r}).\n"
+                                    f"(abreviação atual: {cur!r}).\n"
                                     f"Substituir por {picked!r}? [y/N]"
                                 )
                             )
@@ -292,7 +292,7 @@ class Command(BaseCommand):
                         self.stdout.write(
                             self.style.NOTICE(
                                 "Export do seed omitido (nenhuma mutação nesta execução). "
-                                "Para gravar a BD actual no CSV: "
+                                "Para gravar a BD atual no CSV: "
                                 "``python manage.py atualizar_lista_abreviacoes --export-seed``."
                             )
                         )

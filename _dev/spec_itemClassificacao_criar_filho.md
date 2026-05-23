@@ -420,7 +420,7 @@ Registradas de forma explícita; o restante do documento já adota o comportamen
 
 ## Atalho desde change (v2) — «+ Criar Código Filho»
 
-Esta secção define o atalho na tela de **edição/visualização** (`change`) de `ItemClassificacao` que abre a **add** com o registo actual como **item mãe** e dispara o mesmo protocolo de sugestão de código (**G1**, endpoint `suggest-child-code-by-parent/`, `applyChildCodeSuggestPayload` no cliente). **Não** duplica o algoritmo de código; apenas navega e inicializa o formulário de criação.
+Esta secção define o atalho na tela de **edição/visualização** (`change`) de `ItemClassificacao` que abre a **add** com o registo atual como **item mãe** e dispara o mesmo protocolo de sugestão de código (**G1**, endpoint `suggest-child-code-by-parent/`, `applyChildCodeSuggestPayload` no cliente). **Não** duplica o algoritmo de código; apenas navega e inicializa o formulário de criação.
 
 **Implementação:** `apps/core/item_classificacao_child_from_change.py`, `ItemClassificacaoAdmin.get_changeform_initial_data` / `render_change_form`, bloco `object-tools` e JavaScript em `apps/core/templates/admin/core/change_form.html`.
 
@@ -430,14 +430,14 @@ Esta secção define o atalho na tela de **edição/visualização** (`change`) 
 
 - Botão **«+ Criar Código Filho»** na **change** de `ItemClassificacao` (não popup).
 - Modal de **confirmação** antes de navegar para a add (registo **activo** e **matriz**).
-- Modal de **bloqueio** (somente informativo) quando o registo actual é **Detalhe** (`matriz = false`).
+- Modal de **bloqueio** (somente informativo) quando o registo atual é **Detalhe** (`matriz = false`).
 - URL da add com `parent_item_id=<pk>` e `from_change_parent=1`.
 - Pré-preenchimento na add: mãe, vigência **(V3′)**, display semântico da mãe, sugestão **(G1)** com `force`.
 
 ### Fora de escopo (v2)
 
 - Sugestão de código **na própria change** (sem navegar para a add).
-- Alterar `matriz` automaticamente; o utilizador deve editar o registo actual.
+- Alterar `matriz` automaticamente; o usuário deve editar o registo atual.
 - **(G5)** na entrada pelo atalho (ver abaixo).
 
 ### Posição do botão (UI)
@@ -448,7 +448,7 @@ Esta secção define o atalho na tela de **edição/visualização** (`change`) 
 
 ### Estados do botão
 
-| Estado do registo actual                                                       | Botão                                    | Ao clicar                                            |
+| Estado do registo atual                                                       | Botão                                    | Ao clicar                                            |
 | ------------------------------------------------------------------------------ | ---------------------------------------- | ---------------------------------------------------- |
 | **Activo** (`data_registro_fim` = sentinela) + **Matriz** + pode sugerir filho | Activado (verde)                         | Modal confirmação → add                              |
 | **Activo** + **Detalhe**                                                       | Activado (verde)                         | Modal **bloqueio** — só «Entendi»; **sem** navegação |
@@ -460,19 +460,19 @@ A verificação de «pode sugerir filho» no servidor reutiliza `suggest_child_c
 
 ### Modal de bloqueio — Detalhe
 
-Quando `matriz = false` e o utilizador clica no botão:
+Quando `matriz = false` e o usuário clica no botão:
 
 1. Exibir modal (família `showCoreAttentionModal`, ícone ⚠️, título «Atenção!»).
-2. Corpo (sentido obrigatório): para registar um **item filho** a partir deste código, o registo actual deve estar como **Matriz**; altere «Matriz / Detalhe» neste registo antes de criar um código filho.
+2. Corpo (sentido obrigatório): para registar um **item filho** a partir deste código, o registo atual deve estar como **Matriz**; altere «Matriz / Detalhe» neste registo antes de criar um código filho.
 3. Um botão **«Entendi»** (fecha o modal).
 4. **Proibido** navegar para a add.
 
 ### Modal de confirmação — Matriz activa
 
-1. Se houver **alterações não guardadas feitas pelo utilizador** na change, o cliente **deve** aplicar o aviso de `setupUnsavedChangesWarning` (`window.__coreConfirmUnsavedIfDirty`) **antes** do modal de confirmação. **Um único canal** no clique do botão (handler dedicado); o botão **não** está em `guardedLinks` (evita `confirm` duplicado).
+1. Se houver **alterações não guardadas feitas pelo usuário** na change, o cliente **deve** aplicar o aviso de `setupUnsavedChangesWarning` (`window.__coreConfirmUnsavedIfDirty`) **antes** do modal de confirmação. **Um único canal** no clique do botão (handler dedicado); o botão **não** está em `guardedLinks` (evita `confirm` duplicado).
 2. Modal (título **«Criar Código Filho»** — «Código» com C maiúsculo):
    - «Você será encaminhado para a tela de criação de novo Item (Código) de Classificação.»
-   - «O código atual (**&lt;código canónico&gt;**) será o assumido como mãe do novo código a ser criado.» — **&lt;código canónico&gt;** = valor **dinâmico** do registo actual (máscara de apresentação): preferir o campo `receita_cod` visível no formulário; fallback `data-receita-cod-display` no botão (servidor: `format_receita_cod_by_vigencia` do objeto da change).
+   - «O código atual (**&lt;código canónico&gt;**) será o assumido como mãe do novo código a ser criado.» — **&lt;código canónico&gt;** = valor **dinâmico** do registo atual (máscara de apresentação): preferir o campo `receita_cod` visível no formulário; fallback `data-receita-cod-display` no botão (servidor: `format_receita_cod_by_vigencia` do objeto da change).
    - «Deseja continuar?»
 3. Botões: **Cancelar** | **Continuar**.
 4. **Continuar** → `window.location` para a URL da add (secção URL).
@@ -481,11 +481,11 @@ Quando `matriz = false` e o utilizador clica no botão:
 
 O mecanismo global `setupUnsavedChangesWarning` mantém-se para Cancelar / Bloquear / Excluir. Para **«Criar Código Filho»**, reutiliza-se `__coreConfirmUnsavedIfDirty` no handler do botão.
 
-**Falso positivo a evitar:** na carga da change de `ItemClassificacao`, `runCodeDigitValidation('init')` (máscara de `receita_cod`), polling de FKs e init na add podem alterar o DOM **sem** acção do utilizador e marcar `isDirty` incorrectamente.
+**Falso positivo a evitar:** na carga da change de `ItemClassificacao`, `runCodeDigitValidation('init')` (máscara de `receita_cod`), polling de FKs e init na add podem alterar o DOM **sem** acção do usuário e marcar `isDirty` incorrectamente.
 
 **Mecânica (cliente):**
 
-1. Após `runCodeDigitValidation('init')` (e `syncHierarchyFromCode('init')` na add, quando aplicável), chamar `window.__coreRebaselineFormDirtySnapshot()` — redefine `initialState` e `originalState` de cada campo visível para o valor **actual** pós-init.
+1. Após `runCodeDigitValidation('init')` (e `syncHierarchyFromCode('init')` na add, quando aplicável), chamar `window.__coreRebaselineFormDirtySnapshot()` — redefine `initialState` e `originalState` de cada campo visível para o valor **atual** pós-init.
 2. Repetir o rebaseline com `setTimeout` (~750 ms) para absorver polling de raw-id (350 ms) e `refreshConfirmedParentSnapshot` (~500 ms).
 3. Durante escrita programática pontual em `receita_cod` (formatação de máscara), usar `window.__coreSuppressDirtyRecompute` para não disparar `recomputeDirty` intermédio.
 4. Após `initChildCodeFromChangeParent` na add, novo rebaseline.
@@ -498,7 +498,7 @@ Com isso, abrir a change **sem editar** e clicar em «Criar Código Filho» **n�
 /admin/core/itemclassificacao/add/?parent_item_id=<pk>&from_change_parent=1
 ```
 
-- Preservar `_changelist_filters` da request actual quando existir (retorno coerente na add — `spec_itemClassificacao_formulario.md`).
+- Preservar `_changelist_filters` da request atual quando existir (retorno coerente na add — `spec_itemClassificacao_formulario.md`).
 - `from_change_parent=1` é parâmetro **interno** de fluxo (não é filtro de negócio).
 
 ### (V3′) Vigência do filho na entrada pelo atalho
@@ -531,7 +531,7 @@ Ordem recomendada no cliente (`initChildCodeFromChangeParent`):
 
 **(G5) não se aplica** na chegada pelo atalho: na add, `receita_cod` inicia vazio e a mãe é escrita programaticamente sem troca manual.
 
-**(G5) aplica-se apenas** se, **depois** na add, o utilizador **trocar** o item mãe (lupa) **com** `receita_cod` já preenchido — fluxo já especificado em **(G5)**.
+**(G5) aplica-se apenas** se, **depois** na add, o usuário **trocar** o item mãe (lupa) **com** `receita_cod` já preenchido — fluxo já especificado em **(G5)**.
 
 ### Casos de teste (v2)
 

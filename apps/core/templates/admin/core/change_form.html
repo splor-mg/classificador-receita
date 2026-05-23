@@ -3190,7 +3190,7 @@
           showCoreAttentionModal({
             title: 'Atenção!',
             messages: [
-              'Para registar um item filho a partir deste código, o registo actual deve estar marcado como Matriz (agregador).',
+              'Para registar um item filho a partir deste código, o registo atual deve estar marcado como Matriz (agregador).',
               'Altere o campo «Matriz / Detalhe» para Matriz neste registo antes de criar um código filho.'
             ],
             okLabel: 'Entendi'
@@ -3221,7 +3221,7 @@
           direction: 'prev_level',
           glyph: '\u00AB',
           ariaLabel: 'Nível anterior',
-          titleActive: 'Nível anterior — abrir o código irmão anterior',
+          titleActive: 'Nível anterior (código irmão/mãe) vigente nessa estrutura',
           titleDisabled: 'Nível anterior — não há código irmão anterior navegável nesta vigência'
         },
         {
@@ -3229,7 +3229,7 @@
           direction: 'prev_code',
           glyph: '\u2039',
           ariaLabel: 'Código anterior',
-          titleActive: 'Código anterior — abrir o código anterior na árvore',
+          titleActive: 'Código anterior vigente nessa estrutura',
           titleDisabled: 'Código anterior — não há código anterior navegável nesta vigência'
         },
         {
@@ -3237,7 +3237,7 @@
           direction: 'next_code',
           glyph: '\u203A',
           ariaLabel: 'Próximo código',
-          titleActive: 'Próximo código — abrir o próximo código vigente nessa estrutura',
+          titleActive: 'Próximo código vigente nessa estrutura',
           titleDisabled: 'Próximo código — não há código seguinte navegável nesta vigência'
         },
         {
@@ -3245,8 +3245,8 @@
           direction: 'next_level',
           glyph: '\u00BB',
           ariaLabel: 'Próximo nível',
-          titleActive: 'Próximo nível — abrir o código irmão seguinte vigente nessa estrutura',
-          titleDisabled: 'Próximo nível — não há código irmão seguinte navegável nesta vigência'
+          titleActive: 'Próximo nível (código irmão/mãe) vigente nessa estrutura',
+          titleDisabled: 'Próximo nível — não há código irmão/mãe seguinte navegável nesta vigência'
         }
       ];
 
