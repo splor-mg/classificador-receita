@@ -56,7 +56,7 @@ Disparado quando `parent_item_id` recebe ou altera valor (incluindo após `syncH
   2. **M1.2** — rótulo/`label_link` de `parent_item_id` no DOM (fallback, ex.: seleção manual ou atraso de renderização do admin).
 - **P-orq.3.** O cliente **não** deve depender **somente** do `change` de `parent_item_id` nem **somente** de polling do rótulo para cumprir **P1** após lookup por código. A camada que processa a resposta da hierarquia **deve** invocar **P-mãe** explicitamente (ex.: `applyClassificationNamingAfterParentResolved(parent_pk, nome_mae)`), passando `nome_mae` do payload quando disponível.
 - **P-orq.4.** Troca de item mãe: considera-se **nova** resolução quando `parent.pk` mudar **ou** quando `parent.name` (`nome_mae`) for distinto do último aplicado em **P-mãe** (comparação após *trim* + *case fold*). Nesse caso **P-mãe** **deve** rodar de novo mesmo que o `pk` no input já estivesse atualizado antes do `change`.
-- **P-mãe.2-bis (complemento na troca de mãe).** Se `receita_nome` for **sugestão incompleta** (**G1.2**) do radical da **mãe anterior** (ex.: `Impostos sobre o Patrimônio - ` após trocar para mãe cujo radical abreviado é `ITCD`), **não** preservar o prefixo antigo como se fosse complemento (**A9.2**): substituir por **`(novo_radical_abreviado) + sufixo_canônico`** (**(N5)**) apenas. A preservação de **A9.2** aplica-se somente quando há **complemento** não vazio após o traço **e** o valor **não** for só sugestão incompleta da mãe anterior.
+- **P-mãe.2-bis (complemento na troca de mãe).** Se `receita_nome` for **sugestão literal** do radical da **mãe anterior** (`bAntigo + (N7)` sem complemento — predicado **G1.5.a** / `receitaNomeEhSugestaoLiteral` no cliente; ex.: `Impostos sobre o Patrimônio - ` após trocar para mãe cujo radical abreviado é `ITCD`), **não** preservar o prefixo antigo como se fosse complemento (**A9.2**): substituir por **`(novo_radical_abreviado) + sufixo_canônico`** (**(N5)**) apenas. A preservação de **A9.2** aplica-se somente quando há **complemento** não vazio após o traço **e** o valor **não** for só sugestão literal da mãe anterior.
 
 ### P-mãe durante confirmação **(G5)** — troca de mãe com código já preenchido
 
@@ -96,7 +96,7 @@ Após o fechamento do modal (ou após reversão automática por erro do endpoint
 ## Escopo e fora de escopo
 
 - **Escopo:** tela de **add**; `receita_nome`; `receita_nome_base_mode`; rádios; integração com preenchimento a partir de `receita_cod` / lookup do item mãe (**P-mãe**).
-- **Escopo (validação):** **G0** (nome vazio no **add**, independente do rádio) e **G1** (sugestão incompleta nos modos com base no item mãe) no **cliente** (`validateClassificationNamingOnSubmit`) **e** no **servidor** (`ItemClassificacaoAdminForm.clean()`), com definições canônicas em **I4**.
+- **Escopo (validação):** **G0** (nome vazio no **add**, independente do rádio) e **G1** (`trim(receita_nome)` terminando com traço **(N7)**, em **todos** os modos do **add** — inclusive `sem_base`) no **cliente** (`validateClassificationNamingOnSubmit`) **e** no **servidor** (`ItemClassificacaoAdminForm.clean()`), com definições canônicas em **I4**.
 - **Fora de escopo:** `INSERT` em `AliasLexico` a partir desta tela; alteração do seed.
 - **Fora de escopo (tela de alteração — change view):** ver seção **«Escopo na tela de alteração (change view)»** logo abaixo. `receita_nome_base_mode`, rádios de modo e protocolos **P-mãe** / **A1–A9** / **G0** / **G1** **não** se aplicam à edição de um `ItemClassificacao` existente.
 
@@ -121,7 +121,7 @@ A presente spec descreve o **protocolo de criação** (`add`) do nome da classif
 - **(N5) `sufixo_canônico de edição`:** a sequência literal **`" - "`** (espaço, hífen ASCII U+002D, espaço). Nos modos **Completo** e **Abreviado**, sempre que houver radical não vazio a sugerir, o valor inicial (ou reposto) de `receita_nome` **deve** ser **`radical + sufixo_canônico`**, *sem* substituir o hífen ASCII por en dash/em dash na **sugestão automática** — o mesmo padrão visual e de edição nos dois modos; o usuário completa o nome **após** esse sufixo. (Remoção com separadores flexíveis continua a cargo de **M2** ao mudar para **sem base**.)
 - **(N6) `norm` (comparação estrita na v1):** usada em **A3.1** (passagem primária), **A1.3** e **A3.2** (detecção de duplicidade). **Definição:** *trim* em cada operando + **case folding** Unicode (em Python: `str.casefold()`; em JavaScript: usar API equivalente a *case fold* quando disponível, ou documentar o desvio se usar apenas `toLowerCase()`). **Espaços internos:** **não** colapsar na passagem estrita. **Acentos:** **não** remover diacríticos; grafias com e sem acento **não** se tratam como iguais (ex.: `Taxa` ≠ `Taxá`).
 - **(N8) `norm_colapso_espacos` (fallback de comparação):** aplicar **(N6)** e, em seguida, colapsar **espaços internos** (qualquer sequência de espaços em branco no meio da string vira **um** espaço ASCII). Usada **somente** quando a passagem estrita correspondente **não** produzir resultado (**A3.3**, **A4.1b**). Se dois `termo` distintos no banco colidirem após **(N8)**, tratar como duplicidade conforme **A1.3** / **G6** (**D3**), não como desempate.
-- **(N7) `separador flexível`:** imediatamente após o radical `b`, a sequência composta por: espaços em branco opcionais; **um** caractere traço entre hífen ASCII U+002D (`-`), en dash U+2013 (`\u2013`) ou em dash U+2014 (`\u2014`); espaços em branco opcionais. **Usado em** **M2.1** (remoção do prefixo ao mudar para **sem base**) e **G1.2** (detecção de sugestão incompleta). **Distinto de (N5):** a **sugestão automática** do sistema continua a usar apenas **`sufixo_canônico`** **(N5)** (`" - "` com hífen ASCII); o usuário pode digitar **(N7)** no campo, e **G1.2** **deve** tratá-lo como «só radical + separador, sem complemento», à mesma lógica de **M2.1**.
+- **(N7) `separador flexível`:** imediatamente após o radical `b` **ou** no final do valor de `receita_nome`, a sequência composta por: espaços em branco opcionais; **um** caractere traço entre hífen ASCII U+002D (`-`), en dash U+2013 (`\u2013`) ou em dash U+2014 (`\u2014`); espaços em branco opcionais. **Usado em** **M2.1** (remoção do prefixo ao mudar para **sem base**) e **G1.2** (detecção de bloqueio: `trim(receita_nome)` termina com **(N7)**). **Distinto de (N5):** a **sugestão automática** do sistema continua a usar apenas **`sufixo_canônico`** **(N5)** (`" - "` com hífen ASCII); o usuário pode digitar **(N7)** no campo, e **G1.2** **deve** bloquear qualquer ortografia de **(N7)** ao final do valor, independente do radical e do modo.
 
 ---
 
@@ -131,23 +131,24 @@ A presente spec descreve o **protocolo de criação** (`add`) do nome da classif
 
 - **M1.1.** Com este modo selecionado e `nome_mae` conhecido (*trim* não vazio), `receita_nome` **deve começar** por **`prefixo_completo`** (**(N9)** / **(N5)**), *i.e.* `nome_mae + sufixo_canônico`.
 - **M1.2.** `nome_mae` **deve** ser extraído do rótulo de `parent_item_id` (texto após `" - "` no *link*). Se o item mãe não tiver nome, o radical fica vazio e **M1.1** não se aplica.
-- **M1.3.** Ao selecionar de novo este modo com o campo já editado (**M1.4** / clique explícito, **não** **P-mãe**): se o valor **não** começar por **`prefixo_completo`** nem por **`prefixo_abreviado`** (**(N9)**), o sistema **deve prefixar** **`prefixo_completo`** ao valor atual, aplicando **A9.2** se houver complemento reconhecível após um separador **(N7)** no valor prefixado. Se o valor **já** começar por **`prefixo_completo`**, **não** duplicar o prefixo. Se começar **somente** por **`prefixo_abreviado`** (e **não** por **`prefixo_completo`**), **não** aplicar **M1.3** — vale **M1.5** / **A9.3**.
+- **M1.3.** Ao selecionar este modo (clique explícito, **não** **P-mãe**), a substituição do radical existente segue o **algoritmo unificado de A9.3** (4 passos — ver seção «Regra A9»). **M1.3** corresponde ao **passo 4** desse algoritmo: quando nenhum dos passos anteriores casa **e** o valor **não contém** nenhum separador **(N7)**, o valor inteiro é tratado como complemento e **`prefixo_completo`** é prefixado à esquerda. **Não** duplicar prefixos: se o valor já começar por **`prefixo_completo`**, o passo 1 de A9.3 garante no-op.
 - **M1.4.** **Não** se aplica ao repovoamento automático do item mãe (**P-mãe**). Quando o **usuário** clica explicitamente neste rádio, valem **M1.1**–**M1.5** (**A9.3** na troca de modo); qualquer nova definição ou troca de `parent_item_id` dispara **P-mãe** (Abreviado), **não** **M1.4**.
-- **M1.5 (troca de modo → Completo; ver também A9.3).** Ao selecionar este modo, se `receita_nome` começar por **`prefixo_abreviado`** e **não** por **`prefixo_completo`**: **remover** do início o radical abreviado conhecido (**`ra`** de **(N9)**) seguido do **separador flexível** **(N7)** (mesma lógica de remoção que **M2.1**, com `texto_radical_conhecido` = `ra`); em seguida repor **`prefixo_completo`** e, se após a remoção restar **complemento** não vazio, concatená-lo conforme **A9.2**; se **não** houver complemento, aplicar apenas **`prefixo_completo`** (sugestão incompleta conforme **G1.2**). **Objetivo:** trocar o radical do modo **Abreviado** pelo de **Completo** sem empilhar `nome_mae` sobre `ITCD - `.
+- **M1.5 (troca de modo → Completo; caso particular de A9.3).** Corresponde ao **passo 2** do algoritmo de **A9.3** quando a base candidata é o `radical_abreviado` («base do modo oposto»): se `stripLeadingParentRadical(valor, radical_abreviado)` casa (valor começa por `ra + (N7)`), remove-se esse prefixo, preserva-se o complemento e repõe-se **`prefixo_completo`**. **Objetivo:** trocar o radical do modo **Abreviado** pelo de **Completo** sem empilhar `nome_mae` sobre `ITCD - `.
 
 **Exemplo M1.1**  
 - `nome_mae` = `Imposto sobre Transmissão "Causa Mortis" e Doação de Bens e Direitos` → `receita_nome` = `Imposto sobre Transmissão "Causa Mortis" e Doação de Bens e Direitos - `.
 
-**Exemplo M1.3 (prefixar complemento solto)**  
-- Modo **Completo**, `nome_mae` = `IPVA`, valor `Principal` (sem radical) → `IPVA - Principal`.
+**Exemplo M1.3 (sem traço — passo 4 de A9.3, prefixa o valor inteiro como complemento)**  
+- Modo **Completo**, `nome_mae` = `IPVA`, valor `Principal` (sem traço) → `IPVA - Principal`.
+- Modo **Completo**, `nome_mae` = `Imposto sobre a Propriedade Predial e Territorial Urbana`, valor `IPTU` (sem traço) → `Imposto sobre a Propriedade Predial e Territorial Urbana - IPTU`.
 
-**Exemplo M1.3 (não prefixar — já tem radical reconhecível)**  
-- Modo **Completo**, item mãe `ICMS`, valor `ICMS - Principal` → **não** prefixar (**M1.3**); valor já começa por **`prefixo_completo`** (e coincide com **`prefixo_abreviado`** quando `ra` = `ICMS`).
+**Exemplo passo 1 de A9.3 (no-op — já começa pelo novo prefixo)**  
+- Modo **Completo**, valor `Imposto sobre a Propriedade Predial e Territorial Urbana - Principal` → clique no rádio **Completo** mantém o valor inalterado.
 
-**Exemplo M1.5 / A9.3 (Abreviado → Completo)**  
+**Exemplo M1.5 / A9.3 (Abreviado → Completo — passo 2)**  
 - `nome_mae` = `Imposto sobre Transmissão "Causa Mortis" e Doação de Bens e Direitos`, `ra` = `ITCD`, valor `ITCD - ` → após rádio **Completo**: `Imposto sobre Transmissão "Causa Mortis" e Doação de Bens e Direitos - ` (**não** `Imposto… - ITCD - `).
 
-**Exemplo M1.5 / A9.3 (com complemento)**  
+**Exemplo M1.5 / A9.3 (com complemento — passo 2)**  
 - Valor `ITCD - Principal` → **Completo**: `Imposto sobre Transmissão "Causa Mortis" e Doação de Bens e Direitos - Principal`.
 
 ---
@@ -198,67 +199,95 @@ A presente spec descreve o **protocolo de criação** (`add`) do nome da classif
 - Rádio **Sem base**, `receita_nome` vazio → **bloqueado** por **G0**.
 
 **Exemplo G0 vs G1**  
-- `receita_nome` = `ITCD - ` (incompleto, não vazio) → **G0** não bloqueia; **G1** bloqueia (modo **Abreviado** com `b` = `ITCD`).
+- `receita_nome` = `ITCD - ` (não vazio, termina com traço) → **G0** não bloqueia; **G1** bloqueia (independente do modo, inclusive `sem_base`).  
+- `receita_nome` = `ITCD` (não vazio, sem traço final) → **G0** e **G1** **não** bloqueiam, mesmo no modo Abreviado/Completo.
 
-### G1 — Bloqueio de envio: nome só com radical + separador (incompleto)
+### G1 — Bloqueio de envio: nome terminando com traço (incompleto)
 
-**Paridade entre modos:** **G1** aplica-se nos modos **Completo** e **Abreviado** de forma **simétrica**: em cada um, `b` é o radical que o sistema sugeriria **antes** do traço; bloqueia-se gravar item novo cujo `receita_nome` seja **igual** a esse radical ou **igual** à sugestão automática incompleta (`b` + separador **(N7)** sem complemento). No modo **Sem base** (**M2**), **G1** **não** se aplica.
+**Paridade entre modos:** **G1** aplica-se a **todos** os modos da tela **add** (`base_pai_completo`, `base_pai_abrev`, `sem_base` e modo vazio) e **não depende** do radical efetivo `b`: bloqueia-se gravar item novo cujo `trim(receita_nome)` termine com um **separador flexível (N7)**. Isso engloba (i) o caso particular em que `receita_nome` é exatamente a sugestão automática (`b + (N5)` para Completo ou Abreviado), (ii) qualquer nome editado pelo usuário que permaneça com traço final pendurado e (iii) entradas livres em `sem_base` terminadas em traço. A diferenciação entre os sub-casos serve apenas para selecionar a mensagem de erro em **G1.5** (G1.5.a vs G1.5.b).
 
-- **G1.1 (cliente).** Na tela **add**, após validações de código e hierarquia, executar `validateClassificationNamingOnSubmit` (**G0.3** primeiro; depois **G1**). Se **G0** não bloqueou, existir radical do item mãe conhecido (**G4**), `receita_nome_base_mode` for **Completo** ou **Abreviado**, e `trim(receita_nome)` for **sugestão incompleta** (**G1.2**), **bloquear** o envio no navegador.
-- **G1.2 (definição canônica).** Seja `b` o *trim* do **radical efetivo** conforme `receita_nome_base_mode` e o item mãe resolvido:  
-  - **`base_pai_completo`** ou legado **`base_pai`:** `b = trim(nome_mae)` do `parent_item_id`;  
-  - **`base_pai_abrev`:** `b = trim(radical_abreviado)` (saída de **A1–A8** / **B0.2**, **não** o `nome_mae` literal);  
-  - **`sem_base`** ou vazio: **não** avaliar **G1** (`b` indefinido).  
-  Seja `n = trim(receita_nome)`. **Sugestão incompleta** quando:  
-  1. `n` for **igual** a `b` (nome **exatamente** o radical sugerido, sem traço); **ou**  
-  2. `n` corresponder a **`b` + separador flexível (N7)**, opcionalmente seguido **apenas** de espaços em branco até o fim — **sem** caractere não branco após o traço do **(N7)** (radical + traço, sem complemento).  
-  A detecção **deve** usar a **mesma** definição de separador que **M2.1** (hífen ASCII, en dash, em dash; espaços opcionais à volta do traço). **(N5)** é caso particular de **(N7)**.  
-  **Requisito:** não gravar item novo em **add** cujo nome esteja em qualquer um desses estados incompletos, quer o radical seja o **nome completo** da mãe ou o **abreviado**.
-- **G1.3 (cliente — feedback).** Ao bloquear no navegador: `setCustomValidity` com `receita_nome_submit_incompleto_error`, erro no campo e nota no topo (ex.: «Por favor, corrija o erro abaixo.»).
-- **G1.4 (servidor — obrigatório).** Em `ItemClassificacaoAdminForm.clean()` na tela **add**, **deve** repetir **G1.2** com os mesmos `b`, `n` e modo (normalizar `base_pai` → `base_pai_completo`). Se incompleto, `ValidationError` em `receita_nome` com o texto **G1.5**. Obter `nome_mae` de `parent_item_id` resolvido; obter `radical_abreviado` via módulo **I1** / **I4**, sem duplicar **A1–A8** no formulário.
-- **G1.5 (mensagem de erro).** Texto único em `classification_naming_messages.py` (`receita_nome_submit_incompleto_error`), usado no cliente (**G1.3**) e no servidor (**G1.4**). Redação em português do Brasil, citando **item mãe** e a necessidade de completar o nome **após o traço** (ou remover o traço se o usuário quiser repetir só o radical). Exemplo normativo:  
-  `Atualize o nome da classificação após o traço para concluir o cadastro, ou remova o traço se não quiser um complemento além do radical sugerido (completo ou abreviado) com base no item mãe.`
+- **G1.1 (cliente).** Na tela **add**, após validações de código e hierarquia, executar `validateClassificationNamingOnSubmit` (**G0.3** primeiro; depois **G1**). Se **G0** não bloqueou e `trim(receita_nome)` casar o predicado de **G1.2**, **bloquear** o envio no navegador, **em qualquer** valor de `receita_nome_base_mode` (inclusive `sem_base` e vazio).
+- **G1.2 (definição canônica).** Seja `n = trim(receita_nome)`. **Nome incompleto (G1)** quando, após **right-trim** apenas de espaços em branco em `n`, o **último caractere** de `n` for um traço pertencente a **(N7)** (`-` U+002D, `–` U+2013, `—` U+2014). Equivalentemente, `n` casa com `^.*` + `(N7)` + `\s*$`, com `(N7)` no sentido de **M2.1** (hífen ASCII, en dash ou em dash, com espaços ASCII opcionais ao redor). **(N5)** é caso particular de **(N7)**.
 
-**Exemplo G1.2 (Abreviado — só radical)**  
-- `b` = `Rest. Progressiva IPVA`; `n` = `Rest. Progressiva IPVA` → **bloqueado** (igual a `b`).
+  **Escopo de modo.** O predicado **não consulta** `receita_nome_base_mode` nem o radical efetivo `b`: o bloqueio aplica-se em **todos** os modos do **add** (incluindo **`sem_base`**, **`base_pai_completo`**, **`base_pai_abrev`** e legado **`base_pai`**).
 
-**Exemplo G1.2 (Abreviado — radical + traço)**  
-- `nome_mae` longo, `b` = `Rest. Progressiva IPVA`; `n` = `Rest. Progressiva IPVA - ` → **bloqueado**.
+  **Casos cobertos automaticamente.**
+  1. Sugestão automática literal de qualquer ramo: `b_completo + (N5)` e `b_abreviado + (N5)` (em qualquer ortografia de (N7));
+  2. Nomes editados pelo usuário com traço final pendurado (ex.: `IPVA - Cota Única -`);
+  3. Nomes no modo **`sem_base`** terminados em traço (ex.: `Taxa municipal -`).
 
-**Exemplo G1.2 (Completo)**  
-- `b` = `IPVA`; `n` = `IPVA - Principal` → **permitido**.
+  **Casos liberados** (regressão em relação à versão anterior desta spec).
+  - `n` igual a `nome_mae` ou ao radical abreviado, **sem** traço final (ex.: `Imposto sobre a Propriedade Predial e Territorial Urbana`, `IPVA`) → **permitido**.
+  - `n` com complemento e sem traço final (ex.: `IPVA - Cota Única`) → **permitido**.
 
-**Exemplo G1.2 (separador flexível — alinhado a M2.1)**  
-- `b` = `IPVA`; `n` = `IPVA - ` → **bloqueado** (caso **(N5)** / ASCII).  
-- `b` = `IPVA`; `n` = `IPVA\u2013` (en dash, sem complemento) → **bloqueado**.  
-- `b` = `IPVA`; `n` = `IPVA\u2013Principal` → **permitido**.
+  **Seleção da mensagem (ver G1.5).** Para gerar a mensagem adequada, a validação **deve** ainda calcular `b_completo = trim(nome_mae)` e `b_abreviado = trim(radical_abreviado)` (via **I1**/**I4**) e comparar `n` com `b_completo + (N5)` e `b_abreviado + (N5)` (em todas as ortografias de **(N7)**, com espaços ASCII opcionais ao redor do traço):
+  - se casar → **G1.5.a** (sugestão literal);
+  - senão → **G1.5.b** (traço final pendurado).
+  No modo **`sem_base`** ou quando `b_completo` for vazio (item mãe ausente), pular **G1.5.a** e usar diretamente **G1.5.b**.
 
-**Exemplo G1.2 (fora de G1)**  
-- Modo **Abreviado**, `b` = `IPVA`, `n` = nome longo literal da mãe (diferente de `b`) → **permitido** por **G1** (não confundir com regra de duplicidade semântica entre itens).
+  **Requisito:** não gravar item novo em **add** cujo `trim(receita_nome)` termine com traço **(N7)**, qualquer que seja o modo.
+- **G1.3 (cliente — feedback).** Ao bloquear no navegador: `setCustomValidity` com a chave de mensagem adequada (`receita_nome_submit_sugestao_literal_error` para **G1.5.a**; `receita_nome_submit_traco_final_error` para **G1.5.b**), erro no campo e nota no topo (ex.: «Por favor, corrija o erro abaixo.»).
+- **G1.4 (servidor — obrigatório).** Em `ItemClassificacaoAdminForm.clean()` na tela **add**, **deve** repetir **G1.2** sobre `n = trim(receita_nome)`, **independentemente** do modo (inclusive `sem_base`). Se o predicado disparar, escolher entre **G1.5.a** e **G1.5.b** conforme a sub-regra de **G1.2** (comparação com `b_completo + (N5)` / `b_abreviado + (N5)` quando `nome_mae` estiver disponível). Em caso de bloqueio, levantar `ValidationError` em `receita_nome` com o texto correspondente. Obter `nome_mae` de `parent_item_id` resolvido; obter `radical_abreviado` via módulo **I1** / **I4**, sem duplicar **A1–A8** no formulário. Normalizar `base_pai` → `base_pai_completo` apenas para fins de exibição/auditoria (o predicado em si não depende do modo).
+- **G1.5 (mensagens de erro — duas variantes).** Textos em `classification_naming_messages.py`, usados no cliente (**G1.3**) e no servidor (**G1.4**). Redação em português do Brasil.
+
+  - **G1.5.a — sugestão automática literal não completada.**  
+    Disparada quando `n` casa com `b_completo + (N5)` **ou** `b_abreviado + (N5)` (com (N7) flexível). Chave sugerida: `receita_nome_submit_sugestao_literal_error`. Texto normativo:  
+    `Atualize o nome após o traço para concluir o cadastro, ou remova o traço final se desejar gravar apenas o radical sugerido (completo ou abreviado).`
+
+  - **G1.5.b — nome termina com traço (não é sugestão literal).**  
+    Disparada quando `n` termina com **(N7)** mas **não** casa com **G1.5.a**. Vale também em `sem_base` (em que `b` é indefinido). Chave sugerida: `receita_nome_submit_traco_final_error`. Texto normativo:  
+    `O Nome da Classificação por Natureza de Receita não pode terminar com traço (-, – ou —). Adicione um complemento após o último traço ou remova-o.`
+
+**Exemplo G1.2 (Completo — sugestão literal)**  
+- Item mãe `Receita de Imposto`; `n = "Receita de Imposto - "` → **bloqueado** com **G1.5.a**.
+
+**Exemplo G1.2 (Abreviado — sugestão literal)**  
+- Radical abreviado `Receita Imposto`; `n = "Receita Imposto - "` → **bloqueado** com **G1.5.a**.
+
+**Exemplo G1.2 (sugestão sem espaço final)**  
+- `n = "Receita de Imposto -"`; `n = "Receita Imposto -"` → **bloqueado** com **G1.5.a** (predicado **G1.2** captura `^.* (N7) \s*$`; a comparação com `b + (N5)` admite espaços ASCII opcionais ao redor do traço, então casa como sugestão literal).
+
+**Exemplo G1.2 (complemento + traço pendurado)**  
+- `n = "Receita de Imposto - Carro -"`; `n = "Receita Imposto - Carro - "` → **bloqueado** com **G1.5.b** (termina com traço, mas não é sugestão literal).
+
+**Exemplo G1.2 (radical igual sem traço — regressão, agora permitido)**  
+- `n = "Receita de Imposto"`; `n = "Receita Imposto"` → **permitido** (não termina com traço, mesmo coincidindo com `b`).
+
+**Exemplo G1.2 (complemento normal)**  
+- `n = "Receita de Imposto - Carro"`; `n = "Receita Imposto - Carro"`; `n = "Rec. Imposto - Carro"` → **permitido**.
+
+**Exemplo G1.2 (separadores Unicode)**  
+- `n = "Receita Imposto\u2013"` (en dash) → **bloqueado** com **G1.5.a** (sugestão literal abreviada com (N7) en dash).  
+- `n = "Receita Imposto\u2014Carro\u2014"` (em dashes) → **bloqueado** com **G1.5.b** (termina com em dash; tem complemento intermediário).  
+- `n = "Receita Imposto\u2013Carro"` → **permitido** (não termina com traço).
+
+**Exemplo G1.2 (modo `sem_base`)**  
+- Modo `sem_base`, `n = "Taxa municipal de iluminação"` → **permitido**.  
+- Modo `sem_base`, `n = "Taxa municipal -"` → **bloqueado** com **G1.5.b**.
 
 ### G2 — Mensagens informativas (antes do envio)
 
-- **G2.0.** Enquanto o predicado de **sugestão incompleta** de **G1.2** for verdadeiro e houver radical conhecido, **deve** exibir-se mensagem informativa azul; o **texto** depende do modo:
+- **G2.0.** Enquanto o predicado **G1.2** for verdadeiro (`trim(receita_nome)` termina com **(N7)**) e houver radical conhecido, **deve** exibir-se mensagem informativa azul; o **texto** depende do modo. A mensagem **deve** apresentar as duas saídas válidas (completar após o traço **ou** remover o traço final).
 
 - **G2.1 — Modo Completo (`base_pai_completo`):**  
   **Texto fixo:**  
-  `Nome sugerido com base na versão completa do item mãe selecionado. Complete o nome desta classificação após o traço.`  
+  `Nome sugerido com base na versão completa do item mãe selecionado. Complete o nome após o traço, ou remova o traço final para gravar apenas o radical.`  
   (Chave sugerida na implementação: ex. `receita_nome_sugestao_info_completo` — **sem** interpolar `nome_mae`; o radical exibido em `receita_nome` já é o nome completo da mãe.)
 
 - **G2.2 — Modo Abreviado (`base_pai_abrev`):**  
   **Texto** (*template* com placeholder `{nome_mae}`):  
-  `Nome sugerido com base na versão abreviada do item mãe selecionado. Complete o nome desta classificação após o traço. O nome do item mãe é "` + **valor literal de `nome_mae`** + `"`  
+  `Nome sugerido com base na versão abreviada do item mãe selecionado. Complete o nome após o traço, ou remova o traço final para gravar apenas o radical. O nome do item mãe é "` + **valor literal de `nome_mae`** + `"`  
   (aspas delimitadoras literais ao redor do nome do item mãe; escapar aspas internas de `nome_mae` na implementação se necessário). Chave sugerida: `receita_nome_sugestao_info_abrev_template` com placeholder `{nome_mae}`.
 
 - **G2.3.** No evento `input` de `receita_nome`, limpar *customValidity*, mensagens locais de naming e *errornote* associada.
 
 **Exemplo G2.1**  
 - Qualquer item mãe → mensagem fixa:  
-  `Nome sugerido com base na versão completa do item mãe selecionado. Complete o nome desta classificação após o traço.`
+  `Nome sugerido com base na versão completa do item mãe selecionado. Complete o nome após o traço, ou remova o traço final para gravar apenas o radical.`
 
 **Exemplo G2.2**  
 - `nome_mae` = `Impostos sobre o Patrimônio` → mensagem completa:  
-  `Nome sugerido com base na versão abreviada do item mãe selecionado. Complete o nome desta classificação após o traço. O nome do item mãe é "Impostos sobre o Patrimônio"`.
+  `Nome sugerido com base na versão abreviada do item mãe selecionado. Complete o nome após o traço, ou remova o traço final para gravar apenas o radical. O nome do item mãe é "Impostos sobre o Patrimônio"`.
 
 ### G3 — Limpeza ao remover o item mãe
 
@@ -266,7 +295,7 @@ A presente spec descreve o **protocolo de criação** (`add`) do nome da classif
 
 ### G4 — Hidratação após POST com erro
 
-- **G4.1.** Se o formulário retornar com `parent_item_id` e `receita_nome` preenchidos, reidratar o estado do radical pelo rótulo ou, se necessário, inferir o prefixo antes do primeiro separador flexível (**M2.1**), **em consistência** com `receita_nome_base_mode` salvo. No modo **Abreviado**, o valor de `b` usado em **G1.2** **deve** corresponder ao radical abreviado associado ao prefixo atual de `receita_nome`, coerente com **`base_pai_abrev`**.
+- **G4.1.** Se o formulário retornar com `parent_item_id` e `receita_nome` preenchidos, reidratar o estado do radical pelo rótulo ou, se necessário, inferir o prefixo antes do primeiro separador flexível (**M2.1**), **em consistência** com `receita_nome_base_mode` salvo. **Nota:** o predicado de **G1.2** **não** depende de `b`; a reidratação de `b_completo` / `b_abreviado` continua relevante para outros protocolos (**P-mãe**, **A9.2**, **A9.3**, **M1.3**, **M1.5**) e para a **seleção** entre **G1.5.a** e **G1.5.b** no servidor, mas não condiciona o bloqueio de **G1**.
 
 ### G5 — Ordem na cadeia de envio
 
@@ -364,13 +393,46 @@ A presente spec descreve o **protocolo de criação** (`add`) do nome da classif
 
 - **A9.1.** Recalcular sugestão.
 - **A9.2.** Ao repor o radical (mudança de modo, **P-mãe** ou recálculo do abreviado): se `receita_nome` contiver um **separador flexível** **(N7)** seguido de **complemento** não vazio (texto após o traço, com pelo menos um caractere não branco), o novo valor **deve** ser **`(novo_radical) + sufixo_canônico`** (**(N5)**) **concatenado ao complemento preservado** — o mesmo trecho que estava após o separador, sem reinterpretar nem descartar (ex.: `… - Principal` mantém `Principal` quando o item mãe muda e **P-mãe** força Abreviado). Se **não** houver complemento (sugestão incompleta conforme **G1.2** ou valor vazio após o separador), aplicar apenas **`novo_radical + sufixo_canônico`** (**(N5)**).
-- **A9.2-bis.** Na **troca** de item mãe (**P-mãe** com `nome_mae` novo), se o valor atual for **sugestão incompleta** (**G1.2**) do radical da mãe **anterior**, tratar como **sem complemento** (**P-mãe.2-bis**), mesmo que o texto contiver um traço no final.
-- **A9.3 (troca de modo Completo ↔ Abreviado — M1.5).** Disparada pelo clique explícito no rádio **Completo** ou **Abreviado** (**M1.4** / **B0.4**), **não** por **P-mãe**. Com `nome_mae` e `ra` (**(N9)**) conhecidos:
-  - **A9.3.1 — Selecionar Completo:** se o valor começar por **`prefixo_abreviado`** e **não** por **`prefixo_completo`**, executar **M1.5** (remover `ra` + **(N7)**, repor **`prefixo_completo`**, **A9.2** no complemento). Caso contrário, se **não** começar por **`prefixo_completo`** nem por **`prefixo_abreviado`**, aplicar **M1.3**. Se já começar por **`prefixo_completo`**, manter coerência com **M1.1** sem duplicar prefixos.
-  - **A9.3.2 — Selecionar Abreviado:** se o valor começar por **`trim(nome_mae)`** seguido de **(N7)** (radical **completo** no campo) e **não** for já **`prefixo_abreviado`** com `ra` não vazio, **remover** `nome_mae` + **(N7)** e repor **`prefixo_abreviado`**, com **A9.2** no complemento. Se **não** começar por nenhum dos dois prefixos (**(N9)**), **prefixar** **`prefixo_abreviado`** ao valor (análogo a **M1.3** no modo Abreviado). Se já começar por **`prefixo_abreviado`**, **não** duplicar.
-  - **A9.3.3.** A troca de modo **não** deve interpretar o radical do modo anterior como **complemento** a preservar (**A9.2** aplica-se ao texto **após** remoção do radical do modo de origem).
+- **A9.2-bis.** Na **troca** de item mãe (**P-mãe** com `nome_mae` novo), se o valor atual for **sugestão literal** (`bAntigo + (N7)` sem complemento — predicado **G1.5.a**) do radical da mãe **anterior**, tratar como **sem complemento** (**P-mãe.2-bis**), mesmo que o texto contiver um traço no final.
 
-**Exemplo A9.3.2 (Completo → Abreviado)**  
+### A9.3 — Troca de modo Completo ↔ Abreviado (algoritmo unificado de 4 passos)
+
+Disparada pelo clique explícito no rádio **Completo** ou **Abreviado** (**M1.4** / **B0.4**), **não** por **P-mãe**. Com `nome_mae` e `ra` (**(N9)**) conhecidos, e dadas as variáveis:
+
+- `novo_prefixo` = `prefixo_completo` (`nome_mae + (N5)`) ou `prefixo_abreviado` (`ra + (N5)`), conforme o rádio clicado;
+- `bases_remover` = lista ordenada das bases candidatas a strip **exato**, com o radical do **modo oposto** ao clicado em primeiro lugar e o do **modo destino** em segundo (para também tolerar separadores **(N7)** não canônicos no início do valor).
+
+O cliente **deve** aplicar os passos abaixo em ordem, parando no primeiro que casar:
+
+| Passo | Condição | Ação |
+|---|---|---|
+| **A9.3-1** | `valor` já começa por `novo_prefixo` (literal **(N5)** com hífen ASCII e espaços canônicos). | **No-op** — não duplicar prefixos. |
+| **A9.3-2** | Para alguma `base ∈ bases_remover`, `stripLeadingParentRadical(valor, base)` casa (**(N7)** flexível como em **M2.1**: hífen ASCII, en dash ou em dash, com espaços ASCII opcionais ao redor). | Remove esse prefixo, preserva o resto como **complemento**, retorna `novo_prefixo + complemento` (ou só `novo_prefixo` se complemento vazio). Aplica **A9.2** sobre o complemento. **M1.5** é o caso particular `Abreviado → Completo` (`base = ra`); o caso simétrico `Completo → Abreviado` usa `base = nome_mae`. |
+| **A9.3-3** | Nenhum strip exato bateu, **e** `valor` contém pelo menos um separador **(N7)**. | Strip de **tudo até o primeiro (N7) inclusive**. Em seguida, **limpar resíduo**: enquanto o que sobrou começar com **(N7)** (com espaços ASCII opcionais ao redor), strip mais um **(N7)**. O resultado trimado é o **complemento**. Retorna `novo_prefixo + complemento` (ou só `novo_prefixo` se complemento vazio). **Corrige** o cenário em que o usuário **editou** o radical sugerido (ex.: removeu conectivos) — o passo 2 falha por não haver match exato, mas o passo 3 garante a substituição correta. |
+| **A9.3-4** | Nenhum dos anteriores casou (em particular, `valor` **não** contém nenhum **(N7)**). | **Trata o valor inteiro como complemento.** Retorna `novo_prefixo + trim(valor)`. Equivale ao antigo **M1.3** (prepend sem remover). |
+
+**A9.3-5 (independência da regra).** O algoritmo **não** consulta `receita_nome_base_mode` (o modo previamente selecionado) para decidir o ramo; só usa `nome_mae`, `ra` e o radical conhecido para construir `bases_remover`. Isso garante que o resultado depende **somente** do valor atual de `receita_nome` e do rádio recém-clicado.
+
+**A9.3-6 (não interpretar radical anterior como complemento).** Os passos 2 e 3 garantem que o texto **antes** do separador é descartado como «tentativa de radical», nunca preservado como complemento. **A9.2** aplica-se ao texto **após** essa remoção.
+
+**A9.3-7 (paridade com P-mãe).** A função `extrairComplementoPreservado` usada por **P-mãe** (`complementoPreservadoNaTrocaItemMae`) implementa o **passo 3** sem a limpeza iterativa de resíduo. Para os fluxos atuais de P-mãe isso não causa divergência porque a entrada em P-mãe é controlada pelo sistema (sugestões automáticas + edições leves do usuário). Caso o cliente venha a adotar o mesmo helper em P-mãe, herdará automaticamente a limpeza de resíduo do passo 3.
+
+**Exemplos A9.3** (item mãe `Imposto sobre a Propriedade Predial e Territorial Urbana`, `ra` = `IPTU`)
+
+| Valor antes | Rádio clicado | Passo | Resultado |
+|---|---|---|---|
+| `IPTU - Principal` | Completo | A9.3-2 (`base = ra`) | `Imposto sobre a Propriedade Predial e Territorial Urbana - Principal` |
+| `Imposto sobre a Propriedade Predial e Territorial Urbana - Principal` | Abreviado | A9.3-2 (`base = nome_mae`) | `IPTU - Principal` |
+| `Imposto sobre Prop. Predial Terretorial Urbana - Complemento 1` (radical editado pelo usuário) | Abreviado | A9.3-3 (strip até primeiro `-`) | `IPTU - Complemento 1` |
+| `IPTUs - Complemento 2` (typo, não casa `ra` exato) | Abreviado | A9.3-3 | `IPTU - Complemento 2` |
+| `IPTUs - Complemento 2` | Completo | A9.3-3 | `Imposto sobre a Propriedade Predial e Territorial Urbana - Complemento 2` |
+| `IPTU` (sem traço, regressão liberada por **G1.2**) | Completo | A9.3-4 (passo de fallback) | `Imposto sobre a Propriedade Predial e Territorial Urbana - IPTU` |
+| `Foo` (sem traço, sem relação com radicais) | Abreviado | A9.3-4 | `IPTU - Foo` |
+| `X -- Y` (traço duplicado consecutivo) | Abreviado | A9.3-3 (limpeza de resíduo) | `IPTU - Y` |
+| `X -` (traço sem complemento) | Abreviado | A9.3-3 (complemento vazio) | `IPTU - ` |
+| `Imposto sobre a Propriedade Predial e Territorial Urbana - ` | Completo | A9.3-1 (já começa por `novo_prefixo`) | (inalterado) `Imposto sobre a Propriedade Predial e Territorial Urbana - ` |
+
+**Exemplo A9.3-2 (Completo → Abreviado, nome_mae longo)**  
 - `nome_mae` = `Imposto sobre Transmissão "Causa Mortis" e Doação de Bens e Direitos`, `ra` = `ITCD`, valor = `Imposto sobre Transmissão "Causa Mortis" e Doação de Bens e Direitos - Principal` → **Abreviado**: `ITCD - Principal`.
 
 ---
@@ -383,9 +445,10 @@ A presente spec descreve o **protocolo de criação** (`add`) do nome da classif
 - **I4.** Predicados em `classification_naming_validation.py`, exportando no mínimo:  
   - `receita_nome_vazio_no_add(nome)` → bool (**G0.1**);  
   - `validar_receita_nome_guardrail_g0(receita_nome)` → bool (True = bloquear);  
-  - `radical_efetivo_para_guardrail(receita_nome_base_mode, nome_mae, radical_abreviado)` → `b` ou `None` (**sem_base**);  
-  - `receita_nome_eh_sugestao_incompleta(nome, radical)` → bool (**G1.2**, **(N7)** idêntico a **M2.1**);  
-  - `validar_receita_nome_guardrail_g1(...)` → bool (True = bloquear).  
+  - `receita_nome_termina_com_traco(nome)` → bool (**G1.2** — predicado **único** de bloqueio: `^.*` + `(N7)` + `\s*$`; idêntico a **M2.1**);  
+  - `radical_efetivo_para_guardrail(receita_nome_base_mode, nome_mae, radical_abreviado)` → `b` ou `None` (auxiliar para escolher a mensagem entre **G1.5.a** e **G1.5.b**; `None` em `sem_base`);  
+  - `receita_nome_eh_sugestao_literal(nome, b)` → bool (True quando `n` casa com `b + (N7)` (com espaços ASCII opcionais ao redor do traço, em qualquer ortografia de **(N7)**); usado para selecionar **G1.5.a**);  
+  - `validar_receita_nome_guardrail_g1(receita_nome, nome_mae=None, radical_abreviado=None)` → tupla `(bloquear: bool, chave_mensagem: 'receita_nome_submit_sugestao_literal_error' | 'receita_nome_submit_traco_final_error' | None)`, agregando o predicado **G1.2** com a seleção entre **G1.5.a** e **G1.5.b**. **Não** depende de `receita_nome_base_mode` para bloquear; consulta `nome_mae` / `radical_abreviado` apenas para escolher a mensagem.  
   **Uso obrigatório:** `ItemClassificacaoAdminForm.clean()` em **add** — **G0.4** antes de **G1.4**; **recomenda-se** o mesmo contrato no cliente (`validateClassificationNamingOnSubmit`: **G0** depois **G1**).
 - **I5.** Após `syncHierarchyFromCode` com `parent.found` e `parent.name`, o `change_form` (ou módulo equivalente) **deve** chamar a API JS de **P-orq.3** com `parent.pk` e `parent.name`, sem depender do disparo de `change` em `parent_item_id`.
 
@@ -402,15 +465,20 @@ A presente spec descreve o **protocolo de criação** (`add`) do nome da classif
 - **M1.3:** valor `Principal` sem prefixo → após **Completo**, `nome_mae - Principal`; valor `ICMS - Principal` com mãe `ICMS` → **sem** duplicar `ICMS - `.
 - **M1.5 / A9.3:** após **P-mãe** com `ITCD - `, clique em **Completo** → apenas `nome_mae - ` (nome longo da mãe), **sem** `ITCD` no meio; com `ITCD - Principal` → `nome_mae - Principal`.
 - **A9.3.2:** nome longo da mãe + ` - Principal` → rádio **Abreviado** → `ITCD - Principal` (ou `ra` correspondente).
-- **Abreviado:** **G2.2** com «versão abreviada» no início **e** `nome_mae` literal no final entre aspas; **G1** com `b` = radical abreviado.
+- **Abreviado:** **G2.2** com «versão abreviada» no início **e** `nome_mae` literal no final entre aspas; seleção de **G1.5.a** usa `b_abreviado` (saída de A1–A8) para comparação `b + (N5)`, **não** o `nome_mae` literal.
 - **M2:** remoção com traços Unicode; aviso **M2.3**.
-- **G1.2 / (N7):** bloqueio de envio com `IPVA - `, `IPVA\u2013` e liberação com `IPVA - Principal` (mesma lógica de separador que **M2.1**), nos modos **Completo** e **Abreviado**.
-- **G1.2:** `n === b` (só radical, sem traço) → bloqueado em ambos os modos.
-- **G1.4 (servidor):** `ItemClassificacaoAdminForm` em **add** rejeita POST com `receita_nome` incompleto mesmo sem JS; modo **Abreviado** usa `b` abreviado, não `nome_mae` longo.
+- **G1.2 / (N7) — sugestão literal Completo:** `n = nome_mae + " - "` (e variações `nome_mae + " -"`, `nome_mae + "\u2013"`, `nome_mae + "\u2014"`) → bloqueio com **G1.5.a**.
+- **G1.2 / (N7) — sugestão literal Abreviado:** `n = radical_abreviado + " - "` (e variações com (N7) Unicode) → bloqueio com **G1.5.a**.
+- **G1.2 — radical igual sem traço (regressão):** `n = nome_mae` ou `n = radical_abreviado` (sem traço final) → **permitido** (cobre regressão do antigo bloqueio `n === b`).
+- **G1.2 — modificado com traço pendurado:** `n = "IPVA - Cota Única -"` → bloqueio com **G1.5.b** (não é sugestão literal).
+- **G1.2 — `sem_base` com traço final:** modo `sem_base`, `n = "Taxa municipal -"` → bloqueio com **G1.5.b**.
+- **G1.2 — `sem_base` sem traço final:** modo `sem_base`, `n = "Taxa municipal de iluminação"` → permitido.
+- **G1.2 — complemento normal:** `n = "IPVA - Cota Única"`; `n = "Rec. Imposto - Carro"` → permitido nos três modos (Completo, Abreviado, Sem base).
+- **G1.4 (servidor — Completo, mensagem G1.5.a):** POST em `base_pai_completo` com `n = nome_mae + " - "` → `ValidationError` em `receita_nome` com `receita_nome_submit_sugestao_literal_error`, mesmo sem JS.
+- **G1.4 (servidor — `sem_base`, mensagem G1.5.b):** POST em `sem_base` com `n` terminado em traço → `ValidationError` com `receita_nome_submit_traco_final_error`.
 - **G0:** POST em **add** com `receita_nome` vazio ou só espaços → rejeitado em **todos** os modos (`base_pai_abrev`, `base_pai_completo`, `sem_base`, modo vazio).
-- **G0 vs G1:** `ITCD - ` → **G0** não bloqueia; **G1** bloqueia no modo **Abreviado**.
-- **G1 / sem_base:** POST com `sem_base` e `IPVA - ` → **não** falha **G1** (mas **G0** bloqueia se `receita_nome` vazio).
-- **G4:** POST com erro + modo Abreviado: `b` em **G1.2** coerente com prefixo abreviado.
+- **G0 vs G1:** `ITCD - ` → **G0** não bloqueia; **G1** bloqueia (independente do modo). `ITCD` (sem traço) → **G0** e **G1** **não** bloqueiam, mesmo em Abreviado/Completo.
+- **G4:** POST com erro + modo Abreviado: `b` reidratado coerente com prefixo abreviado **só** para fins de seleção entre G1.5.a/G1.5.b e demais protocolos (P-mãe, A9.\*, M1.\*); o bloqueio **G1.2** independe de `b`.
 - **A3+A6, A4+A6, A8+A6** (A6 em todos os ramos).
 - **A3.2 / A1.3 / G6:** com duas linhas ativas em conflito por `norm(termo)`, alerta com `termo_nome` e **sem** aplicação de **A3.1**.
 - **A3.3 / A4.1b:** `nome_mae` com um espaço e `termo` com dois espaços internos — match na passagem fallback **(N8)**; **A4.1a** sem intervalos antes do fallback.
@@ -426,11 +494,11 @@ A presente spec descreve o **protocolo de criação** (`add`) do nome da classif
 | D3  | Duplicidade de `termo_nome` no léxico                  | **Sem desempate** (erro de BD). **A3.2**, **A1.3**, **G6**: alerta pedindo verificação na **Lista de Abreviações**.                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | D4  | Espaços em comparações                                 | **(N6)** estrito na passagem primária; **(N8)** `norm_colapso_espacos` **só como fallback** em **A3.3** e **A4.1b**.                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | D5  | Item mãe vs rádio (**P-mãe**)                          | Ao definir/alterar `parent_item_id`: **sempre** forçar **Abreviado** (**P-mãe.3**–**P-mãe.4**), recalcular radical (**A1–A8**), repor `receita_nome` com **A9.2** (preservar complemento após **(N7)**). **Sobrescreve** rádio anterior (incl. **Sem base**). **Completo** só por clique (**M1**); **não** usar **M1.4** no autocomplete.                                                                                                                                                                                                  |
-| D6  | **G1** no servidor (**I4**)                            | **Uma** definição (**G1.2**); **dois** pontos de aplicação: cliente (**G1.1**–**G1.3**) e `ItemClassificacaoAdminForm.clean()` em **add** (**G1.4**). **Paridade Completo / Abreviado:** `b` = `nome_mae` ou `radical_abreviado`; bloqueia `n === b` e `n === b + (N7)` sem complemento. **`sem_base`:** fora de **G1**. Mensagem única **G1.5**.                                                                                                                                                                                          |
-| D7  | Orquestração hierarquia → **P-mãe**                    | **P-orq.1**–**P-orq.4**, **P-mãe.2-bis**, **A9.2-bis**, **I5**: após lookup por `receita_cod`, invocar **P-mãe** com `parent.name` do JSON; não depender só de `change` + rótulo DOM; na troca de mãe, não manter prefixo de sugestão incompleta da mãe anterior.                                                                                                                                                                                                                                                                          |
-| D8  | **M1.3**, troca de modo (**M1.5** / **A9.3**) e **G2** | **M1.3:** prefixar **`prefixo_completo`** só se o valor **não** começa por **`prefixo_completo`** nem por **`prefixo_abreviado`** (**(N9)**). **M1.5 / A9.3:** ao trocar rádio **Completo** ↔ **Abreviado**, **substituir** o radical do modo anterior (remoção **(N7)** + **A9.2**), não empilhar prefixos (ex.: `ITCD - ` → **Completo** = só `nome_mae - `). **G2.1:** «versão completa» + completar após o traço (texto fixo). **G2.2:** «versão abreviada» + completar após o traço + `nome_mae` entre aspas (template `{nome_mae}`). |
+| D6  | **G1** no servidor (**I4**)                            | **Uma** definição (**G1.2**: `trim(n)` termina com **(N7)**) aplicada em **todos** os modos do **add** (inclusive `sem_base`). Predicado de bloqueio **independe** de `receita_nome_base_mode` e do radical efetivo `b`. **Duas** mensagens em **G1.5**: **G1.5.a** quando `n` coincide com sugestão literal (`b_completo + (N5)` ou `b_abreviado + (N5)`, com (N7) flexível); **G1.5.b** caso contrário. Validação em dois pontos: cliente (**G1.1**–**G1.3**) e `ItemClassificacaoAdminForm.clean()` em **add** (**G1.4**). `radical_efetivo_para_guardrail(...)` e `receita_nome_eh_sugestao_literal(...)` continuam em **I4** para alimentar a escolha entre G1.5.a e G1.5.b. **Regressão proposital:** `n === b` (sem traço final) deixa de ser bloqueio. |
+| D7  | Orquestração hierarquia → **P-mãe**                    | **P-orq.1**–**P-orq.4**, **P-mãe.2-bis**, **A9.2-bis**, **I5**: após lookup por `receita_cod`, invocar **P-mãe** com `parent.name` do JSON; não depender só de `change` + rótulo DOM; na troca de mãe, não manter prefixo de sugestão literal da mãe anterior (predicado **G1.5.a**).                                                                                                                                                                                                                                                       |
+| D8  | **A9.3** (algoritmo unificado de troca de modo) e **G2** | **A9.3** (4 passos, indep. de `receita_nome_base_mode`): **1)** no-op se `valor` já começa por `novo_prefixo`; **2)** strip exato de qualquer base em `[radical_oposto, radical_destino]` (com **(N7)** flexível) — **M1.5** é caso particular `Abreviado → Completo`; **3)** strip «tudo até o primeiro **(N7)** inclusive» com limpeza iterativa de **(N7)** residual — **corrige duplicação** quando o usuário editou o radical sugerido; **4)** se valor não tem **(N7)**, trata o valor inteiro como complemento e prepende `novo_prefixo` (regra **M1.3** antiga). Nunca empilhar prefixos. **G2.1:** «versão completa» + duas saídas (completar após o traço **ou** remover o traço final) — texto fixo. **G2.2:** «versão abreviada» + duas saídas + `nome_mae` entre aspas (template `{nome_mae}`). |
 | D9  | Conectivos (SSOT + **A6**)                             | `LEXICO_CONNECTIVOS_FIXOS` e `LEXICO_PONTUACAO_OMITIR_NAS_EXTREMIDADES` em `classification_naming_connectives.py`; infer importa só conectivos lexicais. **A6** (pontuação + conectivos) aplica-se **sempre** ao radical (**A3**, **A4**, **A8**) antes de **A7**; ponto preservado só em token **(iv)**.                                                                                                                                                                                                                                  |
-| D9  | **G0** — nome obrigatório no **add**                   | `trim(receita_nome)` vazio → bloquear **sempre** (**G0**), **independente** do rádio; **não** altera sugestão/remoção dos rádios. **G1** continua só para sugestão incompleta (Abreviado/Completo). Ordem: **G0** → **G1**. Alinhado a `item_classificacao.yaml` (`required: true`).                                                                                                                                                                                                                                                       |
+| D10 | **G0** — nome obrigatório no **add**                   | `trim(receita_nome)` vazio → bloquear **sempre** (**G0**), **independente** do rádio; **não** altera sugestão/remoção dos rádios. **G1** continua, em todos os modos (inclusive `sem_base`), para nomes terminando em **(N7)** (ver **D6**). Ordem: **G0** → **G1**. Alinhado a `item_classificacao.yaml` (`required: true`).                                                                                                                                                                                                              |
 
 ---
 

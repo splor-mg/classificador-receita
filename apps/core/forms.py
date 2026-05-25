@@ -26,8 +26,10 @@ from apps.core.classification_naming_abbrev import (
     normalize_receita_nome_base_mode,
 )
 from apps.core.classification_naming_messages import (
-    RECEITA_NOME_SUBMIT_INCOMPLETO_ERROR,
+    RECEITA_NOME_SUBMIT_SUGESTAO_LITERAL_ERROR,
+    RECEITA_NOME_SUBMIT_TRACO_FINAL_ERROR,
     RECEITA_NOME_VAZIO_ERROR,
+    MENSAGEM_SUGESTAO_LITERAL_KEY,
 )
 from apps.core.classification_naming_validation import (
     validar_receita_nome_guardrail_g0,
@@ -344,18 +346,27 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
             nome_mae = ""
             if parent is not None:
                 nome_mae = (getattr(parent, "receita_nome", None) or "").strip()
+            # Sob G1.2 novo, a seleção de mensagem (G1.5.a vs G1.5.b) considera
+            # b_completo **e** b_abreviado, independente do modo selecionado.
+            # Pré-computa radical_abrev quando há nome_mae para evitar recálculo no helper.
             radical_abrev = None
-            if nome_mae and base_mode == "base_pai_abrev":
+            if nome_mae:
                 radical_abrev = calcular_radical_abreviado(nome_mae).radical
             if validar_receita_nome_guardrail_g0(receita_nome=receita_nome):
                 self.add_error("receita_nome", RECEITA_NOME_VAZIO_ERROR)
-            elif validar_receita_nome_guardrail_g1(
-                receita_nome=receita_nome,
-                receita_nome_base_mode=base_mode,
-                nome_mae=nome_mae,
-                radical_abreviado=radical_abrev,
-            ):
-                self.add_error("receita_nome", RECEITA_NOME_SUBMIT_INCOMPLETO_ERROR)
+            else:
+                bloquear, chave_mensagem = validar_receita_nome_guardrail_g1(
+                    receita_nome=receita_nome,
+                    nome_mae=nome_mae,
+                    radical_abreviado=radical_abrev,
+                )
+                if bloquear:
+                    texto = (
+                        RECEITA_NOME_SUBMIT_SUGESTAO_LITERAL_ERROR
+                        if chave_mensagem == MENSAGEM_SUGESTAO_LITERAL_KEY
+                        else RECEITA_NOME_SUBMIT_TRACO_FINAL_ERROR
+                    )
+                    self.add_error("receita_nome", texto)
 
         return cleaned
 

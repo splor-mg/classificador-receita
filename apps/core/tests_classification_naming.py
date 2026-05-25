@@ -17,14 +17,20 @@ from apps.core.classification_naming_connectives import (
 )
 from apps.core.alias_lexico_infer import _CONNECTIVES
 from apps.core.classification_naming_messages import (
+    MENSAGEM_SUGESTAO_LITERAL_KEY,
+    MENSAGEM_TRACO_FINAL_KEY,
+    RECEITA_NOME_SUBMIT_SUGESTAO_LITERAL_ERROR,
+    RECEITA_NOME_SUBMIT_TRACO_FINAL_ERROR,
     RECEITA_NOME_SUGESTAO_INFO_ABREV_TEMPLATE,
     RECEITA_NOME_SUGESTAO_INFO_COMPLETO,
     RECEITA_NOME_VAZIO_ERROR,
+    classification_naming_messages_dict,
     format_receita_nome_sugestao_info_abrev,
 )
 from apps.core.classification_naming_validation import (
     radical_efetivo_para_guardrail,
-    receita_nome_eh_sugestao_incompleta,
+    receita_nome_eh_sugestao_literal,
+    receita_nome_termina_com_traco,
     receita_nome_vazio_no_add,
     validar_receita_nome_guardrail_g0,
     validar_receita_nome_guardrail_g1,
@@ -36,8 +42,14 @@ class G2MessagesTests(SimpleTestCase):
         self.assertIn("versão completa", RECEITA_NOME_SUGESTAO_INFO_COMPLETO)
         self.assertIn("após o traço", RECEITA_NOME_SUGESTAO_INFO_COMPLETO)
 
+    def test_g2_1_menciona_remover_traco(self) -> None:
+        self.assertIn("remova o traço final", RECEITA_NOME_SUGESTAO_INFO_COMPLETO)
+
     def test_g2_2_template_menciona_versao_abreviada(self) -> None:
         self.assertIn("versão abreviada", RECEITA_NOME_SUGESTAO_INFO_ABREV_TEMPLATE)
+
+    def test_g2_2_template_menciona_remover_traco(self) -> None:
+        self.assertIn("remova o traço final", RECEITA_NOME_SUGESTAO_INFO_ABREV_TEMPLATE)
 
     def test_g2_2_inclui_nome_mae(self) -> None:
         msg = format_receita_nome_sugestao_info_abrev("Impostos sobre o Patrimônio")
@@ -62,15 +74,26 @@ class G0ValidationTests(SimpleTestCase):
         self.assertFalse(validar_receita_nome_guardrail_g0(receita_nome="ITCD - "))
 
     def test_g0_independe_do_modo_g1_ainda_bloqueia_incompleto(self) -> None:
+        # **G0 vs G1**: ITCD - (termina com traço) → G0 não bloqueia, G1 bloqueia.
         self.assertFalse(validar_receita_nome_guardrail_g0(receita_nome="ITCD - "))
-        self.assertTrue(
-            validar_receita_nome_guardrail_g1(
-                receita_nome="ITCD - ",
-                receita_nome_base_mode="base_pai_abrev",
-                nome_mae="Nome longo ITCD",
-                radical_abreviado="ITCD",
-            )
+        bloquear, chave = validar_receita_nome_guardrail_g1(
+            receita_nome="ITCD - ",
+            nome_mae="Nome longo ITCD",
+            radical_abreviado="ITCD",
         )
+        self.assertTrue(bloquear)
+        self.assertEqual(chave, MENSAGEM_SUGESTAO_LITERAL_KEY)
+
+    def test_g0_vs_g1_sem_traco_libera_em_ambos(self) -> None:
+        # **G0 vs G1**: ITCD (sem traço final) → G0 e G1 não bloqueiam.
+        self.assertFalse(validar_receita_nome_guardrail_g0(receita_nome="ITCD"))
+        bloquear, chave = validar_receita_nome_guardrail_g1(
+            receita_nome="ITCD",
+            nome_mae="Nome longo ITCD",
+            radical_abreviado="ITCD",
+        )
+        self.assertFalse(bloquear)
+        self.assertIsNone(chave)
 
     def test_mensagem_g0(self) -> None:
         self.assertIn("Natureza de Receita", RECEITA_NOME_VAZIO_ERROR)
@@ -85,20 +108,172 @@ class NormTests(SimpleTestCase):
         self.assertEqual(norm_colapso_espacos("Imposto  sobre"), "imposto sobre")
 
 
-class G1ValidationTests(SimpleTestCase):
-    def test_bloqueia_radical_igual(self) -> None:
-        self.assertTrue(receita_nome_eh_sugestao_incompleta("IPVA", "IPVA"))
+class G1PredicadoBloqueioTests(SimpleTestCase):
+    """``receita_nome_termina_com_traco`` (G1.2) — predicado único, sem ``b``."""
 
-    def test_bloqueia_radical_com_traco_ascii(self) -> None:
-        self.assertTrue(receita_nome_eh_sugestao_incompleta("IPVA - ", "IPVA"))
+    def test_bloqueia_traco_final_ascii_com_espaco(self) -> None:
+        self.assertTrue(receita_nome_termina_com_traco("IPVA - "))
 
-    def test_bloqueia_radical_com_en_dash(self) -> None:
-        self.assertTrue(receita_nome_eh_sugestao_incompleta("IPVA\u2013", "IPVA"))
+    def test_bloqueia_traco_final_ascii_sem_espaco(self) -> None:
+        self.assertTrue(receita_nome_termina_com_traco("IPVA -"))
 
-    def test_permite_com_complemento(self) -> None:
-        self.assertFalse(receita_nome_eh_sugestao_incompleta("IPVA - Principal", "IPVA"))
+    def test_bloqueia_en_dash_final(self) -> None:
+        self.assertTrue(receita_nome_termina_com_traco("IPVA\u2013"))
 
-    def test_sem_base_nao_avalia(self) -> None:
+    def test_bloqueia_em_dash_final(self) -> None:
+        self.assertTrue(receita_nome_termina_com_traco("IPVA\u2014"))
+
+    def test_bloqueia_complemento_seguido_de_traco(self) -> None:
+        self.assertTrue(receita_nome_termina_com_traco("IPVA - Cota Única -"))
+        self.assertTrue(receita_nome_termina_com_traco("Rec. Imposto - Carro - "))
+
+    def test_libera_sem_traco_final(self) -> None:
+        self.assertFalse(receita_nome_termina_com_traco("IPVA"))
+        self.assertFalse(receita_nome_termina_com_traco("IPVA - Principal"))
+        self.assertFalse(receita_nome_termina_com_traco("Rec. Imposto - Carro"))
+
+    def test_libera_vazio(self) -> None:
+        self.assertFalse(receita_nome_termina_com_traco(""))
+        self.assertFalse(receita_nome_termina_com_traco("   "))
+
+    def test_libera_radical_igual_sem_traco_regressao(self) -> None:
+        """**Regressão proposital**: ``n === b`` deixa de ser bloqueio."""
+        self.assertFalse(
+            receita_nome_termina_com_traco(
+                "Imposto sobre a Propriedade Predial e Territorial Urbana"
+            )
+        )
+
+
+class G1SugestaoLiteralTests(SimpleTestCase):
+    """``receita_nome_eh_sugestao_literal`` — usado só para selecionar G1.5.a."""
+
+    def test_casa_com_b_mais_traco_ascii(self) -> None:
+        self.assertTrue(receita_nome_eh_sugestao_literal("IPVA - ", "IPVA"))
+        self.assertTrue(receita_nome_eh_sugestao_literal("IPVA -", "IPVA"))
+
+    def test_casa_com_b_mais_en_dash(self) -> None:
+        self.assertTrue(receita_nome_eh_sugestao_literal("IPVA\u2013", "IPVA"))
+
+    def test_nao_casa_quando_igual_a_b_sem_traco(self) -> None:
+        self.assertFalse(receita_nome_eh_sugestao_literal("IPVA", "IPVA"))
+
+    def test_nao_casa_com_complemento(self) -> None:
+        self.assertFalse(receita_nome_eh_sugestao_literal("IPVA - Principal", "IPVA"))
+
+    def test_nao_casa_quando_b_vazio(self) -> None:
+        self.assertFalse(receita_nome_eh_sugestao_literal("IPVA -", ""))
+        self.assertFalse(receita_nome_eh_sugestao_literal("", "IPVA"))
+
+
+class G1ValidacaoTuplaTests(SimpleTestCase):
+    """``validar_receita_nome_guardrail_g1`` retorna ``(bloquear, chave_mensagem)``."""
+
+    def test_libera_quando_nao_termina_com_traco(self) -> None:
+        bloquear, chave = validar_receita_nome_guardrail_g1(
+            receita_nome="IPVA - Principal",
+            nome_mae="IPVA",
+            radical_abreviado="IPVA",
+        )
+        self.assertFalse(bloquear)
+        self.assertIsNone(chave)
+
+    def test_bloqueia_sugestao_literal_completo(self) -> None:
+        # `n = b_completo + " - "` → G1.5.a.
+        bloquear, chave = validar_receita_nome_guardrail_g1(
+            receita_nome="Imposto sobre a Propriedade Predial e Territorial Urbana - ",
+            nome_mae="Imposto sobre a Propriedade Predial e Territorial Urbana",
+            radical_abreviado="IPTU",
+        )
+        self.assertTrue(bloquear)
+        self.assertEqual(chave, MENSAGEM_SUGESTAO_LITERAL_KEY)
+
+    def test_bloqueia_sugestao_literal_abreviado(self) -> None:
+        # `n = b_abreviado + " - "` → G1.5.a (mesmo se o modo selecionado fosse Completo).
+        bloquear, chave = validar_receita_nome_guardrail_g1(
+            receita_nome="IPTU - ",
+            nome_mae="Imposto sobre a Propriedade Predial e Territorial Urbana",
+            radical_abreviado="IPTU",
+        )
+        self.assertTrue(bloquear)
+        self.assertEqual(chave, MENSAGEM_SUGESTAO_LITERAL_KEY)
+
+    def test_bloqueia_sugestao_literal_sem_espaco_final(self) -> None:
+        # `n = b + " -"` → ainda casa como sugestão literal (G1.5.a).
+        bloquear, chave = validar_receita_nome_guardrail_g1(
+            receita_nome="IPTU -",
+            nome_mae="IPTU",
+            radical_abreviado="IPTU",
+        )
+        self.assertTrue(bloquear)
+        self.assertEqual(chave, MENSAGEM_SUGESTAO_LITERAL_KEY)
+
+    def test_bloqueia_traco_pendurado_com_complemento_g1_5_b(self) -> None:
+        bloquear, chave = validar_receita_nome_guardrail_g1(
+            receita_nome="IPVA - Cota Única -",
+            nome_mae="IPVA",
+            radical_abreviado="IPVA",
+        )
+        self.assertTrue(bloquear)
+        self.assertEqual(chave, MENSAGEM_TRACO_FINAL_KEY)
+
+    def test_bloqueia_sem_base_traco_final_g1_5_b(self) -> None:
+        # `sem_base`: nome_mae vazio, radical_abreviado None → seleciona G1.5.b.
+        bloquear, chave = validar_receita_nome_guardrail_g1(
+            receita_nome="Taxa municipal -",
+            nome_mae="",
+            radical_abreviado=None,
+        )
+        self.assertTrue(bloquear)
+        self.assertEqual(chave, MENSAGEM_TRACO_FINAL_KEY)
+
+    def test_libera_sem_base_sem_traco(self) -> None:
+        bloquear, chave = validar_receita_nome_guardrail_g1(
+            receita_nome="Taxa municipal de iluminação",
+            nome_mae="",
+            radical_abreviado=None,
+        )
+        self.assertFalse(bloquear)
+        self.assertIsNone(chave)
+
+    def test_libera_radical_igual_sem_traco_regressao(self) -> None:
+        # Antigo bloqueio `n === b` agora é liberado.
+        bloquear, chave = validar_receita_nome_guardrail_g1(
+            receita_nome="IPVA",
+            nome_mae="IPVA",
+            radical_abreviado="IPVA",
+        )
+        self.assertFalse(bloquear)
+        self.assertIsNone(chave)
+
+
+class G1MensagensDictTests(SimpleTestCase):
+    """Chaves expostas no ``classification_naming_messages_dict``."""
+
+    def test_chaves_presentes(self) -> None:
+        d = classification_naming_messages_dict()
+        self.assertEqual(
+            d[MENSAGEM_SUGESTAO_LITERAL_KEY],
+            RECEITA_NOME_SUBMIT_SUGESTAO_LITERAL_ERROR,
+        )
+        self.assertEqual(
+            d[MENSAGEM_TRACO_FINAL_KEY],
+            RECEITA_NOME_SUBMIT_TRACO_FINAL_ERROR,
+        )
+
+    def test_g1_5_a_menciona_radical_sugerido(self) -> None:
+        self.assertIn("após o traço", RECEITA_NOME_SUBMIT_SUGESTAO_LITERAL_ERROR)
+        self.assertIn("remova o traço final", RECEITA_NOME_SUBMIT_SUGESTAO_LITERAL_ERROR)
+        self.assertIn(
+            "radical sugerido", RECEITA_NOME_SUBMIT_SUGESTAO_LITERAL_ERROR
+        )
+
+    def test_g1_5_b_menciona_inconsistencia_de_traco(self) -> None:
+        self.assertIn("não pode terminar com traço", RECEITA_NOME_SUBMIT_TRACO_FINAL_ERROR)
+
+
+class RadicalEfetivoTests(SimpleTestCase):
+    def test_sem_base_retorna_none(self) -> None:
         self.assertIsNone(radical_efetivo_para_guardrail("sem_base", "IPVA", "IPVA"))
 
     def test_modo_abrev_usa_radical_abreviado(self) -> None:
@@ -107,15 +282,14 @@ class G1ValidationTests(SimpleTestCase):
         )
         self.assertEqual(b, "IPVA")
 
-    def test_validar_g1_abreviado(self) -> None:
-        self.assertTrue(
-            validar_receita_nome_guardrail_g1(
-                receita_nome="Rest. IPVA - ",
-                receita_nome_base_mode="base_pai_abrev",
-                nome_mae="Nome longo",
-                radical_abreviado="Rest. IPVA",
-            )
-        )
+    def test_modo_completo_usa_nome_mae(self) -> None:
+        b = radical_efetivo_para_guardrail("base_pai_completo", "IPVA", "IPVA")
+        self.assertEqual(b, "IPVA")
+
+    def test_base_pai_legado_aceito(self) -> None:
+        # `base_pai` (legado) é normalizado para `base_pai_completo`.
+        b = radical_efetivo_para_guardrail("base_pai", "IPVA", "IPVA")
+        self.assertEqual(b, "IPVA")
 
 
 class AbbrevProtocolTests(SimpleTestCase):

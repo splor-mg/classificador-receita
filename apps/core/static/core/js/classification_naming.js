@@ -111,12 +111,36 @@
     return m;
   }
 
-  /** **G1.2** — paridade com classification_naming_validation.py */
-  function receitaNomeEhSugestaoIncompleta(nome, radical) {
+  /**
+   * **G1.2** (predicado único de bloqueio) — paridade com
+   * ``receita_nome_termina_com_traco`` em classification_naming_validation.py.
+   *
+   * Bloqueia quando ``trim(nome)`` termina com **(N7)** (hífen ASCII,
+   * en dash ou em dash), opcionalmente seguido apenas de espaços.
+   * Independente de modo e de radical.
+   */
+  var TRAILING_HYPHEN_RE = new RegExp(
+    '[' + HYPHEN_CLASS_FRAGMENT + ']\\s*$',
+    'u'
+  );
+  function receitaNomeTerminaComTraco(nome) {
+    var n = String(nome || '').trim();
+    if (!n) return false;
+    return TRAILING_HYPHEN_RE.test(n);
+  }
+
+  /**
+   * **G1.5.a** (seleção de mensagem) — paridade com
+   * ``receita_nome_eh_sugestao_literal`` em classification_naming_validation.py.
+   *
+   * True quando ``n`` casa com ``b + (N7)`` (com (N7) flexível e espaços
+   * ASCII opcionais ao redor do traço). Usado apenas para escolher entre
+   * G1.5.a (sugestão literal) e G1.5.b (traço final pendurado).
+   */
+  function receitaNomeEhSugestaoLiteral(nome, radical) {
     var n = String(nome || '').trim();
     var b = String(radical || '').trim();
     if (!n || !b) return false;
-    if (n === b) return true;
     var re = new RegExp(
       '^' + escapeRegExp(b) + '\\s*[' + HYPHEN_CLASS_FRAGMENT + ']\\s*$',
       'u'
@@ -179,22 +203,78 @@
   }
 
   /**
-   * **A9.2 / A9.3** — remove radical conhecido (N7) e repõe novo prefixo + complemento.
-   * Quando o strip pelo radical reconhecido **corresponde** mas não resta texto (**M1.5**
-   * só sugestão incompleta), **não** usar ``extrairComplementoPreservado`` no valor inteiro —
-   * nomes multi-segmento teriam o primeiro traço interno confundido com início do complemento.
+   * **A9.3 passo 3** — strip "tudo até o primeiro (N7) inclusive", limpando
+   * traços residuais consecutivos no início do que sobrou.
+   *
+   * Retorna o complemento (trimado) ou ``null`` se o valor não contém (N7).
+   *
+   * Ex.: ``"X - Y"`` → ``"Y"``; ``"X -- Y"`` → ``"Y"``; ``"X -"`` → ``""``;
+   * ``"X"`` → ``null``.
    */
-  function reporRadicalPreservandoComplemento(val, novoPrefixo, radicalRemover) {
-    var complemento = '';
-    if (radicalRemover) {
-      var stripped = stripLeadingParentRadical(val, radicalRemover);
+  function stripUpToFirstHyphenComplemento(rawValue) {
+    var raw = String(rawValue || '');
+    var firstStripRe = new RegExp(
+      '^[^' + HYPHEN_CLASS_FRAGMENT + ']*[' + HYPHEN_CLASS_FRAGMENT + ']\\s*',
+      'u'
+    );
+    if (!firstStripRe.test(raw)) return null;
+    var stripped = raw.replace(firstStripRe, '');
+    var leadingHyphenRe = new RegExp(
+      '^\\s*[' + HYPHEN_CLASS_FRAGMENT + ']\\s*',
+      'u'
+    );
+    while (leadingHyphenRe.test(stripped)) {
+      stripped = stripped.replace(leadingHyphenRe, '');
+    }
+    return stripped.trim();
+  }
+
+  /**
+   * **A9.3** — algoritmo unificado de 4 passos para repor o radical preservando complemento.
+   *
+   * 1. Se ``val`` já começa por ``novoPrefixo`` (literal com (N5)) → no-op.
+   * 2. Para cada ``base`` em ``basesRemover`` (na ordem dada — tipicamente
+   *    [radical do modo oposto, radical do modo destino]): se ``stripLeadingParentRadical``
+   *    bate, remove esse prefixo (com (N7) flexível) e preserva o resto como complemento.
+   * 3. Se nada foi removido e ``val`` contém algum (N7): strip "tudo até o primeiro (N7)
+   *    inclusive", limpa traços residuais consecutivos no início do que sobrou e usa
+   *    isso como complemento.
+   * 4. Se ``val`` não contém nenhum (N7): trata o valor inteiro como complemento
+   *    (regra **M1.3** antiga — prepend sem remover).
+   *
+   * Em todos os ramos: se houver complemento → ``novoPrefixo + complemento``;
+   * senão → apenas ``novoPrefixo`` (radical + (N5)).
+   *
+   * Paridade com a função de troca de item mãe (**P-mãe**, ``complementoPreservadoNaTrocaItemMae``):
+   * P-mãe usa ``extrairComplementoPreservado`` que é equivalente ao passo 3 (sem limpeza
+   * iterativa de resíduo, ok porque P-mãe não reaproveita valores anômalos).
+   *
+   * @param {string} val Valor atual de ``receita_nome``.
+   * @param {string} novoPrefixo Novo radical já com (N5) ao final (ex.: ``"IPTU - "``).
+   * @param {string[]|string} basesRemover Bases candidatas a strip exato, em ordem
+   *                                       de prioridade. Aceita string para compat.
+   * @returns {string} Novo valor para ``receita_nome``.
+   */
+  function reporRadicalPreservandoComplemento(val, novoPrefixo, basesRemover) {
+    if (valorComecaPorPrefixoCanonico(val, novoPrefixo)) {
+      return val;
+    }
+    var bases = Array.isArray(basesRemover) ? basesRemover : [basesRemover];
+    for (var i = 0; i < bases.length; i++) {
+      var base = bases[i];
+      if (!base) continue;
+      var stripped = stripLeadingParentRadical(val, base);
       if (stripped !== null) {
-        complemento = String(stripped).trim();
-        return complemento ? novoPrefixo + complemento : novoPrefixo;
+        var compExato = String(stripped).trim();
+        return compExato ? novoPrefixo + compExato : novoPrefixo;
       }
     }
-    complemento = extrairComplementoPreservado(val).trim();
-    return complemento ? novoPrefixo + complemento : novoPrefixo;
+    var fallback = stripUpToFirstHyphenComplemento(val);
+    if (fallback !== null) {
+      return fallback ? novoPrefixo + fallback : novoPrefixo;
+    }
+    var inteiro = String(val || '').trim();
+    return inteiro ? novoPrefixo + inteiro : novoPrefixo;
   }
 
   function scheduleApplyFromParentLookupLabel(parentItemIdInput, applyFn) {
@@ -323,10 +403,12 @@
     function refreshReceitaNomeSugestaoInfoMensagem() {
       var b = radicalEfetivoGuardrail();
       var mode = getBaseMode();
+      // **G2.0** — mostra info enquanto **G1.2** estiver verdadeiro (nome termina
+      // com (N7)) e o modo for Completo/Abreviado com radical conhecido.
       if (
         b &&
         (mode === 'base_pai_completo' || mode === 'base_pai_abrev') &&
-        receitaNomeEhSugestaoIncompleta(receitaNomeInput.value, b)
+        receitaNomeTerminaComTraco(receitaNomeInput.value)
       ) {
         if (mode === 'base_pai_completo') {
           showReceitaNomeInfo(
@@ -353,7 +435,11 @@
 
     /**
      * **P-mãe.2-bis / A9.2-bis:** na troca de mãe, não preservar prefixo se o valor
-     * atual for só sugestão incompleta (G1.2) da mãe anterior.
+     * atual for sugestão literal (``bAntigo + (N7)``, sem complemento) da mãe anterior.
+     *
+     * Sob o predicado novo de **G1.2** (termina com (N7)), a detecção semântica de
+     * «sugestão da mãe anterior, sem complemento» continua a ser a antiga **G1.5.a**
+     * (``receitaNomeEhSugestaoLiteral``) — não o predicado de bloqueio.
      */
     function complementoPreservadoNaTrocaItemMae(nomeMaeNovo, nomeMaeAnterior) {
       var raw = receitaNomeInput.value || '';
@@ -363,7 +449,7 @@
         nomeMaeNovo &&
         !nomeMaeIgual(nomeMaeAnterior, nomeMaeNovo) &&
         bAntigo &&
-        receitaNomeEhSugestaoIncompleta(raw, bAntigo)
+        receitaNomeEhSugestaoLiteral(raw, bAntigo)
       ) {
         return '';
       }
@@ -407,49 +493,22 @@
       });
     }
 
-    /** **M1.3 / M1.5 / A9.3.1** */
+    /** **M1.3 / M1.5 / A9.3.1** — handler do rádio "Completo" (algoritmo unificado A9.3). */
     function applyModoCompletoCore() {
       setBaseModeValue('base_pai_completo');
       radicalConhecidoRemocao = nomeMae;
       var pCompleto = prefixoComSufixoCanonico(nomeMae);
-      var pAbrev = prefixoComSufixoCanonico(radicalAbreviado);
       var val = receitaNomeInput.value || '';
-
-      if (valorComecaPorPrefixoCanonico(val, pCompleto)) {
-        refreshReceitaNomeSugestaoInfoMensagem();
-        return;
-      }
-
-      if (
-        pAbrev &&
-        valorComecaPorPrefixoCanonico(val, pAbrev) &&
-        !valorComecaPorPrefixoCanonico(val, pCompleto)
-      ) {
-        receitaNomeInput.value = reporRadicalPreservandoComplemento(
-          val,
-          pCompleto,
-          radicalAbreviado
-        );
-        refreshReceitaNomeSugestaoInfoMensagem();
-        return;
-      }
-
-      if (stripLeadingParentRadical(val, nomeMae) !== null) {
-        receitaNomeInput.value = reporRadicalPreservandoComplemento(
-          val,
-          pCompleto,
-          nomeMae
-        );
-        refreshReceitaNomeSugestaoInfoMensagem();
-        return;
-      }
-
-      if (
-        !valorComecaPorPrefixoCanonico(val, pCompleto) &&
-        !(pAbrev && valorComecaPorPrefixoCanonico(val, pAbrev))
-      ) {
-        receitaNomeInput.value = pCompleto + val;
-      }
+      // Bases para strip exato (passo 2 de A9.3), na ordem:
+      //   1. radical do modo OPOSTO (abreviado) — espera-se que case quando o usuário
+      //      está alternando do rádio "Abreviado" para o "Completo";
+      //   2. radical do modo DESTINO (completo / nomeMae) — captura casos em que o
+      //      valor começa por `nomeMae + (N7)` mas o separador não é o (N5) canônico.
+      receitaNomeInput.value = reporRadicalPreservandoComplemento(
+        val,
+        pCompleto,
+        [radicalAbreviado, nomeMae]
+      );
       refreshReceitaNomeSugestaoInfoMensagem();
     }
 
@@ -470,40 +529,20 @@
       });
     }
 
-    /** **M1.3 (Abreviado) / A9.3.2** */
+    /** **M1.3 (Abreviado) / A9.3.2** — handler do rádio "Abreviado" (algoritmo unificado A9.3). */
     function applyModoAbreviadoCore(alertas) {
       setBaseModeValue('base_pai_abrev');
       radicalConhecidoRemocao = radicalAbreviado;
       var pAbrev = prefixoComSufixoCanonico(radicalAbreviado);
-      var pCompleto = prefixoComSufixoCanonico(nomeMae);
       var val = receitaNomeInput.value || '';
-
-      if (valorComecaPorPrefixoCanonico(val, pAbrev)) {
-        showLexicoAlertas(alertas);
-        refreshReceitaNomeSugestaoInfoMensagem();
-        return;
-      }
-
-      if (
-        valorComecaPorPrefixoCanonico(val, pCompleto) ||
-        stripLeadingParentRadical(val, nomeMae) !== null
-      ) {
-        receitaNomeInput.value = reporRadicalPreservandoComplemento(
-          val,
-          pAbrev,
-          nomeMae
-        );
-        showLexicoAlertas(alertas);
-        refreshReceitaNomeSugestaoInfoMensagem();
-        return;
-      }
-
-      if (
-        !valorComecaPorPrefixoCanonico(val, pCompleto) &&
-        !valorComecaPorPrefixoCanonico(val, pAbrev)
-      ) {
-        receitaNomeInput.value = pAbrev + val;
-      }
+      // Bases para strip exato (passo 2 de A9.3), na ordem:
+      //   1. radical do modo OPOSTO (completo / nomeMae) — alternância "Completo" → "Abreviado";
+      //   2. radical do modo DESTINO (abreviado) — captura separador não canônico.
+      receitaNomeInput.value = reporRadicalPreservandoComplemento(
+        val,
+        pAbrev,
+        [nomeMae, radicalAbreviado]
+      );
       showLexicoAlertas(alertas);
       refreshReceitaNomeSugestaoInfoMensagem();
     }
@@ -760,32 +799,31 @@
           return false;
         }
 
-        var mode = getBaseMode();
-        if (mode === 'sem_base' || !mode) {
+        // **G1.2** — bloqueio único: ``trim(nome)`` termina com (N7).
+        // Aplica-se a **todos** os modos (Completo, Abreviado, Sem base, vazio).
+        if (!receitaNomeTerminaComTraco(nomeAtual)) {
           receitaNomeInput.setCustomValidity('');
           clearReceitaNomeMessages(receitaNomeInput);
           removeTopErrorNote(adminForm);
           return true;
         }
+
+        // **G1.5** — seleção de mensagem: tenta G1.5.a (sugestão literal) com
+        // b_completo e b_abreviado, mesmo quando o modo é sem_base/vazio.
         ensureNomeMaeFromUi();
-        var b = radicalEfetivoGuardrail();
-        if (!b) {
-          receitaNomeInput.setCustomValidity('');
-          clearReceitaNomeMessages(receitaNomeInput);
-          removeTopErrorNote(adminForm);
-          return true;
-        }
-        if (b && receitaNomeEhSugestaoIncompleta(nomeAtual, b)) {
-          var nomeMsg = msgs.receita_nome_submit_incompleto_error || '';
-          receitaNomeInput.setCustomValidity(nomeMsg);
-          showReceitaNomeError(receitaNomeInput, nomeMsg);
-          showTopErrorNote(adminForm, 'Por favor, corrija o erro abaixo.');
-          return false;
-        }
-        receitaNomeInput.setCustomValidity('');
-        clearReceitaNomeMessages(receitaNomeInput);
-        removeTopErrorNote(adminForm);
-        return true;
+        var bCompleto = String(nomeMae || '').trim();
+        var bAbreviado = String(radicalAbreviado || '').trim();
+        var literal =
+          (bCompleto && receitaNomeEhSugestaoLiteral(nomeAtual, bCompleto)) ||
+          (bAbreviado && receitaNomeEhSugestaoLiteral(nomeAtual, bAbreviado));
+        var chaveMsg = literal
+          ? 'receita_nome_submit_sugestao_literal_error'
+          : 'receita_nome_submit_traco_final_error';
+        var nomeMsg = msgs[chaveMsg] || '';
+        receitaNomeInput.setCustomValidity(nomeMsg);
+        showReceitaNomeError(receitaNomeInput, nomeMsg);
+        showTopErrorNote(adminForm, 'Por favor, corrija o erro abaixo.');
+        return false;
       };
   };
 })();
