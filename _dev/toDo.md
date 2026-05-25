@@ -1,34 +1,80 @@
 ----------------------------------------------------------------------------------------------------
 # lista 
 
+- **itemClassificacao** - formulário de criação
+  - **criar código já existente** - Na tela de criação, se o campo de código canônico for preenchido com código que já existe com registro ativo e vigente para período de vigência compatível com o do formulário, deve haver mensagem de erro/bloqueio, mesmo que classificacao_id for diversa. Lembrando que a vigência deve ser entendida da seguinte forma:
+    - Se o campo classificação estiver vazio, deve interpretar o que já foi definido como fallback;
+    - Se o campo classificação estiver preenchido, deve ser entendido como a vigência correspondente ao do campo classificação.
 
+  - **filtros de FK** - quando se remove filtros em lupa de seleção de FK, não está sendo mais possível selecionar de fato a FK. Clica-se na FK desejada, e nada acontece.
 
-- **itemClassificacao** - criar código já existente - Na tela de criação, se o campo de código canônico for preenchido com código que já existe com registro ativo e vigente para período de vigência compatível com o do formulário, deve haver mensagem de alerta informando que já existe tal código vigente <link para o registro já existente>. Clique aqui para navegar para próximo dígito disponível. 
-   Lembrar que, a vigência do formulário deve ser entendida da seguinte forma: 
+  - **assistente de nomenclatura** - garantir que não haja espaços múltiplos (mais de um espaço entre palavras ou ao final), bem como padrão de maiúsculas (primeira letra maiúsculas, desde que não seja conectivos)
 
-   -> Se o campo classificação estiver vazio, deve interpretar o que já foi definido como fallback. 
-   -> Se o campo classificação estiver preenchido, deve ser entendido como a vigência correspondente ao do campo classificação 
+  - **furo de vigência de FK** - verificar se protocolo permite registrar itemClassificação, mesmo tendo informado campo Classificação, classificacao_id, FK, com vigência que não compreende a vigência que constou nos campos de data de vigência do formulário. Verificar teste de vigência contígua. Além disso, colocar como lista de validações de bancos se há consistência de vigências relacionais (FK-PK).
 
-   Me fale o que entendeu
+  - **salto de nível** - implementar regra que alerte caso o usuário esteja registrando código que "salte dígito" em relação ao último código implementado... caso o outro não exista - perguntar DCAF se quer impedir criação de código que salte um dígito ou não
 
-- quando se remove filtros em lupa de seleção de FK, não está sendo mais possível selecionar de fato a FK
+  - **mensagem de alerta de acoplamento** - verificar refinamento da regra de mensagem de alerta para quando há juntção de cod com nivel de uma classificação e mãe com nível pertencente a outra classificação
+  A mensagem atual é: "Não existe item mãe vigente para a classificação selecionada, porém existe para CLASS-RECEITA-UNIAO-2018. Certifique-se de que a classificação selecionada está correta."
 
-- **furo de vigência de FK** - verificar se protocolo permite registrar itemClassificação, mesmo tendo informado campo Classificação, classificacao_id, FK, com vigência que não compreende a vigência que constou nos campos de data de vigência do formulário
-- **itemClassificacao** - colocar navegação para, próximo item, para navegar para o item do mesmo nivel, ou item imediatamente anterior; Ou próxima matriz, sendo que navegará para item de mesmo nível imediatamente seguinte em relação ao item _ pai desse registro
+  - **botão limpar** - o botão falha e não limpa o campo de código canônico quando se chega na página pelo comando "+ Criar Código Filho" a partir da tela change.
 
-- criar glossário para zensical com conteceitos centrais no projeto, tais como:
-   - bitemporalidade: falar onde ponde encontrar mais detalhes
-   - sentinela [valor sentinela / data sentinela]
-   - natureza de receita
-   - data de vigência [vigência] vs data de registro
+  - **consistência FK** - ajustar a construção do link ao lado da lupa de uma FK quando a página de criação/item filho é criado a partir do botão "+Criar Código Filho", uma vez que atualmente está apontando para registro específico.
 
+  - **erro vigência item mãe** - na simulação de preencher código "1.1.1.2.52.0.1.00.000" para ser criado, no momento em que se seleciona `classificacao_id`, há mensagem de que "Não existe item mãe vigente para a classificação selecionada, porém existe para CLASS-RECEITA-UNIAO-2018. Certifique-se de que a classificação selecionada está correta.", mesmo existindo o código "1.1.1.2.52.0.0.00.000"
 
-
-
-
-- criar protocolo de incorporação/importação de bases
+- **Importar Bases**
+criar protocolo de incorporação/importação de bases
   - tratamento Excel/csv por ano
-  - gerar script que vai considerar alteração nos metadados d
+  - tratamento de campos para modular formatação de texto, por exemplo, ao invés de Caixa Alta, especialmente os nomes devem passar para o modelo de primeira letra maiúscula, à exceção dos conectivos
+  - identificação de máscara para preenchimento de valores derivados de 
+  - gerar script que vai considerar alteração nos metadados
+
+- **itemClassificacao** - changelist
+  - a ferramenta de busca do Django não está encontrando match quando o código, ou parte dele, é informado com a mácara/pontos separadores de campos
+
+- **itemClassificacao** - alteração de registro entre Matriz/Detalhe
+  - considerando que na estrutura hierárquica há regras de negócio inerentes à natureza matricial e capilaridade de um código, é necessário revisar quais protocolos de consistência e eventuais travas/guardrails são necessários para garantir segurança
+
+- **itemClassificacao** - códigos de espelhamento
+  - Atualmente existe uma regra de negócio que prevê a criação de categorias de códigos que se baseiam no espelhamento de um código já existente, como é o caso das receitas intraorçamentárias e das dedutoras. Qual o melhor tratamento conferir para essas receitas no banco de dados?
+  Acrescentar coluna em itemClassificacao para identificar qual é a intra/dedutora associada? 
+  No processo de criação de uma nova codificação, perguntar se tem ou não intra/dedudora?
+  Como fazer para editar esse parâmetro de espelhamento em registro?
+  Criar um issue de criações automatizadas de intra/dedutora?
+
+- **nivelHierarquico**
+  - verificar travamento da semântica de nível (ex.: NIVEL-1), já que necessariamente ela vai ser 1, 2, 3, 4... Pensar em uma forma de não ter NIVEL-2 associado a "Número do Nível" diferente de 2, por exemplo
+  - na changelist, alterar barra de filtro, no filtro "Por Classificação", que está repetindo entidades idênticas
+
+- **ListaAbreviacoes**
+  - Revisar o atual protocolo automatizado de atualização das abreviações e a pertinência das abreviações geradas
+  - Verificar edição para permitir "reativar" e alterar conteúdo/valor da abreviação
+  - Implementar um "on/off" na changelist, para poder ativar e desativar registro sem precisar entrar no registro
+
+- **DJANGO** 
+  - implementar protocolo de navegação para as demais changelists. Verificar aumento de escopo da atual regra de forma a permitir navegação plana se código não for hierárquico.
+  - **caixas de diálogo** - substituir o primeiro padrão implementado de `window.confirm()` nativo do navegador (que renderiza o modal genérico com o título "127.0.0.1:8000 diz" e botões padrão "OK / Cancelar") por um **modal HTML estilizado**, no mesmo padrão visual dos demais modais já implementados no gerenciador (ex.: confirmação bitemporal, navegação por blur, navegação estrutural). O novo modal deve preservar a regra de negócio atual — alertar o usuário sobre perda de alterações ao sair da página/formulário sem salvar — mas com título, mensagem e rótulos de botões customizados (ex.: "Sair sem salvar" / "Continuar editando"), além de manter a coerência visual e de acessibilidade com os demais diálogos do sistema.
+
+- **Validações de banco**
+  - **códigos por espelhamento** - protcolo para garantir que as vigências sobrepostas de um código com seu espelhamento estejam em conformidade com a "replicação" esperada para o espelhamento, especialmente quanto ao nome do espelho.
+
+- **Versionamento**
+  - criar issue para versionamento do conteúdo taxonômico (versionamento do banco?)
+  - criar issue para produzir versão do datapackage
+    > - associar as versões do datapackage a migrations, por exemplo?
+
+- **Glossário**
+criar glossário para site estático com conteceitos centrais no projeto, tais como:
+  - bitemporalidade: falar onde ponde encontrar mais detalhes
+  - sentinela [valor sentinela / data sentinela]
+  - natureza de receita
+  - data de vigência [vigência] vs data de registro
+
+
+
+
+
 
 - classificação com vigência ativa tem que ter níveis hierárquicos cadastrados para, com vigência que abrança todo perído da vigencia da classificação, com a quantidade de níveis detalhados equivalentes aquele
 
