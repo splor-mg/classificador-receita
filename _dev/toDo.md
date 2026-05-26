@@ -5,14 +5,34 @@
   - **criar código já existente** - Na tela de criação, se o campo de código canônico for preenchido com código que já existe com registro ativo e vigente para período de vigência compatível com o do formulário, deve haver mensagem de erro/bloqueio, mesmo que classificacao_id for diversa. Lembrando que a vigência deve ser entendida da seguinte forma:
     - Se o campo classificação estiver vazio, deve interpretar o que já foi definido como fallback;
     - Se o campo classificação estiver preenchido, deve ser entendido como a vigência correspondente ao do campo classificação.
+    Na tela de criação, se o campo de código canônico for preenchido com código que já existe com registro ativo e vigente para período de vigência compatível com o do formulário, deve haver mensagem de alerta informando que já existe tal código vigente <link para o registro já existente>. Clique aqui para navegar para próximo dígito disponível. 
+   
+   Lembrar que, a vigência do formulário deve ser entendida da seguinte forma: 
+
+   -> Se o campo classificação estiver vazio, deve interpretar o que já foi definido como fallback. 
+   -> Se o campo classificação estiver preenchido, deve ser entendido como a vigência correspondente ao do campo classificação 
+
+   Me fale o que entendeu
+
+  - **dígitos ignorados ao digitar código** - deve ser permitido digitar ponto, para facilitar UX quando quiser preencher manualmente o código desejado
+  
+  - **mensagem de confirmação de criação** - uma janela pop-up de confirmação de criação, com dados resumidos do que está sendo criado
+
+  - **mensagem de confirmação para sair** de formulário sujo - hoje não pergunta se o usuário clicar para ir, por exemplo, para outra changelist
 
   - **filtros de FK** - quando se remove filtros em lupa de seleção de FK, não está sendo mais possível selecionar de fato a FK. Clica-se na FK desejada, e nada acontece.
 
+  - **erro nome dedutora** - Tentativa criar: 9112520403000 Nome gerado: Dedução Rec. - ITCD - DA-MJM - ITCD - Imposto sobre o Patrimônio - Nome esperado: Dedução Rec. - ITCD - DA-MJM -
+
   - **assistente de nomenclatura** - garantir que não haja espaços múltiplos (mais de um espaço entre palavras ou ao final), bem como padrão de maiúsculas (primeira letra maiúsculas, desde que não seja conectivos)
+      No classification_naming_messages.py, implementar limpeza do nome da classificação, removendo espaçamentos múltiplos tanto no meio, como nas extremidades
 
   - **furo de vigência de FK** - verificar se protocolo permite registrar itemClassificação, mesmo tendo informado campo Classificação, classificacao_id, FK, com vigência que não compreende a vigência que constou nos campos de data de vigência do formulário. Verificar teste de vigência contígua. Além disso, colocar como lista de validações de bancos se há consistência de vigências relacionais (FK-PK).
 
   - **salto de nível** - implementar regra que alerte caso o usuário esteja registrando código que "salte dígito" em relação ao último código implementado... caso o outro não exista - perguntar DCAF se quer impedir criação de código que salte um dígito ou não
+      no submit, garantir/mensagem pop-up de alerta -  que o código que vai ser salvo, não presenta, dentre os registros de mesmo item do pai, um pulo maior que um. por exemplo, o último item salvo com item pai 1151, foi 115102, garantir que não crie 115104 antes de 115103
+
+  - **verificar ajuste de vigência** - considerando o bloqueio de no delete para caso relacionamento ORM existir, verificar uma situação de correção de registro no qual o usuário tentou fazer uma sobreposição de vigência, porém registrou uma "quebra de vigência", com o início de nova vigênica. Quando quiser corrigir esse lançamento, o que o usuário deve fazer? Deve excluir a nova vigência e então corrigir a vigência do registro anterior?
 
   - **mensagem de alerta de acoplamento** - verificar refinamento da regra de mensagem de alerta para quando há juntção de cod com nivel de uma classificação e mãe com nível pertencente a outra classificação
   A mensagem atual é: "Não existe item mãe vigente para a classificação selecionada, porém existe para CLASS-RECEITA-UNIAO-2018. Certifique-se de que a classificação selecionada está correta."
@@ -22,6 +42,8 @@
   - **consistência FK** - ajustar a construção do link ao lado da lupa de uma FK quando a página de criação/item filho é criado a partir do botão "+Criar Código Filho", uma vez que atualmente está apontando para registro específico.
 
   - **erro vigência item mãe** - na simulação de preencher código "1.1.1.2.52.0.1.00.000" para ser criado, no momento em que se seleciona `classificacao_id`, há mensagem de que "Não existe item mãe vigente para a classificação selecionada, porém existe para CLASS-RECEITA-UNIAO-2018. Certifique-se de que a classificação selecionada está correta.", mesmo existindo o código "1.1.1.2.52.0.0.00.000"
+  
+  - **regra de consistência** - nomes - não poder haver dois nomes iguais, no mesmo Nível, com mesmo item_pai, na mesma vigência
 
 - **Importar Bases**
 criar protocolo de incorporação/importação de bases
@@ -30,11 +52,17 @@ criar protocolo de incorporação/importação de bases
   - identificação de máscara para preenchimento de valores derivados de 
   - gerar script que vai considerar alteração nos metadados
 
+- **itemClassificacao** - opção de gerar automaticamente códigos correlatos
+  - quando estiver criando uma receita, verificar implementação de opção a geração de registros de estrutura fixa automaticamente, tal como o são os Tipos de Receita, Receita Dedutora e Receita Intraorçamentária
+  - além de, ao criar um itemClassificacao, poder gerar automaticamente um registro, deve ser pensada alternativa para, aquele registro que antes não era replicado automaticamente, poder ser. 
+  - considero raozável pensar que exista uma necessidade de harmonização de comportamentos entre estruturas irmãs de comportamento "espelahado", tal como o Tipo da Receita. O que poderíamos fazer para garantir que esses códigos tenham algum vínculo? mapear isso em algum banco?
+  - quando o usuário desejar criar uma subdivisão, uma vez garantida a consistência de ajustes mencionados acima, seria desejável um protocolo de alteração de um registro de alteração da classificação mãe de detalhe para matriz?
+
 - **itemClassificacao** - changelist
   - a ferramenta de busca do Django não está encontrando match quando o código, ou parte dele, é informado com a mácara/pontos separadores de campos
 
 - **itemClassificacao** - alteração de registro entre Matriz/Detalhe
-  - considerando que na estrutura hierárquica há regras de negócio inerentes à natureza matricial e capilaridade de um código, é necessário revisar quais protocolos de consistência e eventuais travas/guardrails são necessários para garantir segurança
+  - considerando que na estrutura hierárquica há regras de negócio inerentes à natureza matricial e capilaridade de um código, é necessário revisar quais protocolos de consistência e eventuais travas/guardrails são necessários para garantir consistência
 
 - **itemClassificacao** - códigos de espelhamento
   - Atualmente existe uma regra de negócio que prevê a criação de categorias de códigos que se baseiam no espelhamento de um código já existente, como é o caso das receitas intraorçamentárias e das dedutoras. Qual o melhor tratamento conferir para essas receitas no banco de dados?
@@ -47,10 +75,21 @@ criar protocolo de incorporação/importação de bases
   - verificar travamento da semântica de nível (ex.: NIVEL-1), já que necessariamente ela vai ser 1, 2, 3, 4... Pensar em uma forma de não ter NIVEL-2 associado a "Número do Nível" diferente de 2, por exemplo
   - na changelist, alterar barra de filtro, no filtro "Por Classificação", que está repetindo entidades idênticas
 
-- **ListaAbreviacoes**
+- **ListaAbreviacoes - Abreviaturas**
   - Revisar o atual protocolo automatizado de atualização das abreviações e a pertinência das abreviações geradas
+  - botão cancelar
+  - Verificar, de forma mais ampla, criação de nomes de convênios
   - Verificar edição para permitir "reativar" e alterar conteúdo/valor da abreviação
   - Implementar um "on/off" na changelist, para poder ativar e desativar registro sem precisar entrar no registro
+  - incluir abreviação "MDE" - Manutenção e Desenvolvimento do Ensino
+  - ? fazer uma flag -para --print-conflicts-resolve-hard para forçar atualização conforme mais recente
+  - Adaptação para, no processo de abreviação, quando o último termo após o traço do nome do item pai, for exatamente o primerio termo antes do primeiro traço do nome do item filho, isso quer dizer que o nome do item pai inteiro, dever ser registrado como sendo abreviado pelo nome do primeiro termo antes do primeiro traço no nome do item filho, ou o último termo, após último traço no nome do item pai:
+
+   Exemplo
+
+   Outras Transf. Convênios União Entidades - Princ. - Agropecuária -> Agropecuária
+   1.7.1.7.99.0.1.05.000	Outras Transf. Convênios União Entidades - Princ. - Agropecuária
+   1.7.1.7.99.0.1.05.001	Agropecuária - Secretaria de Agricultura Familiar e Cooperativismo do Governo Federal
 
 - **DJANGO** 
   - implementar protocolo de navegação para as demais changelists. Verificar aumento de escopo da atual regra de forma a permitir navegação plana se código não for hierárquico.
@@ -58,6 +97,7 @@ criar protocolo de incorporação/importação de bases
 
 - **Validações de banco**
   - **códigos por espelhamento** - protcolo para garantir que as vigências sobrepostas de um código com seu espelhamento estejam em conformidade com a "replicação" esperada para o espelhamento, especialmente quanto ao nome do espelho.
+  - verificar 2 nomes iguais com vigências sobrepostas em códigos irmaõs
 
 - **Versionamento**
   - criar issue para versionamento do conteúdo taxonômico (versionamento do banco?)
@@ -72,19 +112,21 @@ criar glossário para site estático com conteceitos centrais no projeto, tais c
   - data de vigência [vigência] vs data de registro
 
 
-
-
-
-
 - classificação com vigência ativa tem que ter níveis hierárquicos cadastrados para, com vigência que abrança todo perído da vigencia da classificação, com a quantidade de níveis detalhados equivalentes aquele
 
 - **Base Legal**
   - verificar possibilidade de excluir registro
+  - formato de edição de data com lápis, tal como modelo bitemporal
+  - travar edição do campo *_ref
+  - operações de cancelar, registrar
+  - colocar legendas no filtro da changelist
 
 - **itemClassificacao** - **criação automática** - pensar em critério para perguntar se quer criação automática de principal, mjm, dA etc
 
 - **Consistência de Banco** - **validação**
   - verificar se todo registro ativo tem item pai que está identificado como matriz
+  - validação de garantir que toda classificação com vigência ativa tem que ter níveis hierárquicos cadastrados para, com vigência que abrança todo perído da vigencia da classificação, com a quantidade de níveis detalhados equivalentes aquele
+  - 
 
 - funcionalidade exportar para excel, csv, pdf
 - implementar schemas/correspondence-table (variant?)
