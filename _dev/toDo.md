@@ -15,6 +15,9 @@
    Me fale o que entendeu
 
   - **dígitos ignorados ao digitar código** - deve ser permitido digitar ponto, para facilitar UX quando quiser preencher manualmente o código desejado
+
+  - **assistênte de vigência** - verificar criação de protocolo auxiliar para identificar `vigência anual`. Esse protocolo poderia ser utilizado parar criar filtro nas changelists para indentificar vigências  vigência por ano, pegando todos os registros ativos, com vigência. 
+    Pensei que poderia ser um "get vigência", cujo comportamento padrão poderia ser o de obter o registro vigênte para cada ano, conforme ativo em dias atuais. No entanto, para além disso, deveria ser possível esse "get vigência" poder ser instruído com argumento de data de registro. Isto é, ele somente consideria o stado do banco conforme atualizado até data x. Para tanto, o script deveria conseguir converter datas de fim de registro em dia futuro em relação à data x, deve ser assumido como se estivesse com "valor sentinela". Assim, resconstituira o estado do banco
   
   - **mensagem de confirmação de criação** - uma janela pop-up de confirmação de criação, com dados resumidos do que está sendo criado
 
@@ -94,6 +97,7 @@ criar protocolo de incorporação/importação de bases
 - **DJANGO** 
   - implementar protocolo de navegação para as demais changelists. Verificar aumento de escopo da atual regra de forma a permitir navegação plana se código não for hierárquico.
   - **caixas de diálogo** - substituir o primeiro padrão implementado de `window.confirm()` nativo do navegador (que renderiza o modal genérico com o título "127.0.0.1:8000 diz" e botões padrão "OK / Cancelar") por um **modal HTML estilizado**, no mesmo padrão visual dos demais modais já implementados no gerenciador (ex.: confirmação bitemporal, navegação por blur, navegação estrutural). O novo modal deve preservar a regra de negócio atual — alertar o usuário sobre perda de alterações ao sair da página/formulário sem salvar — mas com título, mensagem e rótulos de botões customizados (ex.: "Sair sem salvar" / "Continuar editando"), além de manter a coerência visual e de acessibilidade com os demais diálogos do sistema.
+  - Na tela de edição (change), uma sugestão a avaliar seria, ao cliar no botão "Histórico" que navegasse para a correspondente changelist e filtrasse todos os registros ativos do correspondente código
 
 - **Validações de banco**
   - **códigos por espelhamento** - protcolo para garantir que as vigências sobrepostas de um código com seu espelhamento estejam em conformidade com a "replicação" esperada para o espelhamento, especialmente quanto ao nome do espelho.
@@ -149,6 +153,7 @@ criar glossário para site estático com conteceitos centrais no projeto, tais c
 -------- feito
 x **itemClassificacao** - criar a partir de item pai - 
 x **visualização** - **changelist** - implementar padrão de, em todas changelist's, a visualização inicial vir, por padrão, como Ativos (Ano Corrente) 
+x **visualização** - **changelist** - filtros do sidebar com estado inicial recolhido, à exceção de «Por Status do Registro» e «Por Data de Início do Registro» (`ChangelistSidebarFilterCollapseMixin` + override `apps/core/templates/admin/filter.html`; ver `_dev/spec_django.md` — «Estado inicial dos filtros do sidebar»). Stateless: estado recomputado a cada GET, sobrepondo escolha do utilizador. Aplicado em todos os admins bitemporais com >3 filtros. 
 x verificar a ordenação do db de ItemClassificação, já que as novas receitas criadas, independente do código, estão vindo por último
 x verificar consistência de não permitir a criação de item sem que exista matriz anterior existente?. Seria pelo campo `item_pai`?
       x pré-preenchimento de códigos até chegar a 13 dígitos e erro se houver mais dígitos que o máximo
