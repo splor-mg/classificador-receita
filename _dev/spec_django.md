@@ -281,6 +281,82 @@ changelist_default_filters = {
 
 `apps/core/tests_admin_changelist_default_filters.py` — redirect, flag, limpar, paginação, reentrada após `clear_stale_changelist_skip_default_flags` (simula saída da changelist).
 
+#### Estado inicial dos filtros do sidebar (recolhimento)
+
+Comportamento: ao entrar na changelist de um `ModelAdmin` configurado, o sidebar de filtros nasce com **somente os filtros declarados** abertos (`<details open>`); os demais ficam recolhidos. O estado é **recomputado a cada GET** — eventual interação anterior do utilizador (abrir/fechar) **é sobrescrita** ao navegar de volta à changelist. Não há persistência por sessão nem por cliente.
+
+Mapa de filtros expandidos por changelist (default `DEFAULT_CHANGELIST_EXPANDED_FILTERS` = `{"registro_ativo", "data_registro_inicio"}`):
+
+| Changelist (ModelAdmin) | Filtros expandidos por default                        | Observação                                                                       |
+| ----------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `SerieClassificacao`    | «Por Status do Registro», «Por Data de Início do Registro» | 4 filtros (>3) — recolhimento aplicado.                                          |
+| `Classificacao`         | «Por Status do Registro», «Por Data de Início do Registro» | 7 filtros.                                                                       |
+| `NivelHierarquico`      | «Por Status do Registro», «Por Data de Início do Registro» | 6 filtros.                                                                       |
+| `ItemClassificacao`     | «Por Status do Registro», «Por Data de Início do Registro» | 10 filtros — caso mais saliente.                                                 |
+| `VersaoClassificacao`   | «Por Status do Registro»                              | 5 filtros; `data_registro_inicio` não existe na `list_filter` (apenas `Status`). |
+| `VarianteClassificacao` | «Por Status do Registro»                              | 6 filtros; idem.                                                                 |
+| `BaseLegalTecnica`      | — (mixin **não** aplicado)                            | Tabela não bitemporal; nenhum filtro casaria com o default — `BaseLegalTecnicaAdmin` fica sem o mixin para evitar todos os filtros recolhidos. |
+| `AliasLexico`           | — (no-op)                                              | Apenas 1 filtro (≤ `CHANGELIST_COLLAPSE_MIN_FILTERS`); mesmo aplicando o mixin, não tem efeito. |
+
+#### Mecânica
+
+1. **Mixin**: `ChangelistSidebarFilterCollapseMixin` em `apps/core/admin_mixins.py`. O `ModelAdmin` declara, opcionalmente, `changelist_expanded_filters: frozenset[str]` (default em `DEFAULT_CHANGELIST_EXPANDED_FILTERS`). Os nomes são comparados contra `spec.parameter_name` (`SimpleListFilter` — ex.: `RegistroAtivoFilter`) e `spec.field_path` (`FieldListFilter` — ex.: `DateFieldListFilter` declarado em `list_filter` como `"data_registro_inicio"`).
+
+2. **Critérios de aplicação a cada GET** (no-op se algum falhar):
+   - `request.method == "GET"`;
+   - `_popup` **não** presente em `request.GET` (popups de `raw_id` lookup preservam o comportamento padrão);
+   - `len(self.list_filter) > CHANGELIST_COLLAPSE_MIN_FILTERS` (= 3).
+
+3. **Injeção em `request`**: quando os critérios passam, o mixin anexa `request.changelist_expanded_filter_params` (um `frozenset[str]`).
+
+4. **Anotação nas `filter_specs` (server-side)**: a `ChangeList` customizada `ChangelistWithClearAllSkipDefault` (devolvida por `get_changelist` em ambos os mixins, redirect e collapse) lê `request.changelist_expanded_filter_params` no `__init__` e anota cada `spec` com o atributo `core_collapse_open: bool`.
+
+   Esta anotação **não** pode ser feita lendo `request` directamente no template `admin/filter.html`, porque a templatetag `admin_list_filter` (`django/contrib/admin/templatetags/admin_list.py`) renderiza esse template com **contexto plano** (sem `RequestContext`); apenas `title`, `choices` e `spec` ficam disponíveis. Daí a anotação ser feita na `ChangeList` e o template ler `spec.core_collapse_open`.
+
+5. **Decisão no template**: `apps/core/templates/admin/filter.html` (override do padrão do Django Admin) emite `<details open>` se `spec.core_collapse_open != False` — i.e. `True` (no set), atributo **ausente** (mixin não aplicado / popup / poucos filtros — preserva o padrão do Django) ou `True`. Apenas `False` recolhe.
+
+6. **Rótulo do filtro (sem «Por …»)**: o template renderiza directamente `{{ title }}` no `<summary>`, em vez do `blocktranslate` `" By {{ filter_title }} "` do Django. Decisão de UX: enxugar o sidebar. O `title` já vem em pt-BR (atributo `title` em `SimpleListFilter` ou `verbose_name` do campo em `FieldListFilter`).
+
+7. **Stateless** + **override de `filters.js`** (Django 6+): o `change_list.html` nativo do Django 6 carrega `<script src="{% static 'admin/js/filters.js' %}" defer></script>`, e esse script persiste o estado abrir/recolher de cada `<details data-filter-title="…">` em `sessionStorage["django.admin.filtersState"]`. No carregamento da página, ele **sobrescreve** o atributo `open` renderizado pelo servidor, o que conflitaria com este protocolo declarativo. Por isso, `apps/core/static/admin/js/filters.js` **substitui** o ficheiro nativo (o `AppDirectoriesFinder` resolve primeiro o app `apps.core`, listado antes de `django.contrib.admin` em `INSTALLED_APPS` — ver `classificador/settings.py`). O override **não** lê nem persiste `sessionStorage`; apenas limpa eventual estado residual. Assim, qualquer recarregamento ou nova entrada na changelist recompõe o estado declarativo. É **comportamento intencional** — alinhado com a filosofia de «decisão de domínio explícita no `ModelAdmin`».
+
+8. **Filtros com valor aplicado** (auto-expand): a regra de expansão é a **união** de dois conjuntos —
+   - (i) os filtros declarados em `changelist_expanded_filters`, **e**
+   - (ii) **qualquer** filtro que tenha um parâmetro próprio com valor activo em `request.GET`.
+
+   A detecção usa `spec.expected_parameters()` (API do Django Admin) — cobre `SimpleListFilter` (`["<parameter_name>"]`), `DateFieldListFilter` (`["<field>__gte", "<field>__lt", "<field>__isnull"]`), `RelatedFieldListFilter` (`["<field>__exact", "<field>__isnull"]`) e demais subclasses de `FieldListFilter`. Valor é considerado activo se ≠ vazio e ≠ sentinela no-op (`_CHANGELIST_FILTER_NOOP_SENTINEL_VALUES`, hoje `{REGISTRO_ATIVO_VALUE_TODOS}`).
+
+   Justificativa de UX: «aberto/recolhido» é estado visual recomputado a cada GET; mas se o filtro foi **aplicado** (afeta o queryset/URL), ele precisa estar visível para o utilizador entender o recorte da changelist e poder ajustar/limpar. Continua sem persistência — só «filtro aplicado» preserva expansão entre navegações, porque o próprio valor já vem na querystring.
+
+#### Configuração por `ModelAdmin`
+
+```python
+class MeuAdmin(
+    ChangelistDefaultFilterRedirectMixin,
+    ChangelistSidebarFilterCollapseMixin,   # ← logo após o redirect, antes dos demais mixins
+    …,
+    admin.ModelAdmin,
+):
+    list_filter = [RegistroAtivoFilter, …, "data_registro_inicio"]
+    # Opcional. Default: DEFAULT_CHANGELIST_EXPANDED_FILTERS
+    # changelist_expanded_filters = frozenset({REGISTRO_ATIVO_QUERY_PARAM})
+```
+
+#### Notas de extensão
+
+- **Mais filtros expandidos por changelist**: override de `changelist_expanded_filters` na classe do `ModelAdmin` (ex.: `frozenset({REGISTRO_ATIVO_QUERY_PARAM, "data_vigencia_inicio"})`).
+- **Filtros que não pertencem ao set padrão e não casam com nada**: se nenhum filtro casar, o sidebar fica todo recolhido — mantém-se acessível, mas com pouca informação visível. Por isso o mixin **não** é aplicado em `BaseLegalTecnicaAdmin` (sem nenhum filtro bitemporal).
+- **Compatibilidade com colapsável nativo do Django 6+**: o `<details>` continua sendo do Django; o JS nativo (clique no `<summary>`) preserva interação dentro da página. A recomposição só ocorre na próxima entrada (novo GET).
+
+#### Testes manuais recomendados
+
+1. Menu → changelist `ItemClassificacao` → apenas «Status do Registro» e «Data de Início do Registro» abertos; demais recolhidos.
+2. Expandir manualmente «Categoria» **sem** aplicar opção → navegar para um change → voltar à lista → «Categoria» volta a ficar recolhido (a regra é stateless).
+3. Aplicar filtro de «Categoria» (ex.: «7 - Receita Intraorçamentária») → URL passa a ter o parâmetro → «Categoria» nasce **aberto** (auto-expand por «filtro aplicado»), além dos 2 declarados; mudar de página/voltar à changelist mantém aberto enquanto o parâmetro permanecer.
+4. «Limpar todos os filtros» → URL vazia → apenas os 2 declarados abertos; «Categoria» recolhido de novo.
+5. Clicar em «Todos» no filtro `Status do Registro` (`?registro_ativo=todos`) → não conta como aplicado (sentinela no-op); «Status do Registro» continua aberto **apenas** porque está no set declarado.
+6. Abrir popup (`raw_id` lookup de FK) → sidebar com comportamento padrão do Django (não-colapsado).
+7. Acessar `AliasLexico` (1 filtro) → comportamento padrão do Django (filtro aberto).
+
 ---
 
 ## Pipeline de atualização bitemporal — apenas campos do model

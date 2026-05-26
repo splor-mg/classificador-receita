@@ -1,0 +1,31 @@
+{% comment %}
+Override do template padrão ``admin/filter.html``.
+
+Diferenças em relação ao template do Django 6.x:
+
+1. Título do filtro renderizado como ``{{ title }}`` (sem o prefixo «Por … /
+   By …»). O ``title`` vem do próprio ``ListFilter`` (atributo ``title`` em
+   ``SimpleListFilter`` ou ``verbose_name`` do campo em ``FieldListFilter``)
+   e já está em pt-BR neste projeto. Decisão de UX: enxugar o sidebar.
+
+2. ``<details open>`` controlado por ``spec.core_collapse_open``, anotado
+   por ``ChangelistWithClearAllSkipDefault`` quando o
+   ``ChangelistSidebarFilterCollapseMixin`` está activo (ver
+   ``apps/core/admin_mixins.py``):
+
+   - ``spec.core_collapse_open`` ausente (atributo não definido → ``""``
+     no template) ou ``True`` → ``<details open>`` (comportamento padrão).
+   - ``spec.core_collapse_open == False`` → ``<details>`` sem ``open``.
+
+   A anotação é feita na ``ChangeList`` porque a templatetag
+   ``admin_list_filter`` renderiza este template com contexto plano (sem
+   ``request``).
+{% endcomment %}<details data-filter-title="{{ title }}"{% if spec.core_collapse_open != False %} open{% endif %}>
+    <summary>{{ title }}</summary>
+    <ul>
+        {% for choice in choices %}
+        <li{% if choice.selected %} class="selected"{% endif %}>
+            <a href="{{ choice.query_string|iriencode }}">{{ choice.display }}</a></li>
+        {% endfor %}
+    </ul>
+</details>

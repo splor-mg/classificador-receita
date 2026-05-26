@@ -85,6 +85,7 @@ from apps.core.admin_mixins import (
     REGISTRO_ATIVO_VALUE_ANO_CORRENTE,
     REGISTRO_ATIVO_VALUE_HISTORICO,
     ChangelistDefaultFilterRedirectMixin,
+    ChangelistSidebarFilterCollapseMixin,
     CoreChangeSaveFormSubmitMixin,
     BitemporalInactiveReadOnlyMixin,
     BitemporalAdminMixin,
@@ -100,6 +101,7 @@ from apps.core.admin_mixins import (
 @admin.register(SerieClassificacao)
 class SerieClassificacaoAdmin(
     ChangelistDefaultFilterRedirectMixin,
+    ChangelistSidebarFilterCollapseMixin,
     BitemporalObjectActionsMixin,
     BitemporalAdminMixin,
     BitemporalInactiveReadOnlyMixin,
@@ -175,6 +177,7 @@ class SerieClassificacaoAdmin(
 @admin.register(Classificacao)
 class ClassificacaoAdmin(
     ChangelistDefaultFilterRedirectMixin,
+    ChangelistSidebarFilterCollapseMixin,
     SemanticForeignKeyAdminMixin,
     BitemporalObjectActionsMixin,
     BitemporalAdminMixin,
@@ -257,6 +260,7 @@ class ClassificacaoAdmin(
 @admin.register(NivelHierarquico)
 class NivelHierarquicoAdmin(
     ChangelistDefaultFilterRedirectMixin,
+    ChangelistSidebarFilterCollapseMixin,
     SemanticForeignKeyAdminMixin,
     BitemporalObjectActionsMixin,
     BitemporalAdminMixin,
@@ -329,6 +333,7 @@ class NivelHierarquicoAdmin(
 @admin.register(ItemClassificacao)
 class ItemClassificacaoAdmin(
     ChangelistDefaultFilterRedirectMixin,
+    ChangelistSidebarFilterCollapseMixin,
     SemanticForeignKeyAdminMixin,
     BitemporalObjectActionsMixin,
     BitemporalAdminMixin,
@@ -853,6 +858,7 @@ class ItemClassificacaoAdmin(
 @admin.register(VersaoClassificacao)
 class VersaoClassificacaoAdmin(
     ChangelistDefaultFilterRedirectMixin,
+    ChangelistSidebarFilterCollapseMixin,
     CoreChangeSaveFormSubmitMixin,
     BitemporalInactiveReadOnlyMixin,
     AutoExportAdminMixin,
@@ -873,6 +879,7 @@ class VersaoClassificacaoAdmin(
 @admin.register(VarianteClassificacao)
 class VarianteClassificacaoAdmin(
     ChangelistDefaultFilterRedirectMixin,
+    ChangelistSidebarFilterCollapseMixin,
     CoreChangeSaveFormSubmitMixin,
     BitemporalInactiveReadOnlyMixin,
     AutoExportAdminMixin,

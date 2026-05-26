@@ -239,9 +239,88 @@ class RegistroAtivoFilter(admin.SimpleListFilter):
 
 
 #---------------------------------------------------------------------------------------------------
+# Valores sentinela de filtros "no-op" que NÃO devem ser considerados "filtro
+# aplicado" para fins de expansão do sidebar. Manter alinhado com filtros que
+# implementam o padrão de "Todos" como sentinela explícita no queryset.
+_CHANGELIST_FILTER_NOOP_SENTINEL_VALUES = frozenset({REGISTRO_ATIVO_VALUE_TODOS})
+
+
+def _spec_has_active_filter(spec, params) -> bool:
+    """
+    True se algum parâmetro esperado por ``spec`` está presente em ``params``
+    com valor activo (não vazio e não sentinela no-op conhecida).
+
+    ``params`` é tipicamente ``request.GET`` (``QueryDict``). Usa
+    ``spec.expected_parameters()`` (API do Django Admin) para descobrir as
+    chaves consumidas pelo filtro — funciona para ``SimpleListFilter``,
+    ``DateFieldListFilter``, ``RelatedFieldListFilter`` e outras subclasses
+    de ``FieldListFilter``.
+    """
+    expected_method = getattr(spec, "expected_parameters", None)
+    if not callable(expected_method):
+        return False
+    try:
+        expected = list(expected_method() or ())
+    except Exception:
+        return False
+    if not expected:
+        return False
+    for key in expected:
+        if key not in params:
+            continue
+        value = params.get(key)
+        if value in (None, "", []):
+            continue
+        if value in _CHANGELIST_FILTER_NOOP_SENTINEL_VALUES:
+            continue
+        return True
+    return False
+
+
 # Pré-filtro padrão na changelist via redirect 302
 class ChangelistWithClearAllSkipDefault(ChangeList):
-    """Acrescenta parâmetro one-shot ao link «Limpar todos os filtros» (Django 6+)."""
+    """
+    Acrescenta parâmetro one-shot ao link «Limpar todos os filtros» (Django 6+)
+    e, quando ``ChangelistSidebarFilterCollapseMixin`` está activo, anota cada
+    ``filter_spec`` com ``core_collapse_open`` (``True``/``False``) para o
+    override de ``admin/filter.html`` decidir o estado inicial ``<details open>``.
+
+    Regra de expansão (anotada em ``spec.core_collapse_open``):
+
+    ``open`` se **qualquer** das condições for verdadeira —
+
+    1. ``spec.parameter_name`` ou ``spec.field_path`` pertence ao set
+       declarado pelo ``ModelAdmin`` (``changelist_expanded_filters``);
+    2. ``spec`` tem **valor aplicado** na URL (alguma chave de
+       ``spec.expected_parameters()`` em ``request.GET`` com valor não-vazio
+       e fora de ``_CHANGELIST_FILTER_NOOP_SENTINEL_VALUES``).
+
+    Caso contrário → recolhido. Stateless, recomputado a cada GET.
+
+    A anotação é feita aqui (no ``__init__``) e não no template porque a
+    templatetag ``admin_list_filter`` (``django/contrib/admin/templatetags/admin_list.py``)
+    renderiza ``admin/filter.html`` com um **contexto plano** (sem ``RequestContext``):
+    ``request`` não fica disponível dentro do template, mas ``spec`` sim.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = args[0] if args else kwargs.get("request")
+        expanded_set = getattr(
+            request, "changelist_expanded_filter_params", None
+        ) if request is not None else None
+        if expanded_set is None:
+            return
+        params = request.GET if request is not None else {}
+        for spec in getattr(self, "filter_specs", None) or ():
+            param = getattr(spec, "parameter_name", None)
+            field_path = getattr(spec, "field_path", None)
+            in_declared = (
+                (param is not None and param in expanded_set)
+                or (field_path is not None and field_path in expanded_set)
+            )
+            in_active = _spec_has_active_filter(spec, params)
+            spec.core_collapse_open = bool(in_declared or in_active)
 
     def get_queryset(self, request, exclude_parameters=None):
         qs = super().get_queryset(request, exclude_parameters=exclude_parameters)
@@ -328,6 +407,75 @@ class ChangelistDefaultFilterRedirectMixin:
             return super().changelist_view(request, extra_context=extra_context)
 
         return HttpResponseRedirect(f"{request.path}?{urlencode(defaults)}")
+
+
+#---------------------------------------------------------------------------------------------------
+# Estado inicial dos filtros do sidebar (recolhimento) na changelist
+#
+# Conjunto padrão de filtros que devem nascer **abertos** quando o sidebar
+# é recolhido. Os demais filtros ficam ``<details>`` sem ``open``. Os nomes
+# são comparados contra ``spec.parameter_name`` (``SimpleListFilter``) e
+# ``spec.field_path`` (``FieldListFilter``, ex.: ``DateFieldListFilter``).
+DEFAULT_CHANGELIST_EXPANDED_FILTERS = frozenset({
+    REGISTRO_ATIVO_QUERY_PARAM,   # «Por Status do Registro» (RegistroAtivoFilter)
+    "data_registro_inicio",       # «Por Data de Início do Registro» (DateFieldListFilter)
+})
+
+# Abaixo desse número de filtros, o recolhimento não é aplicado (no-op).
+CHANGELIST_COLLAPSE_MIN_FILTERS = 3
+
+
+class ChangelistSidebarFilterCollapseMixin:
+    """
+    Recolhe o sidebar de filtros da changelist, à exceção dos filtros
+    declarados em ``changelist_expanded_filters`` (set de
+    ``parameter_name`` / ``field_path``).
+
+    Sem persistência por sessão/cliente: o estado é **recomputado a cada
+    GET** na changelist e **sobrepõe** eventual escolha anterior do
+    utilizador (abrir/fechar manualmente). Decisão de domínio explícita.
+
+    Critérios de aplicação a cada GET:
+    - request é ``GET`` e **não** é popup (sem ``_popup`` em ``request.GET``);
+    - ``len(self.list_filter) > CHANGELIST_COLLAPSE_MIN_FILTERS``.
+
+    Quando aplicado, anexa ``request.changelist_expanded_filter_params``
+    (``frozenset[str]``) consumido pelo template
+    ``apps/core/templates/admin/filter.html`` para decidir ``<details open>``
+    server-side. Quando **não** aplicado, o template cai no comportamento
+    padrão do Django Admin (todos os filtros nascem abertos).
+
+    Configurar no ``ModelAdmin``:
+
+        class MeuAdmin(
+            ChangelistSidebarFilterCollapseMixin,
+            …,
+            admin.ModelAdmin,
+        ):
+            # Opcional. Default: DEFAULT_CHANGELIST_EXPANDED_FILTERS.
+            changelist_expanded_filters = frozenset({REGISTRO_ATIVO_QUERY_PARAM})
+    """
+
+    changelist_expanded_filters: frozenset = DEFAULT_CHANGELIST_EXPANDED_FILTERS
+
+    def get_changelist(self, request, **kwargs):
+        # Garante a ``ChangeList`` que sabe ler ``core_collapse_open`` em cada
+        # ``filter_spec``. Compatível com ``ChangelistDefaultFilterRedirectMixin``
+        # (que devolve a mesma classe) — ordem dos mixins no MRO é indiferente.
+        return ChangelistWithClearAllSkipDefault
+
+    def changelist_view(self, request, extra_context=None):
+        list_filter = getattr(self, "list_filter", None) or ()
+        if (
+            request.method == "GET"
+            and IS_POPUP_VAR not in request.GET
+            and len(list_filter) > CHANGELIST_COLLAPSE_MIN_FILTERS
+        ):
+            request.changelist_expanded_filter_params = frozenset(
+                self.changelist_expanded_filters or ()
+            )
+        return super().changelist_view(request, extra_context=extra_context)
+
 
 #---------------------------------------------------------------------------------------------------
 # Filtros de sidebar (changelist): id local vs ForeignKey
