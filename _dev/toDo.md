@@ -2,7 +2,16 @@
 # lista 
 
 - **itemClassificacao** - formulário de criação
-  - **criar código já existente** - Na tela de criação, se o campo de código canônico for preenchido com código que já existe com registro ativo e vigente para período de vigência compatível com o do formulário, deve haver mensagem de erro/bloqueio, mesmo que classificacao_id for diversa. Lembrando que a vigência deve ser entendida da seguinte forma:
+
+  - **criar código já existente** - 
+    
+    Na tela de criação, se o campo de "Código Canônico da Natureza de Receita:" for preenchido com código que já existir de forma ativa, isto é, com data_registro_fim = SENTINELA, e cuja vigência abranja, integral ou parcialmente, a vigência que está informada nos campos de data de vigência do formulário de criação, deve aparecer mensagem de erro em vermelho na parte superior ao campo de código canônico de receita.
+
+    A mensagem de erro que deve aparecer deve ser algo assim: 
+
+    "Já existe o [código informado](link-para-codigo-informado), com vigência de <data-inicio-vigencia> até <data-fim-vigencia>. [Clique aqui](protocolo-encontrar-proximo-código-disponível) para ir para o próximo código disponível ou ajuste a data de vigência do código atual"
+    
+    com registro ativo e vigente para período de vigência compatível com o do formulário, deve haver mensagem de erro/bloqueio, mesmo que classificacao_id for diversa. Lembrando que a vigência deve ser entendida da seguinte forma:
     - Se o campo classificação estiver vazio, deve interpretar o que já foi definido como fallback;
     - Se o campo classificação estiver preenchido, deve ser entendido como a vigência correspondente ao do campo classificação.
     Na tela de criação, se o campo de código canônico for preenchido com código que já existe com registro ativo e vigente para período de vigência compatível com o do formulário, deve haver mensagem de alerta informando que já existe tal código vigente <link para o registro já existente>. Clique aqui para navegar para próximo dígito disponível. 
