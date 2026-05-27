@@ -18,6 +18,13 @@
 
   - **assistênte de vigência** - verificar criação de protocolo auxiliar para identificar `vigência anual`. Esse protocolo poderia ser utilizado parar criar filtro nas changelists para indentificar vigências  vigência por ano, pegando todos os registros ativos, com vigência. 
     Pensei que poderia ser um "get vigência", cujo comportamento padrão poderia ser o de obter o registro vigênte para cada ano, conforme ativo em dias atuais. No entanto, para além disso, deveria ser possível esse "get vigência" poder ser instruído com argumento de data de registro. Isto é, ele somente consideria o stado do banco conforme atualizado até data x. Para tanto, o script deveria conseguir converter datas de fim de registro em dia futuro em relação à data x, deve ser assumido como se estivesse com "valor sentinela". Assim, resconstituira o estado do banco
+    Poderia haver o registro de um campo na parte superior da changelist, chamado Vigência. Um dropdown seria apenas para ano e haveria um campo de data ao lado direito, para "conforme data:...". Caso apenas o campo ano estiver selecionado, ele vai considerar que é o léxico vigente par ao ano informado conforme hoje. Caso o campo conforme data... esteja preenchido, ele deve recuperar o que estava vigente conforme a data informada. Deveria haver pelo menos 3 padrões, fechamento; LDO, LOA, e uma oportunidade de informar. Ao rodar o protocolo de "filtragem" no banco de dados, por exemplo, sem o preenchimento do campo de "conforme data", deve informar que foram selecionados os códigos vigentes em conformidade com seu registro/versão mais recente.
+
+    data início de vigência <= 31/12/<ANO-SELECIONADO>
+    data de fim de vigêcia >= 01/01/<ANO-SELECIONADO>
+    data de fim de registro = SENTINELA ou instância com maior data de fim de registro, desde que > 31/12/<ANO-SELECIONADO>
+
+    ao lado desse campo de vigência, ele poderia ser 3 na verdade: Ano, Data e Versão. O usuário poderia selecionar cada um dos campo. O campo data, para as opções padrão, deve adatar conforme ano esperado, ou assumir ano corrente. O campo de versão deve ser um campo de dropdown com a lista de versões já publicadas, e eventualmente restritas àquelas compatíveis ao ANO-SELECIONADO. Pensar se no versionamento coloca-se ano ou não
   
   - **mensagem de confirmação de criação** - uma janela pop-up de confirmação de criação, com dados resumidos do que está sendo criado
 
@@ -48,6 +55,8 @@
   
   - **regra de consistência** - nomes - não poder haver dois nomes iguais, no mesmo Nível, com mesmo item_pai, na mesma vigência
 
+  - **definições .env** - considerando que atualmente temos um export, que faz um export automático para o CSV, bem como lista de abreviações que podem ou não serem usadas, verificar implementação de "usos-padrão" para cada um deles, bem como uma forma de configurar para que não funcionem no .env.
+
 - **Importar Bases**
 criar protocolo de incorporação/importação de bases
   - tratamento Excel/csv por ano
@@ -57,6 +66,7 @@ criar protocolo de incorporação/importação de bases
 
 - **itemClassificacao** - opção de gerar automaticamente códigos correlatos
   - quando estiver criando uma receita, verificar implementação de opção a geração de registros de estrutura fixa automaticamente, tal como o são os Tipos de Receita, Receita Dedutora e Receita Intraorçamentária
+  - uma das alternativas poderia ser criar uma tabela bitemporal para EstruturasFixas. Nessa, você poderia cadastrar todos os valores de estrutura fixa por nível da estrutura. Por exemplo, poderia haver o registro para a estrutura de NIVEL-7, toda vez que seu código for 1, ele vai ter um nome/descrição. Ela seria bitemporal, para poder registrar sua evolução ao longo do mtepmo
   - além de, ao criar um itemClassificacao, poder gerar automaticamente um registro, deve ser pensada alternativa para, aquele registro que antes não era replicado automaticamente, poder ser. 
   - considero raozável pensar que exista uma necessidade de harmonização de comportamentos entre estruturas irmãs de comportamento "espelahado", tal como o Tipo da Receita. O que poderíamos fazer para garantir que esses códigos tenham algum vínculo? mapear isso em algum banco?
   - quando o usuário desejar criar uma subdivisão, uma vez garantida a consistência de ajustes mencionados acima, seria desejável um protocolo de alteração de um registro de alteração da classificação mãe de detalhe para matriz?
@@ -105,6 +115,7 @@ criar protocolo de incorporação/importação de bases
 
 - **Versionamento**
   - criar issue para versionamento do conteúdo taxonômico (versionamento do banco?)
+  - avaliar implementação de campo de vigência na parte superior do ementário.
   - criar issue para produzir versão do datapackage
     > - associar as versões do datapackage a migrations, por exemplo?
 
