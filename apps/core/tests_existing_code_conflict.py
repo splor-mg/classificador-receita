@@ -10,6 +10,7 @@ from apps.core.forms import ItemClassificacaoForm
 from apps.core.models import ItemClassificacao
 from apps.core.item_classificacao_existing_code import (
     ExistingCodeConflict,
+    existing_code_conflict_message_html,
     existing_code_conflict_plain_message,
     existing_code_conflict_to_dict,
     lookup_existing_code_conflict_response_data,
@@ -188,6 +189,25 @@ class ResolveExistingCodeConflictTests(SimpleTestCase):
         )
 
 
+class ExistingCodeConflictMessageHtmlTests(SimpleTestCase):
+    def test_html_includes_link_and_next_action_class(self) -> None:
+        conflict = ExistingCodeConflict(
+            pk="1",
+            receita_cod="111250100000",
+            receita_cod_display="1.1.1.2.50.1.0.00.000",
+            display_label="x",
+            link_url="/admin/core/itemclassificacao/1/change/",
+            vigencia_inicio=date(2018, 1, 1),
+            vigencia_fim=date(9999, 12, 31),
+        )
+        html = str(existing_code_conflict_message_html(conflict))
+        self.assertIn('target="_blank"', html)
+        self.assertIn("/admin/core/itemclassificacao/1/change/", html)
+        self.assertIn("js-existing-code-conflict-next", html)
+        self.assertIn("01/01/2018", html)
+        self.assertIn("31/12/9999", html)
+
+
 class ExistingCodeConflictPlainMessageTests(SimpleTestCase):
     def test_message_includes_code_and_vigencia_br(self) -> None:
         conflict = ExistingCodeConflict(
@@ -252,6 +272,9 @@ class LookupExistingCodeConflictEndpointTests(SimpleTestCase):
         self.assertTrue(data["has_conflict"])
         self.assertEqual(data["conflict"]["pk"], "9")
         self.assertIn("Já existe o", data["message"])
+        self.assertIn("message_html", data)
+        self.assertIn("js-existing-code-conflict-next", data["message_html"])
+        self.assertIn('target="_blank"', data["message_html"])
 
 
 class ItemClassificacaoFormExistingCodeConflictTests(SimpleTestCase):
@@ -290,6 +313,9 @@ class ItemClassificacaoFormExistingCodeConflictTests(SimpleTestCase):
         )
         self.assertFalse(form.is_valid())
         self.assertIn("receita_cod", form.errors)
+        error_html = str(form.errors["receita_cod"][0])
+        self.assertIn("js-existing-code-conflict-next", error_html)
+        self.assertIn('target="_blank"', error_html)
         mock_resolve.assert_called_once()
 
 

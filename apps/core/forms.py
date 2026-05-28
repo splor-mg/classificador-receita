@@ -342,7 +342,7 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
             vig_ini = cleaned.get("data_vigencia_inicio")
             vig_fim = cleaned.get("data_vigencia_fim")
             from apps.core.item_classificacao_existing_code import (
-                existing_code_conflict_plain_message,
+                existing_code_conflict_message_html,
                 resolve_existing_code_conflict,
             )
 
@@ -350,7 +350,7 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
             if conflict:
                 self.add_error(
                     "receita_cod",
-                    existing_code_conflict_plain_message(conflict),
+                    existing_code_conflict_message_html(conflict),
                 )
 
         if is_add:

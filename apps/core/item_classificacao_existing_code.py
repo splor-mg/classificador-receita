@@ -12,6 +12,7 @@ from typing import Any, Dict, Optional
 
 from django.http import HttpRequest
 from django.urls import reverse
+from django.utils.html import format_html, strip_tags
 
 from apps.core.admin_formatters import format_receita_cod_by_vigencia
 from apps.core.admin_mixins import transaction_time_sentinel_for_query
@@ -152,16 +153,37 @@ def existing_code_conflict_to_dict(conflict: ExistingCodeConflict) -> Dict[str, 
     }
 
 
-def existing_code_conflict_plain_message(conflict: ExistingCodeConflict) -> str:
-    """Texto normativo CE-2/CE-3 (sem HTML; links no cliente na E3)."""
+def existing_code_conflict_message_html(conflict: ExistingCodeConflict):
+    """
+    Fragmento HTML canônico CE-2/CE-3/CE-5 (alerta, erro de submit e JSON).
+
+    Inclui link do código (nova aba) e «Clique aqui» (``js-existing-code-conflict-next``).
+    """
     cod = conflict.receita_cod_display or conflict.receita_cod
     ini = _format_vigencia_br(conflict.vigencia_inicio)
     fim = _format_vigencia_br(conflict.vigencia_fim)
-    return (
-        f"Já existe o {cod} com vigência de {ini} até {fim}. "
-        "Ajuste a data de vigência do código atual ou utilize a opção "
-        "de próximo código disponível no formulário."
+    link_url = (conflict.link_url or "").strip()
+    if link_url:
+        cod_part = format_html(
+            '<a href="{}" target="_blank" rel="noopener noreferrer">{}</a>',
+            link_url,
+            cod,
+        )
+    else:
+        cod_part = cod
+    return format_html(
+        "Já existe o {} com vigência de {} até {}. "
+        '<a href="#" class="js-existing-code-conflict-next">Clique aqui</a> '
+        "para ir para o próximo código disponível ou ajuste a data de vigência do código atual.",
+        cod_part,
+        ini,
+        fim,
     )
+
+
+def existing_code_conflict_plain_message(conflict: ExistingCodeConflict) -> str:
+    """Texto sem HTML (fallback / campo ``message`` do JSON)."""
+    return strip_tags(str(existing_code_conflict_message_html(conflict))).strip()
 
 
 def lookup_existing_code_conflict_response_data(request: HttpRequest) -> Dict[str, Any]:
@@ -188,11 +210,13 @@ def lookup_existing_code_conflict_response_data(request: HttpRequest) -> Dict[st
     if not conflict:
         return {"ok": True, "has_conflict": False}
 
+    message_html = existing_code_conflict_message_html(conflict)
     return {
         "ok": True,
         "has_conflict": True,
         "code_digits": conflict.receita_cod,
         "code_display": conflict.receita_cod_display,
+        "message_html": str(message_html),
         "message": existing_code_conflict_plain_message(conflict),
         "conflict": existing_code_conflict_to_dict(conflict),
     }

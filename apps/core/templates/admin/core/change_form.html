@@ -450,6 +450,7 @@
     var itemParentLevelJumpWarnUrl = '{{ item_parent_level_jump_warn_url|default:"" }}';
     var itemValidateIntermediateZerosUrl = '{{ item_validate_intermediate_zeros_url|default:"" }}';
     var itemSuggestChildCodeUrl = '{{ item_suggest_child_code_url|default:"" }}';
+    var itemExistingCodeConflictUrl = '{{ item_existing_code_conflict_url|default:"" }}';
     var itemInitChildFromChange = "{{ item_init_child_from_change|yesno:'true,false' }}" === "true";
     var itemNivelSemanticLookupUrl = '{{ item_nivel_semantic_lookup_url|default:"" }}';
     var itemParentSemanticLookupUrl = '{{ item_parent_semantic_lookup_url|default:"" }}';
@@ -930,6 +931,27 @@
         if (!formEl) return;
         var note = formEl.querySelector('.client-submit-errornote');
         if (note) note.remove();
+      }
+
+      function formHasBlockingFieldErrors(formEl) {
+        if (!formEl) return false;
+        var lists = formEl.querySelectorAll('ul.errorlist');
+        for (var i = 0; i < lists.length; i++) {
+          if (lists[i].querySelector('li')) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      function syncFormErrorSummary(formEl) {
+        if (!formEl || formHasBlockingFieldErrors(formEl)) {
+          return;
+        }
+        clearClientSubmitErrorSummary(formEl);
+        formEl.querySelectorAll('p.errornote').forEach(function(note) {
+          note.remove();
+        });
       }
 
       function focusSubmitValidationErrors(formEl) {
@@ -1522,6 +1544,245 @@
         fieldRow.appendChild(ul);
       }
 
+      var existingCodeConflictInFlight = false;
+      var lastExistingCodeConflictRenderedKey = '';
+
+      function escapeHtmlForExistingCodeConflict(text) {
+        return String(text || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function clearExistingCodeConflictMessages(fieldRow) {
+        if (!fieldRow) return;
+        fieldRow.querySelectorAll('.existing-code-conflict-warning').forEach(function(node) {
+          node.remove();
+        });
+      }
+
+      function clearExistingCodeConflictSubmitError(fieldRow) {
+        if (!fieldRow) return;
+        fieldRow.querySelectorAll('.existing-code-conflict-submit-error').forEach(function(node) {
+          node.remove();
+        });
+      }
+
+      function clearAllExistingCodeConflictUi(fieldRow) {
+        clearExistingCodeConflictMessages(fieldRow);
+        clearExistingCodeConflictSubmitError(fieldRow);
+      }
+
+      function clearExistingCodeConflictFieldErrors(fieldRow) {
+        clearAllExistingCodeConflictUi(fieldRow);
+        if (!fieldRow) return;
+        fieldRow.querySelectorAll('ul.errorlist').forEach(function(ul) {
+          if (ul.querySelector('.js-existing-code-conflict-next')) {
+            ul.remove();
+          }
+        });
+      }
+
+      function onExistingCodeConflictResolved() {
+        if (!isAddMode || !receitaCodInput) {
+          return;
+        }
+        clearExistingCodeConflictFieldErrors(getReceitaCodFieldRow(receitaCodInput));
+        lastExistingCodeConflictRenderedKey = '';
+        syncFormErrorSummary(receitaCodInput.form);
+      }
+
+      function receitaCodRowHasExistingCodeConflictServerError(codRow) {
+        if (!codRow) return false;
+        var err = codRow.querySelector('.errorlist');
+        if (!err) return false;
+        return !!err.querySelector('.js-existing-code-conflict-next');
+      }
+
+      function buildExistingCodeConflictMessageHtml(data) {
+        if (data && data.message_html) {
+          return data.message_html;
+        }
+        var conflict = (data && data.conflict) || {};
+        var codLabel = escapeHtmlForExistingCodeConflict(
+          conflict.receita_cod_display || data.code_display || conflict.receita_cod || ''
+        );
+        var linkUrl = (conflict.link_url || '').trim();
+        var ini = escapeHtmlForExistingCodeConflict(
+          conflict.vigencia_inicio_display || conflict.vigencia_inicio || ''
+        );
+        var fim = escapeHtmlForExistingCodeConflict(
+          conflict.vigencia_fim_display || conflict.vigencia_fim || ''
+        );
+        var codLink = linkUrl
+          ? (
+            '<a href="' + escapeHtmlForExistingCodeConflict(linkUrl) + '" target="_blank" rel="noopener noreferrer">'
+            + codLabel
+            + '</a>'
+          )
+          : codLabel;
+        return (
+          'Já existe o ' + codLink + ' com vigência de ' + ini + ' até ' + fim + '. '
+          + '<a href="#" class="js-existing-code-conflict-next">Clique aqui</a> '
+          + 'para ir para o próximo código disponível ou ajuste a data de vigência do código atual.'
+        );
+      }
+
+      function bindExistingCodeConflictNextLinks(root) {
+        if (!root) return;
+        root.querySelectorAll('.js-existing-code-conflict-next').forEach(function(nextLink) {
+          if (nextLink.dataset.ceBound === '1') {
+            return;
+          }
+          nextLink.dataset.ceBound = '1';
+          nextLink.addEventListener('click', function(ev) {
+            ev.preventDefault();
+            if (typeof suggestChildCodeFromParent !== 'function') {
+              return;
+            }
+            suggestChildCodeFromParent('existing_code_conflict_next', { force: true }).then(function(ok) {
+              if (!ok) {
+                return;
+              }
+              onExistingCodeConflictResolved();
+              scheduleExistingCodeConflictCheck('after_next_code');
+            });
+          });
+        });
+      }
+
+      function initExistingCodeConflictAfterPostback() {
+        if (!isAddMode || !receitaCodInput) {
+          return;
+        }
+        var codRow = getReceitaCodFieldRow(receitaCodInput);
+        clearExistingCodeConflictMessages(codRow);
+        if (receitaCodRowHasExistingCodeConflictServerError(codRow)) {
+          bindExistingCodeConflictNextLinks(codRow);
+          lastExistingCodeConflictRenderedKey = '';
+          return;
+        }
+      }
+
+      function showExistingCodeConflictWarning(fieldRow, html) {
+        if (!fieldRow || !html) return;
+        clearAllExistingCodeConflictUi(fieldRow);
+        var ul = document.createElement('ul');
+        ul.className = 'messagelist existing-code-conflict-warning';
+        ul.style.marginTop = '6px';
+        var li = document.createElement('li');
+        li.className = 'warning';
+        li.innerHTML = html;
+        ul.appendChild(li);
+        fieldRow.appendChild(ul);
+        bindExistingCodeConflictNextLinks(ul);
+      }
+
+      function showExistingCodeConflictSubmitError(fieldRow, html) {
+        if (!fieldRow || !html) return;
+        clearAllExistingCodeConflictUi(fieldRow);
+        var ul = document.createElement('ul');
+        ul.className = 'errorlist existing-code-conflict-submit-error';
+        var li = document.createElement('li');
+        li.innerHTML = html;
+        ul.appendChild(li);
+        fieldRow.insertBefore(ul, fieldRow.firstChild);
+        bindExistingCodeConflictNextLinks(ul);
+      }
+
+      function fetchExistingCodeConflictPayload() {
+        if (!itemExistingCodeConflictUrl || !receitaCodInput) {
+          return Promise.resolve(null);
+        }
+        var codeValue = stripReceitaCodFormatting(receitaCodInput.value);
+        var vigencia = getCurrentVigenciaIsoValues();
+        if (!codeValue || !vigencia.vigenciaInicio || !vigencia.vigenciaFim) {
+          return Promise.resolve(null);
+        }
+        var url = itemExistingCodeConflictUrl
+          + '?code=' + encodeURIComponent(codeValue)
+          + '&vigencia_inicio=' + encodeURIComponent(vigencia.vigenciaInicio)
+          + '&vigencia_fim=' + encodeURIComponent(vigencia.vigenciaFim);
+        return fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+          .then(function(response) { return response.json(); })
+          .catch(function() {
+            return null;
+          });
+      }
+
+      function validateExistingCodeConflictOnSubmit() {
+        return fetchExistingCodeConflictPayload().then(function(data) {
+          var codRow = getReceitaCodFieldRow(receitaCodInput);
+          if (!data || !data.ok) {
+            return { isValid: true };
+          }
+          if (!data.has_conflict) {
+            onExistingCodeConflictResolved();
+            return { isValid: true };
+          }
+          showExistingCodeConflictSubmitError(
+            codRow,
+            buildExistingCodeConflictMessageHtml(data)
+          );
+          lastExistingCodeConflictRenderedKey = '';
+          return { isValid: false };
+        });
+      }
+
+      function scheduleExistingCodeConflictCheck(triggerName) {
+        if (!isAddMode || !itemExistingCodeConflictUrl || !receitaCodInput) {
+          return Promise.resolve();
+        }
+        var codRow = getReceitaCodFieldRow(receitaCodInput);
+        if (triggerName === 'init') {
+          initExistingCodeConflictAfterPostback();
+          if (receitaCodRowHasExistingCodeConflictServerError(codRow)) {
+            return Promise.resolve();
+          }
+        }
+        if (receitaCodRowHasExistingCodeConflictServerError(codRow)) {
+          clearExistingCodeConflictMessages(codRow);
+          bindExistingCodeConflictNextLinks(codRow);
+          return Promise.resolve();
+        }
+        var codeValue = stripReceitaCodFormatting(receitaCodInput.value);
+        var vigencia = getCurrentVigenciaIsoValues();
+        if (!codeValue || !vigencia.vigenciaInicio || !vigencia.vigenciaFim) {
+          clearExistingCodeConflictMessages(codRow);
+          lastExistingCodeConflictRenderedKey = '';
+          return Promise.resolve();
+        }
+        var signature = codeValue + '|' + vigencia.vigenciaInicio + '|' + vigencia.vigenciaFim;
+        if (existingCodeConflictInFlight) {
+          return Promise.resolve();
+        }
+        existingCodeConflictInFlight = true;
+        return fetchExistingCodeConflictPayload()
+          .then(function(data) {
+            if (!data || !data.ok) {
+              clearExistingCodeConflictMessages(codRow);
+              lastExistingCodeConflictRenderedKey = '';
+              return;
+            }
+            if (!data.has_conflict) {
+              onExistingCodeConflictResolved();
+              return;
+            }
+            if (
+              signature === lastExistingCodeConflictRenderedKey
+              && codRow.querySelector('.existing-code-conflict-warning')
+            ) {
+              return;
+            }
+            showExistingCodeConflictWarning(codRow, buildExistingCodeConflictMessageHtml(data));
+            lastExistingCodeConflictRenderedKey = signature;
+          })
+          .finally(function() {
+            existingCodeConflictInFlight = false;
+          });
+      }
+
       function setAdminDateInput(input, isoDate) {
         if (!input || !isoDate) return;
         input.value = isoDate;
@@ -1871,6 +2132,7 @@
         lastParentSuggestSuccessPk = parentPk;
         applyNamingAfterParentSuggest(parentPk);
         refreshConfirmedParentSnapshot();
+        scheduleExistingCodeConflictCheck('after_child_suggest');
       }
 
       function suggestChildCodeFromParent(triggerName, options) {
@@ -2253,6 +2515,20 @@
           clearFieldInfoMessages(getFieldRow(vigenciaInicioInput || vigenciaFimInput));
         });
       }
+      if (isAddMode && itemExistingCodeConflictUrl) {
+        function onVigenciaChangeForExistingCodeConflict() {
+          window.clearTimeout(window.__existingCodeConflictVigenciaTimer);
+          window.__existingCodeConflictVigenciaTimer = window.setTimeout(function() {
+            scheduleExistingCodeConflictCheck('vigencia_change');
+          }, 200);
+        }
+        if (vigenciaInicioInput) {
+          vigenciaInicioInput.addEventListener('change', onVigenciaChangeForExistingCodeConflict);
+        }
+        if (vigenciaFimInput) {
+          vigenciaFimInput.addEventListener('change', onVigenciaChangeForExistingCodeConflict);
+        }
+      }
 
       function isReceitaCodTextInsertionInputType(inputType) {
         return (
@@ -2492,7 +2768,9 @@
             return;
           }
           if (isAddMode) {
-            syncHierarchyFromCode('code_blur');
+            syncHierarchyFromCode('code_blur').then(function() {
+              scheduleExistingCodeConflictCheck('code_blur');
+            });
             return;
           }
           if (!isReceitaCodAlteredOnChange()) {
@@ -2508,6 +2786,10 @@
           disableFutureAutoAdjust = true;
         }
         syncItemIdPreview();
+        if (isAddMode && !stripReceitaCodFormatting(receitaCodInput.value)) {
+          clearAllExistingCodeConflictUi(getReceitaCodFieldRow(receitaCodInput));
+          lastExistingCodeConflictRenderedKey = '';
+        }
       });
       receitaCodInput.addEventListener('change', syncItemIdPreview);
 
@@ -2522,6 +2804,7 @@
                 return;
               }
               runCodeDigitValidation('classificacao_change');
+              scheduleExistingCodeConflictCheck('classificacao_change');
             });
           }
         });
@@ -2551,13 +2834,19 @@
           .then(function(result) {
             syncItemIdPreview();
             if (result && result.isValid && isAddMode) {
-              return syncHierarchyFromCode('init');
+              return syncHierarchyFromCode('init').then(function() {
+                return scheduleExistingCodeConflictCheck('init');
+              });
             }
           })
           .finally(function() {
             window.setTimeout(rebaselineDirtyIfReady, 0);
+            initExistingCodeConflictAfterPostback();
           });
-        window.setTimeout(rebaselineDirtyIfReady, 750);
+        window.setTimeout(function() {
+          rebaselineDirtyIfReady();
+          initExistingCodeConflictAfterPostback();
+        }, 750);
       }
 
       schedulePostInitDirtyRebaseline();
@@ -3105,22 +3394,28 @@
                   focusSubmitValidationErrors(adminForm);
                   return;
                 }
-                return validateIntermediateCanonicalZerosOnSubmit().then(function(zeroResult) {
-                  if (!zeroResult || !zeroResult.isValid) {
+                return validateExistingCodeConflictOnSubmit().then(function(ceResult) {
+                  if (!ceResult || !ceResult.isValid) {
                     focusSubmitValidationErrors(adminForm);
                     return;
                   }
-                  if (typeof window.validateClassificationNamingOnSubmit === 'function') {
-                    var namingOk = window.validateClassificationNamingOnSubmit();
-                    if (!namingOk) {
+                  return validateIntermediateCanonicalZerosOnSubmit().then(function(zeroResult) {
+                    if (!zeroResult || !zeroResult.isValid) {
+                      focusSubmitValidationErrors(adminForm);
                       return;
                     }
-                  }
-                  return requestParentLevelJumpConfirmation().then(function(confirmed) {
-                    if (!confirmed) {
-                      return;
+                    if (typeof window.validateClassificationNamingOnSubmit === 'function') {
+                      var namingOk = window.validateClassificationNamingOnSubmit();
+                      if (!namingOk) {
+                        return;
+                      }
                     }
-                    finalizeNativeFormSubmit();
+                    return requestParentLevelJumpConfirmation().then(function(confirmed) {
+                      if (!confirmed) {
+                        return;
+                      }
+                      finalizeNativeFormSubmit();
+                    });
                   });
                 });
               });

@@ -6,7 +6,9 @@ O objetivo é orientar o usuário sem bloquear a edição inicial (estado de **a
 
 **Implementação (repositório):** `apps/core/item_classificacao_existing_code.py`; endpoint
 `lookup-existing-code-conflict/` em `ItemClassificacaoAdmin`; validação na add em
-`ItemClassificacaoForm.clean()`.
+`ItemClassificacaoForm.clean()`; alerta amarelo e reavaliação por vigência em
+`change_form.html` (`scheduleExistingCodeConflictCheck`, classe
+`existing-code-conflict-warning`).
 
 **Referências de contexto já implementado:**
 
@@ -79,29 +81,83 @@ Se não houver CE:
 
 - remover aviso/erro CE do campo.
 
-### (CE-2) Mensagem em modo alerta (edição)
+### (CE-2) Mensagem canônica (alerta e erro)
 
-Formato orientativo (texto-base):
+Existe **um único fragmento HTML** de mensagem CE, gerado no servidor
+(`existing_code_conflict_message_html`) e reutilizado em todos os canais.
+
+Formato orientativo:
 
 > Já existe o [<código informado>](<link-change>) com vigência de <data-início> até <data-fim>. [Clique aqui](ação-local-próximo-código) para ir para o próximo código disponível ou ajuste a data de vigência do código atual.
 
-Requisitos:
+Requisitos do fragmento:
 
 - `[<código informado>]` abre em **nova aba** (`target="_blank"` e `rel="noopener noreferrer"`).
-- `[Clique aqui]` executa ação local na mesma página (sem navegação externa).
-- O aviso deve persistir após mudanças irrelevantes de UI e só desaparecer quando:
-  - vigência e/ou código deixam de conflitar; ou
-  - usuário usa "próximo código" e o novo resultado deixa de conflitar.
+- `[Clique aqui]` usa `class="js-existing-code-conflict-next"`, `href="#"` e ação local (sem navegação externa).
+- Datas em `DD/MM/YYYY` no texto visível.
+
+**Modo alerta (edição):** renderizar o fragmento em `<ul class="messagelist existing-code-conflict-warning">` com `<li class="warning">`.
+
+O aviso deve persistir enquanto houver CE em edição e só desaparecer quando:
+
+- vigência e/ou código deixarem de conflitar; ou
+- usuário acionar "próximo código" e o novo resultado deixar de conflitar.
 
 ### (CE-3) Transição para erro no submit
 
 No submit da add:
 
 - se CE ainda existir, bloquear gravação;
-- converter o mesmo conteúdo da mensagem (ou equivalente semântico) para **erro vermelho** associado ao `receita_cod` (na posição/padrão do projeto para erros do campo);
-- manter os links e ações conforme aplicável.
+- exibir o **mesmo fragmento HTML** de **(CE-2)** como **erro vermelho** em `receita_cod` (`errorlist` do Django no servidor; `errorlist` cliente antes do POST em **(CE-5)**);
+- **manter** link do código e ação "Clique aqui" com o mesmo comportamento.
 
-**Decisão desta v1:** conteúdo textual do erro pode ser idêntico ao alerta, alterando apenas severidade visual e semântica de validação (`warning` -> `error`).
+### (CE-3a) Exclusividade visual alerta × erro
+
+**Não** exibir alerta amarelo CE e erro vermelho CE **simultaneamente** no mesmo campo.
+
+| Fase | Exibição |
+| ---- | -------- |
+| Edição (sem submit pendente) | Somente alerta amarelo |
+| Submit bloqueado (cliente ou POST com erro) | Somente erro vermelho (com links) |
+| Conflito resolvido | Nenhuma mensagem CE |
+| Novo conflito após correção | Somente alerta amarelo (até novo submit) |
+
+Ao passar para erro de submit, o cliente **deve remover** `.existing-code-conflict-warning`.
+
+### (CE-3b) Erro no servidor (`clean()`)
+
+`ItemClassificacaoForm.clean()` na add deve usar `existing_code_conflict_message_html` (HTML seguro via `format_html`), **não** texto plano alternativo.
+
+### (CE-3c) Pós-submit / `init`
+
+Quando a add recarregar com `errorlist` de CE em `receita_cod` (POST rejeitado):
+
+1. **remover** qualquer `.existing-code-conflict-warning`;
+2. **não** chamar `scheduleExistingCodeConflictCheck` para repor o amarelo;
+3. **vincular** `js-existing-code-conflict-next` no `errorlist` do servidor (mesmo handler do alerta).
+
+### (CE-3d) Banner global «Por favor, corrija o erro abaixo.»
+
+Quando o submit é bloqueado por CE (cliente ou POST), o admin exibe o banner genérico (`p.errornote`) no topo do formulário, além do erro em `receita_cod`.
+
+Ao **resolver** o conflito CE **sem novo POST** (próximo código, ajuste de vigência ou código que deixe de conflitar):
+
+1. remover alerta amarelo, erro vermelho CE no campo e `errorlist` do servidor que contenha `js-existing-code-conflict-next`;
+2. se **não** restar nenhum `ul.errorlist` com itens no formulário, remover também:
+   - `p.errornote.client-submit-errornote` (banner injetado no submit cliente);
+   - `p.errornote` do Django no topo do formulário (banner após POST rejeitado).
+
+Se ainda houver outros erros de campo no formulário, o banner global **permanece**.
+
+Implementação: `onExistingCodeConflictResolved()` + `syncFormErrorSummary(form)` no `change_form.html`.
+
+### (CE-5) Bloqueio no submit (cliente)
+
+Antes do POST nativo, após `syncHierarchyFromCode('submit')`:
+
+1. consultar o endpoint CE;
+2. se `has_conflict` → remover alerta amarelo, exibir erro vermelho com `message_html` e **cancelar** submit;
+3. servidor repete validação em `clean()` (**CE-12**).
 
 ---
 
@@ -157,6 +213,8 @@ Campos recomendados:
 - `has_conflict: true`
 - `code_digits`
 - `code_display`
+- `message_html` — fragmento canônico **(CE-2)** (mesmo HTML do `clean()`)
+- `message` — texto sem tags (fallback / acessibilidade)
 - `conflict`:
   - `pk`
   - `display_label`
@@ -180,8 +238,9 @@ Campos recomendados:
 
 ### (CE-8) Padrão visual
 
-- **Alerta:** lista/estilo amarelo no padrão já usado nas mensagens de warning no admin (`messagelist` + `warning`, conforme specs correlatas).
-- **Erro de submit:** padrão vermelho de erro de campo (`errorlist` / `setCustomValidity` / mecanismo equivalente do projeto).
+- **Alerta:** `messagelist existing-code-conflict-warning` + `li.warning`.
+- **Erro de submit:** `errorlist` (servidor ou `existing-code-conflict-submit-error` no cliente), **mesmo HTML** interno que o alerta.
+- **Exclusividade:** ver **(CE-3a)**.
 
 ### (CE-9) Persistência de mensagem
 
@@ -222,16 +281,18 @@ Na submissão da add, após validações de formato de código e pré-condiçõe
 7. **Reavaliação por data:** alterar somente `data_vigencia_inicio`/`fim` reprocessa CE do código atual.
 8. **Sem conflito:** código inexistente ou sem sobreposição -> nenhuma mensagem CE.
 9. **Paridade cliente/servidor:** forçar submit direto (sem JS) com CE -> backend também bloqueia.
+10. **Banner após resolver CE:** submit bloqueado por CE -> «Clique aqui» ou ajuste que elimine CE -> some erro em `receita_cod` **e** o banner «Por favor, corrija o erro abaixo.» (se não houver outros erros).
 
 ---
 
 ## Decisões de produto registradas nesta spec
 
 - **DP1. Severidade dual:** edição = alerta; submit = erro bloqueante.
-- **DP2. Conteúdo textual:** erro pode reutilizar texto do alerta, mudando severidade visual/semântica.
+- **DP2. Fragmento único:** alerta e erro usam o mesmo `message_html`; muda só o container (amarelo vs vermelho) e a exclusividade **(CE-3a)**.
 - **DP3. Navegação:** link do código conflitado abre em nova aba.
 - **DP4. Ação local:** "próximo código" atua no formulário atual e reaproveita pipeline completo já existente.
 - **DP5. Múltiplos conflitos:** exibir o conflito ativo sobreposto mais recente (CE★).
+- **DP6. Banner global:** ao resolver CE localmente, retirar «Por favor, corrija o erro abaixo.» se não houver outros erros (**CE-3d**).
 
 ---
 
