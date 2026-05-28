@@ -198,16 +198,16 @@ contrato de persistência (BD continua a guardar apenas dígitos).
 
 ### Digitação e colagem
 
-- **B1.5. (digitação)** O input deve aceitar apenas dígitos **0-9** como entrada
-  semântica do usuário. Caracteres de pontuação/separação (`.`, `,`, espaço,
-  `-`, letras, etc.) digitados manualmente são **bloqueados** (`beforeinput` no
-  cliente) ou removidos no `input`/`compositionend` (fallback IME). Os pontos
-  da máscara visual vêm apenas do blur/sugestão/programação — não da digitação
-  manual de separadores.
-- **B1.6. (colagem)** O sistema deve aceitar colagem tanto de código mascarado
-  quanto de código sem máscara. O texto colado é primeiro normalizado para
-  **somente dígitos** (strip de pontuação/espaços), e depois submetido ao
-  mesmo pipeline de formatação do blur.
+- **B1.5. (digitação)** Nas telas **add** e **change** de `ItemClassificacao`, o
+  input `receita_cod` deve aceitar **dígitos `0-9` e ponto `.`** como entrada do
+  usuário (o ponto como separador de níveis, alinhado à máscara visual). Demais
+  caracteres (`,`, espaço, `-`, letras, etc.) são **bloqueados** (`beforeinput`)
+  ou removidos no `input`/`compositionend` (fallback IME), **sem** remover os
+  pontos já digitados pelo usuário.
+- **B1.6. (colagem)** O sistema deve aceitar colagem de código mascarado ou sem
+  máscara. O texto colado é sanitizado para manter apenas **`0-9` e `.`**; em
+  seguida segue o mesmo pipeline do blur (validação e reaplicação da máscara
+  canônica quando aplicável).
 - **B1.7.** O blur corrige colocação indevida de pontos (pontos em posições
   inválidas, pontos excedentes, separadores misturados), produzindo a forma
   canônica da máscara quando houver máscara compatível.
@@ -234,10 +234,10 @@ contrato de persistência (BD continua a guardar apenas dígitos).
 Arquivos envolvidos (formulário / B1):
 
 - `apps/core/templates/admin/core/change_form.html` — `beforeinput` (B1.5),
-  `enforceReceitaCodDigitsOnlyOnInput`, colagem em `paste` (B1.6), blur
+  `enforceReceitaCodAllowedCharsOnInput`, colagem em `paste` (B1.6), blur
   (`runCodeDigitValidation`, B1.1).
-- `apps/core/forms.py` — `ItemClassificacaoForm.clean`: rejeita `receita_cod`
-  com caracteres fora de `0-9` (após remover pontos de máscara no POST).
+- `apps/core/forms.py` — `ItemClassificacaoForm.clean`: aceita `receita_cod` com
+  pontos no POST; rejeita demais caracteres; persiste somente dígitos.
 
 Arquivos envolvidos (apresentação tier 1/2):
 
@@ -299,8 +299,10 @@ Política de exposição e nomenclatura:
   resolução, em nenhum dos tiers.
 - **T-7.** `receita_cod` vazio devolve string vazia sem consultar banco.
 - **T-B1.5.** Digitar letra ou vírgula no `receita_cod` → caractere não entra
-  (ou é removido no mesmo instante); digitar dígitos continua possível.
-- **T-B1.6.** Colar `1.1.1.2,50` → apenas dígitos permanecem; blur reaplica máscara.
+  (ou é removido no mesmo instante); digitar dígitos e **ponto** continua
+  possível; pontos já presentes **não** são apagados ao corrigir caractere inválido.
+- **T-B1.6.** Colar `1.1.1.2.50` → pontos preservados; colar `1.1.1.2,50` → vírgula
+  removida (`1.1.1.250`); blur reaplica máscara canônica quando válida.
 - **T-B1.8.** Submit com valor mascarado no input → POST/gravação só com dígitos.
 
 - **T-8.** **Display de `parent_item_id` no formulário** (campo "Item Mãe"):

@@ -292,7 +292,7 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
         if receita_cod_raw and not receita_cod_raw.replace(".", "").isdigit():
             self.add_error(
                 "receita_cod",
-                "O código canônico deve conter apenas dígitos (0-9).",
+                "O código canônico deve conter apenas dígitos (0-9) e pontos (.) como separadores.",
             )
             return cleaned
 

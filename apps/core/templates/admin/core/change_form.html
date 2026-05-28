@@ -535,6 +535,11 @@
       return String(value || '').replace(/\D+/g, '');
     }
 
+    function sanitizeReceitaCodInputChars(value) {
+      // B1.5/B1.6: entrada editável — dígitos e separador de máscara (.).
+      return String(value || '').replace(/[^0-9.]/g, '');
+    }
+
     function buildItemSemanticId(rawReceitaCod) {
       var codigo = stripReceitaCodFormatting(rawReceitaCod);
       return codigo ? ('IT-' + codigo) : '';
@@ -2578,19 +2583,31 @@
         }
       }
 
-      function enforceReceitaCodDigitsOnlyOnInput() {
+      function enforceReceitaCodAllowedCharsOnInput() {
         if (window.__coreSuppressReceitaCodDigitFilter) {
           return;
         }
-        var value = receitaCodInput.value || '';
-        if (!value) {
+        var el = receitaCodInput;
+        var value = el.value || '';
+        if (!value || !/[^0-9.]/.test(value)) {
           return;
         }
-        // B1.5: rejeita letras e separadores inválidos (`.` da máscara é permitido).
-        if (!/[^0-9.]/.test(value)) {
+        var cleaned = sanitizeReceitaCodInputChars(value);
+        if (cleaned === value) {
           return;
         }
-        setReceitaCodInputFromDigitsOnly(stripReceitaCodFormatting(value));
+        var selStart = el.selectionStart || 0;
+        var removedBefore = value.slice(0, selStart).length -
+          sanitizeReceitaCodInputChars(value.slice(0, selStart)).length;
+        window.__coreSuppressReceitaCodDigitFilter = true;
+        try {
+          el.value = cleaned;
+          var newPos = Math.max(0, selStart - removedBefore);
+          el.setSelectionRange(newPos, newPos);
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+        } finally {
+          window.__coreSuppressReceitaCodDigitFilter = false;
+        }
       }
 
       receitaCodInput.addEventListener('focus', function() {
@@ -2600,7 +2617,7 @@
       });
 
       receitaCodInput.addEventListener('beforeinput', function(event) {
-        // B1.5: bloqueia inserção de não-dígitos; colagem tratada no handler paste.
+        // B1.5: aceita 0-9 e .; colagem tratada no handler paste.
         if (window.__coreSuppressReceitaCodDigitFilter || !event) {
           return;
         }
@@ -2610,25 +2627,24 @@
         if (!event.data) {
           return;
         }
-        if (/[^\d]/.test(event.data)) {
+        if (!/^[0-9.]*$/.test(event.data)) {
           event.preventDefault();
         }
       });
 
       receitaCodInput.addEventListener('compositionend', function() {
-        enforceReceitaCodDigitsOnlyOnInput();
+        enforceReceitaCodAllowedCharsOnInput();
       });
 
       receitaCodInput.addEventListener('paste', function(event) {
-        // Colagem resiliente: aceita código com ou sem máscara e insere apenas
-        // os dígitos no campo. A canonicidade visual é restabelecida no blur.
+        // B1.6: colagem com máscara — preserva dígitos e pontos; blur saneia.
         if (!event || !event.clipboardData) return;
         var rawText = event.clipboardData.getData('text') || '';
-        var onlyDigits = stripReceitaCodFormatting(rawText);
+        var sanitized = sanitizeReceitaCodInputChars(rawText);
         event.preventDefault();
         var start = receitaCodInput.selectionStart || 0;
         var end = receitaCodInput.selectionEnd || start;
-        receitaCodInput.setRangeText(onlyDigits, start, end, 'end');
+        receitaCodInput.setRangeText(sanitized, start, end, 'end');
         receitaCodInput.dispatchEvent(new Event('input', { bubbles: true }));
       });
 
@@ -2781,7 +2797,7 @@
       });
 
       receitaCodInput.addEventListener('input', function() {
-        enforceReceitaCodDigitsOnlyOnInput();
+        enforceReceitaCodAllowedCharsOnInput();
         if (hasAutoAdjustedOnce) {
           disableFutureAutoAdjust = true;
         }

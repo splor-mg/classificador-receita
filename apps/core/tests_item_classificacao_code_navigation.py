@@ -12,6 +12,11 @@ from apps.core.item_classificacao_code_lookup import (
 from apps.core.models import TRANSACTION_TIME_SENTINEL, ItemClassificacao
 
 
+class NormalizeReceitaCodDigitsTests(TestCase):
+    def test_strips_dots_for_semantic_comparison(self):
+        self.assertEqual(normalize_receita_cod_digits("12.34.56.78"), "12345678")
+
+
 class ReceitaCodChangeDetectionTests(TestCase):
     def test_unchanged_when_equal_digits(self):
         inst = ItemClassificacao(receita_cod="12345678")
