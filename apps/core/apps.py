@@ -1,5 +1,6 @@
 from django.apps import AppConfig
 from django.contrib import admin
+from functools import wraps
 
 
 class CoreConfig(AppConfig):
@@ -15,10 +16,13 @@ class CoreConfig(AppConfig):
         simples e local (executada no ready do app) que evita ter que substituir
         o AdminSite em todo o projeto.
         """
+        if getattr(admin.AdminSite, "_core_get_app_list_patched", False):
+            return
         orig_get_app_list = admin.AdminSite.get_app_list
 
-        def get_app_list(self_site, request):
-            app_list = orig_get_app_list(self_site, request)
+        @wraps(orig_get_app_list)
+        def get_app_list(self_site, request, *args, **kwargs):
+            app_list = orig_get_app_list(self_site, request, *args, **kwargs)
             for app in app_list:
                 if app.get("app_label") == "core":
                     models = app.get("models", [])
@@ -47,3 +51,4 @@ class CoreConfig(AppConfig):
             return app_list
 
         admin.AdminSite.get_app_list = get_app_list
+        admin.AdminSite._core_get_app_list_patched = True
