@@ -9,7 +9,7 @@
 
     A mensagem de erro que deve aparecer deve ser algo assim: 
 
-    "Já existe o [código informado](link-para-codigo-informado), com vigência de <data-inicio-vigencia> até <data-fim-vigencia>. [Clique aqui](protocolo-encontrar-proximo-código-disponível) para ir para o próximo código disponível ou ajuste a data de vigência do código atual"
+    "Já existe o [código informado](link-para-codigo-informado), com vigência de <data-inicio-vigencia> até <data-fim-vigencia>. [Clique aqui](protocolo-encontrar-proximo-código-disponível) para ir para o próximo código disponível ou ajuste a data de vigência do código atual."
     
     com registro ativo e vigente para período de vigência compatível com o do formulário, deve haver mensagem de erro/bloqueio, mesmo que classificacao_id for diversa. Lembrando que a vigência deve ser entendida da seguinte forma:
     - Se o campo classificação estiver vazio, deve interpretar o que já foi definido como fallback;
@@ -113,7 +113,8 @@ criar protocolo de incorporação/importação de bases
    1.7.1.7.99.0.1.05.000	Outras Transf. Convênios União Entidades - Princ. - Agropecuária
    1.7.1.7.99.0.1.05.001	Agropecuária - Secretaria de Agricultura Familiar e Cooperativismo do Governo Federal
 
-- **DJANGO** 
+- **DJANGO**
+  - na navegação para próximo irmão/mãe, deve-se, uma vez voltado na hierarquia, tentar buscar os irmãos de mesmo nível em mãe subsequente. 
   - implementar protocolo de navegação para as demais changelists. Verificar aumento de escopo da atual regra de forma a permitir navegação plana se código não for hierárquico.
   - **caixas de diálogo** - substituir o primeiro padrão implementado de `window.confirm()` nativo do navegador (que renderiza o modal genérico com o título "127.0.0.1:8000 diz" e botões padrão "OK / Cancelar") por um **modal HTML estilizado**, no mesmo padrão visual dos demais modais já implementados no gerenciador (ex.: confirmação bitemporal, navegação por blur, navegação estrutural). O novo modal deve preservar a regra de negócio atual — alertar o usuário sobre perda de alterações ao sair da página/formulário sem salvar — mas com título, mensagem e rótulos de botões customizados (ex.: "Sair sem salvar" / "Continuar editando"), além de manter a coerência visual e de acessibilidade com os demais diálogos do sistema.
   - Na tela de edição (change), uma sugestão a avaliar seria, ao cliar no botão "Histórico" que navegasse para a correspondente changelist e filtrasse todos os registros ativos do correspondente código
