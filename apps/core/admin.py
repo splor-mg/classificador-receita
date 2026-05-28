@@ -47,6 +47,9 @@ from apps.core.item_classificacao_child_from_change import (
     build_create_child_code_button_context,
     is_add_from_change_parent_request,
 )
+from apps.core.item_classificacao_existing_code import (
+    lookup_existing_code_conflict_response_data,
+)
 from apps.core.item_classificacao_suggest_child_code import (
     suggest_child_code_by_parent_response_data,
 )
@@ -509,6 +512,11 @@ class ItemClassificacaoAdmin(
                 name=f"{self.model._meta.app_label}_{self.model._meta.model_name}_suggest_child_code_by_parent",
             ),
             path(
+                "lookup-existing-code-conflict/",
+                self.admin_site.admin_view(self.lookup_existing_code_conflict_view),
+                name=f"{self.model._meta.app_label}_{self.model._meta.model_name}_lookup_existing_code_conflict",
+            ),
+            path(
                 "resolve-code-navigation/",
                 self.admin_site.admin_view(self.resolve_code_navigation_view),
                 name=f"{self.model._meta.app_label}_{self.model._meta.model_name}_resolve_code_navigation",
@@ -591,6 +599,9 @@ class ItemClassificacaoAdmin(
             context["item_suggest_child_code_url"] = reverse(
                 f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_suggest_child_code_by_parent"
             )
+            context["item_existing_code_conflict_url"] = reverse(
+                f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_lookup_existing_code_conflict"
+            )
             context["item_init_child_from_change"] = is_add_from_change_parent_request(request)
         return super().render_change_form(request, context, add, change, form_url, obj)
 
@@ -672,6 +683,9 @@ class ItemClassificacaoAdmin(
 
     def suggest_child_code_by_parent_view(self, request):
         return JsonResponse(suggest_child_code_by_parent_response_data(request))
+
+    def lookup_existing_code_conflict_view(self, request):
+        return JsonResponse(lookup_existing_code_conflict_response_data(request))
 
     def warn_parent_level_jump_view(self, request):
         def parse_date(raw):

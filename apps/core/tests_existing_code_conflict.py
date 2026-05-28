@@ -1,14 +1,18 @@
-"""Testes de detecção CE / CE★ (spec itemClassificacao_criar_codigo_existente, entrega E1)."""
+"""Testes CE / CE★ e entrega E2 (spec itemClassificacao_criar_codigo_existente)."""
 
 from datetime import date
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from django.test import SimpleTestCase
+from django.test import RequestFactory, SimpleTestCase
 
+from apps.core.forms import ItemClassificacaoForm
+from apps.core.models import ItemClassificacao
 from apps.core.item_classificacao_existing_code import (
     ExistingCodeConflict,
+    existing_code_conflict_plain_message,
     existing_code_conflict_to_dict,
+    lookup_existing_code_conflict_response_data,
     resolve_existing_code_conflict,
     vigencia_intervals_overlap,
 )
@@ -184,6 +188,111 @@ class ResolveExistingCodeConflictTests(SimpleTestCase):
         )
 
 
+class ExistingCodeConflictPlainMessageTests(SimpleTestCase):
+    def test_message_includes_code_and_vigencia_br(self) -> None:
+        conflict = ExistingCodeConflict(
+            pk="1",
+            receita_cod="111250100000",
+            receita_cod_display="1.1.1.2.50.1.0.00.000",
+            display_label="x",
+            link_url="/admin/1/change/",
+            vigencia_inicio=date(2018, 1, 1),
+            vigencia_fim=date(9999, 12, 31),
+        )
+        msg = existing_code_conflict_plain_message(conflict)
+        self.assertIn("1.1.1.2.50.1.0.00.000", msg)
+        self.assertIn("01/01/2018", msg)
+        self.assertIn("31/12/9999", msg)
+
+
+class LookupExistingCodeConflictEndpointTests(SimpleTestCase):
+    def setUp(self) -> None:
+        self.factory = RequestFactory()
+
+    def _get(self, **params: str):
+        return lookup_existing_code_conflict_response_data(
+            self.factory.get("/admin/lookup-existing-code-conflict/", params)
+        )
+
+    def test_missing_code_returns_error(self) -> None:
+        data = self._get(vigencia_inicio="2026-01-01", vigencia_fim="2026-12-31")
+        self.assertFalse(data["ok"])
+
+    @patch(
+        "apps.core.item_classificacao_existing_code.resolve_existing_code_conflict",
+        return_value=None,
+    )
+    def test_no_conflict(self, _mock_resolve: MagicMock) -> None:
+        data = self._get(
+            code="111250100000",
+            vigencia_inicio="2026-01-01",
+            vigencia_fim="2026-12-31",
+        )
+        self.assertTrue(data["ok"])
+        self.assertFalse(data["has_conflict"])
+
+    @patch("apps.core.item_classificacao_existing_code.resolve_existing_code_conflict")
+    def test_with_conflict(self, mock_resolve: MagicMock) -> None:
+        conflict = ExistingCodeConflict(
+            pk="9",
+            receita_cod="111250100000",
+            receita_cod_display="1.1.1.2.50.1.0.00.000",
+            display_label="111250100000 - Nome",
+            link_url="/admin/core/itemclassificacao/9/change/",
+            vigencia_inicio=date(2018, 1, 1),
+            vigencia_fim=date(2025, 12, 31),
+        )
+        mock_resolve.return_value = conflict
+        data = self._get(
+            code="111250100000",
+            vigencia_inicio="2026-01-01",
+            vigencia_fim="2026-12-31",
+        )
+        self.assertTrue(data["ok"])
+        self.assertTrue(data["has_conflict"])
+        self.assertEqual(data["conflict"]["pk"], "9")
+        self.assertIn("Já existe o", data["message"])
+
+
+class ItemClassificacaoFormExistingCodeConflictTests(SimpleTestCase):
+    @patch.object(ItemClassificacao, "full_clean")
+    @patch("apps.core.forms.validar_receita_nome_guardrail_g1", return_value=(False, None))
+    @patch("apps.core.forms.validar_receita_nome_guardrail_g0", return_value=False)
+    @patch.object(ItemClassificacaoForm, "_get_receita_cod_digit_rule", return_value=(12, "TEST"))
+    @patch("apps.core.item_classificacao_existing_code.resolve_existing_code_conflict")
+    def test_add_blocks_submit_on_conflict(
+        self,
+        mock_resolve: MagicMock,
+        _mock_digits: MagicMock,
+        _mock_g0: MagicMock,
+        _mock_g1: MagicMock,
+        _mock_model_clean: MagicMock,
+    ) -> None:
+        mock_resolve.return_value = ExistingCodeConflict(
+            pk="1",
+            receita_cod="111250100000",
+            receita_cod_display="1.1.1.2.50.1.0.00.000",
+            display_label="x",
+            link_url="/admin/1/change/",
+            vigencia_inicio=date(2018, 1, 1),
+            vigencia_fim=date(9999, 12, 31),
+        )
+        form = ItemClassificacaoForm(
+            data={
+                "receita_cod": "111250100000",
+                "data_vigencia_inicio": "2026-01-01",
+                "data_vigencia_fim": "2026-12-31",
+                "matriz": "matriz",
+                "item_gerado": "nao",
+                "receita_nome": "Nome de teste",
+                "receita_nome_base_mode": "sem_base",
+            }
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("receita_cod", form.errors)
+        mock_resolve.assert_called_once()
+
+
 class ExistingCodeConflictDictTests(SimpleTestCase):
     def test_serializes_iso_dates(self) -> None:
         conflict = ExistingCodeConflict(
@@ -198,4 +307,6 @@ class ExistingCodeConflictDictTests(SimpleTestCase):
         data = existing_code_conflict_to_dict(conflict)
         self.assertEqual(data["vigencia_inicio"], "2018-01-01")
         self.assertEqual(data["vigencia_fim"], "9999-12-31")
+        self.assertEqual(data["vigencia_inicio_display"], "01/01/2018")
+        self.assertEqual(data["vigencia_fim_display"], "31/12/9999")
         self.assertEqual(data["pk"], "1")

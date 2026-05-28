@@ -10,12 +10,20 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any, Dict, Optional
 
+from django.http import HttpRequest
 from django.urls import reverse
 
 from apps.core.admin_formatters import format_receita_cod_by_vigencia
 from apps.core.admin_mixins import transaction_time_sentinel_for_query
-from apps.core.item_classificacao_code_lookup import normalize_receita_cod_digits
+from apps.core.item_classificacao_code_lookup import (
+    _parse_admin_get_date,
+    normalize_receita_cod_digits,
+)
 from apps.core.models import ItemClassificacao
+
+
+def _format_vigencia_br(value: date) -> str:
+    return value.strftime("%d/%m/%Y")
 
 
 @dataclass(frozen=True)
@@ -130,7 +138,7 @@ def _conflict_from_item(
 
 
 def existing_code_conflict_to_dict(conflict: ExistingCodeConflict) -> Dict[str, Any]:
-    """Payload serializável (endpoint JSON na E2)."""
+    """Payload serializável (endpoint JSON)."""
     return {
         "pk": conflict.pk,
         "receita_cod": conflict.receita_cod,
@@ -139,4 +147,52 @@ def existing_code_conflict_to_dict(conflict: ExistingCodeConflict) -> Dict[str, 
         "link_url": conflict.link_url,
         "vigencia_inicio": conflict.vigencia_inicio.isoformat(),
         "vigencia_fim": conflict.vigencia_fim.isoformat(),
+        "vigencia_inicio_display": _format_vigencia_br(conflict.vigencia_inicio),
+        "vigencia_fim_display": _format_vigencia_br(conflict.vigencia_fim),
+    }
+
+
+def existing_code_conflict_plain_message(conflict: ExistingCodeConflict) -> str:
+    """Texto normativo CE-2/CE-3 (sem HTML; links no cliente na E3)."""
+    cod = conflict.receita_cod_display or conflict.receita_cod
+    ini = _format_vigencia_br(conflict.vigencia_inicio)
+    fim = _format_vigencia_br(conflict.vigencia_fim)
+    return (
+        f"Já existe o {cod} com vigência de {ini} até {fim}. "
+        "Ajuste a data de vigência do código atual ou utilize a opção "
+        "de próximo código disponível no formulário."
+    )
+
+
+def lookup_existing_code_conflict_response_data(request: HttpRequest) -> Dict[str, Any]:
+    """Payload JSON para ``lookup-existing-code-conflict/`` (admin add)."""
+    raw_code = request.GET.get("code")
+    vig_ini = _parse_admin_get_date(request.GET.get("vigencia_inicio"))
+    vig_fim = _parse_admin_get_date(request.GET.get("vigencia_fim"))
+
+    code = normalize_receita_cod_digits(raw_code)
+    if not code:
+        return {"ok": False, "message": "Informe o código canônico."}
+    if not vig_ini or not vig_fim:
+        return {
+            "ok": False,
+            "message": "Informe o período de vigência para verificar o código.",
+        }
+    if vig_fim < vig_ini:
+        return {
+            "ok": False,
+            "message": "Período de vigência inválido: data fim anterior à data de início.",
+        }
+
+    conflict = resolve_existing_code_conflict(code, vig_ini, vig_fim)
+    if not conflict:
+        return {"ok": True, "has_conflict": False}
+
+    return {
+        "ok": True,
+        "has_conflict": True,
+        "code_digits": conflict.receita_cod,
+        "code_display": conflict.receita_cod_display,
+        "message": existing_code_conflict_plain_message(conflict),
+        "conflict": existing_code_conflict_to_dict(conflict),
     }

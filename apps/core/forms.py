@@ -338,6 +338,21 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
             if receita_cod and receita_cod_changed_vs_instance(receita_cod, self.instance):
                 self.add_error("receita_cod", RECEITA_COD_CHANGE_BLOCK_MESSAGE)
 
+        if is_add and receita_cod:
+            vig_ini = cleaned.get("data_vigencia_inicio")
+            vig_fim = cleaned.get("data_vigencia_fim")
+            from apps.core.item_classificacao_existing_code import (
+                existing_code_conflict_plain_message,
+                resolve_existing_code_conflict,
+            )
+
+            conflict = resolve_existing_code_conflict(receita_cod, vig_ini, vig_fim)
+            if conflict:
+                self.add_error(
+                    "receita_cod",
+                    existing_code_conflict_plain_message(conflict),
+                )
+
         if is_add:
             receita_nome = (cleaned.get("receita_nome") or "").strip()
             base_mode = normalize_receita_nome_base_mode(cleaned.get("receita_nome_base_mode"))
