@@ -3,28 +3,6 @@
 
 - **itemClassificacao** - formulário de criação
 
-  - **criar código já existente** - 
-    
-    Na tela de criação, se o campo de "Código Canônico da Natureza de Receita:" for preenchido com código que já existir de forma ativa, isto é, com data_registro_fim = SENTINELA, e cuja vigência abranja, integral ou parcialmente, a vigência que está informada nos campos de data de vigência do formulário de criação, deve aparecer mensagem de erro em vermelho na parte superior ao campo de código canônico de receita.
-
-    A mensagem de erro que deve aparecer deve ser algo assim: 
-
-    "Já existe o [código informado](link-para-codigo-informado), com vigência de <data-inicio-vigencia> até <data-fim-vigencia>. [Clique aqui](protocolo-encontrar-proximo-código-disponível) para ir para o próximo código disponível ou ajuste a data de vigência do código atual."
-    
-    com registro ativo e vigente para período de vigência compatível com o do formulário, deve haver mensagem de erro/bloqueio, mesmo que classificacao_id for diversa. Lembrando que a vigência deve ser entendida da seguinte forma:
-    - Se o campo classificação estiver vazio, deve interpretar o que já foi definido como fallback;
-    - Se o campo classificação estiver preenchido, deve ser entendido como a vigência correspondente ao do campo classificação.
-    Na tela de criação, se o campo de código canônico for preenchido com código que já existe com registro ativo e vigente para período de vigência compatível com o do formulário, deve haver mensagem de alerta informando que já existe tal código vigente <link para o registro já existente>. Clique aqui para navegar para próximo dígito disponível. 
-   
-   Lembrar que, a vigência do formulário deve ser entendida da seguinte forma: 
-
-   -> Se o campo classificação estiver vazio, deve interpretar o que já foi definido como fallback. 
-   -> Se o campo classificação estiver preenchido, deve ser entendido como a vigência correspondente ao do campo classificação 
-
-   Me fale o que entendeu
-
-  - **dígitos ignorados ao digitar código** - deve ser permitido digitar ponto, para facilitar UX quando quiser preencher manualmente o código desejado
-
   - **assistênte de vigência** - verificar criação de protocolo auxiliar para identificar `vigência anual`. Esse protocolo poderia ser utilizado parar criar filtro nas changelists para indentificar vigências  vigência por ano, pegando todos os registros ativos, com vigência. 
     Pensei que poderia ser um "get vigência", cujo comportamento padrão poderia ser o de obter o registro vigênte para cada ano, conforme ativo em dias atuais. No entanto, para além disso, deveria ser possível esse "get vigência" poder ser instruído com argumento de data de registro. Isto é, ele somente consideria o stado do banco conforme atualizado até data x. Para tanto, o script deveria conseguir converter datas de fim de registro em dia futuro em relação à data x, deve ser assumido como se estivesse com "valor sentinela". Assim, resconstituira o estado do banco
     Poderia haver o registro de um campo na parte superior da changelist, chamado Vigência. Um dropdown seria apenas para ano e haveria um campo de data ao lado direito, para "conforme data:...". Caso apenas o campo ano estiver selecionado, ele vai considerar que é o léxico vigente par ao ano informado conforme hoje. Caso o campo conforme data... esteja preenchido, ele deve recuperar o que estava vigente conforme a data informada. Deveria haver pelo menos 3 padrões, fechamento; LDO, LOA, e uma oportunidade de informar. Ao rodar o protocolo de "filtragem" no banco de dados, por exemplo, sem o preenchimento do campo de "conforme data", deve informar que foram selecionados os códigos vigentes em conformidade com seu registro/versão mais recente.
@@ -172,6 +150,19 @@ criar glossário para site estático com conteceitos centrais no projeto, tais c
 
 
 -------- feito
+- **itemClassificacao** - formulário de criação
+  x **dígitos ignorados ao digitar código** - deve ser permitido digitar ponto, para facilitar UX quando quiser preencher manualmente o código desejado
+  x **criar código já existente** => implementado conforme `_dev/spec_itemClassificacao_criar_codigo_existente.md`
+    
+    Na tela de criação (add) de itemClassificacao, se o campo de "Código Canônico da Natureza de Receita:" for preenchido com código que já existir de forma ativa, isto é, com data_registro_fim = SENTINELA, e cuja vigência abranja, integral ou parcialmente, a vigência que está informada nos campos de data de vigência do formulário de criação, deve aparecer mensagem de alerta em amarelo associada ao campo de código canônico de receita.
+
+    A mensagem de erro que deve aparecer deve ser algo assim: 
+
+    "Já existe o [código informado](link-para-codigo-informado), com vigência de <data-inicio-vigencia> até <data-fim-vigencia>. [Clique aqui](protocolo-encontrar-proximo-código-disponível) para ir para o próximo código disponível ou ajuste a data de vigência do código atual."
+
+    Essa mensagem deve ficar sendo exibida enquanto o usuário não alterar a data de vigência do formulário, ou não clicar no `Clique aqui` da mensagem. 
+
+    O `Clique aqui` da mensagem deve identificar o "próximo código disponível" nos mesmos termos do protocolo de criar filho a partir do item mãe já implementado, e descrito em `_dev/spec_itemClassificacao_criar_filho.md`. 
 x **itemClassificacao** - criar a partir de item pai - 
 x **visualização** - **changelist** - implementar padrão de, em todas changelist's, a visualização inicial vir, por padrão, como Ativos (Ano Corrente) 
 x **visualização** - **changelist** - filtros do sidebar com estado inicial recolhido, à exceção de «Por Status do Registro» e «Por Data de Início do Registro» (`ChangelistSidebarFilterCollapseMixin` + override `apps/core/templates/admin/filter.html`; ver `_dev/spec_django.md` — «Estado inicial dos filtros do sidebar»). Stateless: estado recomputado a cada GET, sobrepondo escolha do utilizador. Aplicado em todos os admins bitemporais com >3 filtros. 
