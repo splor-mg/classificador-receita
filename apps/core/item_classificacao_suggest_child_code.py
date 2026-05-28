@@ -20,6 +20,9 @@ from apps.core.item_classificacao_code_lookup import (
     _parse_admin_get_date,
 )
 from apps.core.models import ItemClassificacao, NivelHierarquico
+from apps.core.item_classificacao_existing_code import (
+    queryset_active_receita_cod_overlapping_vigencia,
+)
 from apps.core.parent_item_validation import (
     _canonical_zero_segment,
     _receita_cod_digits_only,
@@ -431,16 +434,11 @@ def suggest_child_code_for_parent(
         level_target,
     )
 
-    existing = (
-        ItemClassificacao.objects.filter(
-            receita_cod=receita_cod,
-            data_registro_fim=reg_sent,
-            data_vigencia_inicio__lte=v1_fim,
-            data_vigencia_fim__gte=v1_ini,
-        )
-        .order_by("pk")
-        .first()
-    )
+    existing = queryset_active_receita_cod_overlapping_vigencia(
+        receita_cod,
+        v1_ini,
+        v1_fim,
+    ).first()
     existing_code_warning: Optional[Dict[str, str]] = None
     if existing:
         try:
