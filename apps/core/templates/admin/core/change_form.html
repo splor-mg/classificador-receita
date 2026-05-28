@@ -2693,14 +2693,21 @@
       function showChangeReceitaCodNavigationModal(scenario, codigoDisplay, target) {
         var cod = codigoDisplay || stripReceitaCodFormatting(receitaCodInput.value);
         var messages = [];
-        if (scenario === 'C3') {
+        if (scenario === 'C2') {
+          messages.push('Já existe registro ativo e vigente para o código ' + cod + '.');
+        } else if (scenario === 'C3') {
           messages.push('O ' + cod + ' digitado tem vigência diversa do código atual.');
         } else if (scenario === 'C4') {
           messages.push('Não foi encontrado registro para o ' + cod + '.');
         }
-        var question = scenario === 'C4'
-          ? 'Deseja ser direcionado para a tela de criação de um novo código?'
-          : 'Deseja ser direcionado para a tela de edição do ' + cod + '?';
+        var question;
+        if (scenario === 'C4') {
+          question = 'Deseja ser direcionado para a tela de criação de um novo código?';
+        } else if (scenario === 'C2') {
+          question = 'Deseja ser direcionado para a tela de edição desse código?';
+        } else {
+          question = 'Deseja ser direcionado para a tela de edição do ' + cod + '?';
+        }
         return showCoreAttentionModal({
           messages: messages,
           confirmQuestion: question,

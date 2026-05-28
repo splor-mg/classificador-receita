@@ -182,13 +182,17 @@ Resposta sugerida: `{ "ok": true, "scenario": "C2"|"C3"|"C4", "codigo_display": 
 - **Sim**: `location.assign` para URL do endpoint; preservar `_changelist_filters` quando existir.
 - **Alterações não guardadas (navegação M2–M4):** após «Sim», chamar `__coreRebaselineReceitaCodNavigationDirtyState()` (rebaseline de `receita_cod` e `item_id` — preview derivado atualizado no blur por `syncItemIdPreview`) e em seguida `__coreConfirmUnsavedIfDirty(go)`. Assim, **somente** a troca de código + `item_id` **não** dispara o segundo `confirm`; se **outros** campos estiverem alterados, o aviso **deve** aparecer.
 
-#### **M2** — vigência atual
+#### **M2** — vigência atual (**C2**)
 
 ```
 Atenção!
 
-Deseja ser direcionado para a tela de edição do <código>?
+Já existe registro ativo e vigente para o código <código>.
+
+Deseja ser direcionado para a tela de edição desse código?
 ```
+
+- **`<código>`** — valor formatado (`codigo_display` do endpoint), não apenas dígitos crus.
 
 #### **M3** — vigência diversa
 
