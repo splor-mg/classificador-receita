@@ -12,9 +12,9 @@ clicáveis (§ Modo execução).
 
 ## Modo sugestão (padrão) vs modo execução
 
-| Modo | Quando | O que a LLM/IDE faz | O que **não** faz |
-|------|--------|---------------------|-------------------|
-| **Sugestão** | Pedido genérico ou “ajuda com commit” (§ Pedidos genéricos) | Protocolo § Sugestão de staging; mensagens; `git add` para copiar | `git add` / `git commit` / `git push` sem autorização |
+| Modo         | Quando                                                                           | O que a LLM/IDE faz                                                | O que **não** faz                                     |
+| ------------ | -------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------- |
+| **Sugestão** | Pedido genérico ou “ajuda com commit” (§ Pedidos genéricos)                      | Protocolo § Sugestão de staging; mensagens; `git add` para copiar  | `git add` / `git commit` / `git push` sem autorização |
 | **Execução** | Operador **explícito**: “pode fazer o commit”, “executa o commit completo”, etc. | § Modo execução — confirmações com clique antes de correr comandos | Commitar sem confirmar qual proposta e se inclui push |
 
 ### Pedidos genéricos → só protocolo de sugestão
@@ -58,41 +58,83 @@ lista numerada) antes ou junto da escolha B/C.
 
 ---
 
-## Estrutura
+## Estrutura da mensagem
 
 ```
-<tipo>(<escopo opcional>): <título curto>
+<tipo>(<escopo opcional>): <título — ver § Composição do título>
 
 <linhas See * — obrigatório; copiar de _dev/_dev.md>
 
-<corpo opcional — parágrafos em PT-BR; por quê e efeito no domínio>
+<corpo opcional — parágrafos em PT-BR; detalhe do que mudou>
 ```
 
-- **Título:** uma linha, ≤ ~72 caracteres quando possível; imperativo; sem ponto final.
-- **Logo abaixo do título** (primeiras linhas do corpo da mensagem): copiar **todas** as linhas
-  `See …` registradas em **`_dev/_dev.md`**, cada linha numa linha separada, na ordem e
-  redação exatas.
-- **Depois das linhas `See`:** parágrafos opcionais em português do Brasil; foco no **porquê**
-  e no efeito para o domínio — não substituir nem anteceder o bloco `See`.
+Linha em branco entre o título e as linhas `See`; linha em branco entre o bloco `See` e o corpo.
 
-Linha em branco entre o título e as linhas `See`; linha em branco entre o bloco `See` e os
-parágrafos explicativos (quando houver).
+### Composição do título (Conventional Commits)
+
+O título é **uma linha** com três partes:
+
+```text
+<tipo>(<escopo>): <mensagem resumida>
+```
+
+| Parte                   | Função                                                                                                                  |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **`tipo`**              | Natureza da mudança (§ Tipos) — o que o commit *é* (documentação, feature, fix, …).                                     |
+| **`escopo`**            | Módulo ou tema afetado (§ Escopo), entre parênteses — opcional mas recomendado.                                         |
+| **`mensagem resumida`** | Texto **após** `(<escopo>): ` — o que o repositório/projeto **passa a ter ou a conseguir** se este commit for aplicado. |
+
+**Ideia da mensagem resumida:** responder implicitamente: *«Se o utilizador aplicar este commit,
+o projeto vai …»* — em poucas palavras, sem ponto final no fim da linha.
+
+**Redação em português (este repositório):**
+
+- Começar a mensagem (após os dois pontos do escopo) com **verbo no infinitivo**: *implementar*,
+  *adicionar*, *corrigir*, *documentar*, *renomear*, *atualizar*, …
+- **Evitar** título só com substantivos («convenção de commits …») sem verbo inicial.
+- ≤ ~72 caracteres no título completo, quando possível.
+
+**Exemplos de título:**
+
+| Fraco (evitar)                                  | Melhor                                                      |
+| ----------------------------------------------- | ----------------------------------------------------------- |
+| `feat(commits): convenção de commits e staging` | `docs(commits): implementar convenção de commits e staging` |
+| `refact(code): pacote code_*`                   | `refact(code): renomear módulos para pacote code_*`         |
+
+**Corpo da mensagem (após o bloco `See`):** parágrafos opcionais; listar ficheiros ou resumir
+alterações; foco no *porquê* e no efeito — não repetir o título em prosa.
+
+### Linhas `See` e corpo
+
+- **Logo abaixo do título:** copiar **todas** as linhas `See …` de **`_dev/_dev.md`**, uma por linha.
+- **Depois do `See`:** corpo opcional (§ acima).
+
+### Tipo vs ficheiros alterados
+
+| Diff principal                                    | Tipo usual                                    | Nota                                                                                          |
+| ------------------------------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Só `_dev/spec_*.md`, `docs/`, README (sem código) | **`docs`**                                    | Mesmo que a spec descreva um processo novo — não usar `feat` só por ser “feature” conceptual. |
+| Código + specs alinhadas ao mesmo comportamento   | `feat` / `fix` / `refact` + escopo do domínio | Specs no mesmo commit quando mesma causa.                                                     |
+| Só `toDo.md`                                      | **`dev`**                                     | Título fixo § Commit só de toDo.                                                              |
+
+`feat` reserva-se a mudança **implementada** em código (ou JS/CSS do Admin) visível ou comportamental.
 
 ---
 
 ## Tipos (`<tipo>`)
 
-| Tipo     | Quando usar                                                 |
-| -------- | ----------------------------------------------------------- |
-| `feat`   | Comportamento novo ou extensão visível ao usuário / API     |
-| `fix`    | Correção de bug                                             |
-| `refact` | Mudança interna sem alterar comportamento observável        |
-| `docs`   | Só documentação (`_dev/`, `docs/`, README, specs)           |
-| `dev`    | Anotações de desenvolvimento (`toDo`, rascunhos em `_dev/`) |
-| `test`   | Só testes                                                   |
-| `chore`  | Build, deps, tooling, tarefas sem impacto de produto        |
+| Tipo     | Quando usar                                                    |
+| -------- | -------------------------------------------------------------- |
+| `feat`   | Comportamento novo ou extensão em **código** / Admin / API     |
+| `fix`    | Correção de bug em código ou comportamento                     |
+| `refact` | Mudança interna em código sem alterar comportamento observável |
+| `docs`   | Só documentação (`_dev/spec_*.md`, `docs/`, README, ADR)       |
+| `dev`    | Anotações de desenvolvimento (`toDo`, rascunhos em `_dev/`)    |
+| `test`   | Só testes                                                      |
+| `chore`  | Build, deps, tooling, tarefas sem impacto de produto           |
 
-Evitar tipos genéricos quando um tipo acima couber.
+Evitar tipos genéricos quando um tipo acima couber. Não usar `feat` quando o diff for **apenas**
+documentação (usar `docs`).
 
 ---
 
@@ -106,13 +148,13 @@ Opcional, em **camelCase** ou **kebab-case** quando já usado no histórico (`co
 Consultar subfamílias, inventário `code_*` e tabelas de domínio em **`_dev/spec_convencoes.md`**.
 Se o commit for claramente um tema já nomeado lá, usar esse escopo:
 
-| Tema do commit                                             | Escopo sugerido                               |
-| ---------------------------------------------------------- | --------------------------------------------- |
-| Pacote / rename `code_*`, regras transversais de módulos   | `code` ou `code-name` (rename focado em nome) |
-| SDD, `spec_agents`, engenharia de contexto                 | `sdd`                                         |
-| Filtros recolhidos do sidebar do Admin                     | `changelist-filters`                          |
-| Convenção de commits, staging, modo sugestão/execução (`spec_commits.md`, `spec_agents.md`) | `commits` | `feat(commits)` se processo novo; `docs(commits)` se só ajuste textual |
-| Só `spec_convencoes.md` (sem `spec_commits`) | `convencoes` | `docs(convencoes)` |
+| Tema do commit                                                                              | Escopo sugerido                               |
+| ------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| Pacote / rename `code_*`, regras transversais de módulos                                    | `code` ou `code-name` (rename focado em nome) |
+| SDD, `spec_agents`, engenharia de contexto                                                  | `sdd`                                         |
+| Filtros recolhidos do sidebar do Admin                                                      | `changelist-filters`                          |
+| Convenção de commits, staging, modo sugestão/execução (`spec_commits.md`, `spec_agents.md`) | `commits`                                     | **`docs(commits)`** se diff só specs; `feat` só com código no mesmo commit |
+| Só `spec_convencoes.md` (sem `spec_commits`)                                                | `convencoes`                                  | `docs(convencoes)`                                                         |
 
 ### 2. Spec funcional que dá sentido à alteração
 
@@ -157,8 +199,8 @@ Nesse caso:
 
 - **Escopo:** spec ou artefacto **principal** que dá sentido ao conjunto (§ 1–2); em rename,
   nome **antigo** (acima).
-- **Tipo:** `refact` se só rename/paths; `feat` se novo processo ou capacidade (ex. convenção
-  de commits); `docs` se só documentação sem processo novo.
+- **Tipo:** `refact` se só rename/paths em código; **`docs`** se só specs/docs; `feat` só com
+  código no mesmo commit (§ Tipo vs ficheiros alterados).
 - **Corpo:** pode listar ficheiros tocados ou resumir a causa única («alinhamento após
   rename de …»).
 
@@ -227,11 +269,11 @@ entregar um **pacote revisável**: staging proposto + mensagem(ns) — não só 
 commit são bem-vindos quando partilham essa causa. Se o working tree misturar **temas distintos**,
 propor **vários commits** numerados (Commit A, Commit B, …), cada um com:
 
-| Bloco              | Conteúdo                                                                             |
-| ------------------ | ------------------------------------------------------------------------------------ |
-| **Ficheiros**      | Lista de caminhos (e nota `git mv`/rename se aplicável)                              |
-| **Resumo do diff** | 1–3 frases do que mudou no conteúdo (não só nomes de ficheiro)                       |
-| **`git add`**      | Comandos copy-paste (`git add path1 path2` ou `git add -p` se pedirem granularidade) |
+| Bloco              | Conteúdo                                                                                   |
+| ------------------ | ------------------------------------------------------------------------------------------ |
+| **Ficheiros**      | Lista de caminhos (e nota `git mv`/rename se aplicável)                                    |
+| **Resumo do diff** | 1–3 frases do que mudou no conteúdo (não só nomes de ficheiro)                             |
+| **`git add`**      | Comandos copy-paste (`git add path1 path2` ou `git add -p` se pedirem granularidade)       |
 | **Mensagem**       | Título + linhas `See` de `_dev/_dev.md` + corpo (exceto `dev(toDo)` — § Commit só de toDo) |
 
 **Exemplo de bloco para um commit:**
@@ -254,11 +296,11 @@ See https://github.com/splor-mg/classificador-receita/tree/migracao
 
 ### Passo 3 — Ficheiros frequentemente à parte
 
-| Situação                                   | Sugestão usual                                                             |
-| ------------------------------------------ | -------------------------------------------------------------------------- |
+| Situação                                     | Sugestão usual                                                   |
+| -------------------------------------------- | ---------------------------------------------------------------- |
 | Só `_dev/toDo.md` ou pedido «atualizar toDo» | § Commit só de toDo; ou **não** incluir até o operador confirmar |
-| Spec de commits/agents sem código          | `docs(sdd): …` ou `docs(convencoes): …`                                    |
-| Alterações já staged + unstaged misturadas | Explicar o que está em cada estado antes de sugerir `add`                  |
+| Spec de commits/agents sem código            | `docs(sdd): …` ou `docs(convencoes): …`                          |
+| Alterações já staged + unstaged misturadas   | Explicar o que está em cada estado antes de sugerir `add`        |
 
 ### Passo 4 — Dúvida sobre abordagem → perguntar com opções clicáveis
 
@@ -290,12 +332,23 @@ Ordem sugerida na mensagem (modo sugestão):
 ## Exemplo mínimo (só mensagem)
 
 ```
-feat(itemClassificacao): bloquear submit quando código já existe
+feat(itemClassificacao): bloquear submit quando código já existe na add
 
 See #18
 See https://github.com/splor-mg/classificador-receita/tree/migracao
 
 Validação CE no cliente e no servidor; mensagem compartilhada com o endpoint.
+```
+
+Exemplo só documentação:
+
+```
+docs(commits): implementar convenção de commits e staging para agentes
+
+See #18
+See https://github.com/splor-mg/classificador-receita/tree/migracao
+
+Adiciona spec_commits.md; reforça spec_agents.md e spec_convencoes.md.
 ```
 
 ---
