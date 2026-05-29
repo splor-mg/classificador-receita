@@ -1,9 +1,12 @@
 ----------------------------------------------------------------------------------------------------
 # lista 
 
-- **itemClassificacao** - formulário de criação
+- **itemClassificacao** - formulário de criaçã
 
-  - **assistênte de vigência** - verificar criação de protocolo auxiliar para identificar `vigência anual`. Esse protocolo poderia ser utilizado parar criar filtro nas changelists para indentificar vigências  vigência por ano, pegando todos os registros ativos, com vigência. 
+  - **assistênte de vigência** - verificar criação de protocolo auxiliar para identificar vigência, por período, ou por versão. 
+    O que eu pensei foi em criar um script python, chamado `get_valid_code.py`. Deveria ser possível passar como argumento para essa função, ano, data, ou 2 anos ou duas data, ou a versão. 
+
+    Esse protocolo poderia ser utilizado parar criar filtro nas changelists para indentificar vigências  vigência por ano, pegando todos os registros ativos, com vigência. 
     Pensei que poderia ser um "get vigência", cujo comportamento padrão poderia ser o de obter o registro vigênte para cada ano, conforme ativo em dias atuais. No entanto, para além disso, deveria ser possível esse "get vigência" poder ser instruído com argumento de data de registro. Isto é, ele somente consideria o stado do banco conforme atualizado até data x. Para tanto, o script deveria conseguir converter datas de fim de registro em dia futuro em relação à data x, deve ser assumido como se estivesse com "valor sentinela". Assim, resconstituira o estado do banco
     Poderia haver o registro de um campo na parte superior da changelist, chamado Vigência. Um dropdown seria apenas para ano e haveria um campo de data ao lado direito, para "conforme data:...". Caso apenas o campo ano estiver selecionado, ele vai considerar que é o léxico vigente par ao ano informado conforme hoje. Caso o campo conforme data... esteja preenchido, ele deve recuperar o que estava vigente conforme a data informada. Deveria haver pelo menos 3 padrões, fechamento; LDO, LOA, e uma oportunidade de informar. Ao rodar o protocolo de "filtragem" no banco de dados, por exemplo, sem o preenchimento do campo de "conforme data", deve informar que foram selecionados os códigos vigentes em conformidade com seu registro/versão mais recente.
 
@@ -22,7 +25,7 @@
   - **erro nome dedutora** - Tentativa criar: 9112520403000 Nome gerado: Dedução Rec. - ITCD - DA-MJM - ITCD - Imposto sobre o Patrimônio - Nome esperado: Dedução Rec. - ITCD - DA-MJM -
 
   - **assistente de nomenclatura** - garantir que não haja espaços múltiplos (mais de um espaço entre palavras ou ao final), bem como padrão de maiúsculas (primeira letra maiúsculas, desde que não seja conectivos)
-      No classification_naming_messages.py, implementar limpeza do nome da classificação, removendo espaçamentos múltiplos tanto no meio, como nas extremidades
+      No code_name_messages.py, implementar limpeza do nome da classificação, removendo espaçamentos múltiplos tanto no meio, como nas extremidades
 
   - **furo de vigência de FK** - verificar se protocolo permite registrar itemClassificação, mesmo tendo informado campo Classificação, classificacao_id, FK, com vigência que não compreende a vigência que constou nos campos de data de vigência do formulário. Verificar teste de vigência contígua. Além disso, colocar como lista de validações de bancos se há consistência de vigências relacionais (FK-PK).
 
@@ -76,6 +79,7 @@ criar protocolo de incorporação/importação de bases
   - na changelist, alterar barra de filtro, no filtro "Por Classificação", que está repetindo entidades idênticas
 
 - **ListaAbreviacoes - Abreviaturas**
+  - remover ITCD -> HY
   - Revisar o atual protocolo automatizado de atualização das abreviações e a pertinência das abreviações geradas
   - botão cancelar
   - Verificar, de forma mais ampla, criação de nomes de convênios
@@ -147,6 +151,8 @@ criar glossário para site estático com conteceitos centrais no projeto, tais c
 - avaliar estratégia de documentação das áreas de intervenção que classificam as áreas dos convênios
 
 - avaliar a "justificativa de alteração" não apenas como parâmetro de registro, mas como parâmetro de documentação 
+
+- **datapackage** — decidido: seeds permanecem em `docs/assets/seed_*.csv`; `data-raw/` e `data/` para o protocolo de import (ver ADR-005). Spec do import: `_dev/spec_import_*.md` *(a redigir)*.
 
 
 -------- feito
