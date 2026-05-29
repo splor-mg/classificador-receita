@@ -6,7 +6,7 @@ Documentar o comportamento **técnico** implementado em torno de `parent_item_id
 
 Esta especificação **não** substitui `spec_itemClassificacao_regras_hierarquia.md` nas regras de negócio gerais; complementa o que foi feito no **código** (`apps/core/code_parent_item_validation.py`, `apps/core/admin.py`, `apps/core/templates/admin/core/change_form.html`) para o fluxo de **confirmação antes do submit** e para a **análise de intermediários**.
 
-Lookups JSON de **código / hierarquia** no mesmo admin (lupa de mãe por código exacto e derivação de nível + mãe matriz): `_dev/spec_itemClassificacao_foreignKeys_lookup.md` (`apps/core/item_classificacao_code_lookup.py`).
+Lookups JSON de **código / hierarquia** no mesmo admin (lupa de mãe por código exacto e derivação de nível + mãe matriz): `_dev/spec_itemClassificacao_foreignKeys_lookup.md` (`apps/core/classification_item_code_lookup.py`).
 
 ## Glossário (implementação)
 

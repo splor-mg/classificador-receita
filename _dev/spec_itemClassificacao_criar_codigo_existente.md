@@ -4,7 +4,7 @@ Esta especificação define o comportamento na tela **add** de `ItemClassificaca
 
 O objetivo é orientar o usuário sem bloquear a edição inicial (estado de **alerta**), permitindo ajuste de vigência no próprio formulário; e, no **submit**, bloquear a gravação caso o conflito permaneça (estado de **erro**).
 
-**Implementação (repositório):** `apps/core/item_classificacao_existing_code.py`; endpoint
+**Implementação (repositório):** `apps/core/classification_item_existing_code.py`; endpoint
 `lookup-existing-code-conflict/` em `ItemClassificacaoAdmin`; validação na add em
 `ItemClassificacaoForm.clean()`; alerta amarelo e reavaliação por vigência em
 `change_form.html` (`scheduleExistingCodeConflictCheck`, classe

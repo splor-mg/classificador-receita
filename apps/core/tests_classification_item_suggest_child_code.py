@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 from django.test import SimpleTestCase
 
-from apps.core.item_classificacao_suggest_child_code import (
+from apps.core.classification_item_suggest_child_code import (
     _assemble_child_receita_cod,
     _choose_segment_value,
     _level_capacity,

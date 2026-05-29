@@ -238,6 +238,9 @@ Arquivos envolvidos (formulário / B1):
   (`runCodeDigitValidation`, B1.1).
 - `apps/core/forms.py` — `ItemClassificacaoForm.clean`: aceita `receita_cod` com
   pontos no POST; rejeita demais caracteres; persiste somente dígitos.
+- `apps/core/tests_classification_item_mascara.py` — testes backend de B1.5/B1.8
+  (`ItemClassificacaoForm.clean`, sanitização dígitos+ponto); UI/colagem em T-B1.5/T-B1.6
+  permanecem cobertura manual ou E2E no `change_form.html`.
 
 Arquivos envolvidos (apresentação tier 1/2):
 
@@ -301,9 +304,11 @@ Política de exposição e nomenclatura:
 - **T-B1.5.** Digitar letra ou vírgula no `receita_cod` → caractere não entra
   (ou é removido no mesmo instante); digitar dígitos e **ponto** continua
   possível; pontos já presentes **não** são apagados ao corrigir caractere inválido.
+  _Backend parcial:_ `tests_classification_item_mascara.py` (`ReceitaCodInputSanitizationTests`).
 - **T-B1.6.** Colar `1.1.1.2.50` → pontos preservados; colar `1.1.1.2,50` → vírgula
   removida (`1.1.1.250`); blur reaplica máscara canônica quando válida.
 - **T-B1.8.** Submit com valor mascarado no input → POST/gravação só com dígitos.
+  _Backend:_ `tests_classification_item_mascara.py` (`test_clean_rejects_invalid_separator`).
 
 - **T-8.** **Display de `parent_item_id` no formulário** (campo "Item Mãe"):
   para um item mãe cuja vigência se enquadre no cenário do T-2 (split

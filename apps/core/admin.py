@@ -33,24 +33,24 @@ from apps.core.admin_formatters import (
     get_active_vigencia_masks,
 )
 from apps.core.code_mask import resolve_receita_cod_mask_context
-from apps.core.item_classificacao_code_lookup import (
+from apps.core.classification_item_code_lookup import (
     lookup_hierarchy_by_code_response_data,
     lookup_parent_by_code_response_data,
     resolve_code_navigation_response_data,
 )
-from apps.core.item_classificacao_structural_navigation import (
+from apps.core.classification_item_structural_navigation import (
     resolve_structural_navigation_response_data,
     structural_navigation_availability,
 )
-from apps.core.item_classificacao_child_from_change import (
+from apps.core.classification_item_child_from_change import (
     apply_change_parent_initial_data,
     build_create_child_code_button_context,
     is_add_from_change_parent_request,
 )
-from apps.core.item_classificacao_existing_code import (
+from apps.core.classification_item_existing_code import (
     lookup_existing_code_conflict_response_data,
 )
-from apps.core.item_classificacao_suggest_child_code import (
+from apps.core.classification_item_suggest_child_code import (
     suggest_child_code_by_parent_response_data,
 )
 from apps.core.code_parent_item_validation import (

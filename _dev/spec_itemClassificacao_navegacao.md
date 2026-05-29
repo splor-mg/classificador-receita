@@ -11,7 +11,7 @@ Esta especificação define quatro protocolos de **navegação estrutural** na v
 | **(G-nav.prev-code)**  | Código anterior |
 | **(G-nav.prev-level)** | Nível anterior  |
 
-**Implementação de referência (alvo):** `apps/core/templates/admin/core/change_form.html` (barra **(G-nav.ui-toolbar)**, botões **(G-nav.ui-controls)**, `__coreConfirmUnsavedIfDirty`, aviso de classificação); novo endpoint JSON em `ItemClassificacaoAdmin` (família `lookup-*` / `resolve-structural-navigation` em `apps/core/item_classificacao_code_lookup.py`).
+**Implementação de referência (alvo):** `apps/core/templates/admin/core/change_form.html` (barra **(G-nav.ui-toolbar)**, botões **(G-nav.ui-controls)**, `__coreConfirmUnsavedIfDirty`, aviso de classificação); novo endpoint JSON em `ItemClassificacaoAdmin` (família `lookup-*` / `resolve-structural-navigation` em `apps/core/classification_item_code_lookup.py`).
 
 **Specs relacionadas (não substituídas):**
 
@@ -63,7 +63,7 @@ Definições em `_dev/spec_itemClassificacao_editar_codigo.md` aplicam-se com **
 
 **Candidato navegável:** registro **(T6)** cujo `receita_cod` satisfaz **(T-cod.2)** para **V1** do registro em edição. Todos os protocolos consideram **somente** candidatos navegáveis. Códigos inexistentes ou só com vigência diversa **não** são destino; o controle correspondente permanece desabilitado ou inativo.
 
-**Desempate (mesmo `receita_cod`, várias linhas bitemporais com (T-cod.2)):** maior `data_vigencia_fim`; empate → maior `data_vigencia_inicio`; empate → maior `pk`. Mesma regra de `resolve-code-navigation` em `item_classificacao_code_lookup.py`.
+**Desempate (mesmo `receita_cod`, várias linhas bitemporais com (T-cod.2)):** maior `data_vigencia_fim`; empate → maior `data_vigencia_inicio`; empate → maior `pk`. Mesma regra de `resolve-code-navigation` em `classification_item_code_lookup.py`.
 
 **Navegação entre classificações:** os protocolos **podem** retornar destino com `classificacao_id` diferente do registro aberto, desde que o candidato seja navegável (**(T-cod.2)** vs **V1**). É comportamento **intencional** desta funcionalidade (percorrer classificações estruturalmente compatíveis sob a mesma **MASK-EDIT**). A UI **deve** exibir aviso quando a classificação do destino divergir da do registro aberto (ver **(G-nav.ui-warning-class)**).
 

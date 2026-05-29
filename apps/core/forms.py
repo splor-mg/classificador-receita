@@ -330,7 +330,7 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
 
         is_add = not (self.instance and getattr(self.instance, "pk", None))
         if not is_add and self.instance and getattr(self.instance, "pk", None):
-            from apps.core.item_classificacao_code_lookup import (
+            from apps.core.classification_item_code_lookup import (
                 RECEITA_COD_CHANGE_BLOCK_MESSAGE,
                 receita_cod_changed_vs_instance,
             )
@@ -341,7 +341,7 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
         if is_add and receita_cod:
             vig_ini = cleaned.get("data_vigencia_inicio")
             vig_fim = cleaned.get("data_vigencia_fim")
-            from apps.core.item_classificacao_existing_code import (
+            from apps.core.classification_item_existing_code import (
                 existing_code_conflict_message_html,
                 resolve_existing_code_conflict,
             )

@@ -7,7 +7,7 @@ Documentar o contrato HTTP/JSON dos endpoints usados pelo formulário de **adici
 1. Resolver um **item** pelo **código exato** e janela de vigência (lupa de `parent_item_id`).
 2. Derivar **nível hierárquico** a partir do **código canônico** e sugerir **item mãe matriz** coerente com a máscara e a vigência.
 
-A lógica de negócio e ORM vive em `apps/core/item_classificacao_code_lookup.py`. As views em `ItemClassificacaoAdmin` apenas delegam e envolvem o dicionário em `JsonResponse`.
+A lógica de negócio e ORM vive em `apps/core/classification_item_code_lookup.py`. As views em `ItemClassificacaoAdmin` apenas delegam e envolvem o dicionário em `JsonResponse`.
 
 Relacionado: regras de domínio de `parent_item_id` em `_dev/spec_itemClassificacao_regras_hierarquia.md`; aviso de salto de nível e intermediários em `_dev/spec_itemClassificacao_validar_hierarquia.md`.
 
@@ -174,7 +174,7 @@ Notas de redação:
 
 ## Manutenção
 
-- Alterações de contrato JSON devem manter este ficheiro alinhado ao módulo `item_classificacao_code_lookup.py` e ao JavaScript que consome estes endpoints em `change_form` / `code_name.js` (nomes de chaves).
+- Alterações de contrato JSON devem manter este ficheiro alinhado ao módulo `classification_item_code_lookup.py` e ao JavaScript que consome estes endpoints em `change_form` / `code_name.js` (nomes de chaves).
 - A regra de paridade «item mãe / nível hierárquico» (seção acima) **deve** ser preservada em cada nova FK temporal da hierarquia que vier a ser exposta pelo endpoint: criar variáveis locais de contagem (sem expor no payload), emitir `notices` no bloco correspondente, espelhar a renderização no cliente.
 
 ### Testes recomendados

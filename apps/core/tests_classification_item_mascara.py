@@ -1,4 +1,7 @@
-"""Testes de entrada de receita_cod no formulário (spec mascara B1.5/B1.8)."""
+"""Testes do protocolo B1 (entrada e submit de receita_cod no formulário).
+
+Spec: `_dev/spec_itemClassificacao_mascara_apresentacao.md` (B1.5, B1.8; casos T-B1.5, T-B1.8 no backend).
+"""
 
 from unittest.mock import patch
 
@@ -35,7 +38,7 @@ class ItemClassificacaoFormReceitaCodInputTests(SimpleTestCase):
     @patch("apps.core.forms.validar_receita_nome_guardrail_g1", return_value=(False, None))
     @patch("apps.core.forms.validar_receita_nome_guardrail_g0", return_value=False)
     @patch.object(ItemClassificacaoForm, "_get_receita_cod_digit_rule", return_value=(13, "TEST"))
-    @patch("apps.core.item_classificacao_existing_code.resolve_existing_code_conflict", return_value=None)
+    @patch("apps.core.classification_item_existing_code.resolve_existing_code_conflict", return_value=None)
     def test_clean_rejects_invalid_separator(
         self,
         _mock_conflict,

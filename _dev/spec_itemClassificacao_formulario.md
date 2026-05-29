@@ -12,7 +12,7 @@ Esta especificação define regras de **apresentação** e **ações de UI** no 
 | `_dev/spec_itemClassificacao_criar_nome.md`           | Protocolo **P-mãe** e rádios de radical (somente add).                                                                                                                     |
 | `_dev/spec_itemClassificacao_foreignKeys_lookup.md`   | Lookup por `receita_cod` e FKs semânticas.                                                                                                                                 |
 | `_dev/spec_itemClassificacao_validar_hierarquia.md`   | Modais de salto de nível no submit; item raiz.                                                                                                                             |
-| `_dev/spec_itemClassificacao_mascara_apresentacao.md` | Máscara de exibição de códigos.                                                                                                                                            |
+| `_dev/spec_itemClassificacao_mascara_apresentacao.md` | Máscara de exibição de códigos; entrada B1.5/B1.8 — testes em `apps/core/tests_classification_item_mascara.py`.                                                         |
 | `_dev/spec_itemClassificacao_editar_codigo.md`        | Edição de `receita_cod` na **change**; borracha **(R-revert)** (restaura código original — distinto de **(R-clear)**).                                                     |
 
 ---
@@ -38,7 +38,7 @@ O input editável **Código Canônico da Natureza de Receita** (`receita_cod`) n
 **Notas:**
 
 - `maxlength="25"` no widget permanece para edição/colagem do código **mascarado** no browser; a validação normativa de 8–13 dígitos canônicos segue no backend e no pipeline JS.
-- Entrada do usuário: dígitos **0-9** e ponto **`.`** (separador de níveis) nas telas add/change — ver **B1.5** em `_dev/spec_itemClassificacao_mascara_apresentacao.md`; persistência no BD continua só com dígitos (**B1.8**).
+- Entrada do usuário: dígitos **0-9** e ponto **`.`** (separador de níveis) nas telas add/change — ver **B1.5** em `_dev/spec_itemClassificacao_mascara_apresentacao.md`; persistência no BD continua só com dígitos (**B1.8**). Testes backend: `apps/core/tests_classification_item_mascara.py`.
 - O campo auxiliar readonly `item_id` mantém largura própria (`20em`); esta spec **não** exige unificar `item_id` com `37ch`.
 
 ---

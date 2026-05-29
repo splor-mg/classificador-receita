@@ -8,7 +8,7 @@ from django.test import RequestFactory, SimpleTestCase
 
 from apps.core.forms import ItemClassificacaoForm
 from apps.core.models import ItemClassificacao
-from apps.core.item_classificacao_existing_code import (
+from apps.core.classification_item_existing_code import (
     ExistingCodeConflict,
     existing_code_conflict_message_html,
     existing_code_conflict_plain_message,
@@ -98,7 +98,7 @@ class ResolveExistingCodeConflictTests(SimpleTestCase):
 
     def test_normalizes_masked_code(self) -> None:
         with patch(
-            "apps.core.item_classificacao_existing_code.queryset_active_receita_cod_overlapping_vigencia"
+            "apps.core.classification_item_existing_code.queryset_active_receita_cod_overlapping_vigencia"
         ) as mock_qs_fn:
             mock_qs = MagicMock()
             mock_qs_fn.return_value = mock_qs
@@ -117,7 +117,7 @@ class ResolveExistingCodeConflictTests(SimpleTestCase):
             )
 
     @patch(
-        "apps.core.item_classificacao_existing_code.queryset_active_receita_cod_overlapping_vigencia"
+        "apps.core.classification_item_existing_code.queryset_active_receita_cod_overlapping_vigencia"
     )
     def test_returns_conflict_payload(self, mock_qs_fn: MagicMock) -> None:
         item = _item_stub(pk=42)
@@ -127,11 +127,11 @@ class ResolveExistingCodeConflictTests(SimpleTestCase):
 
         with (
             patch(
-                "apps.core.item_classificacao_existing_code.reverse",
+                "apps.core.classification_item_existing_code.reverse",
                 return_value="/admin/core/itemclassificacao/42/change/",
             ),
             patch(
-                "apps.core.item_classificacao_existing_code.format_receita_cod_by_vigencia",
+                "apps.core.classification_item_existing_code.format_receita_cod_by_vigencia",
                 return_value="1.1.1.2.50.1.0.00.000",
             ),
         ):
@@ -150,7 +150,7 @@ class ResolveExistingCodeConflictTests(SimpleTestCase):
         self.assertEqual(result.vigencia_fim, date(9999, 12, 31))
 
     @patch(
-        "apps.core.item_classificacao_existing_code.queryset_active_receita_cod_overlapping_vigencia"
+        "apps.core.classification_item_existing_code.queryset_active_receita_cod_overlapping_vigencia"
     )
     def test_queryset_uses_ce_star_ordering(self, mock_qs_fn: MagicMock) -> None:
         mock_qs_fn.return_value.first.return_value = None
@@ -161,9 +161,9 @@ class ResolveExistingCodeConflictTests(SimpleTestCase):
         )
         mock_qs_fn.assert_called_once()
 
-    @patch("apps.core.item_classificacao_existing_code.ItemClassificacao.objects")
+    @patch("apps.core.classification_item_existing_code.ItemClassificacao.objects")
     def test_filter_uses_overlap_not_containment(self, mock_objects: MagicMock) -> None:
-        from apps.core.item_classificacao_existing_code import (
+        from apps.core.classification_item_existing_code import (
             queryset_active_receita_cod_overlapping_vigencia,
         )
 
@@ -239,7 +239,7 @@ class LookupExistingCodeConflictEndpointTests(SimpleTestCase):
         self.assertFalse(data["ok"])
 
     @patch(
-        "apps.core.item_classificacao_existing_code.resolve_existing_code_conflict",
+        "apps.core.classification_item_existing_code.resolve_existing_code_conflict",
         return_value=None,
     )
     def test_no_conflict(self, _mock_resolve: MagicMock) -> None:
@@ -251,7 +251,7 @@ class LookupExistingCodeConflictEndpointTests(SimpleTestCase):
         self.assertTrue(data["ok"])
         self.assertFalse(data["has_conflict"])
 
-    @patch("apps.core.item_classificacao_existing_code.resolve_existing_code_conflict")
+    @patch("apps.core.classification_item_existing_code.resolve_existing_code_conflict")
     def test_with_conflict(self, mock_resolve: MagicMock) -> None:
         conflict = ExistingCodeConflict(
             pk="9",
@@ -282,7 +282,7 @@ class ItemClassificacaoFormExistingCodeConflictTests(SimpleTestCase):
     @patch("apps.core.forms.validar_receita_nome_guardrail_g1", return_value=(False, None))
     @patch("apps.core.forms.validar_receita_nome_guardrail_g0", return_value=False)
     @patch.object(ItemClassificacaoForm, "_get_receita_cod_digit_rule", return_value=(12, "TEST"))
-    @patch("apps.core.item_classificacao_existing_code.resolve_existing_code_conflict")
+    @patch("apps.core.classification_item_existing_code.resolve_existing_code_conflict")
     def test_add_blocks_submit_on_conflict(
         self,
         mock_resolve: MagicMock,

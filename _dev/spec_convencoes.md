@@ -106,7 +106,7 @@ de domínio** espelhados de `schemas/dominios/`.
 
 - `models.py`, migrações, `admin.py`, templates, static/JS do Admin
 - Scripts em `scripts/`, schemas Frictionless em `schemas/`
-- Módulos de orquestração por fluxo (`item_classificacao_code_lookup.py`,
+- Módulos de orquestração por fluxo (`classification_item_code_lookup.py`,
   `admin_handlers.py`, etc.) — podem **importar** `code_*`, mas não usam o prefixo
 
 ### Subfamílias (orientação)
@@ -151,7 +151,9 @@ o nome histórico.
 | `code_organizations_entities.py`   | Catálogo `orgaos_entidades` (choices / optgroup no Admin)        |
 
 **Testes espelhados (sem prefixo `code_` no nome):** `tests_code_name.py`,
-`tests_code_parent_item_validation.py`, etc.
+`tests_code_parent_item_validation.py`, `tests_classification_item_*.py` (fluxos
+`classification_item_*`; ex.: `tests_classification_item_mascara.py` ↔
+`spec_itemClassificacao_mascara_apresentacao.md`), etc.
 
 **Front-end Admin:** `static/core/js/code_name.js` — funções `initCodeName`,
 `validateCodeNameOnSubmit`, …; ver `spec_itemClassificacao_criar_nome.md`.

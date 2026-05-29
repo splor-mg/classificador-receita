@@ -15,7 +15,7 @@ from django.urls import reverse
 
 from apps.core.admin_formatters import format_receita_cod_by_vigencia, get_active_vigencia_masks
 from apps.core.admin_mixins import transaction_time_sentinel_for_query
-from apps.core.item_classificacao_code_lookup import (
+from apps.core.classification_item_code_lookup import (
     _item_admin_change_url,
     _pick_navigation_record,
     _vigencia_intervals_overlap,

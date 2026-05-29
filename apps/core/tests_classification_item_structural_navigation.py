@@ -4,7 +4,7 @@ from datetime import date
 
 from django.test import TestCase
 
-from apps.core.item_classificacao_structural_navigation import (
+from apps.core.classification_item_structural_navigation import (
     DIRECTIONS,
     _NavContext,
     _normalize_code_for_mask,

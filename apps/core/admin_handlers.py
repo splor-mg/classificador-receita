@@ -51,7 +51,7 @@ class BitemporalChangeHandler:
         Impede confirmação bitemporal quando ``receita_cod`` foi substituído na change
         (``spec_itemClassificacao_editar_codigo.md`` — G-cod.save).
         """
-        from apps.core.item_classificacao_code_lookup import (
+        from apps.core.classification_item_code_lookup import (
             RECEITA_COD_CHANGE_BLOCK_MESSAGE,
             normalize_receita_cod_digits,
             receita_cod_changed_vs_instance,

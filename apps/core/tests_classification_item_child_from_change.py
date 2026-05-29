@@ -5,7 +5,7 @@ from datetime import date, datetime
 from django.test import SimpleTestCase
 from django.utils import timezone
 
-from apps.core.item_classificacao_child_from_change import vigencia_filho_from_item_mae
+from apps.core.classification_item_child_from_change import vigencia_filho_from_item_mae
 from apps.core.models import ItemClassificacao
 
 

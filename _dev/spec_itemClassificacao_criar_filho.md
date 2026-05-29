@@ -2,7 +2,7 @@
 
 Esta especificação define **como o fluxo deve funcionar** no formulário Django de **criação** (`add`) de `ItemClassificacao` no admin, quando o usuário escolhe um **item mãe** com o campo **Código Canônico da Natureza de Receita** (`receita_cod`) ainda vazio: o sistema **sugere automaticamente** o primeiro código em que pode existir **detalhamento hierárquico** coerente com a mãe, a máscara da classificação e os filhos já registrados.
 
-**Referência no repositório (alvo de implementação futura):** novo endpoint JSON no `ItemClassificacaoAdmin` (família de `lookup-hierarchy-by-code` / `lookup-parent-by-code` em `apps/core/item_classificacao_code_lookup.py`), consumo em `change_form.html` / JS dedicado; reutilização de `digit_mask_for_classificacao_vigencia`, `split_receita_cod_segments_tolerant` e `_canonical_zero_segment` em `apps/core/code_parent_item_validation.py`.
+**Referência no repositório (alvo de implementação futura):** novo endpoint JSON no `ItemClassificacaoAdmin` (família de `lookup-hierarchy-by-code` / `lookup-parent-by-code` em `apps/core/classification_item_code_lookup.py`), consumo em `change_form.html` / JS dedicado; reutilização de `digit_mask_for_classificacao_vigencia`, `split_receita_cod_segments_tolerant` e `_canonical_zero_segment` em `apps/core/code_parent_item_validation.py`.
 
 **Specs relacionadas (não substituídas):**
 
@@ -422,7 +422,7 @@ Registradas de forma explícita; o restante do documento já adota o comportamen
 
 Esta secção define o atalho na tela de **edição/visualização** (`change`) de `ItemClassificacao` que abre a **add** com o registo atual como **item mãe** e dispara o mesmo protocolo de sugestão de código (**G1**, endpoint `suggest-child-code-by-parent/`, `applyChildCodeSuggestPayload` no cliente). **Não** duplica o algoritmo de código; apenas navega e inicializa o formulário de criação.
 
-**Implementação:** `apps/core/item_classificacao_child_from_change.py`, `ItemClassificacaoAdmin.get_changeform_initial_data` / `render_change_form`, bloco `object-tools` e JavaScript em `apps/core/templates/admin/core/change_form.html`.
+**Implementação:** `apps/core/classification_item_child_from_change.py`, `ItemClassificacaoAdmin.get_changeform_initial_data` / `render_change_form`, bloco `object-tools` e JavaScript em `apps/core/templates/admin/core/change_form.html`.
 
 **Specs relacionadas:** `_dev/spec_itemClassificacao_regras_hierarquia.md` (mãe `matriz = true`); `_dev/spec_itemClassificacao_formulario.md` (`_changelist_filters` na URL de retorno).
 
@@ -505,7 +505,7 @@ Com isso, abrir a change **sem editar** e clicar em «Criar Código Filho» **n�
 
 Ao abrir a add via atalho, `get_changeform_initial_data` **deve** preencher `data_vigencia_inicio` e `data_vigencia_fim` do filho a partir da vigência do **item mãe** (registo da change), com comparações em **data civil** (fuso local do Django para datetimes aware).
 
-Constante de implementação: `vigencia_filho_from_item_mae(parent)` em `item_classificacao_child_from_change.py`.
+Constante de implementação: `vigencia_filho_from_item_mae(parent)` em `classification_item_child_from_change.py`.
 
 | Regra        | Condição (mãe)                                                                    | `data_vigencia_inicio` do filho | `data_vigencia_fim` do filho            |
 | ------------ | --------------------------------------------------------------------------------- | ------------------------------- | --------------------------------------- |
@@ -549,4 +549,4 @@ Ordem recomendada no cliente (`initChildCodeFromChangeParent`):
 
 ## Manutenção
 
-- Alterações de contrato JSON, critérios de vigência ou do atalho v2 devem manter este arquivo alinhado a `item_classificacao_child_from_change.py`, ao módulo de lookup/sugestão e ao JavaScript do `change_form`.
+- Alterações de contrato JSON, critérios de vigência ou do atalho v2 devem manter este arquivo alinhado a `classification_item_child_from_change.py`, ao módulo de lookup/sugestão e ao JavaScript do `change_form`.

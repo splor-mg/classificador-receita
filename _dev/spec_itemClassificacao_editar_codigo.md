@@ -11,7 +11,7 @@ Esta especificação define o comportamento quando o usuário **altera** o campo
 | **Navegação** **(G-cod.blur)**    | `blur` em `receita_cod` com **COD-2 ≠ COD-1**                 | Modais **M2–M4**: redirecionar ou restaurar **COD-1**.          |
 | **Persistência** **(G-cod.save)** | **Salvar** ou lápis **Editar vigência** com **COD-2 ≠ COD-1** | **Não** abrir `bitemporal_confirm.html`; modal **M-cod-block**. |
 
-**Implementação de referência (alvo):** `apps/core/templates/admin/core/change_form.html` (`showCoreAttentionModal`, blur, validação de dígitos); `apps/core/admin_handlers.py` (`BitemporalChangeHandler`); novo endpoint JSON em `ItemClassificacaoAdmin` (família `lookup-*-by-code` / `resolve-code-navigation` em `apps/core/item_classificacao_code_lookup.py`).
+**Implementação de referência (alvo):** `apps/core/templates/admin/core/change_form.html` (`showCoreAttentionModal`, blur, validação de dígitos); `apps/core/admin_handlers.py` (`BitemporalChangeHandler`); novo endpoint JSON em `ItemClassificacaoAdmin` (família `lookup-*-by-code` / `resolve-code-navigation` em `apps/core/classification_item_code_lookup.py`).
 
 **Specs relacionadas (não substituídas, salvo onde indicado):**
 

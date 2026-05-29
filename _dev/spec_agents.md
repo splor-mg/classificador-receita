@@ -71,7 +71,7 @@ do núcleo do classificador ou testes espelhados:
   (`code_organizations_entities.py` para `orgaos_entidades.yaml`); atualizar a tabela na spec de convenções.
 - Em dúvida entre traduzir o slug do domínio ou espelhá-lo no nome do arquivo `.py`,
   **perguntar ao operador** ou seguir a tabela domínio → módulo já registrada.
-- Respeitar padrões já usados no pacote (`code_*`, `item_classificacao_*`, `tests_code_*`).
+- Respeitar padrões já usados no pacote (`code_*`, `classification_item_*`, `tests_code_*`, `tests_classification_item_*`).
 - Após introduzir ou renomear módulo `code_*`, **atualizar o inventário** em
   `spec_convencoes.md`.
 
@@ -129,7 +129,7 @@ Só quando o operador pedir claramente para **fazer/executar o commit** (ex.: «
 
 - Regras de negócio reutilizáveis → módulos `apps/core/code_*.py` (ver convenções).
 - Orquestração Admin / endpoints / templates → módulos e arquivos já existentes
-  do fluxo (`admin.py`, `item_classificacao_*`, `change_form.html`, etc.).
+  do fluxo (`admin.py`, `classification_item_*`, `change_form.html`, etc.).
 - Alterar specs funcionais apenas nos trechos afetados; **não duplicar** em cada
   spec a política global do prefixo `code_` (manter em `spec_convencoes.md`).
 - **Não criar commit** nem push salvo pedido explícito do operador.

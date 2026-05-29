@@ -4,7 +4,7 @@ from datetime import date
 
 from django.test import RequestFactory, TestCase
 
-from apps.core.item_classificacao_code_lookup import (
+from apps.core.classification_item_code_lookup import (
     normalize_receita_cod_digits,
     receita_cod_changed_vs_instance,
     resolve_code_navigation_response_data,

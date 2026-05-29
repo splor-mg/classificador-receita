@@ -15,7 +15,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.core.admin_formatters import format_receita_cod_by_vigencia
-from apps.core.item_classificacao_suggest_child_code import suggest_child_code_for_parent
+from apps.core.classification_item_suggest_child_code import suggest_child_code_for_parent
 from apps.core.models import ItemClassificacao
 from apps.core.code_parent_item_validation import digit_mask_for_classificacao_vigencia
 
