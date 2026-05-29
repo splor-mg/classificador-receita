@@ -174,7 +174,7 @@ Notas de redação:
 
 ## Manutenção
 
-- Alterações de contrato JSON devem manter este ficheiro alinhado ao módulo `item_classificacao_code_lookup.py` e ao JavaScript que consome estes endpoints em `change_form` / `classification_naming.js` (nomes de chaves).
+- Alterações de contrato JSON devem manter este ficheiro alinhado ao módulo `item_classificacao_code_lookup.py` e ao JavaScript que consome estes endpoints em `change_form` / `code_name.js` (nomes de chaves).
 - A regra de paridade «item mãe / nível hierárquico» (seção acima) **deve** ser preservada em cada nova FK temporal da hierarquia que vier a ser exposta pelo endpoint: criar variáveis locais de contagem (sem expor no payload), emitir `notices` no bloco correspondente, espelhar a renderização no cliente.
 
 ### Testes recomendados

@@ -1,6 +1,6 @@
 /**
  * Radical do nome a partir do item mãe (admin — criação de ItemClassificacao).
- * Mensagens: #classification-naming-config (json_script).
+ * Mensagens: #code-name-config (json_script).
  * Spec: _dev/spec_itemClassificacao_criar_nome.md
  */
 (function () {
@@ -14,7 +14,7 @@
   }
 
   function parseMessages() {
-    var el = document.getElementById('classification-naming-config');
+    var el = document.getElementById('code-name-config');
     if (!el) return null;
     var raw = (el.textContent || '').trim();
     if (!raw) return null;
@@ -81,7 +81,7 @@
 
   function removeTopErrorNote(formEl) {
     if (!formEl) return;
-    var existing = formEl.querySelector('.classification-naming-errornote');
+    var existing = formEl.querySelector('.code-name-errornote');
     if (existing) existing.remove();
   }
 
@@ -89,7 +89,7 @@
     if (!formEl || !text) return;
     removeTopErrorNote(formEl);
     var note = document.createElement('p');
-    note.className = 'errornote classification-naming-errornote';
+    note.className = 'errornote code-name-errornote';
     note.textContent = text;
     formEl.insertBefore(note, formEl.firstChild);
     window.setTimeout(function() {
@@ -113,7 +113,7 @@
 
   /**
    * **G1.2** (predicado único de bloqueio) — paridade com
-   * ``receita_nome_termina_com_traco`` em classification_naming_validation.py.
+   * ``receita_nome_termina_com_traco`` em code_name_validation.py.
    *
    * Bloqueia quando ``trim(nome)`` termina com **(N7)** (hífen ASCII,
    * en dash ou em dash), opcionalmente seguido apenas de espaços.
@@ -131,7 +131,7 @@
 
   /**
    * **G1.5.a** (seleção de mensagem) — paridade com
-   * ``receita_nome_eh_sugestao_literal`` em classification_naming_validation.py.
+   * ``receita_nome_eh_sugestao_literal`` em code_name_validation.py.
    *
    * True quando ``n`` casa com ``b + (N7)`` (com (N7) flexível e espaços
    * ASCII opcionais ao redor do traço). Usado apenas para escolher entre
@@ -299,7 +299,7 @@
    * @param {boolean} isAddMode
    * @param {string} abbrevLookupUrl
    */
-  window.initClassificationNaming = function initClassificationNaming(isAddMode, abbrevLookupUrl) {
+  window.initCodeName = function initCodeName(isAddMode, abbrevLookupUrl) {
     var msgs = parseMessages();
     if (!isAddMode || !msgs) return;
 
@@ -610,7 +610,7 @@
       optionsInline.style.alignItems = 'center';
       optionsInline.style.gap = '18px';
 
-      var radioUiName = '__classification_naming_base_mode_ui';
+      var radioUiName = '__code_name_base_mode_ui';
       optionsInline.innerHTML =
         '<label style="display:inline-flex; align-items:center; margin:0;">' +
         '<input style="margin-right:6px;" type="radio" name="' +
@@ -751,7 +751,7 @@
     });
 
     /** **P-orq.3 / I5** — chamada explícita após syncHierarchyFromCode */
-    window.applyClassificationNamingAfterParentResolved = function (
+    window.applyCodeNameAfterParentResolved = function (
       parentPk,
       nomeMaeFromApi
     ) {
@@ -785,8 +785,8 @@
       }
     }, 0);
 
-    window.validateClassificationNamingOnSubmit =
-      function validateClassificationNamingOnSubmit() {
+    window.validateCodeNameOnSubmit =
+      function validateCodeNameOnSubmit() {
         if (!isAddMode || !receitaNomeInput) return true;
         var nomeAtual = (receitaNomeInput.value || '').trim();
 

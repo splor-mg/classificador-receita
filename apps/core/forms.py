@@ -21,17 +21,17 @@ from apps.core.temporal_fk_resolution import (
     get_temporal_fk_field_names,
     resolve_active_compatible_fk,
 )
-from apps.core.classification_naming_abbrev import (
+from apps.core.code_name_abbrev import (
     calcular_radical_abreviado,
     normalize_receita_nome_base_mode,
 )
-from apps.core.classification_naming_messages import (
+from apps.core.code_name_messages import (
     RECEITA_NOME_SUBMIT_SUGESTAO_LITERAL_ERROR,
     RECEITA_NOME_SUBMIT_TRACO_FINAL_ERROR,
     RECEITA_NOME_VAZIO_ERROR,
     MENSAGEM_SUGESTAO_LITERAL_KEY,
 )
-from apps.core.classification_naming_validation import (
+from apps.core.code_name_validation import (
     validar_receita_nome_guardrail_g0,
     validar_receita_nome_guardrail_g1,
 )

@@ -40,7 +40,7 @@ RECEITA_NOME_SUBMIT_TRACO_FINAL_ERROR = (
     "(-, – ou —). Adicione um complemento após o último traço ou remova-o."
 )
 
-# Chaves canônicas das mensagens (também expostas via ``classification_naming_messages_dict``).
+# Chaves canônicas das mensagens (também expostas via ``code_name_messages_dict``).
 MENSAGEM_SUGESTAO_LITERAL_KEY = "receita_nome_submit_sugestao_literal_error"
 MENSAGEM_TRACO_FINAL_KEY = "receita_nome_submit_traco_final_error"
 
@@ -59,7 +59,7 @@ def format_lexico_termo_duplicado(termo_nome: str) -> str:
     return RECEITA_NOME_LEXICO_TERMO_DUPLICADO_TEMPLATE.format(termo_nome=termo_nome or "")
 
 
-def classification_naming_messages_dict():
+def code_name_messages_dict():
     return {
         "receita_nome_sugestao_info_completo": RECEITA_NOME_SUGESTAO_INFO_COMPLETO,
         "receita_nome_sugestao_info_abrev_template": RECEITA_NOME_SUGESTAO_INFO_ABREV_TEMPLATE,

@@ -57,12 +57,12 @@ from apps.core.parent_item_validation import (
     validate_intermediate_canonical_zeros_json_dict,
     warn_parent_level_jump_json_dict,
 )
-from apps.core.classification_naming_abbrev import (
+from apps.core.code_name_abbrev import (
     calcular_radical_abreviado,
     radical_com_sufixo_canonico,
 )
-from apps.core.classification_naming_messages import (
-    classification_naming_messages_dict,
+from apps.core.code_name_messages import (
+    code_name_messages_dict,
     format_lexico_termo_duplicado,
 )
 
@@ -592,7 +592,7 @@ class ItemClassificacaoAdmin(
                 )
                 context["item_structural_nav_origin_pk"] = str(obj.pk)
         else:
-            context["classification_naming_messages"] = classification_naming_messages_dict()
+            context["code_name_messages"] = code_name_messages_dict()
             context["item_abbreviated_radical_lookup_url"] = reverse(
                 f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_lookup_abbreviated_radical"
             )
@@ -865,7 +865,7 @@ class ItemClassificacaoAdmin(
     class Media:
         js = (
             "core/admin_bitemporal_date_shortcuts.js",
-            "core/js/classification_naming.js",
+            "core/js/code_name.js",
         )
 
 

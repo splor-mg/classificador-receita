@@ -2,7 +2,7 @@
 Lista canónica de conectivos omitíveis e regras de pontuação na compactação (**A6**).
 
 Usada por:
-- modo **Abreviado** na criação de item (``classification_naming_abbrev``);
+- modo **Abreviado** na criação de item (``code_name_abbrev``);
 - inferência da lista de abreviações (só ``LEXICO_CONNECTIVOS_FIXOS`` em ``alias_lexico_infer``).
 
 Comparar tokens lexicais com ``casefold()`` (acentos preservados como nos dados).

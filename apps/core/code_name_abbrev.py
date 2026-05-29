@@ -14,7 +14,7 @@ from apps.core.alias_lexico_service import (
     connectivos_fixos_nome_classificacao,
     iter_alias_lexico_ativos_ordenados,
 )
-from apps.core.classification_naming_connectives import compactar_texto_radical_a6
+from apps.core.code_name_connectives import compactar_texto_radical_a6
 
 SUFIXO_CANONICO = " - "
 
@@ -181,7 +181,7 @@ def _apply_interval_substitutions(nome_mae: str, selected: list[_Interval]) -> s
 
 
 def _remove_connectivos(texto: str) -> str:
-    """A6: pontuação (**A6.1**–**A6.3**) + conectivos lexicais (**A6.2**) — SSOT em ``classification_naming_connectives``."""
+    """A6: pontuação (**A6.1**–**A6.3**) + conectivos lexicais (**A6.2**) — SSOT em ``code_name_connectives``."""
     return compactar_texto_radical_a6(texto, connectivos_fixos_nome_classificacao())
 
 

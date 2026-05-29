@@ -423,8 +423,8 @@
   {{ adminform.form.receita_nome_base_mode }}
 {% endif %}
 </div>
-{% if classification_naming_messages %}
-{{ classification_naming_messages|json_script:"classification-naming-config" }}
+{% if code_name_messages %}
+{{ code_name_messages|json_script:"code-name-config" }}
 {% endif %}
 <script type="text/javascript">
 (function() {
@@ -1371,9 +1371,9 @@
               commitParentSnapshotFromHierarchy(newParentPk, parentNomeMae);
               if (
                 parentNomeMae &&
-                typeof window.applyClassificationNamingAfterParentResolved === 'function'
+                typeof window.applyCodeNameAfterParentResolved === 'function'
               ) {
-                window.applyClassificationNamingAfterParentResolved(newParentPk, parentNomeMae);
+                window.applyCodeNameAfterParentResolved(newParentPk, parentNomeMae);
               }
               var parentRow = getFieldRow(parentItemIdInput);
               var parentFoundStatus = parent.status || {};
@@ -1501,7 +1501,7 @@
       }
 
       function applyNamingAfterParentSuggest(parentPk) {
-        if (typeof window.applyClassificationNamingAfterParentResolved !== 'function') {
+        if (typeof window.applyCodeNameAfterParentResolved !== 'function') {
           return;
         }
         var tentativas = 0;
@@ -1509,7 +1509,7 @@
           tentativas += 1;
           var nome = extractNomeMaeFromParentLabel();
           if (nome) {
-            window.applyClassificationNamingAfterParentResolved(parentPk, nome);
+            window.applyCodeNameAfterParentResolved(parentPk, nome);
             return;
           }
           if (tentativas < 25) {
@@ -2027,9 +2027,9 @@
         }
         if (
           snapshot.nomeMae &&
-          typeof window.applyClassificationNamingAfterParentResolved === 'function'
+          typeof window.applyCodeNameAfterParentResolved === 'function'
         ) {
-          window.applyClassificationNamingAfterParentResolved(snapshot.pk, snapshot.nomeMae);
+          window.applyCodeNameAfterParentResolved(snapshot.pk, snapshot.nomeMae);
           return;
         }
         applyNamingAfterParentSuggest(snapshot.pk);
@@ -2367,15 +2367,15 @@
           });
       }
 
-      function runClassificationNamingInit() {
-        if (typeof window.initClassificationNaming === 'function') {
-          window.initClassificationNaming(isAddMode, itemAbbreviatedRadicalLookupUrl || '');
+      function runCodeNameInit() {
+        if (typeof window.initCodeName === 'function') {
+          window.initCodeName(isAddMode, itemAbbreviatedRadicalLookupUrl || '');
         }
       }
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', runClassificationNamingInit);
+        document.addEventListener('DOMContentLoaded', runCodeNameInit);
       } else {
-        window.setTimeout(runClassificationNamingInit, 0);
+        window.setTimeout(runCodeNameInit, 0);
       }
 
       // Estado "raiz somente leitura" do campo ``parent_item_id``,
@@ -3427,8 +3427,8 @@
                       focusSubmitValidationErrors(adminForm);
                       return;
                     }
-                    if (typeof window.validateClassificationNamingOnSubmit === 'function') {
-                      var namingOk = window.validateClassificationNamingOnSubmit();
+                    if (typeof window.validateCodeNameOnSubmit === 'function') {
+                      var namingOk = window.validateCodeNameOnSubmit();
                       if (!namingOk) {
                         return;
                       }

@@ -29,7 +29,7 @@ from collections import defaultdict
 from collections.abc import Set as AbstractSet
 from datetime import date, datetime
 
-from apps.core.classification_naming_connectives import LEXICO_CONNECTIVOS_FIXOS
+from apps.core.code_name_connectives import LEXICO_CONNECTIVOS_FIXOS
 
 _REGISTRO_FIM_SENTINELS = frozenset(
     {

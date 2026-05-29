@@ -18,11 +18,11 @@ from __future__ import annotations
 
 import re
 
-from apps.core.classification_naming_abbrev import (
+from apps.core.code_name_abbrev import (
     calcular_radical_abreviado,
     normalize_receita_nome_base_mode,
 )
-from apps.core.classification_naming_messages import (
+from apps.core.code_name_messages import (
     MENSAGEM_SUGESTAO_LITERAL_KEY,
     MENSAGEM_TRACO_FINAL_KEY,
 )

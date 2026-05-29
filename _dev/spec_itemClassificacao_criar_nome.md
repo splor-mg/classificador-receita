@@ -8,7 +8,7 @@ Esta especificação define **como o fluxo deve funcionar** no formulário Djang
 - o **preenchimento automático** do nome disparado a partir do **Código Canônico da Natureza de Receita** (`receita_cod`) e da resolução do item mãe;
 - a **paridade** entre os modos **Completo** e **Abreviado**: após o radical, o mesmo sufixo literal de edição **`" - "`** (formalizado em **(N5)** na terminologia), para o usuário completar o nome após o traço.
 
-**Referência no repositório (para alinhar código à spec):** `apps/core/static/core/js/classification_naming.js`, `apps/core/classification_naming_messages.py`, `apps/core/forms.py` (`ItemClassificacaoAdminForm.receita_nome_base_mode`), `apps/core/admin.py` (contexto de mensagens + *media*), fluxo de lookup/hierarquia no `change_form.html` (ex.: `syncHierarchyFromCode`, cadeia que chama `validateClassificationNamingOnSubmit`).
+**Referência no repositório (para alinhar código à spec):** `apps/core/static/core/js/code_name.js`, `apps/core/code_name_messages.py`, `apps/core/forms.py` (`ItemClassificacaoAdminForm.receita_nome_base_mode`), `apps/core/admin.py` (contexto de mensagens + *media*), fluxo de lookup/hierarquia no `change_form.html` (ex.: `syncHierarchyFromCode`, cadeia que chama `validateCodeNameOnSubmit`).
 
 ---
 
@@ -20,7 +20,7 @@ Na tela de criação, os três rádios **devem** aparecer **nesta ordem**, da es
 2. **«Radical Baseado no Item Mãe - Completo»** — **`nome_mae + sufixo_canônico`** (**M1.1** e **(N5)**).
 3. **«Sem Nome Base»**
 
-O `name` HTML dos rádios de UI **deve** continuar distinto do `HiddenInput` de `receita_nome_base_mode` (ex.: `__classification_naming_base_mode_ui`), para não quebrar o comportamento nativo de rádio/hidden.
+O `name` HTML dos rádios de UI **deve** continuar distinto do `HiddenInput` de `receita_nome_base_mode` (ex.: `__code_name_base_mode_ui`), para não quebrar o comportamento nativo de rádio/hidden.
 
 ---
 
@@ -54,7 +54,7 @@ Disparado quando `parent_item_id` recebe ou altera valor (incluindo após `syncH
 - **P-orq.2.** **Fonte de `nome_mae` (ordem de prioridade):**
   1. **`parent.name`** (ou campo equivalente) no **payload JSON** do lookup de hierarquia, quando presente e não vazio;
   2. **M1.2** — rótulo/`label_link` de `parent_item_id` no DOM (fallback, ex.: seleção manual ou atraso de renderização do admin).
-- **P-orq.3.** O cliente **não** deve depender **somente** do `change` de `parent_item_id` nem **somente** de polling do rótulo para cumprir **P1** após lookup por código. A camada que processa a resposta da hierarquia **deve** invocar **P-mãe** explicitamente (ex.: `applyClassificationNamingAfterParentResolved(parent_pk, nome_mae)`), passando `nome_mae` do payload quando disponível.
+- **P-orq.3.** O cliente **não** deve depender **somente** do `change` de `parent_item_id` nem **somente** de polling do rótulo para cumprir **P1** após lookup por código. A camada que processa a resposta da hierarquia **deve** invocar **P-mãe** explicitamente (ex.: `applyCodeNameAfterParentResolved(parent_pk, nome_mae)`), passando `nome_mae` do payload quando disponível.
 - **P-orq.4.** Troca de item mãe: considera-se **nova** resolução quando `parent.pk` mudar **ou** quando `parent.name` (`nome_mae`) for distinto do último aplicado em **P-mãe** (comparação após *trim* + *case fold*). Nesse caso **P-mãe** **deve** rodar de novo mesmo que o `pk` no input já estivesse atualizado antes do `change`.
 - **P-mãe.2-bis (complemento na troca de mãe).** Se `receita_nome` for **sugestão literal** do radical da **mãe anterior** (`bAntigo + (N7)` sem complemento — predicado **G1.5.a** / `receitaNomeEhSugestaoLiteral` no cliente; ex.: `Impostos sobre o Patrimônio - ` após trocar para mãe cujo radical abreviado é `ITCD`), **não** preservar o prefixo antigo como se fosse complemento (**A9.2**): substituir por **`(novo_radical_abreviado) + sufixo_canônico`** (**(N5)**) apenas. A preservação de **A9.2** aplica-se somente quando há **complemento** não vazio após o traço **e** o valor **não** for só sugestão literal da mãe anterior.
 
@@ -75,7 +75,7 @@ Após o fechamento do modal (ou após reversão automática por erro do endpoint
 
 - **P-G5.1.** Em **Cancelar** e em reversão por erro do endpoint, **não** alterar `nivel_id` nem `classificacao_id`.
 - **P-G5.2.** Em **Manter Atual**, **não** alterar `nivel_id` nem `classificacao_id`; **P-mãe** **deve** rodar para a nova mãe, pois o item mãe efetivo mudou mesmo sem recálculo do código.
-- **P-G5.3.** O listener genérico de `change` em `parent_item_id` (`classification_naming.js`) **deve** respeitar a suspensão de **P-mãe** durante **(G5)**; a orquestração explícita após o modal **substitui** qualquer efeito adiado desse listener.
+- **P-G5.3.** O listener genérico de `change` em `parent_item_id` (`code_name.js`) **deve** respeitar a suspensão de **P-mãe** durante **(G5)**; a orquestração explícita após o modal **substitui** qualquer efeito adiado desse listener.
 - **P-G5.4.** Na reversão (**Cancelar** ou erro do endpoint), se o snapshot tiver `nome_mae` conhecido, usá-lo em **P-mãe**; senão, obter `nome_mae` do rótulo após o re-fetch semântico do PK (mesmo fluxo do widget de `parent_item_id`).
 
 **Exemplo P-orq / P-mãe.2-bis**  
@@ -86,7 +86,7 @@ Após o fechamento do modal (ou após reversão automática por erro do endpoint
 
 ## Relação com outras specs e código
 
-- **Lista de abreviações:** no modo **Abreviado**, aplicam-se, quando couber, as noções de *segmento*, *abreviação*, *sigla* e *conectivos* de `_dev/spec_lista_abreviacoes.md`. A lista fixa de conectivos (**fonte única**) está em `apps/core/classification_naming_connectives.py` (`LEXICO_CONNECTIVOS_FIXOS`; alias `NOME_CLASSIFICACAO_CONNECTIVOS_FIXOS`). O motor de inferência (`alias_lexico_infer.py`) importa a mesma lista — não duplicar.
+- **Lista de abreviações:** no modo **Abreviado**, aplicam-se, quando couber, as noções de *segmento*, *abreviação*, *sigla* e *conectivos* de `_dev/spec_lista_abreviacoes.md`. A lista fixa de conectivos (**fonte única**) está em `apps/core/code_name_connectives.py` (`LEXICO_CONNECTIVOS_FIXOS`; alias `NOME_CLASSIFICACAO_CONNECTIVOS_FIXOS`). O motor de inferência (`alias_lexico_infer.py`) importa a mesma lista — não duplicar.
 - **Léxico ativo:** `queryset_alias_lexico_ativos()` e `iter_alias_lexico_ativos_ordenados()` em `apps/core/alias_lexico_service.py`.
 - **Resolução do item mãe:** `_dev/spec_itemClassificacao_foreignKeys_lookup.md` (rótulo `receita_cod - receita_nome` para extrair `nome_mae`).
 - **Formulário admin (UI):** `_dev/spec_itemClassificacao_formulario.md` (largura de `receita_cod`; limpar formulário na add).
@@ -96,7 +96,7 @@ Após o fechamento do modal (ou após reversão automática por erro do endpoint
 ## Escopo e fora de escopo
 
 - **Escopo:** tela de **add**; `receita_nome`; `receita_nome_base_mode`; rádios; integração com preenchimento a partir de `receita_cod` / lookup do item mãe (**P-mãe**).
-- **Escopo (validação):** **G0** (nome vazio no **add**, independente do rádio) e **G1** (`trim(receita_nome)` terminando com traço **(N7)**, em **todos** os modos do **add** — inclusive `sem_base`) no **cliente** (`validateClassificationNamingOnSubmit`) **e** no **servidor** (`ItemClassificacaoAdminForm.clean()`), com definições canônicas em **I4**.
+- **Escopo (validação):** **G0** (nome vazio no **add**, independente do rádio) e **G1** (`trim(receita_nome)` terminando com traço **(N7)**, em **todos** os modos do **add** — inclusive `sem_base`) no **cliente** (`validateCodeNameOnSubmit`) **e** no **servidor** (`ItemClassificacaoAdminForm.clean()`), com definições canônicas em **I4**.
 - **Fora de escopo:** `INSERT` em `AliasLexico` a partir desta tela; alteração do seed.
 - **Fora de escopo (tela de alteração — change view):** ver seção **«Escopo na tela de alteração (change view)»** logo abaixo. `receita_nome_base_mode`, rádios de modo e protocolos **P-mãe** / **A1–A9** / **G0** / **G1** **não** se aplicam à edição de um `ItemClassificacao` existente.
 
@@ -186,9 +186,9 @@ A presente spec descreve o **protocolo de criação** (`add`) do nome da classif
 
 - **G0.1 (definição).** Na tela **add**, seja `n = trim(receita_nome)`. **Nome vazio** quando `n` não contém nenhum caractere (string vazia ou só espaços em branco). Alinhado a `schemas/item_classificacao.yaml` (`receita_nome`, `required: true`).
 - **G0.2 (escopo do modo).** **G0** aplica-se **sempre** no **add**, para **qualquer** valor de `receita_nome_base_mode` (**Abreviado**, **Completo**, **Sem base** ou vazio no POST).
-- **G0.3 (cliente).** Em `validateClassificationNamingOnSubmit`, avaliar **G0** **antes** de **G1**. Se nome vazio, **bloquear** o envio: `setCustomValidity` com **G0.5**, erro no campo e nota no topo.
+- **G0.3 (cliente).** Em `validateCodeNameOnSubmit`, avaliar **G0** **antes** de **G1**. Se nome vazio, **bloquear** o envio: `setCustomValidity` com **G0.5**, erro no campo e nota no topo.
 - **G0.4 (servidor — obrigatório).** Em `ItemClassificacaoAdminForm.clean()` na tela **add**, se **G0.1** for verdadeiro, `ValidationError` em `receita_nome` com **G0.5** (**sem** avaliar **G1** nesse caso).
-- **G0.5 (mensagem de erro).** Texto em `classification_naming_messages.py` (`receita_nome_vazio_error`). Exemplo normativo:  
+- **G0.5 (mensagem de erro).** Texto em `code_name_messages.py` (`receita_nome_vazio_error`). Exemplo normativo:  
   `Preencha o Nome da Classificação por Natureza de Receita para concluir o cadastro.`
 
 **Exemplo G0 (Abreviado — usuário apagou tudo)**  
@@ -206,7 +206,7 @@ A presente spec descreve o **protocolo de criação** (`add`) do nome da classif
 
 **Paridade entre modos:** **G1** aplica-se a **todos** os modos da tela **add** (`base_pai_completo`, `base_pai_abrev`, `sem_base` e modo vazio) e **não depende** do radical efetivo `b`: bloqueia-se gravar item novo cujo `trim(receita_nome)` termine com um **separador flexível (N7)**. Isso engloba (i) o caso particular em que `receita_nome` é exatamente a sugestão automática (`b + (N5)` para Completo ou Abreviado), (ii) qualquer nome editado pelo usuário que permaneça com traço final pendurado e (iii) entradas livres em `sem_base` terminadas em traço. A diferenciação entre os sub-casos serve apenas para selecionar a mensagem de erro em **G1.5** (G1.5.a vs G1.5.b).
 
-- **G1.1 (cliente).** Na tela **add**, após validações de código e hierarquia, executar `validateClassificationNamingOnSubmit` (**G0.3** primeiro; depois **G1**). Se **G0** não bloqueou e `trim(receita_nome)` casar o predicado de **G1.2**, **bloquear** o envio no navegador, **em qualquer** valor de `receita_nome_base_mode` (inclusive `sem_base` e vazio).
+- **G1.1 (cliente).** Na tela **add**, após validações de código e hierarquia, executar `validateCodeNameOnSubmit` (**G0.3** primeiro; depois **G1**). Se **G0** não bloqueou e `trim(receita_nome)` casar o predicado de **G1.2**, **bloquear** o envio no navegador, **em qualquer** valor de `receita_nome_base_mode` (inclusive `sem_base` e vazio).
 - **G1.2 (definição canônica).** Seja `n = trim(receita_nome)`. **Nome incompleto (G1)** quando, após **right-trim** apenas de espaços em branco em `n`, o **último caractere** de `n` for um traço pertencente a **(N7)** (`-` U+002D, `–` U+2013, `—` U+2014). Equivalentemente, `n` casa com `^.*` + `(N7)` + `\s*$`, com `(N7)` no sentido de **M2.1** (hífen ASCII, en dash ou em dash, com espaços ASCII opcionais ao redor). **(N5)** é caso particular de **(N7)**.
 
   **Escopo de modo.** O predicado **não consulta** `receita_nome_base_mode` nem o radical efetivo `b`: o bloqueio aplica-se em **todos** os modos do **add** (incluindo **`sem_base`**, **`base_pai_completo`**, **`base_pai_abrev`** e legado **`base_pai`**).
@@ -228,7 +228,7 @@ A presente spec descreve o **protocolo de criação** (`add`) do nome da classif
   **Requisito:** não gravar item novo em **add** cujo `trim(receita_nome)` termine com traço **(N7)**, qualquer que seja o modo.
 - **G1.3 (cliente — feedback).** Ao bloquear no navegador: `setCustomValidity` com a chave de mensagem adequada (`receita_nome_submit_sugestao_literal_error` para **G1.5.a**; `receita_nome_submit_traco_final_error` para **G1.5.b**), erro no campo e nota no topo (ex.: «Por favor, corrija o erro abaixo.»).
 - **G1.4 (servidor — obrigatório).** Em `ItemClassificacaoAdminForm.clean()` na tela **add**, **deve** repetir **G1.2** sobre `n = trim(receita_nome)`, **independentemente** do modo (inclusive `sem_base`). Se o predicado disparar, escolher entre **G1.5.a** e **G1.5.b** conforme a sub-regra de **G1.2** (comparação com `b_completo + (N5)` / `b_abreviado + (N5)` quando `nome_mae` estiver disponível). Em caso de bloqueio, levantar `ValidationError` em `receita_nome` com o texto correspondente. Obter `nome_mae` de `parent_item_id` resolvido; obter `radical_abreviado` via módulo **I1** / **I4**, sem duplicar **A1–A8** no formulário. Normalizar `base_pai` → `base_pai_completo` apenas para fins de exibição/auditoria (o predicado em si não depende do modo).
-- **G1.5 (mensagens de erro — duas variantes).** Textos em `classification_naming_messages.py`, usados no cliente (**G1.3**) e no servidor (**G1.4**). Redação em português do Brasil.
+- **G1.5 (mensagens de erro — duas variantes).** Textos em `code_name_messages.py`, usados no cliente (**G1.3**) e no servidor (**G1.4**). Redação em português do Brasil.
 
   - **G1.5.a — sugestão automática literal não completada.**  
     Disparada quando `n` casa com `b_completo + (N5)` **ou** `b_abreviado + (N5)` (com (N7) flexível). Chave sugerida: `receita_nome_submit_sugestao_literal_error`. Texto normativo:  
@@ -304,7 +304,7 @@ A presente spec descreve o **protocolo de criação** (`add`) do nome da classif
 ### G6 — Alerta: `termo_nome` duplicado na Lista de Abreviações
 
 - **G6.1.** Quando **A3.2** ou **A1.3** se aplicar, o sistema **deve** exibir alerta **visível** ao usuário (ex.: mensagem de aviso amarela junto ao campo `receita_nome` ou nota no topo do formulário, no mesmo espírito de `remove_base_prefix_mismatch`), **sem** substituir silenciosamente uma abreviação por outra.
-- **G6.2.** **Texto obrigatório** (pode ser *template* em `classification_naming_messages.py`, chave sugerida `receita_nome_lexico_termo_duplicado`):  
+- **G6.2.** **Texto obrigatório** (pode ser *template* em `code_name_messages.py`, chave sugerida `receita_nome_lexico_termo_duplicado`):  
   `Verifique na Lista de Abreviações: o termo_nome «{termo_nome}» está duplicado (há mais de um registro ativo).`  
   O placeholder `{termo_nome}` **deve** ser preenchido com o valor acordado em **A3.2** (`nome_mae`) ou **A1.3** (campo `termo` da linha em conflito).
 - **G6.3.** Este alerta **não** bloqueia por si só o envio do formulário de criação do item (diferente de **G1**); informa inconsistência de dados para correção na **Lista de Abreviações** no admin.
@@ -442,14 +442,14 @@ O cliente **deve** aplicar os passos abaixo em ordem, parando no primeiro que ca
 - **I1.** Lógica **A1–A8** em um módulo Python com testes (a parte **A1–A6** / ramos **A3** e **A8** produz o **radical**; **A7** documenta a concatenação obrigatória de **(N5)** no valor sugerido).
 - **I2.** O admin obtém o radical (ou o texto já com **(N5)**) via endpoint *staff* ou payload embutido, sem duplicar regras de abreviação no JS.
 - **I3.** Se a camada Python expuser **apenas** o radical sem **(N5)**, o cliente **deve** acrescentar **`sufixo_canônico`** ao montar `receita_nome`, de forma que o usuário veja sempre **`radical + " - "`** nos modos **Completo** e **Abreviado**, como em **(N5)**.
-- **I4.** Predicados em `classification_naming_validation.py`, exportando no mínimo:  
+- **I4.** Predicados em `code_name_validation.py`, exportando no mínimo:  
   - `receita_nome_vazio_no_add(nome)` → bool (**G0.1**);  
   - `validar_receita_nome_guardrail_g0(receita_nome)` → bool (True = bloquear);  
   - `receita_nome_termina_com_traco(nome)` → bool (**G1.2** — predicado **único** de bloqueio: `^.*` + `(N7)` + `\s*$`; idêntico a **M2.1**);  
   - `radical_efetivo_para_guardrail(receita_nome_base_mode, nome_mae, radical_abreviado)` → `b` ou `None` (auxiliar para escolher a mensagem entre **G1.5.a** e **G1.5.b**; `None` em `sem_base`);  
   - `receita_nome_eh_sugestao_literal(nome, b)` → bool (True quando `n` casa com `b + (N7)` (com espaços ASCII opcionais ao redor do traço, em qualquer ortografia de **(N7)**); usado para selecionar **G1.5.a**);  
   - `validar_receita_nome_guardrail_g1(receita_nome, nome_mae=None, radical_abreviado=None)` → tupla `(bloquear: bool, chave_mensagem: 'receita_nome_submit_sugestao_literal_error' | 'receita_nome_submit_traco_final_error' | None)`, agregando o predicado **G1.2** com a seleção entre **G1.5.a** e **G1.5.b**. **Não** depende de `receita_nome_base_mode` para bloquear; consulta `nome_mae` / `radical_abreviado` apenas para escolher a mensagem.  
-  **Uso obrigatório:** `ItemClassificacaoAdminForm.clean()` em **add** — **G0.4** antes de **G1.4**; **recomenda-se** o mesmo contrato no cliente (`validateClassificationNamingOnSubmit`: **G0** depois **G1**).
+  **Uso obrigatório:** `ItemClassificacaoAdminForm.clean()` em **add** — **G0.4** antes de **G1.4**; **recomenda-se** o mesmo contrato no cliente (`validateCodeNameOnSubmit`: **G0** depois **G1**).
 - **I5.** Após `syncHierarchyFromCode` com `parent.found` e `parent.name`, o `change_form` (ou módulo equivalente) **deve** chamar a API JS de **P-orq.3** com `parent.pk` e `parent.name`, sem depender do disparo de `change` em `parent_item_id`.
 
 ---
@@ -497,7 +497,7 @@ O cliente **deve** aplicar os passos abaixo em ordem, parando no primeiro que ca
 | D6  | **G1** no servidor (**I4**)                            | **Uma** definição (**G1.2**: `trim(n)` termina com **(N7)**) aplicada em **todos** os modos do **add** (inclusive `sem_base`). Predicado de bloqueio **independe** de `receita_nome_base_mode` e do radical efetivo `b`. **Duas** mensagens em **G1.5**: **G1.5.a** quando `n` coincide com sugestão literal (`b_completo + (N5)` ou `b_abreviado + (N5)`, com (N7) flexível); **G1.5.b** caso contrário. Validação em dois pontos: cliente (**G1.1**–**G1.3**) e `ItemClassificacaoAdminForm.clean()` em **add** (**G1.4**). `radical_efetivo_para_guardrail(...)` e `receita_nome_eh_sugestao_literal(...)` continuam em **I4** para alimentar a escolha entre G1.5.a e G1.5.b. **Regressão proposital:** `n === b` (sem traço final) deixa de ser bloqueio. |
 | D7  | Orquestração hierarquia → **P-mãe**                    | **P-orq.1**–**P-orq.4**, **P-mãe.2-bis**, **A9.2-bis**, **I5**: após lookup por `receita_cod`, invocar **P-mãe** com `parent.name` do JSON; não depender só de `change` + rótulo DOM; na troca de mãe, não manter prefixo de sugestão literal da mãe anterior (predicado **G1.5.a**).                                                                                                                                                                                                                                                       |
 | D8  | **A9.3** (algoritmo unificado de troca de modo) e **G2** | **A9.3** (4 passos, indep. de `receita_nome_base_mode`): **1)** no-op se `valor` já começa por `novo_prefixo`; **2)** strip exato de qualquer base em `[radical_oposto, radical_destino]` (com **(N7)** flexível) — **M1.5** é caso particular `Abreviado → Completo`; **3)** strip «tudo até o primeiro **(N7)** inclusive» com limpeza iterativa de **(N7)** residual — **corrige duplicação** quando o usuário editou o radical sugerido; **4)** se valor não tem **(N7)**, trata o valor inteiro como complemento e prepende `novo_prefixo` (regra **M1.3** antiga). Nunca empilhar prefixos. **G2.1:** «versão completa» + duas saídas (completar após o traço **ou** remover o traço final) — texto fixo. **G2.2:** «versão abreviada» + duas saídas + `nome_mae` entre aspas (template `{nome_mae}`). |
-| D9  | Conectivos (SSOT + **A6**)                             | `LEXICO_CONNECTIVOS_FIXOS` e `LEXICO_PONTUACAO_OMITIR_NAS_EXTREMIDADES` em `classification_naming_connectives.py`; infer importa só conectivos lexicais. **A6** (pontuação + conectivos) aplica-se **sempre** ao radical (**A3**, **A4**, **A8**) antes de **A7**; ponto preservado só em token **(iv)**.                                                                                                                                                                                                                                  |
+| D9  | Conectivos (SSOT + **A6**)                             | `LEXICO_CONNECTIVOS_FIXOS` e `LEXICO_PONTUACAO_OMITIR_NAS_EXTREMIDADES` em `code_name_connectives.py`; infer importa só conectivos lexicais. **A6** (pontuação + conectivos) aplica-se **sempre** ao radical (**A3**, **A4**, **A8**) antes de **A7**; ponto preservado só em token **(iv)**.                                                                                                                                                                                                                                  |
 | D10 | **G0** — nome obrigatório no **add**                   | `trim(receita_nome)` vazio → bloquear **sempre** (**G0**), **independente** do rádio; **não** altera sugestão/remoção dos rádios. **G1** continua, em todos os modos (inclusive `sem_base`), para nomes terminando em **(N7)** (ver **D6**). Ordem: **G0** → **G1**. Alinhado a `item_classificacao.yaml` (`required: true`).                                                                                                                                                                                                              |
 
 ---
@@ -510,7 +510,7 @@ O cliente **deve** aplicar os passos abaixo em ordem, parando no primeiro que ca
 
 ## Melhorias futuras opcionais
 
-- Internacionalização em `classification_naming_messages.py`.
+- Internacionalização em `code_name_messages.py`.
 - Cache do léxico por requisição.
 
 ---

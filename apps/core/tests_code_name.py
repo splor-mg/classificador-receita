@@ -2,13 +2,13 @@
 
 from django.test import SimpleTestCase
 
-from apps.core.classification_naming_abbrev import (
+from apps.core.code_name_abbrev import (
     calcular_radical_abreviado,
     norm,
     norm_colapso_espacos,
     radical_com_sufixo_canonico,
 )
-from apps.core.classification_naming_connectives import (
+from apps.core.code_name_connectives import (
     LEXICO_CONNECTIVOS_FIXOS,
     NOME_CLASSIFICACAO_CONNECTIVOS_FIXOS,
     compactar_texto_radical_a6,
@@ -16,7 +16,7 @@ from apps.core.classification_naming_connectives import (
     token_e_abreviacao_encurtamento_iv,
 )
 from apps.core.alias_lexico_infer import _CONNECTIVES
-from apps.core.classification_naming_messages import (
+from apps.core.code_name_messages import (
     MENSAGEM_SUGESTAO_LITERAL_KEY,
     MENSAGEM_TRACO_FINAL_KEY,
     RECEITA_NOME_SUBMIT_SUGESTAO_LITERAL_ERROR,
@@ -24,10 +24,10 @@ from apps.core.classification_naming_messages import (
     RECEITA_NOME_SUGESTAO_INFO_ABREV_TEMPLATE,
     RECEITA_NOME_SUGESTAO_INFO_COMPLETO,
     RECEITA_NOME_VAZIO_ERROR,
-    classification_naming_messages_dict,
+    code_name_messages_dict,
     format_receita_nome_sugestao_info_abrev,
 )
-from apps.core.classification_naming_validation import (
+from apps.core.code_name_validation import (
     radical_efetivo_para_guardrail,
     receita_nome_eh_sugestao_literal,
     receita_nome_termina_com_traco,
@@ -248,10 +248,10 @@ class G1ValidacaoTuplaTests(SimpleTestCase):
 
 
 class G1MensagensDictTests(SimpleTestCase):
-    """Chaves expostas no ``classification_naming_messages_dict``."""
+    """Chaves expostas no ``code_name_messages_dict``."""
 
     def test_chaves_presentes(self) -> None:
-        d = classification_naming_messages_dict()
+        d = code_name_messages_dict()
         self.assertEqual(
             d[MENSAGEM_SUGESTAO_LITERAL_KEY],
             RECEITA_NOME_SUBMIT_SUGESTAO_LITERAL_ERROR,
@@ -302,7 +302,7 @@ class AbbrevProtocolTests(SimpleTestCase):
         from unittest.mock import patch
 
         with patch(
-            "apps.core.classification_naming_abbrev.iter_alias_lexico_ativos_ordenados",
+            "apps.core.code_name_abbrev.iter_alias_lexico_ativos_ordenados",
             return_value=[],
         ):
             r = calcular_radical_abreviado("Taxa Única")
@@ -313,7 +313,7 @@ class AbbrevProtocolTests(SimpleTestCase):
 
         nome = "Imposto sobre a Propriedade Predial e Territorial Urbana"
         with patch(
-            "apps.core.classification_naming_abbrev.iter_alias_lexico_ativos_ordenados",
+            "apps.core.code_name_abbrev.iter_alias_lexico_ativos_ordenados",
             return_value=[],
         ):
             r = calcular_radical_abreviado(nome)
@@ -327,7 +327,7 @@ class AbbrevProtocolTests(SimpleTestCase):
 
         nome_mae = "Imposto sobre a Propriedade de Veículos Automotores"
         with patch(
-            "apps.core.classification_naming_abbrev.iter_alias_lexico_ativos_ordenados",
+            "apps.core.code_name_abbrev.iter_alias_lexico_ativos_ordenados",
             return_value=[(nome_mae, "Imposto sobre o IPVA")],
         ):
             r = calcular_radical_abreviado(nome_mae)
@@ -354,7 +354,7 @@ class AbbrevProtocolTests(SimpleTestCase):
         from unittest.mock import patch
 
         with patch(
-            "apps.core.classification_naming_abbrev.iter_alias_lexico_ativos_ordenados",
+            "apps.core.code_name_abbrev.iter_alias_lexico_ativos_ordenados",
             return_value=[],
         ):
             r = calcular_radical_abreviado("Imposto, sobre a Propriedade!")

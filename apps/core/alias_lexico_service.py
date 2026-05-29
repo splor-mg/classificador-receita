@@ -13,7 +13,7 @@ from typing import Iterable, Tuple
 from django.db.models import QuerySet
 from django.utils import timezone
 
-from apps.core.classification_naming_connectives import NOME_CLASSIFICACAO_CONNECTIVOS_FIXOS
+from apps.core.code_name_connectives import NOME_CLASSIFICACAO_CONNECTIVOS_FIXOS
 from apps.core.models import TRANSACTION_TIME_SENTINEL
 from apps.core.models_alias_lexico import AliasLexico
 
