@@ -23,13 +23,13 @@ necessário; não duplicar a política do prefixo `code_` em cada documento.
 
 Política completa e fluxo conceitual: **`docs/adr/adr-005_layout-dados.md`**. Comportamento do protocolo de importação (CLI, naming, gravação no BD): **`_dev/spec_import_*.md`** *(a redigir)*.
 
-| Local | Missão resumida |
-|-------|-----------------|
-| `docs/assets/referencias/` | Fontes externas de referência (arquivo); entrada típica do import, sem obrigar path fixo na CLI |
-| `data-raw/` | Primeiro tratamento do import: normalização tabular do arquivo bruto |
-| `data/` | Lançamentos apurados a partir de `data-raw/`; gravação no BD concluída pelo import, **não** pelo Django |
-| `docs/assets/seed_*.csv` | Recursos do `datapackage.yaml`; carga inicial via `carregar_classificador` |
-| PostgreSQL | Fonte operacional em runtime (Admin, governança ADR-004) |
+| Local                      | Missão resumida                                                                                         |
+| -------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `docs/assets/referencias/` | Fontes externas de referência (arquivo); entrada típica do import, sem obrigar path fixo na CLI         |
+| `data-raw/`                | Primeiro tratamento do import: normalização tabular do arquivo bruto                                    |
+| `data/`                    | Lançamentos apurados a partir de `data-raw/`; gravação no BD concluída pelo import, **não** pelo Django |
+| `docs/assets/seed_*.csv`   | Recursos do `datapackage.yaml`; carga inicial via `carregar_classificador`                              |
+| PostgreSQL                 | Fonte operacional em runtime (Admin, governança ADR-004)                                                |
 
 **Distinção obrigatória:** **carga** (seeds → BD) ≠ **importação** (fonte externa → `data-raw/` → `data/` → BD). O Django **não** lê `data/` nem `data-raw/` nos fluxos de carga existentes.
 
@@ -39,12 +39,12 @@ Política completa e fluxo conceitual: **`docs/adr/adr-005_layout-dados.md`**. C
 
 ### Camadas de idioma (visão geral)
 
-| Camada | Onde | Idioma | Notas |
-|--------|------|--------|--------|
-| **Semântica de produto** | `_dev/spec_*.md`, ADRs em `docs/adr/`, páginas em `docs/` | **Português do Brasil** | Tabela pt-BR vs pt-PT: `_dev/spec_agents.md` (§ Idioma da documentação) |
-| **Contrato de dados** | `schemas/`, `schemas/dominios/*.yaml` | Identificador de domínio pode ser **PT** (`orgaos_entidades`) | Catálogo de negócio; `custom.domainRef` |
-| **Implementação** | `apps/core/code_*.py`, funções, testes | **Inglês** (regra geral) | Internacionalização e PEP 8 |
-| **Persistência / modelo** | nomes de campos (`orgao_responsavel`, …) | **Como no schema** | Não renomear por i18n sem migração e spec |
+| Camada                    | Onde                                                      | Idioma                                                        | Notas                                                                   |
+| ------------------------- | --------------------------------------------------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| **Semântica de produto**  | `_dev/spec_*.md`, ADRs em `docs/adr/`, páginas em `docs/` | **Português do Brasil**                                       | Tabela pt-BR vs pt-PT: `_dev/spec_agents.md` (§ Idioma da documentação) |
+| **Contrato de dados**     | `schemas/`, `schemas/dominios/*.yaml`                     | Identificador de domínio pode ser **PT** (`orgaos_entidades`) | Catálogo de negócio; `custom.domainRef`                                 |
+| **Implementação**         | `apps/core/code_*.py`, funções, testes                    | **Inglês** (regra geral)                                      | Internacionalização e PEP 8                                             |
+| **Persistência / modelo** | nomes de campos (`orgao_responsavel`, …)                  | **Como no schema**                                            | Não renomear por i18n sem migração e spec                               |
 
 **Códigos de valor** no catálogo (ex.: `SEF-MG`, `STN-BRA`) são dados/contrato, não nomenclatura de módulo.
 
@@ -69,21 +69,21 @@ Política completa e fluxo conceitual: **`docs/adr/adr-005_layout-dados.md`**. C
   (tabela abaixo). Constantes Python podem manter prefixo alinhado ao identificador
   do domínio (ex.: `ORGAOS_ENTIDADES_CHOICES`).
 
-| YAML (`schemas/dominios/`) | Módulo Python (`apps/core/`) | Campos que consomem |
-|----------------------------|------------------------------|---------------------|
-| `orgaos_entidades.yaml` | `code_organizations_entities.py` | `orgao_responsavel` em `SerieClassificacao`, `BaseLegalTecnica` |
+| YAML (`schemas/dominios/`) | Módulo Python (`apps/core/`)     | Campos que consomem                                             |
+| -------------------------- | -------------------------------- | --------------------------------------------------------------- |
+| `orgaos_entidades.yaml`    | `code_organizations_entities.py` | `orgao_responsavel` em `SerieClassificacao`, `BaseLegalTecnica` |
 
 Ao acrescentar domínio: criar YAML, módulo `code_*` espelho, linha nesta tabela e
 entrada no inventário `code_*` abaixo.
 
 ### Código Python e scripts (`apps/`, `scripts/`, testes)
 
-| Artefato                                                                     | Idioma / convenção                                                                  |
-| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| **Nome de arquivo** (módulos `.py`, espelhos de teste)                       | **Inglês** (`snake_case`), alinhado ao inventário `code_*` e aos padrões existentes |
+| Artefato                                                                     | Idioma / convenção                                                                                     |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| **Nome de arquivo** (módulos `.py`, espelhos de teste)                       | **Inglês** (`snake_case`), alinhado ao inventário `code_*` e aos padrões existentes                    |
 | **Funções, classes, métodos, constantes**                                    | **Inglês** (`snake_case` / `PascalCase`), salvo constantes já ligadas a identificador de domínio em PT |
-| **Comentários** (`#`, docstrings de módulo quando explicam regra de negócio) | **Português do Brasil**, em primeira instância                                      |
-| **Mensagens ao usuário** (Admin, `ValidationError`, templates)               | **Português do Brasil**, salvo spec em contrário                                    |
+| **Comentários** (`#`, docstrings de módulo quando explicam regra de negócio) | **Português do Brasil**, em primeira instância                                                         |
+| **Mensagens ao usuário** (Admin, `ValidationError`, templates)               | **Português do Brasil**, salvo spec em contrário                                                       |
 
 **Termos técnicos em comentários e docstrings:** a orientação de português **não
 proíbe** manter termos consagrados em inglês (`ForeignKey`, `null`, `valid_time`,
@@ -168,7 +168,7 @@ o nome histórico.
 | `code_parent_item_validation.py`   | Regras de `parent_item_id`, hierarquia, saltos, intermediários |
 | `code_valid_time_fk_resolution.py` | Reaponte automático de FK por vigência                         |
 | `code_valid_time_fk_validation.py` | Contenção temporal filho ⊆ alvo(s) da FK                       |
-| `code_organizations_entities.py`   | Catálogo `orgaos_entidades` (choices / optgroup no Admin)        |
+| `code_organizations_entities.py`   | Catálogo `orgaos_entidades` (choices / optgroup no Admin)      |
 
 **Testes espelhados (sem prefixo `code_` no nome):** `tests_code_name.py`,
 `tests_code_parent_item_validation.py`, `tests_classification_item_*.py` (fluxos

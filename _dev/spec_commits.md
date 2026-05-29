@@ -148,13 +148,13 @@ Opcional, em **camelCase** ou **kebab-case** quando já usado no histórico (`co
 Consultar subfamílias, inventário `code_*` e tabelas de domínio em **`_dev/spec_convencoes.md`**.
 Se o commit for claramente um tema já nomeado lá, usar esse escopo:
 
-| Tema do commit                                                                              | Escopo sugerido                               |
-| ------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| Pacote / rename `code_*`, regras transversais de módulos                                    | `code` ou `code-name` (rename focado em nome) |
-| SDD, `spec_agents`, engenharia de contexto                                                  | `sdd`                                         |
-| Filtros recolhidos do sidebar do Admin                                                      | `changelist-filters`                          |
-| Convenção de commits, staging, modo sugestão/execução (`spec_commits.md`, `spec_agents.md`) | `commits`                                     | **`docs(commits)`** se diff só specs; `feat` só com código no mesmo commit |
-| Só `spec_convencoes.md` (sem `spec_commits`)                                                | `convencoes`                                  | `docs(convencoes)`                                                         |
+| Tema do commit                                                                              | Escopo sugerido                               | Tipo usual                                              |
+| ------------------------------------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------- |
+| Pacote / rename `code_*`, regras transversais de módulos                                    | `code` ou `code-name` (rename focado em nome) | —                                                       |
+| SDD, `spec_agents`, engenharia de contexto                                                  | `sdd`                                         | —                                                       |
+| Filtros recolhidos do sidebar do Admin                                                      | `changelist-filters`                          | —                                                       |
+| Convenção de commits, staging, modo sugestão/execução (`spec_commits.md`, `spec_agents.md`) | `commits`                                     | `docs(commits)`; `feat` só com código no mesmo commit   |
+| Só `spec_convencoes.md` (sem `spec_commits`)                                                | `convencoes`                                  | `docs(convencoes)`                                      |
 
 ### 2. Spec funcional que dá sentido à alteração
 
