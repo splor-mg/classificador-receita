@@ -1,9 +1,11 @@
 """
-Domínios compartilhados entre models, espelhando schemas/dominios/*.yaml.
+Catálogo de domínio ``orgaos_entidades`` para ``CharField(choices=...)`` no Django.
 
-Fonte de verdade conceitual: arquivos YAML em schemas/dominios/;
-este módulo mantém as opções para uso em CharField(choices=...) no Django
-e estruturas auxiliares para apresentação (grupos, labels combinados etc.).
+Espelha ``schemas/dominios/orgaos_entidades.yaml`` (identificador de domínio em
+português; implementação Python em inglês — ver ``_dev/spec_convencoes.md``).
+
+Campos que consomem este catálogo: ``SerieClassificacao.orgao_responsavel``,
+``BaseLegalTecnica.orgao_responsavel``. Inclui choices planas e agrupadas para o Admin.
 """
 
 # Domínio orgaos_entidades (dominios/orgaos_entidades.yaml).

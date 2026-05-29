@@ -15,9 +15,9 @@ from apps.core.code_mask import (
     get_latest_active_vigente_classificacao,
     get_mask_from_classificacao_estrutura,
 )
-from apps.core.domain_choices import ORGAOS_ENTIDADES_GROUPED_CHOICES
-from apps.core.null_normalization import normalize_text_field_value
-from apps.core.temporal_fk_resolution import (
+from apps.core.code_organizations_entities import ORGAOS_ENTIDADES_GROUPED_CHOICES
+from apps.core.code_null_normalization import normalize_text_field_value
+from apps.core.code_valid_time_fk_resolution import (
     get_temporal_fk_field_names,
     resolve_active_compatible_fk,
 )

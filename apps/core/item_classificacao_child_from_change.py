@@ -17,7 +17,7 @@ from django.utils import timezone
 from apps.core.admin_formatters import format_receita_cod_by_vigencia
 from apps.core.item_classificacao_suggest_child_code import suggest_child_code_for_parent
 from apps.core.models import ItemClassificacao
-from apps.core.parent_item_validation import digit_mask_for_classificacao_vigencia
+from apps.core.code_parent_item_validation import digit_mask_for_classificacao_vigencia
 
 FROM_CHANGE_PARENT_QUERY_PARAM = "from_change_parent"
 FROM_CHANGE_PARENT_QUERY_VALUE = "1"

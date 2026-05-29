@@ -198,11 +198,11 @@ nenhum intervalo pode começar depois do sentinela; portanto:
 
 ### Pontos de implementação
 
-- A reescrita concentra-se em `apps/core/vigencia_fk_validation.py`. Os
+- A reescrita concentra-se em `apps/core/code_valid_time_fk_validation.py`. Os
   cinco `clean()` de modelos bitemporais que já chamam
   `validate_vigencia_contained_in_fk_targets` herdam a nova semântica sem
   modificação.
-- Refinamento auxiliar em `apps/core/temporal_fk_resolution.py`: a função
+- Refinamento auxiliar em `apps/core/code_valid_time_fk_resolution.py`: a função
   `_build_identity_filter` passa a usar **apenas** o(s) campo(s) `*_ref` do
   alvo, com fallback para `*_id` somente quando nenhum `*_ref` estiver
   preenchido.

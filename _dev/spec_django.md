@@ -66,6 +66,13 @@ Com essa configuração, os apps podem ser referenciados diretamente no `INSTALL
 
 ## Implementação do App Core - Models Bitemporais
 
+### Módulos de regras de negócio (`code_`)
+
+A lógica de domínio reutilizável do classificador (nome, máscara, hierarquia,
+FK temporal, normalização de placeholders, etc.) vive em `apps/core/code_*.py`.
+Convenções, glossário temporal e inventário atual: **`_dev/spec_convencoes.md`**.
+Protocolo SDD e orientações para agentes de IA: **`_dev/spec_agents.md`**.
+
 ### Resumo da Implementação
 
 Foi implementada a estrutura básica do app `core` para gerenciamento das estruturas do Classificador de Natureza de Receita, seguindo os schemas definidos em `schemas/` e alinhado com os ADRs do projeto (ADR-001: Bitemporalidade e ADR-002: GSIM).

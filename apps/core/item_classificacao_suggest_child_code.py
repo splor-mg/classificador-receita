@@ -23,7 +23,7 @@ from apps.core.models import ItemClassificacao, NivelHierarquico
 from apps.core.item_classificacao_existing_code import (
     queryset_active_receita_cod_overlapping_vigencia,
 )
-from apps.core.parent_item_validation import (
+from apps.core.code_parent_item_validation import (
     _canonical_zero_segment,
     _receita_cod_digits_only,
     digit_mask_for_classificacao_vigencia,

@@ -6,9 +6,9 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from apps.core.models_base_legal import BaseLegalTecnica, identifier_validator
-from apps.core.domain_choices import ORGAOS_ENTIDADES_CHOICES
-from apps.core.vigencia_fk_validation import validate_vigencia_contained_in_fk_targets
-from apps.core.temporal_fk_resolution import apply_temporal_fk_resolution
+from apps.core.code_organizations_entities import ORGAOS_ENTIDADES_CHOICES
+from apps.core.code_valid_time_fk_validation import validate_vigencia_contained_in_fk_targets
+from apps.core.code_valid_time_fk_resolution import apply_temporal_fk_resolution
 
 
 # Constantes para valores sentinelas (conforme ADR-001)
@@ -643,7 +643,7 @@ class ItemClassificacao(BitemporalModel):
 
         nivel = self.nivel_id
 
-        from apps.core.parent_item_validation import (
+        from apps.core.code_parent_item_validation import (
             validate_item_nivel_id_receita_cod_derivation,
             validate_item_parent_item_rules,
             validate_item_receita_cod_level_consistency,

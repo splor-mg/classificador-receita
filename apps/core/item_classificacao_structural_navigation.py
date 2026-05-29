@@ -22,7 +22,7 @@ from apps.core.item_classificacao_code_lookup import (
     normalize_receita_cod_digits,
 )
 from apps.core.models import ItemClassificacao
-from apps.core.parent_item_validation import derive_nivel_numero_from_receita_cod_digits
+from apps.core.code_parent_item_validation import derive_nivel_numero_from_receita_cod_digits
 
 DIRECTIONS = frozenset({"next_code", "next_level", "prev_code", "prev_level"})
 

@@ -3,7 +3,7 @@
 from django.core.exceptions import ValidationError
 from django.test import SimpleTestCase
 
-from apps.core.parent_item_validation import (
+from apps.core.code_parent_item_validation import (
     derive_nivel_numero_from_receita_cod_digits,
     intermediate_levels_canonical_zero_error_message,
     nivel_id_receita_cod_derivation_error_message,
@@ -62,7 +62,7 @@ class ValidateItemNivelIdReceitaCodDerivationTests(SimpleTestCase):
             from unittest.mock import patch
 
             return inst, patch(
-                "apps.core.parent_item_validation.digit_mask_for_classificacao_vigencia",
+                "apps.core.code_parent_item_validation.digit_mask_for_classificacao_vigencia",
                 return_value=mask,
             )
         return inst, None

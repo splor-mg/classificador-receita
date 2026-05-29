@@ -21,8 +21,8 @@ from django.db import models as django_models
 from django.utils import timezone
 
 from apps.core.bitemporal_registry import get_sentinela_date
-from apps.core.domain_choices import ORGAOS_ENTIDADES_GROUPED_CHOICES
-from apps.core.null_normalization import normalize_text_field_value
+from apps.core.code_organizations_entities import ORGAOS_ENTIDADES_GROUPED_CHOICES
+from apps.core.code_null_normalization import normalize_text_field_value
 
 VIGENCIA_FIELDS = {"data_vigencia_inicio", "data_vigencia_fim"}
 

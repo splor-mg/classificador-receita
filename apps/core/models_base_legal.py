@@ -1,7 +1,7 @@
 from django.db import models
 from django.core.validators import RegexValidator
 
-from apps.core.domain_choices import ORGAOS_ENTIDADES_CHOICES
+from apps.core.code_organizations_entities import ORGAOS_ENTIDADES_CHOICES
 
 identifier_validator = RegexValidator(
     regex=r'^[A-Z0-9]+(-[A-Z0-9]+)*$',

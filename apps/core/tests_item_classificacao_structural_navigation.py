@@ -14,7 +14,7 @@ from apps.core.item_classificacao_structural_navigation import (
     _resolve_prev_level,
     _segment_code,
 )
-from apps.core.parent_item_validation import derive_nivel_numero_from_receita_cod_digits
+from apps.core.code_parent_item_validation import derive_nivel_numero_from_receita_cod_digits
 
 # Máscara da base fictícia da spec (9 níveis).
 MASK_FICT = [1, 1, 1, 1, 2, 1, 1, 2, 3]

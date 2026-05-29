@@ -27,7 +27,7 @@ from apps.core.models import (
     ItemClassificacao,
     NivelHierarquico,
 )
-from apps.core.parent_item_validation import digit_mask_for_classificacao_vigencia
+from apps.core.code_parent_item_validation import digit_mask_for_classificacao_vigencia
 
 RECEITA_COD_CHANGE_BLOCK_MESSAGE = (
     "Uma vez criado, o código canônico não pode ser substituído na mesma linha de registro. "

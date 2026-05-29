@@ -2,7 +2,7 @@
 
 Esta especificação define **como o fluxo deve funcionar** no formulário Django de **criação** (`add`) de `ItemClassificacao` no admin, quando o usuário escolhe um **item mãe** com o campo **Código Canônico da Natureza de Receita** (`receita_cod`) ainda vazio: o sistema **sugere automaticamente** o primeiro código em que pode existir **detalhamento hierárquico** coerente com a mãe, a máscara da classificação e os filhos já registrados.
 
-**Referência no repositório (alvo de implementação futura):** novo endpoint JSON no `ItemClassificacaoAdmin` (família de `lookup-hierarchy-by-code` / `lookup-parent-by-code` em `apps/core/item_classificacao_code_lookup.py`), consumo em `change_form.html` / JS dedicado; reutilização de `digit_mask_for_classificacao_vigencia`, `split_receita_cod_segments_tolerant` e `_canonical_zero_segment` em `apps/core/parent_item_validation.py`.
+**Referência no repositório (alvo de implementação futura):** novo endpoint JSON no `ItemClassificacaoAdmin` (família de `lookup-hierarchy-by-code` / `lookup-parent-by-code` em `apps/core/item_classificacao_code_lookup.py`), consumo em `change_form.html` / JS dedicado; reutilização de `digit_mask_for_classificacao_vigencia`, `split_receita_cod_segments_tolerant` e `_canonical_zero_segment` em `apps/core/code_parent_item_validation.py`.
 
 **Specs relacionadas (não substituídas):**
 

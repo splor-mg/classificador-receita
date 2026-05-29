@@ -4,7 +4,7 @@
 
 Documentar o comportamento **técnico** implementado em torno de `parent_item_id` no **Django Admin** ao **adicionar** `ItemClassificacao`: aviso de **salto de nível** (mãe não está em `L_filho − 1`), contagem/listagem de **itens intermediários** na base, e a relação com a **validação de domínio** já descrita em `_dev/spec_itemClassificacao_regras_hierarquia.md`.
 
-Esta especificação **não** substitui `spec_itemClassificacao_regras_hierarquia.md` nas regras de negócio gerais; complementa o que foi feito no **código** (`apps/core/parent_item_validation.py`, `apps/core/admin.py`, `apps/core/templates/admin/core/change_form.html`) para o fluxo de **confirmação antes do submit** e para a **análise de intermediários**.
+Esta especificação **não** substitui `spec_itemClassificacao_regras_hierarquia.md` nas regras de negócio gerais; complementa o que foi feito no **código** (`apps/core/code_parent_item_validation.py`, `apps/core/admin.py`, `apps/core/templates/admin/core/change_form.html`) para o fluxo de **confirmação antes do submit** e para a **análise de intermediários**.
 
 Lookups JSON de **código / hierarquia** no mesmo admin (lupa de mãe por código exacto e derivação de nível + mãe matriz): `_dev/spec_itemClassificacao_foreignKeys_lookup.md` (`apps/core/item_classificacao_code_lookup.py`).
 
@@ -23,7 +23,7 @@ Lookups JSON de **código / hierarquia** no mesmo admin (lupa de mãe por códig
 
 ### A) Gatilho do aviso (`level_jump`) — **só níveis**
 
-**Onde:** `ItemClassificacaoAdmin.warn_parent_level_jump_view` (`apps/core/admin.py`) apenas orquestra GET/ORM; a decisão e o payload JSON ficam em `warn_parent_level_jump_json_dict` (`apps/core/parent_item_validation.py`).
+**Onde:** `ItemClassificacaoAdmin.warn_parent_level_jump_view` (`apps/core/admin.py`) apenas orquestra GET/ORM; a decisão e o payload JSON ficam em `warn_parent_level_jump_json_dict` (`apps/core/code_parent_item_validation.py`).
 
 **Condição para `level_jump: true`:** existem `parent_item_id`, `nivel_id`, `classificacao_id`, `vigencia_inicio`, `vigencia_fim` válidos no GET; o `ItemClassificacao` mãe e o `NivelHierarquico` do filho existem; `child_n > 1`; `parent_n < child_n`; e **`parent_n != child_n − 1`**.
 
@@ -31,7 +31,7 @@ Lookups JSON de **código / hierarquia** no mesmo admin (lupa de mãe por códig
 
 ### B) Validação de zeros canônicos nos níveis intermédios — **bloqueio no código**
 
-**Onde:** `find_intermediate_non_canonical_zero_message` / `validate_intermediate_canonical_zeros_json_dict` e `validate_item_parent_item_rules` em `apps/core/parent_item_validation.py`; endpoint `validate-intermediate-canonical-zeros/` no admin.
+**Onde:** `find_intermediate_non_canonical_zero_message` / `validate_intermediate_canonical_zeros_json_dict` e `validate_item_parent_item_rules` em `apps/core/code_parent_item_validation.py`; endpoint `validate-intermediate-canonical-zeros/` no admin.
 
 Quando `parent_n < nivel_n − 1`, os segmentos do **filho** nos índices `LP .. L−2` devem ser **zeros canônicos**; caso contrário, erro **apenas** em `receita_cod`:
 
@@ -43,7 +43,7 @@ No **Salvar** (add), o cliente chama este endpoint **antes** do modal de salto (
 
 ### C) Listagem de intermediários — **outros registos em `ItemClassificacao`**
 
-**Onde:** `analyze_intermediate_items_for_level_jump` (`apps/core/parent_item_validation.py`), chamada a partir de `warn_parent_level_jump_json_dict` (mesmo módulo).
+**Onde:** `analyze_intermediate_items_for_level_jump` (`apps/core/code_parent_item_validation.py`), chamada a partir de `warn_parent_level_jump_json_dict` (mesmo módulo).
 
 Objetivo: montar `intermediate_count`, `intermediate_rows` e rótulos de nível para o texto “Além disso, existe …” no modal.
 
@@ -200,7 +200,7 @@ Fluxo no `submit` (modo **add**):
 | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `code_blur`, `classificacao_change`, `init`                 | O cliente **pode** preencher/substituir `nivel_id` pelo PK de `derived_level` devolvido por `lookup-hierarchy-by-code` (autofill).                                                                                                                                                                                       |
 | `submit`                                                    | O cliente **não** altera o valor de `nivel_id` escolhido no formulário. Compara `metadata.nivel_numero` do PK selecionado com `derived_level.number` do lookup. Se divergirem, bloqueia o submit com `<ul class="errorlist hierarchy-autofill-error">` no campo **Nível Hierárquico** e mensagem normativa (ver abaixo). |
-| Servidor (`full_clean` / `validate_item_parent_item_rules`) | `validate_item_nivel_id_receita_cod_derivation` em `parent_item_validation.py` aplica a mesma regra; erro em `nivel_id` no POST.                                                                                                                                                                                         |
+| Servidor (`full_clean` / `validate_item_parent_item_rules`) | `validate_item_nivel_id_receita_cod_derivation` em `code_parent_item_validation.py` aplica a mesma regra; erro em `nivel_id` no POST.                                                                                                                                                                                         |
 
 **Mensagem normativa (exemplo):**
 
@@ -223,7 +223,7 @@ Variáveis de contexto: `item_validate_intermediate_zeros_url`, `item_parent_lev
 | Peça                        | Arquivo / símbolo                                                                                                                                                                                                                                                                                                                                                                                          |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Rota customizada            | `ItemClassificacaoAdmin.get_urls` → `warn-parent-level-jump/`                                                                                                                                                                                                                                                                                                                                              |
-| View JSON                   | `warn_parent_level_jump_view` (`admin.py`) → `warn_parent_level_jump_json_dict` (`parent_item_validation.py`)                                                                                                                                                                                                                                                                                              |
+| View JSON                   | `warn_parent_level_jump_view` (`admin.py`) → `warn_parent_level_jump_json_dict` (`code_parent_item_validation.py`)                                                                                                                                                                                                                                                                                              |
 | Análise intermediários      | `analyze_intermediate_items_for_level_jump`                                                                                                                                                                                                                                                                                                                                                                |
 | Validação domínio pai/filho | `validate_item_parent_item_rules`, `validate_item_nivel_id_receita_cod_derivation`, `derive_nivel_numero_from_receita_cod_digits`                                                                                                                                                                                                                                                                          |
 | Modal                       | `showCoreAttentionModal` (base binária), variante tri-botão **(G5)** ou `showCoreParentChangeConfirmModal`, `showCoreLevelJumpModal` (salto ao gravar), `requestParentLevelJumpConfirmation` em `change_form.html`; troca de mãe com código preenchido — ver **(G5)** em `spec_itemClassificacao_criar_filho.md`; limpar formulário na add — ver `_dev/spec_itemClassificacao_formulario.md` (**R-clear**) |

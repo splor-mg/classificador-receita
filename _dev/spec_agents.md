@@ -44,7 +44,12 @@ sinalizar ao operador.
 Ao **sugerir ou criar** arquivos Python, funções, classes, métodos, módulos JS
 do núcleo do classificador ou testes espelhados:
 
-- Consultar **`_dev/spec_convencoes.md`** (idioma, prefixo `code_`, inventário).
+- Consultar **`_dev/spec_convencoes.md`** (camadas de idioma, prefixo `code_`,
+  inventário, tabela `schemas/dominios/` → módulo `code_*`).
+- Novo catálogo em `schemas/dominios/*.yaml`: módulo espelho em **inglês**
+  (`code_organizations_entities.py` para `orgaos_entidades.yaml`); atualizar a tabela na spec de convenções.
+- Em dúvida entre traduzir o slug do domínio ou espelhá-lo no nome do arquivo `.py`,
+  **perguntar ao operador** ou seguir a tabela domínio → módulo já registrada.
 - Respeitar padrões já usados no pacote (`code_*`, `item_classificacao_*`, `tests_code_*`).
 - Após introduzir ou renomear módulo `code_*`, **atualizar o inventário** em
   `spec_convencoes.md`.

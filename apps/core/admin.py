@@ -53,7 +53,7 @@ from apps.core.item_classificacao_existing_code import (
 from apps.core.item_classificacao_suggest_child_code import (
     suggest_child_code_by_parent_response_data,
 )
-from apps.core.parent_item_validation import (
+from apps.core.code_parent_item_validation import (
     validate_intermediate_canonical_zeros_json_dict,
     warn_parent_level_jump_json_dict,
 )

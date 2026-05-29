@@ -26,6 +26,10 @@ custom:
 |----------------------------------|---------------------------------------------------------------------|
 | `dominios/orgaos_entidades.yaml` | `serie_classificacao.orgao_responsavel`, `base_legal_tecnica.orgao_responsavel` |
 
+**Espelho Django (choices no Admin):** `apps/core/code_organizations_entities.py`
+(constantes `ORGAOS_ENTIDADES_CHOICES`, `ORGAOS_ENTIDADES_GROUPED_CHOICES`).
+Ver `_dev/spec_convencoes.md` (camadas de idioma e tabela domínio → módulo).
+
 Ao adicionar um novo domínio:
 
 1. Crie o catálogo em `schemas/dominios/novo_dominio.yaml` com `values` (e opcionalmente `labels`).
