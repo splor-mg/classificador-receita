@@ -6,15 +6,32 @@ fluxos de tela, mensagens normativas) permanecem em `_dev/spec_*.md` temáticas
 — por exemplo `spec_itemClassificacao_criar_nome.md`, `spec_foreignKeys_vigencia.md`.
 
 **Manutenção:** ao introduzir ou renomear um módulo coberto aqui, atualizar
-esta spec. Nas specs funcionais, alterar apenas **caminhos de ficheiro** quando
+esta spec. Nas specs funcionais, alterar apenas **caminhos de arquivo** quando
 necessário; não duplicar a política do prefixo `code_` em cada documento.
 
 **Referências relacionadas:**
 
 - ADR-001 (`docs/adr/adr-001_bitemporalidade.md`) — bitemporalidade
+- ADR-005 (`docs/adr/adr-005_layout-dados.md`) — layout de `docs/assets`, `data-raw/` e `data/`
 - `_dev/spec_django.md` — estrutura Django, mapeamento de campos temporais
 - `_dev/spec_agents.md` — SDD, protocolo para agentes de IA (leitura, contradições) e índice de PEP/RFC aplicáveis
 - `_dev/spec_commits.md` — Conventional Commits; linhas `See` em `_dev/_dev.md` (modo sugestão vs execução)
+
+---
+
+## Layout de artefatos de dados
+
+Política completa e fluxo conceitual: **`docs/adr/adr-005_layout-dados.md`**. Comportamento do protocolo de importação (CLI, naming, gravação no BD): **`_dev/spec_import_*.md`** *(a redigir)*.
+
+| Local | Missão resumida |
+|-------|-----------------|
+| `docs/assets/referencias/` | Fontes externas de referência (arquivo); entrada típica do import, sem obrigar path fixo na CLI |
+| `data-raw/` | Primeiro tratamento do import: normalização tabular do arquivo bruto |
+| `data/` | Lançamentos apurados a partir de `data-raw/`; gravação no BD concluída pelo import, **não** pelo Django |
+| `docs/assets/seed_*.csv` | Recursos do `datapackage.yaml`; carga inicial via `carregar_classificador` |
+| PostgreSQL | Fonte operacional em runtime (Admin, governança ADR-004) |
+
+**Distinção obrigatória:** **carga** (seeds → BD) ≠ **importação** (fonte externa → `data-raw/` → `data/` → BD). O Django **não** lê `data/` nem `data-raw/` nos fluxos de carga existentes.
 
 ---
 
@@ -24,16 +41,19 @@ necessário; não duplicar a política do prefixo `code_` em cada documento.
 
 | Camada | Onde | Idioma | Notas |
 |--------|------|--------|--------|
-| **Semântica de produto** | `_dev/spec_*.md` | **Português do Brasil** | Tradução para inglês pode existir em paralelo no futuro |
+| **Semântica de produto** | `_dev/spec_*.md`, ADRs em `docs/adr/`, páginas em `docs/` | **Português do Brasil** | Tabela pt-BR vs pt-PT: `_dev/spec_agents.md` (§ Idioma da documentação) |
 | **Contrato de dados** | `schemas/`, `schemas/dominios/*.yaml` | Identificador de domínio pode ser **PT** (`orgaos_entidades`) | Catálogo de negócio; `custom.domainRef` |
 | **Implementação** | `apps/core/code_*.py`, funções, testes | **Inglês** (regra geral) | Internacionalização e PEP 8 |
 | **Persistência / modelo** | nomes de campos (`orgao_responsavel`, …) | **Como no schema** | Não renomear por i18n sem migração e spec |
 
 **Códigos de valor** no catálogo (ex.: `SEF-MG`, `STN-BRA`) são dados/contrato, não nomenclatura de módulo.
 
-### Especificações (`_dev/spec_*.md`)
+### Especificações (`_dev/spec_*.md`), ADRs e `docs/`
 
-- Redigir em **português do Brasil**.
+- Redigir em **português do Brasil** (não português de Portugal).
+- ADRs (`docs/adr/`), páginas do site Zensical e README seguem a mesma regra.
+- Vocabulário preferido (arquivo, artefato, seção, registro, …): ver
+  **`_dev/spec_agents.md`**, § Idioma da documentação.
 - É permitido — e muitas vezes desejável — usar **termos técnicos em inglês** no
   meio do texto quando forem vocabulário usual (ex.: `foreignKey`, `null`,
   `valid_time`, `commit`, nomes de campos do modelo como `receita_cod`).

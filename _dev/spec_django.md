@@ -37,9 +37,12 @@ classificador-receita/              # Repositório raiz
 |   
 ├── schemas/                        # Schemas Frictionless (mantém)
 ├── docs/                           # Documentação (mantém)
+├── data-raw/                       # Normalização tabular do import (ADR-005)
+├── data/                           # Lançamentos do import antes da gravação no BD (ADR-005)
 └── README.md
-
 ```
+
+Layout de `docs/assets/`, `data-raw/` e `data/`: **`docs/adr/adr-005_layout-dados.md`**.
 
 ### Observação: Organização de Apps em `apps/`
 

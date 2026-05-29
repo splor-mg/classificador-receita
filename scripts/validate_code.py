@@ -10,7 +10,7 @@ compreenda a vigência do item. A máscara canônica é derivada de
 
 Uso:
     poetry run task validar-codigos
-    python scripts/validate_code.py --items data/item_classificacao.csv --niveis docs/assets/seed_nivel_hierarquico.csv
+    python scripts/validate_code.py --items docs/assets/seed_item_classificacao.csv --niveis docs/assets/seed_nivel_hierarquico.csv
 """
 
 from __future__ import annotations
@@ -208,7 +208,7 @@ def main() -> int:
     parser.add_argument(
         "--items",
         type=Path,
-        default=root / "data" / "item_classificacao.csv",
+        default=root / "docs" / "assets" / "seed_item_classificacao.csv",
         help="CSV de itens (item_classificacao)",
     )
     parser.add_argument(

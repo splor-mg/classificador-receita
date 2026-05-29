@@ -65,6 +65,7 @@ Os arquivos ADR seguem o padrão de nomenclatura: `adr-[número]_[nome-resumido-
 | [ADR-002](adr-002_gsim.md) | Adoção do Modelo GSIM para o Classificador de Receita | Proposta | - |
 | [ADR-003](adr-003_chave-semantica.md) | Chave Semântica e Referência Numérica | Proposta | - |
 | [ADR-004](adr-004_governanca-banco.md) | Governança do Banco | Proposta | - |
+| [ADR-005](adr-005_layout-dados.md) | Layout de artefatos de dados | Proposta | 2026-05-29 |
 
 ---
 

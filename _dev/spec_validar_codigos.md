@@ -42,7 +42,7 @@ O teste **falha** se:
 
 - **Script:** `scripts/validate_code.py`.
 - **Tasks:** `poetry run task validar-codigos` (somente códigos); `poetry run task validar-tudo` (schemas + códigos + qualidade).
-- **Entradas:** CSV de itens (ex.: `data/item_classificacao.csv`) e CSV de classificação (ex.: `docs/assets/seed_classificacao.csv`). Argumentos `--items` e `--classificacao` permitem alterar os caminhos.
+- **Entradas:** CSV de itens (ex.: `docs/assets/seed_item_classificacao.csv`) e CSV de classificação (ex.: `docs/assets/seed_classificacao.csv`). Argumentos `--items` e `--niveis` permitem alterar os caminhos (ver `scripts/validate_code.py`).
 - Se o arquivo de itens não existir, o script termina com sucesso (exit 0) e mensagem informativa, sem falhar o pipeline.
 
 ## Referência no schema

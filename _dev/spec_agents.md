@@ -36,14 +36,14 @@ commitar**, **push**, **staging** ou frases equivalentes («ajuda com o commit»
 commitar», «sugestão de commit», «pode fazer o commit», etc.):
 
 1. **Ler na íntegra** **`_dev/spec_commits.md`** antes de responder — não improvisar formato,
-   escopo, modo sugestão vs execução nem regras de `dev(toDo)` só a partir deste ficheiro.
+   escopo, modo sugestão vs execução nem regras de `dev(toDo)` só a partir deste arquivo.
 2. **Ler** **`_dev/_dev.md`** para as linhas `See` (quando for redigir mensagem).
 3. **Seguir** o protocolo de `spec_commits.md` (inventário/diff → agrupamento → `git add`
    sugerido → mensagem → encerramento com opções clicáveis; execução real só § Modo execução).
 4. **Não** substituir `spec_commits.md` por hábitos genéricos de Conventional Commits ou por
    mensagens de commits antigos do repo sem verificar o diff atual.
 
-Esta secção **complementa** § Sugestão de commit e staging (resumo operacional); em caso de
+Esta seção **complementa** § Sugestão de commit e staging (resumo operacional); em caso de
 dúvida, **`spec_commits.md` prevalece**.
 
 ---
@@ -53,7 +53,8 @@ dúvida, **`spec_commits.md` prevalece**.
 1. **`_dev/spec_convencoes.md`** — obrigatório para nomenclatura e organização.
 2. **Specs temáticas** ligadas à tarefa (ex.: nome no add → `spec_itemClassificacao_criar_nome.md`).
 3. **`_dev/spec_django.md`** — quando a tarefa envolver Admin, models bitemporais ou estrutura Django.
-4. **ADRs em `docs/adr/`** — quando a decisão arquitetural (bitemporalidade, chaves) for relevante.
+4. **ADRs em `docs/adr/`** — quando a decisão arquitetural (bitemporalidade, chaves, layout de dados) for relevante; papéis de `docs/assets/`, `data-raw/` e `data/` → **ADR-005**.
+5. **`_dev/spec_import_*.md`** — quando a tarefa envolver o protocolo de importação *(spec a redigir)*.
 
 Não inventar regra de domínio que não esteja nas specs ou no código existente sem
 sinalizar ao operador.
@@ -79,12 +80,37 @@ funcionais.
 
 ### Documentação (SDD primeiro)
 
-| Tipo de mudança                                  | Onde documentar                                              |
-| ------------------------------------------------ | ------------------------------------------------------------ |
-| Comportamento, fluxo Admin, mensagens ao usuário | Atualizar a **`_dev/spec_*.md` temática** (trechos afetados) |
-| Novo módulo `code_*` ou rename                   | Inventário em **`_dev/spec_convencoes.md`**                  |
-| Decisão arquitetural duradoura                   | ADR em **`docs/adr/`**                                       |
-| Anotações pessoais de desenvolvimento            | `_dev/toDo.md` (commit `dev(toDo)` — ver `spec_commits.md`)  |
+| Tipo de mudança                                               | Onde documentar                                                                                           |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Comportamento, fluxo Admin, mensagens ao usuário              | Atualizar a **`_dev/spec_*.md` temática** (trechos afetados)                                              |
+| Novo módulo `code_*` ou rename                                | Inventário em **`_dev/spec_convencoes.md`**                                                               |
+| Decisão arquitetural duradoura                                | ADR em **`docs/adr/`**                                                                                    |
+| Layout de pastas de dados (`data`, `data-raw`, `docs/assets`) | **ADR-005** + índice em **`spec_convencoes.md`**; detalhe operacional do import em **`spec_import_*.md`** |
+| Anotações pessoais de desenvolvimento                         | `_dev/toDo.md` (commit `dev(toDo)` — ver `spec_commits.md`)                                               |
+
+#### Idioma da documentação (português do Brasil)
+
+Sempre que redigir ou revisar texto em **português** no repositório — specs em
+`_dev/spec_*.md`, **ADRs** em `docs/adr/`, páginas em `docs/`, comentários
+normativos em README — usar **português do Brasil**, não português de Portugal.
+
+Orientações práticas (lista não exaustiva):
+
+| Preferir (pt-BR) | Evitar (pt-PT)                           |
+| ---------------- | ---------------------------------------- |
+| arquivo          | ficheiro                                 |
+| artefato         | artefacto                                |
+| usuário          | utilizador                               |
+| registro         | registo                                  |
+| seção            | secção                                   |
+| conceitual       | conceptual                               |
+| intermediário    | intermédio                               |
+| refatoração      | refactor (como substantivo de documento) |
+
+Termos técnicos em **inglês** (`foreignKey`, `valid_time`, `commit`, nomes de
+pastas e identificadores de código) permanecem como já estão. Mensagens ao
+usuário final no Admin: **português do Brasil** (ver também
+`_dev/spec_convencoes.md`, § Idioma e nomenclatura).
 
 **Não** exigir página em `docs/` para cada alteração de código. **Não** inventar
 SemVer de release, pastas `up.sql`/`down.sql`, pipelines genéricos ou tabelas
@@ -148,11 +174,11 @@ Resumo do que `spec_commits.md` exige (detalhes e exemplos lá):
 Pedidos como «ajuda com o commit», «vamos fazer o commit», «sugestão de commit», etc.:
 
 1. **Inventariar** — `git status` / diff; resumir conteúdo alterado.
-2. **Agrupar** — proposta(s) numerada(s): ficheiros → `git add` (copy-paste) → mensagem.
+2. **Agrupar** — proposta(s) numerada(s): arquivos → `git add` (copy-paste) → mensagem.
 3. **Dúvidas** (vários commits, incluir `toDo`, …) — opções **clicáveis**; não adivinhar.
 4. **`See`** — copiar **`_dev/_dev.md`** (linha a linha). Atualizar toDo → `dev(toDo): atualizar anotações`, sem corpo.
 5. **Encerrar** perguntando com clique se deve **executar commit completo** (e qual proposta).
-6. **Nunca** correr `git commit` / `git push` neste modo — só texto e comandos sugeridos.
+6. **Nunca** executar `git commit` / `git push` neste modo — só texto e comandos sugeridos.
 
 ### Modo execução (só se explícito)
 

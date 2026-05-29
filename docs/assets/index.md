@@ -1,16 +1,25 @@
 # Documentos e dados em `docs/assets`
 
-## Entidades/tabelas
+## Papéis no repositório
 
-A tabela abaixo discrimina o propósito e respectivo conteúdo de cada uma das entidades/tabelas da pasta `schemas`.
+Esta pasta concentra os **recursos publicados** do classificador (seeds do datapackage) e o **arquivo de fontes externas**. Outras zonas de dados na raiz do repositório têm missões distintas — ver [ADR-005: Layout de artefatos de dados](../adr/adr-005_layout-dados.md) e o índice em `_dev/spec_convencoes.md`.
 
+| Local | Conteúdo | Missão |
+|-------|----------|--------|
+| **`docs/assets/seed_*.csv`** | CSVs listados em `datapackage.yaml` | Carga inicial / reposição via `carregar_classificador`; validação Frictionless |
+| **`docs/assets/referencias/`** | Ementários, manuais, exemplos (`exemplo_*.csv`, XLSX, RTF) | Fontes externas de referência; entrada típica do protocolo de importação |
+| **`data-raw/`** *(raiz)* | *(produzido pelo import)* | Normalização tabular do arquivo bruto (primeiro tratamento) |
+| **`data/`** *(raiz)* | *(produzido pelo import)* | Lançamentos apurados para gravação no BD pelo protocolo de importação |
 
+O Django **não** lê `data/` nem `data-raw/` na carga de seeds. A spec operacional do import ficará em `_dev/spec_import_*.md` *(a redigir)*.
+
+---
 
 ## Exemplos de Lançamentos
 
 ### Série de Classificação
 
-Exemplos de registros para descrever a série de classificação, conforme demonstrado em `docs/assets/referencias`,  doc [exemplo_serie_classificacao.csv](referencias/exemplo_serie_classificacao.csv).
+Exemplos de registros para descrever a série de classificação, conforme demonstrado em `docs/assets/referencias`, doc [exemplo_serie_classificacao.csv](referencias/exemplo_serie_classificacao.csv).
 
 1. Em 01/01/2023, faz-se o registro inicial do classificador de receita do Estado de Minas Gerais, cuja vigência se inicia na mesma data, sendo o órgão responsável pelo gerenciado é a SEF/MG.
 

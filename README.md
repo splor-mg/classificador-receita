@@ -63,6 +63,10 @@ Os **models Django** (`apps/core/models.py`) e as migrations são a implementaç
 2. Ajustar os models Django e gerar novas migrations para refletir essas mudanças.
 3. Rodar os scripts de validação ( antes de aplicar as migrations em ambientes compartilhados.
 
+### Layout de artefatos de dados
+
+O repositório separa **carga inicial** (seeds em `docs/assets/seed_*.csv`), **importação de fontes externas** (artefatos em `data-raw/` e `data/`) e **runtime** (PostgreSQL). Papéis de cada pasta: [ADR-005](docs/adr/adr-005_layout-dados.md). O protocolo de importação será especificado em `_dev/spec_import_*.md` *(a redigir)*.
+
 
 ## Scripts de Validação e Geração
 
@@ -100,6 +104,4 @@ poetry run task gerar-erd
 **Arquivos gerados:**
 - `docs/erd/erd.dot` - Diagrama em formato Graphviz DOT.
 - `docs/erd/erd.png` - Diagrama em formato PNG (se graphviz estiver instalado).
-
-```
 
