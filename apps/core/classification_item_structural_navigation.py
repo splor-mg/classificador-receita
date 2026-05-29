@@ -338,38 +338,79 @@ def _resolve_prev_code(ctx: _NavContext) -> Optional[str]:
     return _ascend_variation(ctx, forward=False)
 
 
-def _resolve_next_level(ctx: _NavContext) -> Optional[str]:
+def _parse_nv_target(raw: Optional[str]) -> Optional[int]:
+    if raw is None:
+        return None
+    value = str(raw).strip()
+    if not value.isdigit():
+        return None
+    parsed = int(value)
+    return parsed if parsed >= 1 else None
+
+
+def _effective_nv_target(ctx: _NavContext, nv_target: Optional[int]) -> int:
+    if nv_target is not None and nv_target >= 1:
+        return nv_target
+    return ctx.nv_edit
+
+
+def _resolve_next_level(ctx: _NavContext, *, nv_target: int) -> Optional[str]:
+    """
+    (G-nav.next-level): L3 se NV-EDIT < NV-TARGET; senão L1 (irmão) e L2 (subir).
+    """
+    if ctx.nv_edit < nv_target:
+        return _resolve_next_code(ctx)
     found = _sibling_at_level(ctx, ctx.nv_edit, forward=True)
     if found:
         return found
     return _ascend_variation(ctx, forward=True)
 
 
-def _resolve_prev_level(ctx: _NavContext) -> Optional[str]:
+def _resolve_prev_level(ctx: _NavContext, *, nv_target: int) -> Optional[str]:
+    """
+    (G-nav.prev-level): L3 se NV-EDIT != NV-TARGET; senão L1 (irmão) e L2 (subir).
+    """
+    if ctx.nv_edit != nv_target:
+        return _resolve_prev_code(ctx)
     found = _sibling_at_level(ctx, ctx.nv_edit, forward=False)
     if found:
         return found
     return _ascend_variation(ctx, forward=False)
 
 
-def _resolve_direction(ctx: _NavContext, direction: str) -> Optional[str]:
+def _resolve_direction(
+    ctx: _NavContext,
+    direction: str,
+    *,
+    nv_target: Optional[int] = None,
+) -> Optional[str]:
     if direction == "next_code":
         return _resolve_next_code(ctx)
     if direction == "prev_code":
         return _resolve_prev_code(ctx)
+    effective = _effective_nv_target(ctx, nv_target)
     if direction == "next_level":
-        return _resolve_next_level(ctx)
+        return _resolve_next_level(ctx, nv_target=effective)
     if direction == "prev_level":
-        return _resolve_prev_level(ctx)
+        return _resolve_prev_level(ctx, nv_target=effective)
     return None
 
 
-def structural_navigation_availability(obj: ItemClassificacao) -> Dict[str, bool]:
+def structural_navigation_availability(
+    obj: ItemClassificacao,
+    *,
+    nv_target: Optional[int] = None,
+) -> Dict[str, bool]:
     ctx = _build_nav_context(obj)
     if not ctx:
         return {d: False for d in DIRECTIONS}
+    parsed = _parse_nv_target(str(nv_target)) if nv_target is not None else None
+    effective = _effective_nv_target(ctx, parsed)
     return {
-        d: _resolve_direction(ctx, d) is not None for d in DIRECTIONS
+        "next_code": _resolve_next_code(ctx) is not None,
+        "prev_code": _resolve_prev_code(ctx) is not None,
+        "next_level": _resolve_next_level(ctx, nv_target=effective) is not None,
+        "prev_level": _resolve_prev_level(ctx, nv_target=effective) is not None,
     }
 
 
@@ -383,12 +424,23 @@ def _classificacao_display(obj: ItemClassificacao) -> Tuple[str, str]:
     return sem, display
 
 
-def _append_changelist_filters(change_url: str, request: HttpRequest) -> str:
+def _append_change_url_query(
+    change_url: str,
+    request: HttpRequest,
+    *,
+    nv_target: Optional[int] = None,
+    include_nv_target: bool = False,
+) -> str:
+    params: List[str] = []
     filters = (request.GET.get("_changelist_filters") or "").strip()
-    if not filters:
+    if filters:
+        params.append(f"_changelist_filters={filters}")
+    if include_nv_target and nv_target is not None and nv_target >= 1:
+        params.append(f"structural_nav_nv_target={nv_target}")
+    if not params:
         return change_url
     sep = "&" if "?" in change_url else "?"
-    return f"{change_url}{sep}_changelist_filters={filters}"
+    return f"{change_url}{sep}{'&'.join(params)}"
 
 
 def resolve_structural_navigation_response_data(
@@ -412,7 +464,15 @@ def resolve_structural_navigation_response_data(
             "message": "Navegação estrutural indisponível para este registro.",
         }
 
-    target_code = _resolve_direction(ctx, direction)
+    level_direction = direction in {"next_level", "prev_level"}
+    request_nv_target = _parse_nv_target(request.GET.get("nv_target"))
+    effective_nv_target = _effective_nv_target(ctx, request_nv_target)
+
+    target_code = _resolve_direction(
+        ctx,
+        direction,
+        nv_target=effective_nv_target if level_direction else None,
+    )
     if not target_code:
         return {
             "ok": False,
@@ -445,7 +505,12 @@ def resolve_structural_navigation_response_data(
         }
 
     target_obj = _pick_navigation_record(overlapping)
-    change_url = _append_changelist_filters(_item_admin_change_url(target_obj), request)
+    change_url = _append_change_url_query(
+        _item_admin_change_url(target_obj),
+        request,
+        nv_target=effective_nv_target,
+        include_nv_target=level_direction,
+    )
     codigo_display = format_receita_cod_by_vigencia(
         target_obj.receita_cod or target_code,
         target_obj.data_vigencia_inicio,
@@ -459,7 +524,7 @@ def resolve_structural_navigation_response_data(
             " -"
         )
 
-    return {
+    response: Dict[str, Any] = {
         "ok": True,
         "direction": direction,
         "codigo_display": codigo_display,
@@ -473,3 +538,7 @@ def resolve_structural_navigation_response_data(
             "origin_classificacao_display": origin_display,
         },
     }
+    if level_direction:
+        response["nv_target"] = effective_nv_target
+        response["level_seq_active"] = True
+    return response

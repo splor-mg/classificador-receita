@@ -27,14 +27,15 @@ Esta especificação define quatro protocolos de **navegação estrutural** na v
 
 ## Escopo
 
-| Inclui                                                                         | Não inclui                                                  |
-| ------------------------------------------------------------------------------ | ----------------------------------------------------------- |
-| View **change** de `ItemClassificacao`                                         | View **add**                                                |
-| Barra **(G-nav.ui-toolbar)** e quatro botões **(G-nav.ui-controls)** na change | Navegação por **blur** / modais **M2–M4** (`editar_codigo`) |
-| Destino apenas **(T-cod.2)** → `change` do registro desempatado                | Destino **add** ou **(T-cod.3)**                            |
-| Navegação entre `classificacao_id` diferentes (intencional)                    | Alterar `receita_cod` do registro aberto                    |
-| Aviso na UI se a classificação do destino divergir                             | Regras de `parent_item_id` na gravação                      |
-| Endpoint `resolve-structural-navigation` (recomendado)                         | Atalhos de teclado (fora desta versão)                      |
+| Inclui                                                                         | Não inclui                                                         |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| View **change** de `ItemClassificacao`                                         | View **add**                                                       |
+| Barra **(G-nav.ui-toolbar)** e quatro botões **(G-nav.ui-controls)** na change | Navegação por **blur** / modais **M2–M4** (`editar_codigo`)        |
+| Destino apenas **(T-cod.2)** → `change` do registro desempatado                | Destino **add** ou **(T-cod.3)**                                   |
+| Navegação entre `classificacao_id` diferentes (intencional)                    | Alterar `receita_cod` do registro aberto                           |
+| Aviso na UI se a classificação do destino divergir                             | Regras de `parent_item_id` na gravação                             |
+| Endpoint `resolve-structural-navigation` (recomendado)                         | Atalhos de teclado (fora desta versão)                             |
+| **NV-TARGET** e sequência de nível (**(G-nav.level-seq)**)                     | Alterar algoritmo de **(G-nav.next-code)** / **(G-nav.prev-code)** |
 
 ---
 
@@ -44,6 +45,7 @@ Esta especificação define quatro protocolos de **navegação estrutural** na v
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **COD-EDIT**   | Código canônico do registro em edição (dígitos `0-9`, sem pontuação de máscara). Equivalente a **COD-1** em `editar_codigo` na carga da página (não o valor eventualmente digitado no input).                                            |
 | **NV-EDIT**    | Nível hierárquico derivado de **COD-EDIT** (ver abaixo).                                                                                                                                                                                 |
+| **NV-TARGET**  | Nível de referência para **(G-nav.next-level)** e **(G-nav.prev-level)** durante uma **sequência de nível** (ver abaixo). Fixado no primeiro clique em próximo/nível anterior da sequência; não muda até a sequência encerrar.           |
 | **V1**         | Vigência do registro aberto: `data_vigencia_inicio` e `data_vigencia_fim` do `instance` na change.                                                                                                                                       |
 | **MASK-EDIT**  | Máscara de segmentos (larguras por nível) da `estrutura_codigo` **efetivamente utilizada** para formatar/apresentar **COD-EDIT** na change ao iniciar a navegação (mesma fonte que `runCodeDigitValidation` / máscara visível no campo). |
 | **`<código>`** | **COD-EDIT** ou destino formatado com **MASK-EDIT** para exibição.                                                                                                                                                                       |
@@ -109,8 +111,43 @@ Concatenação dos dígitos dos níveis `1` a `N`, inclusive, segundo **MASK-EDI
 
 ### Zero canônico
 
-Segmento em que todos os dígitos são `0`, com largura do nível em **MASK-EDIT** (ex.: `0`, `00`, `000`). Um nível é considerado como contendo `zero canônico` quando todos os dígitos correspondentes àquele nível assumem o 
-valor zero previsto pela respectiva `estrutura_codigo`.
+Segmento em que todos os dígitos são `0`, com largura do nível em **MASK-EDIT** (ex.: `0`, `00`, `000`). Um nível é considerado como contendo `zero canônico` quando todos os dígitos correspondentes àquele nível assumem o valor zero previsto pela respectiva `estrutura_codigo`.
+
+---
+
+## Sequência de nível **(G-nav.level-seq)**
+
+Protocolos **(G-nav.next-level)** e **(G-nav.prev-level)** percorrem a árvore preferindo **irmãos no mesmo nível hierárquico**. Quando não há mais irmãos e o protocolo **sobe** para um ramo ancestral, o destino pode ficar numa **matriz** com **NV-EDIT** menor que o nível em que o usuário iniciou a sequência. Neste caso, cliques seguintes devem **re-descer** no novo ramo (como **(G-nav.next-code)** / **(G-nav.prev-code)**), **um passo por clique**, até **NV-EDIT = NV-TARGET**, e só então retomar irmãos nessa profundidade.
+
+### **NV-TARGET**
+
+| Regra                   | Descrição                                                                                                                                                                                                 |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **(G-nav.level-seq.1)** | **Início:** no **primeiro** clique em **(G-nav.next-level)** ou **(G-nav.prev-level)** após abrir a change **sem** sequência activa → `NV-TARGET := NV-EDIT` do registro nesse momento.                   |
+| **(G-nav.level-seq.2)** | **Manutenção:** enquanto a sequência estiver activa, **NV-TARGET** **não** muda, ainda que **NV-EDIT** do registro aberto varie após redirecionamentos.                                                   |
+| **(G-nav.level-seq.3)** | **Fim:** clique em **(G-nav.next-code)** ou **(G-nav.prev-code)**; navegação por **blur** (**G-cod.blur**); abrir change **sem** parâmetro de sequência; ou URL de change que não preserve **NV-TARGET**. |
+| **(G-nav.level-seq.4)** | **(G-nav.next-code)** e **(G-nav.prev-code)** **não** recebem nem propagam **NV-TARGET**; encerram qualquer sequência activa.                                                                             |
+
+### Persistência (cliente e endpoint)
+
+- O cliente **deve** enviar `nv_target` em pedidos `next_level` / `prev_level` quando a sequência já estiver activa.
+- A `change_url` de destino **deve** incluir query `structural_nav_nv_target=<int>` (preservar juntamente com `_changelist_filters` quando existir).
+- Na carga da change, se `structural_nav_nv_target` estiver presente e for inteiro ≥ 1, a sequência considera-se **activa** com esse **NV-TARGET** (não redefinir no primeiro clique de nível até **(G-nav.level-seq.3)**).
+- **Disponibilidade dos botões:** avaliar **(G-nav.next-level)** / **(G-nav.prev-level)** com **NV-TARGET** da sequência (activa ou hipotética `NV-TARGET := NV-EDIT` na pré-visualização quando inactiva).
+
+### Reutilização de **(G-nav.next-code)** / **(G-nav.prev-code)**
+
+Nas fases de **descida** / **subida** de profundidade (ver **Fase L3** abaixo), aplica-se o resolvedor de **(G-nav.next-code)** ou **(G-nav.prev-code)** **exactamente uma vez** por clique — o mesmo algoritmo das três etapas de cada protocolo de código, produzindo **um** candidato. **Não** confundir com o botão «Próximo código»: é reutilização do **algoritmo**, não do eixo de navegação nem da sequência de nível.
+
+### Casos de borda **(G-nav.level-seq)**
+
+| Situação                                                       | Comportamento                                                                                                    |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| L3 sem candidato **(G-nav.next-code)** / **(G-nav.prev-code)** | Botão de nível desabilitado; **não** saltar silenciosamente para outro ramo.                                     |
+| **NV-EDIT = NV-TARGET** após L2                                | Próximo clique usa L1 (irmãos no nível alvo).                                                                    |
+| Código «não navegável» na descida L3                           | Ignorar; aplicar **(G-nav.next-code)** ao conjunto restante (equivalente a candidato inexistente naquele passo). |
+| **NV-TARGET** inválido na URL                                  | Ignorar parâmetro; tratar como sequência inactiva.                                                               |
+| Registro inactivo (**não** **(T6)**)                           | Sequência não inicia; botões de nível desabilitados.                                                             |
 
 ---
 
@@ -167,7 +204,7 @@ Quatro `button type="button"` em grupo contíguo (`role="group"`, `aria-label="N
 | 3   | `>`             | **(G-nav.next-code)**  | `core-nav-next-code`  |
 | 4   | `»` ou `>>`     | **(G-nav.next-level)** | `core-nav-next-level` |
 
-**Metáfora:** seta **simples** = deslocamento ao longo da árvore (código anterior / próximo código); seta **dobrada** = deslocamento entre **irmãos** no nível **NV-EDIT** (nível anterior / próximo nível). **Não** representam «primeiro/último» nem paginação do admin.
+**Metáfora:** seta **simples** = deslocamento ao longo da árvore (código anterior / próximo código); seta **dobrada** = deslocamento entre **irmãos** preferencialmente no nível **NV-TARGET** (sequência de nível), subindo ou descendo ramos quando necessário. **Não** representam «primeiro/último» nem paginação do admin.
 
 **Estilo visual (distinto de `object-tools`):**
 
@@ -208,6 +245,8 @@ Paridade com `_dev/spec_itemClassificacao_criar_filho.md` (**Alterações não g
 
 Após confirmação (ou se não houver dirty), `location.assign` para a `change_url` do destino.
 
+**Sequência de nível na UI:** botões **(G-nav.next-level)** e **(G-nav.prev-level)** leem/gravam `structural_nav_nv_target` (URL ou estado equivalente). Botões **(G-nav.next-code)** e **(G-nav.prev-code)** **não** incluem o parâmetro e **encerram** a sequência no destino.
+
 ### **(G-nav.ui-warning-class)** Classificação diferente
 
 Se o `classificacao_id` do destino desempatado for diferente do registro aberto, exibir aviso **antes** do redirecionamento (modal `showCoreAttentionModal` ou equivalente), com sentido obrigatório:
@@ -222,27 +261,31 @@ Botões: **Cancelar** | **Continuar**. **Cancelar** mantém a change atual. **Co
 
 `GET …/admin/core/itemclassificacao/resolve-structural-navigation/`
 
-| Parâmetro   | Obrigatório | Descrição                                                  |
-| ----------- | ----------- | ---------------------------------------------------------- |
-| `pk`        | Sim         | PK do registro em edição (origem).                         |
-| `direction` | Sim         | `next_code` \| `next_level` \| `prev_code` \| `prev_level` |
+| Parâmetro   | Obrigatório | Descrição                                                                                                                       |
+| ----------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `pk`        | Sim         | PK do registro em edição (origem).                                                                                              |
+| `direction` | Sim         | `next_code` \| `next_level` \| `prev_code` \| `prev_level`                                                                      |
+| `nv_target` | Condicional | Obrigatório para `next_level` / `prev_level` quando a sequência já está activa; omitir ou ignorar em `next_code` / `prev_code`. |
 
-O servidor obtém **COD-EDIT**, **V1**, **MASK-EDIT** e **NV-EDIT** a partir do `instance` e da máscara efetiva na change.
+O servidor obtém **COD-EDIT**, **V1**, **MASK-EDIT** e **NV-EDIT** a partir do `instance` e da máscara efetiva na change. Para `next_level` / `prev_level`, usar **NV-TARGET** conforme **(G-nav.level-seq)**.
 
-**Resposta com destino:**
+**Resposta com destino (campos adicionais para sequência de nível):**
 
 ```json
 {
   "ok": true,
-  "direction": "next_code",
-  "codigo_display": "1.1.1.2.00.0.0.00.001",
+  "direction": "next_level",
+  "nv_target": 6,
+  "level_seq_active": true,
+  "codigo_display": "1.1.1.4.01.0.0.00.000",
   "target": {
-    "pk": "123",
-    "receita_cod": "111120000000001",
-    "change_url": "/admin/core/itemclassificacao/123/change/",
+    "pk": "456",
+    "receita_cod": "…",
+    "change_url": "/admin/core/itemclassificacao/456/change/?structural_nav_nv_target=6",
     "classificacao_id": "…",
     "classificacao_display": "…",
-    "classificacao_changed": false
+    "classificacao_changed": false,
+    "origin_classificacao_display": "…"
   }
 }
 ```
@@ -343,35 +386,147 @@ Obs.: `1.1.1.2.52.0.0.00.000` não é `COD-PROX` (dígito `52` não é superior 
 
 ## **(G-nav.next-level)** — Próximo nível
 
-### etapa-1
+Resolver **uma** destino por clique, com **NV-TARGET** da sequência activa ou **NV-TARGET := NV-EDIT** no início da sequência. Ordem de fases (**parar na primeira** que produzir candidato):
 
-Prefixo `radical(NV-EDIT − 1)`; no nível **NV-EDIT**, **menor** segmento existente **superior** ao atual; posteriores em zero canônico.
+### Fase L1 — Irmão no nível efectivo
 
-#### Ex.: 1.1
+Quando **NV-EDIT ≥ NV-TARGET**:
 
-- `COD-EDIT`: `1.1.1.2.52.0.0.00.000` (NV-EDIT=5)
-- prefixo: `"1.1.1.2"` (nível 4); dígito atual: `"52"`
+- Prefixo `radical(NV-EDIT − 1)`; no nível **NV-EDIT**, **menor** segmento existente **superior** ao actual entre candidatos navegáveis; níveis posteriores a **NV-EDIT** em zero canônico no candidato.
+- Equivalente à antiga **etapa-1**.
+
+#### Ex.: L1.1
+
+- `COD-EDIT`: `1.1.1.2.52.0.0.00.000` (NV-EDIT=5); **NV-TARGET**=5
 - `COD-PROX-NV`: `1.1.1.2.53.0.0.00.000` (NV-COD-PROX-NV=5)
 
----
+#### Ex.: L1.2
 
-#### Ex.: 1.2
-
-- `COD-EDIT`: `1.1.1.1.00.0.0.00.000` (NV-EDIT=4)
-- prefixo: `"1.1.1"` (nível 3); dígito atual: `"1"`
+- `COD-EDIT`: `1.1.1.1.00.0.0.00.000` (NV-EDIT=4); **NV-TARGET**=4
 - `COD-PROX-NV`: `1.1.1.2.00.0.0.00.000` (NV-COD-PROX-NV=4)
 
 ---
 
-### etapa-2
+### Fase L2 — Subir: próximo irmão ancestral
 
-Se etapa-1 não encontrar: mesma repetição ascendente da etapa-3 de **(G-nav.next-code)** (subir nível a nível até 1).
+Quando L1 não encontra candidato:
 
-#### Ex.: 2.1
+- Repetição ascendente (nível `L` de `NV-EDIT − 1` até `1`): **menor** segmento no nível **L** **superior** ao descartado em **COD-EDIT**, com níveis posteriores a **L** em zero canônico no candidato (mesma lógica da etapa-3 de **(G-nav.next-code)**).
+- **Um degrau por clique** — o destino pode ter **NV-EDIT < NV-TARGET** (matriz ancestral).
+- **Não** exigir que o destino final esteja em **NV-TARGET**.
 
-- `COD-EDIT`: `1.1.1.2.52.0.4.02.000` (NV-EDIT=8)
-- prefixo: `"1.1.1.2"` (nível 4); dígito descartado: `"52"`
+#### Ex.: L2.1
+
+- `COD-EDIT`: `1.1.1.2.52.0.4.02.000` (NV-EDIT=8); **NV-TARGET**=8
 - `COD-PROX-NV`: `1.1.1.2.53.0.0.00.000` (NV-COD-PROX-NV=5)
+
+#### Ex.: L2.2 (troca de ramo)
+
+- `COD-EDIT`: `1.1.1.3.03.4.0.00.000` (NV-EDIT=6); **NV-TARGET**=6
+- `COD-PROX-NV`: `1.1.1.4.00.0.0.00.000` (NV-COD-PROX-NV=4)
+
+#### Ex.: L2.3 (irmão ancestral intermédio)
+
+- `COD-EDIT`: `1.1.1.4.01.5.0.00.000` (NV-EDIT=6); **NV-TARGET**=6
+- `COD-PROX-NV`: `1.1.1.4.50.0.0.00.000` (NV-COD-PROX-NV=5) — **não** saltar directamente para `1.1.1.5.00…` enquanto existir irmão no nível 5 sob `1.1.1.4`.
+
+---
+
+### Fase L3 — Descer: um passo de **(G-nav.next-code)**
+
+Quando L2 produz destino com **NV-EDIT < NV-TARGET**:
+
+- Substituir o destino da L2 por **exactamente um** candidato de **(G-nav.next-code)** aplicado a **COD-EDIT** actual (mesmas regras de candidatos, **MASK-EDIT** e ordem estrutural).
+- **Um clique = um passo** de descida; cliques seguintes repetem L1 (se já **NV-EDIT = NV-TARGET**) ou L3 (se ainda **NV-EDIT < NV-TARGET**) até igualar **NV-TARGET**.
+
+#### Ex.: L3.1
+
+- Após L2.2: `COD-EDIT`=`1.1.1.4.00.0.0.00.000` (NV-EDIT=4); **NV-TARGET**=6
+- Próximo clique (L3): `1.1.1.4.01.0.0.00.000` (NV-COD-PROX-NV=5)
+
+#### Ex.: L3.2
+
+- `COD-EDIT`=`1.1.1.4.01.0.0.00.000` (NV-EDIT=5); **NV-TARGET**=6
+- Próximo clique (L3): `1.1.1.4.01.1.0.00.000` (NV-COD-PROX-NV=6) — retoma L1 nos cliques seguintes.
+
+---
+
+### Sequência ilustrativa (base IRPJ / IPI)
+
+**NV-TARGET = 6** fixado em `1.1.1.3.03.1.0.00.000`. Códigos vigentes incluem (entre outros):
+
+```txt
+1.1.1.3.02.0.0.00.000 … IRPJ …
+1.1.1.3.03.0.0.00.000 … Retido na Fonte …
+1.1.1.3.03.1.0.00.000 … Retido — Trabalho …
+1.1.1.3.03.2.0.00.000 … Retido — Capital …
+1.1.1.3.03.3.0.00.000 … Retido — Remessa …
+1.1.1.3.03.4.0.00.000 … Retido — Outros …
+1.1.1.4.00.0.0.00.000 … Produção e Circulação …
+1.1.1.4.01.0.0.00.000 … IPI …
+1.1.1.4.01.1.0.00.000 … IPI — Fumo …
+1.1.1.4.01.2.0.00.000 … IPI — Bebidas …
+… 4.01.3 … 4.01.4 … 4.01.5 …
+1.1.1.4.50.0.0.00.000 …
+1.1.1.5.00.0.0.00.000 …
+1.1.2.0.00.0.0.00.000 … Taxas …
+1.2.0.0.00.0.0.00.000 … Contribuições …
+2.0.0.0.00.0.0.00.000 … Receitas de Capital …
+```
+
+| #    | Acção (prox nível) | Código destino          | NV destino | Fase                    |
+| ---- | ------------------ | ----------------------- | ---------- | ----------------------- |
+| 0    | —                  | `1.1.1.3.03.1.0.00.000` | 6          | início (`NV-TARGET:=6`) |
+| 1    | prox nível         | `1.1.1.3.03.2.0.00.000` | 6          | L1                      |
+| 2    | prox nível         | `1.1.1.3.03.3.0.00.000` | 6          | L1                      |
+| 3    | prox nível         | `1.1.1.3.03.4.0.00.000` | 6          | L1                      |
+| 4    | prox nível         | `1.1.1.4.00.0.0.00.000` | 4          | L2                      |
+| 5    | prox nível         | `1.1.1.4.01.0.0.00.000` | 5          | L3                      |
+| 6    | prox nível         | `1.1.1.4.01.1.0.00.000` | 6          | L3                      |
+| 7–10 | prox nível         | `4.01.2` … `4.01.5`     | 6          | L1                      |
+| 11   | prox nível         | `1.1.1.4.50.0.0.00.000` | 5          | L2                      |
+| 12   | prox nível         | `1.1.1.5.00.0.0.00.000` | 4          | L2                      |
+| 13   | prox nível         | `1.1.2.0.00.0.0.00.000` | 3          | L2                      |
+| 14   | prox nível         | `1.2.0.0.00.0.0.00.000` | 2          | L2                      |
+| 15   | prox nível         | `2.0.0.0.00.0.0.00.000` | 1          | L2                      |
+
+**Comportamento anterior (obsoleto):** após o passo 4, saltos directos `4.00 → 5.00 → 1.1.2…` sem reentrar em `4.01…`, `4.01.1…`, etc.
+
+**Nota:** códigos marcados como não navegáveis (ex.: «Classificação exemplo para não navegação») ficam **fora** do conjunto de candidatos **(T-cod.2)**; **(G-nav.next-code)** na L3 **salta** para o próximo existente.
+
+---
+
+## **(G-nav.prev-level)** — Nível anterior
+
+Espelho de **(G-nav.next-level)** com **NV-TARGET** e fases L1–L3 invertidas:
+
+| Fase   | **(G-nav.next-level)**                                            | **(G-nav.prev-level)**                                             |
+| ------ | ----------------------------------------------------------------- | ------------------------------------------------------------------ |
+| **L1** | Irmão **superior** no nível efectivo (`NV-EDIT ≥ NV-TARGET`)      | Irmão **inferior** no nível efectivo                               |
+| **L2** | Subir: próximo irmão ancestral (etapa-3 de **(G-nav.next-code)**) | Subir: irmão ancestral anterior (etapa-3 de **(G-nav.prev-code)**) |
+| **L3** | Se **NV-EDIT < NV-TARGET**: **um** passo de **(G-nav.next-code)** | Se **NV-EDIT > NV-TARGET**: **um** passo de **(G-nav.prev-code)**  |
+
+### Exemplos L1 (inalterados em espírito)
+
+#### Ex.: L1.1
+
+- `COD-EDIT`: `1.1.1.2.53.0.0.00.000` (NV-EDIT=5); **NV-TARGET**=5
+- `COD-NV-ANT`: `1.1.1.2.52.0.0.00.000` (NV-COD-NV-ANT=5)
+
+#### Ex.: L1.2
+
+- `COD-EDIT`: `1.1.1.2.00.0.0.00.000` (NV-EDIT=4); **NV-TARGET**=4
+- `COD-NV-ANT`: `1.1.1.1.00.0.0.00.000` (NV-COD-NV-ANT=4)
+
+### Ex.: L2 (ascendente)
+
+- `COD-EDIT`: `1.1.1.2.00.0.0.00.000` (NV-EDIT=4); **NV-TARGET**=4
+- prefixo reduzido: `"1.1.1"` (nível 3); dígito descartado: `"2"`
+- `COD-NV-ANT`: `1.1.1.1.00.0.0.00.000` (NV-COD-NV-ANT=4)
+
+### Sequência inversa (espelho da tabela IRPJ)
+
+Com **NV-TARGET = 6** em `1.1.1.4.01.2.0.00.000`, **prev nível** percorre L1 (`4.01.1`), depois L3 ascendente (`4.01.0`, `4.00`) se necessário, L2 para ramo anterior (`3.03.4`, …), com descida espelhada via **prev-code** quando **NV-EDIT > NV-TARGET** após subida.
 
 ---
 
@@ -379,7 +534,7 @@ Se etapa-1 não encontrar: mesma repetição ascendente da etapa-3 de **(G-nav.n
 
 ### etapa-1
 
-Como etapa-1 de **(G-nav.next-code)**, mas varredura do maior para o menor segmento no nível encontrado e, entre candidatos no nível, o de **maior** código completo.
+Como etapa-1 de **(G-nav.next-code)**, mas varredura do maior para o menor segmento no nível encontrado e, entre candidatos no nível, o de **maior** código completo (candidato estruturalmente **anterior** a **COD-EDIT**).
 
 #### Ex.: 1.1
 
@@ -431,51 +586,18 @@ Se etapa-2 não encontrar: repetição ascendente (nível `L` de `NV-EDIT − 1`
 
 ---
 
-## **(G-nav.prev-level)** — Nível anterior
-
-### etapa-1
-
-Prefixo `radical(NV-EDIT − 1)`; no nível **NV-EDIT**, **maior** segmento existente **inferior** ao atual; posteriores em zero canônico.
-
-#### Ex.: 1.1
-
-- `COD-EDIT`: `1.1.1.2.53.0.0.00.000` (NV-EDIT=5)
-- prefixo: `"1.1.1.2"` (nível 4); dígito atual: `"53"`
-- `COD-NV-ANT`: `1.1.1.2.52.0.0.00.000` (NV-COD-NV-ANT=5)
-
----
-
-#### Ex.: 1.2
-
-- `COD-EDIT`: `1.1.1.2.00.0.0.00.000` (NV-EDIT=4)
-- prefixo: `"1.1.1"` (nível 3); dígito atual: `"2"`
-- `COD-NV-ANT`: `1.1.1.1.00.0.0.00.000` (NV-COD-NV-ANT=4)
-
----
-
-### etapa-2
-
-Se etapa-1 não encontrar: mesma repetição ascendente de **(G-nav.prev-code)** etapa-3.
-
-#### Ex.: 2.1
-
-- `COD-EDIT`: `1.1.1.2.00.0.0.00.000` (NV-EDIT=4)
-- prefixo reduzido: `"1.1.1"` (nível 3); dígito descartado: `"2"`
-- `COD-NV-ANT`: `1.1.1.1.00.0.0.00.000` (NV-COD-NV-ANT=4)
-
----
-
 ## Testes manuais recomendados (change)
 
 1. **Próximo código** nos Ex. 1.1 e 1.2 da base fictícia → `change` correta; botão inativo no último código global se não houver candidato.
 2. **Código anterior** Ex. 1.2 e 2.2 → destino mais próximo no ramo (não apenas matriz `52.0.0.00.000`).
-3. **Próximo / nível anterior** Ex. 1.1 e 1.2 de **(G-nav.next-level)** e **(G-nav.prev-level)**.
-4. Registro com vigência sem candidato **(T-cod.2)** → botão desabilitado (sem redirecionamento).
-5. Mesmo `receita_cod`, duas linhas **(T-cod.2)** → desempate para vigência mais recente (`data_vigencia_fim`, depois início, depois `pk`).
-6. Destino com outra `classificacao_id` → modal **(G-nav.ui-warning-class)**; Cancelar permanece; Continuar navega.
-7. Formulário com `receita_nome` alterado → clique em navegação → `__coreConfirmUnsavedIfDirty` antes de qualquer redirect.
-8. Change sem edição após carga → navegação **sem** `confirm` de alterações não guardadas.
-9. Preservar `_changelist_filters` no `change_url` retornado.
-10. **UI:** barra `<<` `<` `>` `>>` à esquerda, `object-tools` à direita, acima do `.form-row` de `receita_cod`; ausente na add.
-11. **UI:** hover/foco mostra `title` descritivo; leitor de ecrã recebe `aria-label` («Próximo código», etc.); desabilitado usa `title` da coluna «desabilitado».
-12. **UI:** estilo neutro dos botões de navegação — não confundir visualmente com «+ Criar Código Filho» (verde).
+3. **Próximo / nível anterior** Ex. L1 e base IRPJ (tabela sequencial) — incluir re-descida L3 após L2 (`4.00 → 4.01 → 4.01.1`) e irmão intermédio `4.50` antes de `5.00`.
+4. **Sequência de nível:** primeiro clique fixa **NV-TARGET**; clique em **próximo código** limpa `structural_nav_nv_target` da URL; parâmetro repassado nos redirects de nível.
+5. Registro com vigência sem candidato **(T-cod.2)** → botão desabilitado (sem redirecionamento).
+6. Mesmo `receita_cod`, duas linhas **(T-cod.2)** → desempate para vigência mais recente (`data_vigencia_fim`, depois início, depois `pk`).
+7. Destino com outra `classificacao_id` → modal **(G-nav.ui-warning-class)**; Cancelar permanece; Continuar navega.
+8. Formulário com `receita_nome` alterado → clique em navegação → `__coreConfirmUnsavedIfDirty` antes de qualquer redirect.
+9. Change sem edição após carga → navegação **sem** `confirm` de alterações não guardadas.
+10. Preservar `_changelist_filters` e `structural_nav_nv_target` no `change_url` retornado.
+11. **UI:** barra `<<` `<` `>` `>>` à esquerda, `object-tools` à direita, acima do `.form-row` de `receita_cod`; ausente na add.
+12. **UI:** hover/foco mostra `title` descritivo; leitor de ecrã recebe `aria-label`; desabilitado usa `title` da coluna «desabilitado».
+13. **UI:** estilo neutro dos botões de navegação — não confundir visualmente com «+ Criar Código Filho» (verde).

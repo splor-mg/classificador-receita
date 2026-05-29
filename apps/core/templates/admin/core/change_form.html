@@ -460,6 +460,7 @@
     var itemCodeNavigationResolveUrl = '{{ item_code_navigation_resolve_url|default:"" }}';
     var itemStructuralNavUrl = '{{ item_structural_navigation_url|default:""|escapejs }}';
     var itemStructuralNavPk = '{{ item_structural_nav_origin_pk|default:""|escapejs }}';
+    var itemStructuralNavNvTarget = '{{ item_structural_nav_nv_target|default:""|escapejs }}';
     var itemStructuralNavAvailability = {};
     try {
       itemStructuralNavAvailability = JSON.parse('{{ item_structural_nav_availability_json|default:"{}"|escapejs }}');
@@ -3611,6 +3612,13 @@
             pk: itemStructuralNavPk,
             direction: direction
           });
+          if (
+            (direction === 'next_level' || direction === 'prev_level') &&
+            itemStructuralNavNvTarget &&
+            /^[1-9]\d*$/.test(itemStructuralNavNvTarget)
+          ) {
+            params.set('nv_target', itemStructuralNavNvTarget);
+          }
           var changelistFilters = new URLSearchParams(window.location.search).get('_changelist_filters');
           if (changelistFilters) {
             params.set('_changelist_filters', changelistFilters);

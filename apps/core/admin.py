@@ -39,6 +39,7 @@ from apps.core.classification_item_code_lookup import (
     resolve_code_navigation_response_data,
 )
 from apps.core.classification_item_structural_navigation import (
+    _parse_nv_target,
     resolve_structural_navigation_response_data,
     structural_navigation_availability,
 )
@@ -587,8 +588,12 @@ class ItemClassificacaoAdmin(
                 context["item_structural_navigation_url"] = reverse(
                     f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_resolve_structural_navigation"
                 )
+                nav_nv_target = _parse_nv_target(request.GET.get("structural_nav_nv_target"))
                 context["item_structural_nav_availability_json"] = json.dumps(
-                    structural_navigation_availability(obj)
+                    structural_navigation_availability(obj, nv_target=nav_nv_target)
+                )
+                context["item_structural_nav_nv_target"] = (
+                    str(nav_nv_target) if nav_nv_target is not None else ""
                 )
                 context["item_structural_nav_origin_pk"] = str(obj.pk)
         else:
