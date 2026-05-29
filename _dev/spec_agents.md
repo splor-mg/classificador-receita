@@ -60,6 +60,45 @@ sinalizar ao operador.
 
 ---
 
+## Padrões técnicos de referência (não duplicar aqui)
+
+Normas externas aplicam-se **quando a tarefa as tocar**; regra de domínio e
+comportamento continuam nas `spec_*.md` temáticas. Este bloco é um **índice** —
+não repetir o conteúdo de `spec_commits.md`, `spec_convencoes.md` nem das specs
+funcionais.
+
+| Tema                               | Referência externa                                                                                                                                                                                   | Onde no repositório                                                            |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Commits e staging                  | [Conventional Commits](https://www.conventionalcommits.org/) (adaptado)                                                                                                                              | `_dev/spec_commits.md` — **obrigatório** em pedidos de commit (§ Gatilho)      |
+| Nomenclatura, `code_*`, idioma     | Convenções do projeto                                                                                                                                                                                | `_dev/spec_convencoes.md`                                                      |
+| Admin, models, migrações Django    | Estrutura e bitemporalidade                                                                                                                                                                          | `_dev/spec_django.md`, ADRs em `docs/adr/`                                     |
+| Python (estilo, docstrings, types) | [PEP 8](https://peps.python.org/pep-0008/); [PEP 257](https://peps.python.org/pep-0257/) em APIs públicas não óbvias; [PEP 484](https://peps.python.org/pep-0484/) quando o módulo já usa type hints | `apps/core/` — seguir o estilo do arquivo tocado                               |
+| Linguagem normativa em specs       | [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) (MUST / SHOULD / MAY)                                                                                                                             | `_dev/spec_*.md` ao redigir ou interpretar requisitos                          |
+| Contratos JSON no Admin            | Spec do fluxo                                                                                                                                                                                        | ex. `_dev/spec_itemClassificacao_foreignKeys_lookup.md`                        |
+| API HTTP com erros estruturados    | [RFC 7807](https://www.rfc-editor.org/rfc/rfc7807) (problem details)                                                                                                                                 | Só se a tarefa criar ou alterar endpoint HTTP público; caso contrário, ignorar |
+
+### Documentação (SDD primeiro)
+
+| Tipo de mudança                                  | Onde documentar                                              |
+| ------------------------------------------------ | ------------------------------------------------------------ |
+| Comportamento, fluxo Admin, mensagens ao usuário | Atualizar a **`_dev/spec_*.md` temática** (trechos afetados) |
+| Novo módulo `code_*` ou rename                   | Inventário em **`_dev/spec_convencoes.md`**                  |
+| Decisão arquitetural duradoura                   | ADR em **`docs/adr/`**                                       |
+| Anotações pessoais de desenvolvimento            | `_dev/toDo.md` (commit `dev(toDo)` — ver `spec_commits.md`)  |
+
+**Não** exigir página em `docs/` para cada alteração de código. **Não** inventar
+SemVer de release, pastas `up.sql`/`down.sql`, pipelines genéricos ou tabelas
+`schema_version` / `automation_log` salvo existirem no repositório ou pedido
+explícito do operador.
+
+### O que não listar em toda resposta
+
+Em tarefas triviais (typo, ajuste pontual), **não** repetir checklist de PEP/RFC.
+Em tarefas não triviais, mencionar PEP/RFC **só** se a implementação os tiver
+aplicado (ver § Saída esperada).
+
+---
+
 ## Nomenclatura e novos arquivos
 
 Ao **sugerir ou criar** arquivos Python, funções, classes, métodos, módulos JS
@@ -144,7 +183,8 @@ Quando útil, resumir brevemente:
 - quais specs foram consideradas;
 - suposições feitas;
 - pontos sem spec (incerteza);
-- contradições encontradas (se houver).
+- contradições encontradas (se houver);
+- PEP/RFC ou ADR relevantes **apenas** se a tarefa os tiver tocado (§ Padrões técnicos de referência).
 
 ---
 
