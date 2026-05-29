@@ -14,6 +14,7 @@ necessário; não duplicar a política do prefixo `code_` em cada documento.
 - ADR-001 (`docs/adr/adr-001_bitemporalidade.md`) — bitemporalidade
 - `_dev/spec_django.md` — estrutura Django, mapeamento de campos temporais
 - `_dev/spec_agents.md` — SDD e protocolo para agentes de IA (leitura, contradições)
+- `_dev/spec_commits.md` — Conventional Commits; linhas `See` em `_dev/_dev.md` (modo sugestão vs execução)
 
 ---
 

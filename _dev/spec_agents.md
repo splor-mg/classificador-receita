@@ -8,6 +8,8 @@ Classificador de Natureza de Receita.
 com protocolo operacional. Leia sempre em conjunto com:
 
 - `_dev/spec_convencoes.md` — nomenclatura, idioma, prefixo `code_`, inventário
+- `_dev/spec_commits.md` — **obrigatório em qualquer pedido sobre commit** (Conventional Commits, staging, modo sugestão vs execução)
+- `_dev/_dev.md` — linhas `See` imediatamente abaixo do título do commit
 - `_dev/spec_*.md` — comportamento e regras por tema (domínio)
 
 ---
@@ -24,6 +26,25 @@ O projeto adota **desenvolvimento orientado a especificações de domínio**:
   **assistência de IA**, desde que permaneça **rastreável** às specs.
 
 Em resumo: **SDD com convenções transversais e implementação assistida por IA**.
+
+---
+
+## Gatilho: pedidos sobre commit (obrigatório)
+
+Sempre que o operador mencionar **commit**, **git add**, **mensagem de commit**, **o que
+commitar**, **push**, **staging** ou frases equivalentes («ajuda com o commit», «vamos
+commitar», «sugestão de commit», «pode fazer o commit», etc.):
+
+1. **Ler na íntegra** **`_dev/spec_commits.md`** antes de responder — não improvisar formato,
+   escopo, modo sugestão vs execução nem regras de `dev(toDo)` só a partir deste ficheiro.
+2. **Ler** **`_dev/_dev.md`** para as linhas `See` (quando for redigir mensagem).
+3. **Seguir** o protocolo de `spec_commits.md` (inventário/diff → agrupamento → `git add`
+   sugerido → mensagem → encerramento com opções clicáveis; execução real só § Modo execução).
+4. **Não** substituir `spec_commits.md` por hábitos genéricos de Conventional Commits ou por
+   mensagens de commits antigos do repo sem verificar o diff atual.
+
+Esta secção **complementa** § Sugestão de commit e staging (resumo operacional); em caso de
+dúvida, **`spec_commits.md` prevalece**.
 
 ---
 
@@ -74,6 +95,33 @@ Se uma instrução do operador **contradizer** texto normativo em `_dev/spec_*.m
 
 O mesmo protocolo aplica-se quando **código e spec divergem**: reportar
 «spec diz X, código faz Y» e pedir alinhamento antes de refactors amplos.
+
+---
+
+## Sugestão de commit e staging (`git add`)
+
+**Pré-requisito:** § Gatilho: pedidos sobre commit (ler `spec_commits.md` na íntegra).
+
+Resumo do que `spec_commits.md` exige (detalhes e exemplos lá):
+
+### Modo sugestão (padrão)
+
+Pedidos como «ajuda com o commit», «vamos fazer o commit», «sugestão de commit», etc.:
+
+1. **Inventariar** — `git status` / diff; resumir conteúdo alterado.
+2. **Agrupar** — proposta(s) numerada(s): ficheiros → `git add` (copy-paste) → mensagem.
+3. **Dúvidas** (vários commits, incluir `toDo`, …) — opções **clicáveis**; não adivinhar.
+4. **`See`** — copiar **`_dev/_dev.md`** (linha a linha). Atualizar toDo → `dev(toDo): atualizar anotações`, sem corpo.
+5. **Encerrar** perguntando com clique se deve **executar commit completo** (e qual proposta).
+6. **Nunca** correr `git commit` / `git push` neste modo — só texto e comandos sugeridos.
+
+### Modo execução (só se explícito)
+
+Só quando o operador pedir claramente para **fazer/executar o commit** (ex.: «pode fazer o commit»):
+
+1. Se houver várias propostas, **perguntar com clique** qual executar.
+2. **Confirmar** com clique: executar `git add`+`git commit`? fazer **push**?
+3. Só então executar no terminal.
 
 ---
 
