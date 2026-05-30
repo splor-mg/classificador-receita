@@ -17,6 +17,11 @@ As etapas a serem conduzidas pelo protocolo de im
   Deve-se tentar utilizar bibliotecas já consolidadas para leitura de arquivos com essas extensões
   Verificar implementação desses scripts em arquivo separado, a exemplo de `importer_read.py`; implementar de forma separada apenas se houver ganho 
 
+## 1.2. identificação do modelo de dados
+  
+  Deve-se criar mecanismo para identificar o código, se estamos falando ou não de codigo hierárquico, por exemplo, ou mesmo saber identificar a máscara, para códigos hierárquicos, para permitir o gerenciamento de estruturas planas
+  Saber de qual entidade/changelist estamos importando dará a informação de quais são as colunas essenciais (PK)
+  Eventualmente, o importer pode ser pensado para ser definido em alto escopo o suficiente para que ele consiga ser utilizado, eventualmente, para demais classes/entidades do projeto, por mais que o foco maior/fallback é a leitura da itemClassificacao
 
 ## 2. normalização de nomes das colunas/atributos
 
@@ -41,12 +46,13 @@ As etapas a serem conduzidas pelo protocolo de im
       - *classificacao_id*: em qual classificacao_id cada um dos registros dos dados brutos de enquadram. Verificar protocolos já implementados para autocomplete e ou definição de classification_id
       - *nivel_id*: em qual `nivel_id`cada um dos registros se enquadram
       - *item mãe*: deve tentar ser identificado o item mãe. Verificar reaproveitamento das especificações já implementadas para definição do item mãe. Aqui provavelmente precisaremos avaliar melhor como tratar o fallback, se deixamos vazio ou forçamos o registro de um item mãe como sendo o primeiro registro superior encontrado, mesmo que não antedam as especificações normais
+      - *data_vigência*: definição de comportamento para atribuição de data, pensando no fallback comum de "primeiro de janeiro do ano"
     Caso esses campos já estejam disponíveis nos dados brutos, não precisam ser rodado o autocomplete
     Em ambos os casos, existindo dados anteriores ou sendo aplicado o protoclo de "autocomplete", os protocolos de validação/check de autocomplete devem ser rodados
    
 
    - protocolo de normalização do campo de ID
-     até o momento, temos escrito os campos de id garantindo com caixa alta, mas não existe um protoclo de normalização dos campos de id
+     até o momento, temos escrito os campos de id garantindo caixa alta manualmente, mas não existe um protocolo de normalização dos campos de id
      esse protocolo talvez também mereça uma especificação em separado e um arquivo .py separado, talvez não atrelado ao importer. Talvez um script `code_id_normalization.py`, bem como avaliarmos se necessidade de especificação própria para a normalização de id's
      um id não pode ter separação por traço
 
