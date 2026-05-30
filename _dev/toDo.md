@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------------------------------
 # lista 
 
-- **itemClassificacao** - formulário de criaçã
+- **itemClassificacao** - formulário de criação
 
   - **assistênte de vigência** - verificar criação de protocolo auxiliar para identificar vigência, por período, ou por versão. 
     O que eu pensei foi em criar um script python, chamado `get_valid_code.py`. Deveria ser possível passar como argumento para essa função, ano, data, ou 2 anos ou duas data, ou a versão. 
@@ -54,7 +54,7 @@ criar protocolo de incorporação/importação de bases
   - identificação de máscara para preenchimento de valores derivados de 
   - gerar script que vai considerar alteração nos metadados
 
-- **itemClassificacao** - opção de gerar automaticamente códigos correlatos
+- **itemClassificacao** - opção de gerar automaticamente códigos correlatos - estruturas fixas
   - quando estiver criando uma receita, verificar implementação de opção a geração de registros de estrutura fixa automaticamente, tal como o são os Tipos de Receita, Receita Dedutora e Receita Intraorçamentária
   - uma das alternativas poderia ser criar uma tabela bitemporal para EstruturasFixas. Nessa, você poderia cadastrar todos os valores de estrutura fixa por nível da estrutura. Por exemplo, poderia haver o registro para a estrutura de NIVEL-7, toda vez que seu código for 1, ele vai ter um nome/descrição. Ela seria bitemporal, para poder registrar sua evolução ao longo do mtepmo
   - além de, ao criar um itemClassificacao, poder gerar automaticamente um registro, deve ser pensada alternativa para, aquele registro que antes não era replicado automaticamente, poder ser. 
