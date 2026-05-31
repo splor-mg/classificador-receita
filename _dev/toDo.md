@@ -63,6 +63,7 @@ criar protocolo de incorporação/importação de bases
 
 - **itemClassificacao** - changelist
   - a ferramenta de busca do Django não está encontrando match quando o código, ou parte dele, é informado com a mácara/pontos separadores de campos
+  - avaliar implementação de símbolo de lupa ao lado da borracha para poder navegar para outro código existente
 
 - **itemClassificacao** - alteração de registro entre Matriz/Detalhe
   - considerando que na estrutura hierárquica há regras de negócio inerentes à natureza matricial e capilaridade de um código, é necessário revisar quais protocolos de consistência e eventuais travas/guardrails são necessários para garantir consistência
