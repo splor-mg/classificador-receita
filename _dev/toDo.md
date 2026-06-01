@@ -2,6 +2,15 @@
 # lista 
 
 - **itemClassificacao** - formulário de criação
+  
+  - verificar implementação para garantir item mãe imediatamente superior para niveis 8 e 9.
+  Entendo que podemos definir variável no escopo da função de defnição de validação de item mãe para definir em quais níveis não pode haver salto de nível
+
+  - Exemplo de alerta falhou para
+
+    item mãe: 1.1.1.2.52.0.0.00.000
+    item filho: 1.1.1.2.52.0.1.00.000
+    outro item vigente: 1.1.1.2.52.1.1.00.000
 
   - **assistênte de vigência** - verificar criação de protocolo auxiliar para identificar vigência, por período, ou por versão. 
     O que eu pensei foi em criar um script python, chamado `get_valid_code.py`. Deveria ser possível passar como argumento para essa função, ano, data, ou 2 anos ou duas data, ou a versão. 
