@@ -3,10 +3,35 @@
 Commits neste repositório seguem **[Conventional Commits](https://www.conventionalcommits.org/)**
 adaptado às especificidades desse repositório.
 
+**Variante de idioma:** norma **local em português do Brasil** — sync via **`specs-trb`** (catálogo upstream `spec_commits-trb.md` → downstream `_dev/spec_commits.md`). Mensagens de commit em **PT-BR** (§ Composição do título).
+
 **Regra central para LLM/IDE:** o trabalho padrão é **sugerir** (`git add`, mensagens,
 comandos copy-paste) — **não** executar `git commit`, `git push` nem equivalentes “por detrás
 do pano”. Execução real só após pedido **explícito** do operador e confirmação com opções
-clicáveis (§ Modo execução).
+clicáveis (§ Modo execução; **COMMITS-01**–**03**; **AGENTS-11**).
+
+---
+
+## Como citar este documento
+
+| Mecanismo           | Uso                                                                    |
+| ------------------- | ---------------------------------------------------------------------- |
+| **Seção numerada**  | `§ Sugestão de staging` — navegação neste arquivo.                     |
+| **ID normativo**    | `COMMITS-05` — citação estável (compartilhado com catálogo).           |
+| **Índice completo** | `_dev/spec_conventions.md` § **2** (catálogo upstream).                |
+
+| ID         | Seção              | Resumo                                                   |
+| ---------- | ------------------ | -------------------------------------------------------- |
+| COMMITS-01 | Modo sugestão      | IA não executa Git sem autorização                       |
+| COMMITS-02 | Pedidos genéricos  | Só protocolo de sugestão                                 |
+| COMMITS-03 | Modo execução      | Execução só com pedido explícito e confirmação clicável  |
+| COMMITS-04 | Encerramento       | Encerramento da sugestão com opções clicáveis            |
+| COMMITS-05 | Composição título  | Título e corpo do commit em **PT-BR** (variante local)   |
+| COMMITS-06 | Linhas `See`       | Copiar de `_dev/_dev.md`; não inventar linhas `See`      |
+| COMMITS-07 | Tipo vs arquivos   | Diff só de spec → `docs`, não `feat`                     |
+| COMMITS-08 | Credenciais        | Não sugerir `git add` de credenciais                     |
+| COMMITS-09 | Boas práticas      | Não executar `dev-td-up` sem pedido explícito            |
+| COMMITS-10 | Precedência        | Contrato maduro prevalece sobre `_dev/`                  |
 
 ---
 
@@ -70,7 +95,10 @@ lista numerada) antes ou junto da escolha B/C.
 
 Linha em branco entre o título e as linhas `See`; linha em branco entre o bloco `See` e o corpo.
 
-### Composição do título (Conventional Commits)
+Mudanças **incompatíveis** (breaking): usar **`!`** após tipo/escopo (ex. `feat(django)!:`)
+ou rodapé **`BREAKING CHANGE:`** no corpo — alinhado a SemVer (`spec_version.md`).
+
+### Composição do título (Conventional Commits) **(COMMITS-05)**
 
 O título é **uma linha** com três partes:
 
@@ -104,17 +132,18 @@ o projeto vai …»* — em poucas palavras, sem ponto final no fim da linha.
 **Corpo da mensagem (após o bloco `See`):** parágrafos opcionais; listar ficheiros ou resumir
 alterações; foco no *porquê* e no efeito — não repetir o título em prosa.
 
-### Linhas `See` e corpo
+### Linhas `See` e corpo **(COMMITS-06)**
 
 - **Logo abaixo do título:** copiar **todas** as linhas `See …` de **`_dev/_dev.md`**, uma por linha.
+- **Não inventar** linhas `See` que não estejam em `_dev/_dev.md`.
 - **Depois do `See`:** corpo opcional (§ acima).
 
-### Tipo vs ficheiros alterados
+### Tipo vs ficheiros alterados **(COMMITS-07)**
 
 | Diff principal                                    | Tipo usual                                    | Nota                                                                                          |
 | ------------------------------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | Só `_dev/spec_*.md`, `docs/`, README (sem código) | **`docs`**                                    | Mesmo que a spec descreva um processo novo — não usar `feat` só por ser “feature” conceptual. |
-| Código + specs alinhadas ao mesmo comportamento   | `feat` / `fix` / `refact` + escopo do domínio | Specs no mesmo commit quando mesma causa.                                                     |
+| Código + specs alinhadas ao mesmo comportamento   | `feat` / `fix` / `refact` + escopo do domínio | Specs no **mesmo commit** quando mesma causa — não separar implementação de specs SDD. |
 | Só `toDo.md`                                      | **`dev`**                                     | Título fixo § Commit só de toDo.                                                              |
 
 `feat` reserva-se a mudança **implementada** em código (ou JS/CSS do Admin) visível ou comportamental.
@@ -143,9 +172,9 @@ documentação (usar `docs`).
 Opcional, em **camelCase** ou **kebab-case** quando já usado no histórico (`code-name`,
 `changelist-filters`). Ao sugerir escopo, seguir **nesta ordem**:
 
-### 1. Aderência temática em `spec_convencoes.md`
+### 1. Aderência temática em `spec_conventions.md`
 
-Consultar subfamílias, inventário `code_*` e tabelas de domínio em **`_dev/spec_convencoes.md`**.
+Consultar subfamílias, inventário `code_*` e tabelas de domínio em **`_dev/spec_conventions.md`**.
 Se o commit for claramente um tema já nomeado lá, usar esse escopo:
 
 | Tema do commit                                                                              | Escopo sugerido                               | Tipo usual                                              |
@@ -154,11 +183,11 @@ Se o commit for claramente um tema já nomeado lá, usar esse escopo:
 | SDD, `spec_agents`, engenharia de contexto                                                  | `sdd`                                         | —                                                       |
 | Filtros recolhidos do sidebar do Admin                                                      | `changelist-filters`                          | —                                                       |
 | Convenção de commits, staging, modo sugestão/execução (`spec_commits.md`, `spec_agents.md`) | `commits`                                     | `docs(commits)`; `feat` só com código no mesmo commit   |
-| Só `spec_convencoes.md` (sem `spec_commits`)                                                | `convencoes`                                  | `docs(convencoes)`                                      |
+| Só `spec_conventions.md` (sem `spec_commits`)                                                | `convencoes`                                  | `docs(convencoes)`                                      |
 
 ### 2. Spec funcional que dá sentido à alteração
 
-Se não houver encaixe óbvio em `spec_convencoes.md`, perguntar implicitamente:
+Se não houver encaixe óbvio em `spec_conventions.md`, perguntar implicitamente:
 **qual arquivo `_dev/spec_*.md` principal justifica o diff?** Derivar o escopo do **nome do
 ficheiro** da spec:
 
@@ -176,7 +205,7 @@ ficheiro** da spec:
 | `spec_validar_codigos.md`                 | `validar`           |
 
 Specs com **apenas um** segmento após `spec_` (sem segundo `_`): usar esse segmento inteiro
-— ex. `spec_convencoes.md` → `convencoes`, `spec_agents.md` → `agents`, `spec_commits.md` → `commits`.
+— ex. `spec_conventions.md` → `convencoes`, `spec_agents.md` → `agents`, `spec_commits.md` → `commits`.
 
 **Rename de spec:** quando várias alterações existem **porque** um ficheiro `spec_*.md` (ou
 módulo) foi renomeado e outros ficheiros só atualizam referências/caminhos, o escopo deve
@@ -192,7 +221,7 @@ ser derivado do **nome antigo** do ficheiro que motivou a mudança (regra do seg
 
 - rename de uma spec ou módulo `code_*` e atualização de todos os imports/referências;
 - introdução de `spec_commits.md` junto com ajustes correlatos em `spec_agents.md` e
-  `spec_convencoes.md`;
+  `spec_conventions.md`;
 - refactor mecânico (só caminhos ou nomes) sem mudança de comportamento.
 
 Nesse caso:
@@ -242,10 +271,11 @@ See https://github.com/splor-mg/classificador-receita/tree/migracao
 ## Boas práticas
 
 - **Não** executar `git add`, `git commit` nem `git push` no modo sugestão; execução só § Modo execução.
+- **Não** executar `dev-td-up` (ou equivalente) sem pedido explícito. **(COMMITS-09)**
 - Agrupar renomeações/refactors com specs que atualizam os mesmos caminhos.
 - Bullets no corpo só quando listarem renomeações ou itens de teste claros.
 - Não incluir `Co-authored-by` salvo política do time ou hook do ambiente.
-- Não sugerir `git add` de ficheiros com credenciais (`.env`, chaves, tokens).
+- **Não** sugerir `git add` de ficheiros com credenciais (`.env`, chaves, tokens). **(COMMITS-08)**
 - Para sugerir `git commit`: usar HEREDOC, ex. `git commit -m "$(cat <<'EOF' … EOF)"`.
 
 ---
@@ -261,7 +291,7 @@ entregar um **pacote revisável**: staging proposto + mensagem(ns) — não só 
    (`git diff`, `git diff --staged`, ou diff da IDE).
 2. Classificar cada caminho: **código**, **spec `_dev/`**, **schema/docs**, **anotações pessoais**
    (`toDo.md`, rascunhos), **ruído** (espaços, ficheiros `Untitled`, alterações não relacionadas).
-3. Ligar cada grupo ao **tema** (§ Escopo): spec principal, `spec_convencoes`, pacote `code_*`, etc.
+3. Ligar cada grupo ao **tema** (§ Escopo): spec principal, `spec_conventions`, pacote `code_*`, etc.
 
 ### Passo 2 — Propor um ou mais commits
 
@@ -282,7 +312,7 @@ propor **vários commits** numerados (Commit A, Commit B, …), cada um com:
 # Commit 1 — pacote code_* (código + specs de caminho)
 git add apps/core/code_*.py apps/core/tests_code_*.py \
   apps/core/admin.py apps/core/forms.py apps/core/models.py \
-  _dev/spec_convencoes.md _dev/spec_foreignKeys_vigencia.md
+  _dev/spec_conventions.md _dev/spec_foreignKeys_vigencia.md
 ```
 
 ```
@@ -300,6 +330,7 @@ See https://github.com/splor-mg/classificador-receita/tree/migracao
 | -------------------------------------------- | ---------------------------------------------------------------- |
 | Só `_dev/toDo.md` ou pedido «atualizar toDo» | § Commit só de toDo; ou **não** incluir até o operador confirmar |
 | Spec de commits/agents sem código            | `docs(sdd): …` ou `docs(convencoes): …`                          |
+| Sidecars `*_new.md` após merge catálogo      | **Não** incluir no commit das specs locais                       |
 | Alterações já staged + unstaged misturadas   | Explicar o que está em cada estado antes de sugerir `add`        |
 
 ### Passo 4 — Dúvida sobre abordagem → perguntar com opções clicáveis
@@ -348,7 +379,7 @@ docs(commits): implementar convenção de commits e staging para agentes
 See #18
 See https://github.com/splor-mg/classificador-receita/tree/migracao
 
-Adiciona spec_commits.md; reforça spec_agents.md e spec_convencoes.md.
+Adiciona spec_commits.md; reforça spec_agents.md e spec_conventions.md.
 ```
 
 ---
@@ -356,5 +387,5 @@ Adiciona spec_commits.md; reforça spec_agents.md e spec_convencoes.md.
 ## Referências
 
 - Linhas `See *` obrigatórias (fonte única): **`_dev/_dev.md`**
-- Escopo e temas transversais: **`_dev/spec_convencoes.md`**
+- Escopo e temas transversais: **`_dev/spec_conventions.md`**
 - Agentes de IA: **`_dev/spec_agents.md`** (fluxo completo: status/diff → `git add` → mensagem)

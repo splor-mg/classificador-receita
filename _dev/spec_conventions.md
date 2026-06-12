@@ -195,3 +195,59 @@ o nome histórico.
 APIs públicas (nomes de funções, códigos `ValidationError`) podem manter
 vocabulário anterior (`validate_vigencia_contained_in_fk_targets`, …) mesmo após
 rename de ficheiro.
+
+---
+
+## Como citar este documento
+
+| Mecanismo           | Uso                                                         |
+| ------------------- | ----------------------------------------------------------- |
+| **Seção numerada**  | `§ Idioma e nomenclatura` — navegação neste arquivo.         |
+| **ID normativo**    | `CONV-01` — citação estável (catálogo compartilhado).        |
+| **Índice completo** | catálogo upstream `docs/spec_conventions.md` § **2**.         |
+
+**IDs deste arquivo usados neste repositório:**
+
+| ID      | Seção              | Resumo                                              |
+| ------- | ------------------ | --------------------------------------------------- |
+| CONV-01 | Como registrar     | Estrutura ao registrar convenção transversal        |
+| CONV-04 | Manutenção         | Atualizar índice de IDs ao criar norma citável      |
+| CONV-05 | Manutenção         | Elevar modelo compartilhado ao catálogo upstream    |
+
+Normas de **toolkit shell**, **manifest multinível**, **entry shell** e **migrations** do
+catálogo (§ **6**–**8** upstream) **não se aplicam** a este repositório Django.
+
+Sidecars de sync do catálogo: `spec_<tema>_new.md` — ver `spec_agents.md` § **10**.
+
+---
+
+## Linguagem normativa
+
+Obrigações neste arquivo e nas specs usam *deve* / *não deve* / *pode* alinhados ao
+[RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
+
+---
+
+## Como registrar uma convenção **(CONV-01)**
+
+Ao introduzir tema transversal novo neste repositório, cada convenção **deve** ter:
+
+1. **Definição** — o que o padrão cobre e o que fica de fora.
+2. **Onde vale** — pasta ou grupo de arquivos (ex.: `apps/core/code_*.py`, `schemas/`).
+3. **Inventário** (quando houver família de artefatos) — tabela ou lista atualizada ao criar/renomear.
+4. **Regra de manutenção** — «ao acrescentar X, atualizar Y neste arquivo».
+
+Specs funcionais de domínio (`spec_itemClassificacao_*.md`, …) citam **caminhos** ou **IDs**;
+não duplicam tabelas transversais inteiras.
+
+---
+
+## Manutenção
+
+Alterações **só deste projeto**: editar este arquivo; commitar conforme `spec_commits.md`.
+
+Alterações ao **modelo compartilhado** do catálogo SDD: elevar ao repositório canónico
+(`specs-catalog`) — **(CONV-05)** / **AGENTS-14**; ver `spec_agents.md` § **10.4**.
+
+Ao acrescentar norma citável com ID próprio: usar próximo `CONV-NN` livre; atualizar índice
+em **Como citar**.

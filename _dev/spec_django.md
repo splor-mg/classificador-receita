@@ -73,7 +73,7 @@ Com essa configuração, os apps podem ser referenciados diretamente no `INSTALL
 
 A lógica de domínio reutilizável do classificador (nome, máscara, hierarquia,
 FK temporal, normalização de placeholders, etc.) vive em `apps/core/code_*.py`.
-Convenções, glossário temporal e inventário atual: **`_dev/spec_convencoes.md`**.
+Convenções, glossário temporal e inventário atual: **`_dev/spec_conventions.md`**.
 Protocolo SDD e orientações para agentes de IA: **`_dev/spec_agents.md`**.
 
 ### Resumo da Implementação
