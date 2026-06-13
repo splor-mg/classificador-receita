@@ -1,0 +1,88 @@
+---
+title: Desenvolvimento de Interface CRUD para Classificações
+state: O
+author: carloshob
+created: '2025-11-28T20:04:16Z'
+updated: '2026-01-13T17:37:04Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: SGDB - App Web de Gestão
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: ToDo
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-05-04'
+  Data de vencimento: '2026-05-15'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Desenvolver interface completa de CRUD (Create, Read, Update, Delete) para classificações usando Django views, forms e templates. Interface deve permitir criação, visualização, edição e inativação de classificações.
+  
+  ### Entregas:
+  
+  - Views Django (class-based ou function-based)
+  - Forms Django com validação
+  - Templates HTML para CRUD
+  - Navegação e UX implementada
+  - Testes unitários das views
+  
+  ### Observações:
+  
+  - Usar class-based views quando apropriado
+  - Implementar validação tanto no form quanto no model
+  - Considerar UX/UI moderna e responsiva
+---
+# regs
+
+- date: 2025-11-28T20:04:16Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T20:04:17Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T20:04:24Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T20:04:27Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:04:30Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:05:02Z
+  reg: milestone:added:Arquitetura de Dados
+  author: carloshob
+
+- date: 2025-11-28T20:05:08Z
+  reg: milestone:removed:Arquitetura de Dados
+  author: carloshob
+
+- date: 2025-11-28T20:05:08Z
+  reg: milestone:added:SGDB - App Web de Gestão
+  author: carloshob
+
+- date: 2025-12-05T17:00:06Z
+  reg: relationship:parent_added
+  author: carloshob
+---

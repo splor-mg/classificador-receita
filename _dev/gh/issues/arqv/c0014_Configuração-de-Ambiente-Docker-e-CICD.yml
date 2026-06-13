@@ -1,0 +1,99 @@
+---
+title: Configuração de Ambiente Docker e CI/CD
+state: C
+author: carloshob
+created: '2025-11-28T19:46:03Z'
+updated: '2026-03-04T19:53:19Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Implementação do Banco de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Data início: null
+  Data de vencimento: null
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Configurar ambiente Docker completo com PostgreSQL, volumes persistentes e Docker Compose. Implementar pipeline CI/CD básico no GitHub Actions para validação automática de scripts SQL e estrutura do banco.
+  
+  ### Entregas:
+  
+  - Docker Compose funcional (`docker-compose.yml`)
+  - Configuração de volumes para persistência
+  - Scripts de inicialização do ambiente
+  - Pipeline CI/CD (`.github/workflows/validate.yml`)
+  - Documentação de setup do ambiente
+  
+  ### Observações:
+  
+  - Ambiente Docker deve ser reproduzível
+  - CI/CD deve validar DDL e DML scripts
+  - Considerar múltiplos ambientes (dev, test, prod)
+  
+  
+---
+# regs
+
+- date: 2025-11-28T19:46:03Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T19:46:06Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T19:46:33Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T19:46:38Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T19:46:44Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T19:47:01Z
+  reg: milestone:added:Implementação do Banco de Dados
+  author: carloshob
+
+- date: 2025-12-05T16:57:31Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-03-04T19:52:26Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-03-04T19:53:18Z
+  reg: comment
+  author: carloshob
+  body: |-
+    @gabrielbdornas, conforme conversamos, isso não fará sentido para o nosso projeto. Se precisar reabrimos o Issue.!
+
+- date: 2026-03-04T19:53:19Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-03-04T19:53:20Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

@@ -1,0 +1,69 @@
+---
+title: Implementação da lógica de validação de derivação do parent_item
+state: C
+author: carloshob
+created: '2026-05-05T20:49:58Z'
+updated: '2026-05-05T20:50:38Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: null
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-04-01'
+  Data de vencimento: '2026-04-30'
+  Data Fim: '2026-04-29'
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição
+  
+  Considerando que a estrutura da codificação pode alterar tanto em relação à quantidade de dígitos e níveis, foi necessário implementar regra de generalização capaz de validar a correta identificação do Nível identificado e do nível de fato preenchido na estrutura do código.
+  
+---
+# regs
+
+- date: 2026-05-05T20:49:59Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-05-05T20:50:00Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-05-05T20:50:01Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-05-05T20:50:05Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2026-05-05T20:50:38Z
+  reg: comment
+  author: carloshob
+  body: |-
+    Implamentada [especificação](https://github.com/splor-mg/classificador-receita/commit/9af97833a40e36ba9489ae26c05b3812fa4964ee) e [validação de parent_item_id]
+
+- date: 2026-05-05T20:50:38Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-05-05T20:50:39Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

@@ -1,0 +1,80 @@
+---
+title: Criação de Models Django Mapeando Tabelas Bitemporais
+state: O
+author: carloshob
+created: '2025-11-28T20:02:42Z'
+updated: '2026-01-13T17:36:56Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: SGDB - App Web de Gestão
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: ToDo
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-04-27'
+  Data de vencimento: '2026-05-08'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Criar models Django que mapeiam as tabelas do banco bitemporal, utilizando `managed=False` para indicar que as tabelas já existem. Implementar custom Managers e QuerySets para facilitar consultas temporais.
+  
+  ### Entregas:
+  
+  - Models Django para todas as entidades principais
+  - Models configurados com `managed=False`
+  - Custom Managers para consultas as-of
+  - Custom QuerySets para queries temporais
+  - Documentação dos models
+  
+  ### Observações:
+  
+  - Models devem refletir exatamente a estrutura do banco
+  - Custom Managers devem facilitar consultas bitemporais
+  - Considerar uso de `Meta.db_table` para nomes de tabelas
+---
+# regs
+
+- date: 2025-11-28T20:02:43Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T20:02:44Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T20:02:56Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T20:02:59Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:03:04Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:03:23Z
+  reg: milestone:added:SGDB - App Web de Gestão
+  author: carloshob
+
+- date: 2025-12-05T17:00:01Z
+  reg: relationship:parent_added
+  author: carloshob
+---

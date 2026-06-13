@@ -1,0 +1,136 @@
+---
+title: '[16/03/2026] Reunião 05 - Repasses e Alinhamentos'
+state: C
+author: carloshob
+created: '2026-03-06T14:43:38Z'
+updated: '2026-05-28T18:28:31Z'
+labels:
+- meeting
+assignees:
+- carloshob
+milestone: Implementação do Banco de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-03-16'
+  Data de vencimento: '2026-03-16'
+  Data Fim: '2026-03-16'
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  _[ [Gravação do encontro](https://www.youtube.com/watch?v=t3Q27RuxftM&list=PLX2MgvHSaqUu1lNODdj5nqNNE6AU9mXbd&index=2&pp=iAQBsAgC) | [Reunião anterior](https://github.com/splor-mg/classificador-receita/issues/60) | [Próxima reunião](https://github.com/splor-mg/classificador-receita/issues/61) ]_
+  
+  ### Descrição
+  
+  Encontro periódico para a sincronização entre as equipes de desenvolvimento (AID) e a equipe de negócio (DCAF) dedicado ao **repasse** das implementações realizadas desde a reunião anterior e ao **alinhamento** das decisões de modelagem, regras de negócio e próximos passos do projeto.
+  
+  
+  ## Pauta
+  
+  - Conclusão da implementação das operações de edição e criação no banco  
+    - Garantia da **integridade temporal** 
+      - Bloqueio de edição de data de vigência da "Versão atual" em "Registro de nova vigência", sendo calculado como dependência da "Data de Início de Vigência" da "Nova versão"
+      - Bloqueio de Data de Fim de Vigência menor que Data de Início de Vigência
+      - Quando o tipo de edição for de "Registro de nova vigência", impedir "Data de Início de Vigência" anterior à "Data de Início de Vigência" da "Versão Atual"
+      - Conflito de vigência: implementada validação com mensagem apontando para edição do registro conflitante
+      - Alterar harmonização de padrões de registros de triggers bitemporais:
+        Considerando `ano corrente` = Y, Hoje = D (data atual):
+  		- dt_vig_inicio(atual) no ano corrente e < hoje	--> Nova versão começa em D (hoje).
+  		- dt_vig_inicio(atual) no ano corrente e == hoje	--> Nova versão começa em D+1 dia (amanhã).
+  		- dt_vig_inicio(atual) no ano corrente e > hoje	--> Nova versão começa no dia seguinte a dt_vig_inicio(atual).
+  		- dt_vig_inicio(atual) em ano futuro				--> Nova versão sugerida com início em 01/01 do ano seguinte a dt_vig_inicio(atual).
+  		- dt_vig_inicio(atual) em ano anterior e dt_vig_fim(autal) é sentinela ou atinge/ultrapassa o ano corrente	--> Nova versão começa em 01/01 de Y (ano corrente).
+  		- dt_vig_inicio(atual) em ano anterior e dt_vig_fim(autal) é totalmente antes de 01/01 de Y	--> Nova versão começa no dia seguinte a dt_vig_inicio(atual).
+  		- qualquer caso não coberto explicitamente	-->  Fallback: nova versão começa em 01/01 de Y (ano corrente).
+  		- dt_vig_inicio(atual) em ano anterior e dt_vig_fim(autal) é None ou sentinela --> 	Nova versão fica com fim sentinela.
+  		- dt_vig_inicio(atual) em ano anterior e dt_vig_fim(autal) é uma data específica --> 	Nova versão copia o mesmo fim da versão atual.
+  		- dt_vig_inicio(atual) no ano corrente ou futuro (sem fim explícito informado) --> 	Nova versão fica com fim sentinela.
+  		- para novos registros (tela de adição), vigência vem pré-preenchida com: início em 01/01 do ano corrente e fim em sentinela, podendo ser editada livremente antes do primeiro salvamento.
+  
+  
+     - Implementação de **mensagens dinâmicas** de orientação e alertas de consistência
+     - Implementação dos protocolos de **bloqueio e exclusão**
+    - Implementação do protocolo de **reativação** de registros inativos
+      - Bloqueio de reativação com vigência sobreposta
+      - Capacidade de editar o conteúdo dos atributos na atividade de reativação
+      - _obs.: SCD-2, não se altera Data de Fim de Registro quando diferente do valor sentinela_
+    - Implementação de protocolo de **criação de novo registro**
+      - Normalização/padronização do identificador semântico
+      - Bloqueio de criação de novo registro com fim da vigência anterior ao início
+      - Bloqueio de criação de id igual a id já ativo
+    
+  - Replicar estrutura de `Série de Classificações` para demais recursos 
+  
+  ## Participantes
+  - @carloshob 
+  - @gabrielbdornas 
+  - @Laura-Dilly 
+  - @marcelatsm 
+  
+  ## Assuntos Tratados
+  - Foram repassados todos os tópicos, em relação aos quais não houve questionamentos que implicassem em alteração da condução que tem sido feita
+  - Foi ratificada a alteração dos encontros para periodicidade quinzenal, às segundas-feiras.
+  
+  ## Encaminhamentos
+  - Continuação da implementação da modelagem padrão para os demais recursos do projeto
+  - Carregamento da base inicial do classificador
+  
+---
+# regs
+
+- date: 2026-03-06T14:43:38Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-03-06T14:43:39Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-03-06T14:43:40Z
+  reg: label:added:meeting
+  author: carloshob
+
+- date: 2026-03-06T14:43:41Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-03-06T14:43:44Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-03-06T14:45:06Z
+  reg: title:changed:"[12/03/2026] Reunião de Repasse":"[12/03/2026] Reunião 05 - Repasses"
+  author: carloshob
+
+- date: 2026-03-06T14:45:19Z
+  reg: milestone:added:Implementação do Banco de Dados
+  author: carloshob
+
+- date: 2026-03-06T14:45:33Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-03-12T17:39:43Z
+  reg: title:changed:"[12/03/2026] Reunião 05 - Repasses":"[16/03/2026] Reunião 05 - Repasses e Alinhamentos"
+  author: carloshob
+
+- date: 2026-03-16T17:19:16Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-03-16T17:19:18Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

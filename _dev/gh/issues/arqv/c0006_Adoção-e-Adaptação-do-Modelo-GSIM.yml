@@ -1,0 +1,82 @@
+---
+title: Adoção e Adaptação do Modelo GSIM
+state: C
+author: carloshob
+created: '2025-11-28T19:21:26Z'
+updated: '2026-01-19T19:21:18Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Arquitetura de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2025-12-01'
+  Data de vencimento: '2025-12-16'
+  Data Fim: '2025-12-31'
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Estudar e adotar o [GSIM (Generic Statistical Information Model)](https://unece.org/statistics/publications/generic-statistical-information-model-version-20-user-guide) como referência conceitual para modelagem do classificador. Adaptar o modelo GSIM às necessidades específicas do Classificador de Natureza de Receita do Estado de Minas Gerais, garantindo alinhamento com padrões internacionais.
+  
+  ### Entregas:
+  
+  - ADR-002: Adoção do modelo GSIM
+  - Documentação sobre GSIM Statistical Classifications Model
+  - Mapeamento de conceitos GSIM para domínio do classificador
+  - Adaptações necessárias ao modelo base
+  - Revisão e aprovação pela DCAF
+---
+# regs
+
+- date: 2025-11-28T19:21:26Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T19:21:27Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T19:21:40Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T19:21:42Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T19:21:47Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T19:22:44Z
+  reg: milestone:added:Arquitetura de Dados
+  author: carloshob
+
+- date: 2025-12-05T16:56:51Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-01-19T19:21:18Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-01-19T19:21:19Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

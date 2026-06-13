@@ -1,0 +1,68 @@
+---
+title: Ajustar validação da estrutura do código definida para União tendo em vista acréscimo de dígitos no Estado MG
+state: C
+author: carloshob
+created: '2026-05-05T20:53:58Z'
+updated: '2026-05-05T20:54:59Z'
+labels:
+- bug
+assignees:
+- carloshob
+milestone: null
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-04-01'
+  Data de vencimento: '2026-04-30'
+  Data Fim: '2026-04-29'
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição
+  
+  Considerando que o Estado de Minas Gerais historicamente acrescentou dígitos de codificação ao ementário promulgado pela União, considerando que as tradicionais validações da estrutura do código confrontam o código atual com o número de dígitos cadastrados inicialmente para a União na tabela de Níveis Hierárquicos, e considerando que lá a informação consta com a quantidade original de dígitos, sem os acréscimos do Estado, essa conflito está gerando travamento por inconsistência no momento de criar um novo item de classificação da União.
+---
+# regs
+
+- date: 2026-05-05T20:53:58Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-05-05T20:54:00Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-05-05T20:54:00Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-05-05T20:54:03Z
+  reg: label:added:bug
+  author: carloshob
+
+- date: 2026-05-05T20:54:59Z
+  reg: comment
+  author: carloshob
+  body: |-
+    Estrutura do código foi [ajustada da estrutura de codificação](https://github.com/splor-mg/classificador-receita/commit/bbc1e196765ca92ce6ce50d8f2f7daafa6a8185e) na tabela de nível hierárquico, de forma a retratar o acréscimo de códigos feitos por MG, bem como [renderização da máscara](https://github.com/splor-mg/classificador-receita/commit/05695e5cce2e269d365c8f0940463176556213ef) ao criar receitas
+
+- date: 2026-05-05T20:54:59Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-05-05T20:55:01Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

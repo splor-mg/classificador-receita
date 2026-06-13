@@ -1,0 +1,77 @@
+---
+title: Ajuste de padrão de valor vazio para NULL em todas as tabelas seed e exportação
+state: C
+author: carloshob
+created: '2026-05-05T20:38:28Z'
+updated: '2026-05-05T20:39:29Z'
+labels:
+- bug
+assignees:
+- carloshob
+milestone: Migração de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-04-01'
+  Data de vencimento: '2026-04-30'
+  Data Fim: '2026-04-29'
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição
+  
+  O padrão de identificação utilizado inicialmente para identificar campo não preenchido era um traço "-". 
+  
+  Esse padrão estava gerando inconsistências no momento da exportação das bases, precisando ser padronizado.
+  
+---
+# regs
+
+- date: 2026-05-05T20:38:29Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-05-05T20:38:31Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-05-05T20:38:32Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-05-05T20:38:38Z
+  reg: label:added:bug
+  author: carloshob
+
+- date: 2026-05-05T20:38:43Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-05-05T20:39:07Z
+  reg: milestone:added:Migração de Dados
+  author: carloshob
+
+- date: 2026-05-05T20:39:14Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-05-05T20:39:29Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-05-05T20:39:31Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

@@ -1,0 +1,80 @@
+---
+title: Carregamento de Dados Históricos com Transaction Time
+state: O
+author: carloshob
+created: '2025-11-28T19:54:59Z'
+updated: '2026-01-13T17:36:55Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Migração de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: ToDo
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-05-01'
+  Data de vencimento: '2026-05-29'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Carregar dados históricos do Ementário Excel no banco, atribuindo transaction_time apropriado para cada registro histórico. Garantir que o histórico completo seja preservado e rastreável.
+  
+  ### Entregas:
+  
+  - Dados históricos carregados no banco
+  - Transaction_time atribuído corretamente
+  - Validação de completude histórica
+  - Relatório de migração histórica
+  - Aprovação da DCAF sobre dados migrados
+  
+  ### Observações:
+  
+  - Pode ser executada em paralelo com Issue #016
+  - Transaction_time deve refletir data real de modificação quando disponível
+  - Validar que não há gaps temporais críticos
+---
+# regs
+
+- date: 2025-11-28T19:54:59Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T19:54:59Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T19:55:01Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T19:55:13Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T19:55:18Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T19:55:59Z
+  reg: milestone:added:Migração de Dados
+  author: carloshob
+
+- date: 2025-12-05T16:59:37Z
+  reg: relationship:parent_added
+  author: carloshob
+---

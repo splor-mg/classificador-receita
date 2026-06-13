@@ -1,0 +1,100 @@
+---
+title: '[26/02/2026] Reunião 03 - Demonstração de MVP Django'
+state: C
+author: carloshob
+created: '2026-02-26T18:05:44Z'
+updated: '2026-05-27T17:38:17Z'
+labels:
+- meeting
+assignees:
+- carloshob
+milestone: Implementação do Banco de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Data início: '2026-02-26'
+  Data de vencimento: '2026-02-26'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  _[ [Gravação do encontro](https://www.youtube.com/watch?v=I6ZQf-2E6Pg&list=PLX2MgvHSaqUu1lNODdj5nqNNE6AU9mXbd&index=1&t=2s&pp=iAQBsAgC) | [Reunião anterior](https://github.com/splor-mg/classificador-receita/issues/47) | [Próxima reunião](https://github.com/splor-mg/classificador-receita/issues/57) ]_
+  
+  ### Descrição
+  
+  Encontro periódico para a sincronização entre as equipes de desenvolvimento (AID) e a equipe de negócio (DCAF) dedicado ao **repasse** das implementações realizadas desde a reunião anterior e ao **alinhamento** das decisões de modelagem, regras de negócio e próximos passos do projeto.
+  
+  
+  ## Pauta
+  - Remoção temporária da chave interna de `parent_id`
+  - Inclusão de filtros para registros ativos correntes, históricos e inativos
+  - Tratamento de eventos de exclusão
+  - Testagem de implementação
+  - ADR de vigência
+  
+  ## Assuntos tratados
+  - Quanto ao problema da chave interna da `parent_id`, ficou alinhado que, encerrada essa etapa inicial de estruturação da ferramenta Django de governança de banco fazendo as operações básicos, será feita reorganização do plano de trabalho, que deve avaliar a inclusão desse ponto como um issue
+  
+  - Quanto aos filtros implementados, observou-se uma imprecisão do filtro "Ativo (Ano Corrente)", já que percebemos que compreendia classificações com início de vigência em ano futuro. Foi alinhada a implementação de novo filtro, o de "Ativos (Futuro)"
+  
+  - Foram feitos testes da implementação e a grande parte dos registros ocorreu conforme desejado, com falha apenas dos últimos registros de "sobreposição de alterações". Novas rodadas de testes serão feitas para reproduzir o erro e ajustar
+  
+  - Sobre a ADR de vigência, foi ponderado de que, para fins de consistência do banco, especialmente tendo em vista a natureza das consultas orçamentárias, que é muito relevante instituir comportamento padrão para vigência de "toda" classificação ser referente ao primeiro dia do exercício fiscal. Como esse comportamento pode ser, eventualmente, contra-intuitivo para um eventual operador do banco de dados, ponderou-se ser relevante documentar essa decisão via ADR.
+  
+  - Não houve tempo hábil para testes de eventos de exclusão.
+  
+  
+  ## Participantes
+  - @carloshob 
+  - @Laura-Dilly 
+  
+---
+# regs
+
+- date: 2026-02-26T18:05:45Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-02-26T18:05:45Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-02-26T18:05:46Z
+  reg: label:added:meeting
+  author: carloshob
+
+- date: 2026-02-26T18:05:47Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-02-26T20:20:33Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-02-26T20:25:12Z
+  reg: milestone:added:Implementação do Banco de Dados
+  author: carloshob
+
+- date: 2026-02-26T20:25:25Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-02-26T20:25:26Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-02-26T20:28:47Z
+  reg: assignee:added:carloshob
+  author: carloshob
+---

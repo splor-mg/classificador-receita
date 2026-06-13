@@ -1,0 +1,98 @@
+---
+title: Definição de Requisitos Funcionais com DCAF
+state: C
+author: carloshob
+created: '2025-11-28T20:01:06Z'
+updated: '2026-03-04T20:00:57Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: SGDB - App Web de Gestão
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Data início: null
+  Data de vencimento: null
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Realizar workshops e reuniões com a DCAF para levantar e detalhar os requisitos funcionais do aplicativo web de gestão que será construído utilizando Django. O objetivo é mapear os fluxos de trabalho, perfis e permissões de usuários, principais regras de negócio, casos de uso e todas as especificidades necessárias para o desenvolvimento da aplicação web com o framework Django.
+  
+  ### Entregas:
+  
+  - Documento de requisitos funcionais
+  - Casos de uso documentados
+  - Fluxos de trabalho definidos
+  - Perfis de usuário e permissões
+  - Protótipos de interface (wireframes ou mockups)
+  - Aprovação da DCAF sobre requisitos
+  
+  ### Observações:
+  
+  - Requer participação ativa da DCAF
+  - Documentar decisões e trade-offs
+  - Validar requisitos com usuários finais
+---
+# regs
+
+- date: 2025-11-28T20:01:06Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T20:01:07Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T20:01:15Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T20:01:19Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:01:25Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:02:03Z
+  reg: milestone:added:SGDB - App Web de Gestão
+  author: carloshob
+
+- date: 2025-12-05T16:59:48Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-03-04T20:00:25Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-03-04T20:00:56Z
+  reg: comment
+  author: carloshob
+  body: |-
+    @gabrielbdornas, conforme conversamos, vou fechar, se for relevante, no futuro reabrimos.
+
+- date: 2026-03-04T20:00:57Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-03-04T20:00:58Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

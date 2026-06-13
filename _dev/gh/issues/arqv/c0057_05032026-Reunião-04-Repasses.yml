@@ -1,0 +1,106 @@
+---
+title: '[05/03/2026] Reunião 04 - Repasses'
+state: C
+author: carloshob
+created: '2026-02-26T20:27:52Z'
+updated: '2026-05-28T18:15:04Z'
+labels:
+- meeting
+assignees:
+- carloshob
+milestone: Implementação do Banco de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Data início: '2026-03-05'
+  Data de vencimento: '2026-03-05'
+  Projeto: Datamart
+  Planejado: Sim
+  Data Fim: '2026-03-05'
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  _[ ~[Gravação do encontro](https://www.youtube.com/playlist?list=PLX2MgvHSaqUu1lNODdj5nqNNE6AU9mXbd)~ | [Reunião anterior](https://github.com/splor-mg/classificador-receita/issues/56) | [Próxima reunião](https://github.com/splor-mg/classificador-receita/issues/60) ]_
+  
+  ### Descrição
+  
+  Encontro periódico para a sincronização entre as equipes de desenvolvimento (AID) e a equipe de negócio (DCAF) dedicado ao **repasse** das implementações realizadas desde a reunião anterior e ao **alinhamento** das decisões de modelagem, regras de negócio e próximos passos do projeto.
+  
+  
+  ## Pauta
+  - Implementação de Ano (Futuro) como filtro
+  - Tratamento de eventos de exclusão
+  - Testagem de implementação
+  - ADR de vigência
+  
+  ## Participantes
+  - @carloshob 
+  - @gabrielbdornas 
+  - @Laura-Dilly 
+  - @marcelatsm 
+  
+  ## Assuntos tratados
+  - Foram relatadas as implementações realizadas desde a última semana, especialmente as voltadas à operação de atualização das classificações vigentes.
+  
+  - Discutiu-se que comportamentos intrínsecos ao domínio orçamentário — como o início da vigência de uma nova versão de classificação, por padrão, no primeiro dia do ano — podem ser implementados por meio de um layout e de um protocolo de atualização predispostos a esse comportamento.
+  
+  - Foi reforçado a regra de negócio de que não existirá protocolo de exclusão física no banco taxonômico
+  
+  - As atualizações estão sendo implementadas, em versão de teste, para o recurso Série de Classificações.
+  
+  - Esclareceu-se que está sendo implementada uma versão operacional do banco, contemplando inicialmente as funcionalidades básicas já existentes. A ferramenta de gestão das tabelas de correspondência ainda precisa ser desenhada e implementada
+  
+  ## Encaminhamentos
+  - @carloshob ficou responsável por concluir a implementação das operações de edição e criação no banco e replicar a mesma estrutura para os demais recursos.
+  
+  - Após a conclusão da etapa anterior, iniciar o desenvolvimento das estruturas para importação de classificações históricas.
+  
+---
+# regs
+
+- date: 2026-02-26T20:27:52Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-02-26T20:27:53Z
+  reg: label:added:meeting
+  author: carloshob
+
+- date: 2026-02-26T20:28:00Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-02-26T20:28:02Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-02-26T20:28:03Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-02-26T20:28:28Z
+  reg: milestone:added:Implementação do Banco de Dados
+  author: carloshob
+
+- date: 2026-02-26T20:28:36Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-03-06T14:40:43Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-03-06T14:40:46Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

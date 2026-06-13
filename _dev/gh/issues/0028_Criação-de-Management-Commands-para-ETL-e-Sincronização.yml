@@ -1,0 +1,80 @@
+---
+title: Criação de Management Commands para ETL e Sincronização
+state: O
+author: carloshob
+created: '2025-11-28T20:13:16Z'
+updated: '2026-01-13T17:37:02Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: SGDB - App Web de Gestão
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: ToDo
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-06-01'
+  Data de vencimento: '2026-06-26'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Criar Django management commands para operações de ETL e sincronização, permitindo execução de tarefas administrativas via linha de comando. Commands devem suportar operações de migração, sincronização e manutenção.
+  
+  ### Entregas:
+  
+  - Management commands para ETL
+  - Management commands para sincronização
+  - Commands para manutenção e validação
+  - Documentação de uso dos commands
+  - Testes dos management commands
+  
+  ### Observações:
+  
+  - Commands devem ser idempotentes quando possível
+  - Implementar logging adequado
+  - Considerar uso em scripts automatizados e cron jobs
+---
+# regs
+
+- date: 2025-11-28T20:13:16Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T20:13:17Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T20:13:25Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T20:13:28Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:13:34Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:14:24Z
+  reg: milestone:added:SGDB - App Web de Gestão
+  author: carloshob
+
+- date: 2025-12-05T17:00:54Z
+  reg: relationship:parent_added
+  author: carloshob
+---

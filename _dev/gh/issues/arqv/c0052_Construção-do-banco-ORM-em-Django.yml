@@ -1,0 +1,68 @@
+---
+title: Construção do banco ORM em Django
+state: C
+author: carloshob
+created: '2026-01-19T18:26:22Z'
+updated: '2026-03-31T19:24:33Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Implementação do Banco de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-01-01'
+  Data de vencimento: '2026-03-31'
+  Data Fim: '2026-03-31'
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição
+  
+  Realizar estudo e capacitação em Django Framework com foco nos aspectos essenciais para o projeto do Classificador de Natureza de Receita, abrangendo os fundamentos do framework, o uso do ORM, a integração com PostgreSQL, a modelagem temporal e bitemporal, views, autenticação, interface administrativa, management commands e testes.
+  
+  
+---
+# regs
+
+- date: 2026-01-19T18:26:23Z
+  reg: milestone:added:Implementação do Banco de Dados
+  author: carloshob
+
+- date: 2026-01-19T18:26:23Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-01-19T18:26:24Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-01-19T18:26:24Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-01-19T18:26:25Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2026-01-19T18:26:26Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-01-19T18:26:49Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+---

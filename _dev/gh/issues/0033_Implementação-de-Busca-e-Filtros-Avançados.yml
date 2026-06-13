@@ -1,0 +1,81 @@
+---
+title: Implementação de Busca e Filtros Avançados
+state: O
+author: carloshob
+created: '2025-11-28T20:22:13Z'
+updated: '2025-11-28T20:23:00Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Dashboard Público
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: ToDo
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-07-01'
+  Data de vencimento: '2026-07-31'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Implementar sistema de busca e filtros avançados no dashboard, permitindo busca por código, descrição, nível hierárquico, período de vigência, etc. Sistema deve usar queries otimizadas do Django.
+  
+  ### Entregas:
+  
+  - Sistema de busca implementado
+  - Filtros avançados funcionais
+  - Forms Django para busca e filtros
+  - Queries otimizadas (select_related, prefetch_related)
+  - Interface de busca e filtros
+  - Testes de busca e filtros
+  
+  ### Observações:
+  
+  - Busca deve ser performática mesmo com grandes volumes
+  - Considerar uso de índices PostgreSQL
+  - Implementar busca full-text se necessário
+---
+# regs
+
+- date: 2025-11-28T20:22:13Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T20:22:14Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T20:22:23Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T20:22:26Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:22:30Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:23:00Z
+  reg: milestone:added:Dashboard Público
+  author: carloshob
+
+- date: 2025-12-05T17:01:54Z
+  reg: relationship:parent_added
+  author: carloshob
+---

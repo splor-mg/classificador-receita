@@ -1,0 +1,60 @@
+---
+title: Avaliar a discriminação de campo hierárquico nos schemas
+state: O
+author: carloshob
+created: '2026-01-14T20:17:46Z'
+updated: '2026-01-14T20:17:46Z'
+labels:
+- chore
+assignees: []
+milestone: Modelagem de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Backlog
+  Projeto: Datamart
+  Data início: null
+  Data de vencimento: null
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição
+  
+  Após primeira versão dos schemas do projeto, @gabrielbdornas [questionou](https://github.com/splor-mg/classificador-receita/pull/49#discussion_r2643896694): 
+  
+  "já que o nosso [banco] será sempre hierárquica, precisamos mesmo deste campo? Ele é condição fundamental para funcionamento do modelo proposto?"
+  
+  Como suspeitava que a identificação de um objeto como hierárquico ou não poderia sim impactar o modelo, registrei o questionamento neste issue para avaliação posterior.
+---
+# regs
+
+- date: 2026-01-14T20:17:46Z
+  reg: milestone:added:Modelagem de Dados
+  author: carloshob
+
+- date: 2026-01-14T20:17:46Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-01-14T20:17:47Z
+  reg: label:added:chore
+  author: carloshob
+
+- date: 2026-01-14T20:17:48Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-01-14T20:18:17Z
+  reg: relationship:parent_added
+  author: carloshob
+---

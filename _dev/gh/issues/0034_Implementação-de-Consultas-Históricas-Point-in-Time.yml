@@ -1,0 +1,80 @@
+---
+title: Implementação de Consultas Históricas (Point-in-Time)
+state: O
+author: carloshob
+created: '2025-11-28T20:23:37Z'
+updated: '2026-01-13T17:37:03Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Dashboard Público
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: ToDo
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-07-01'
+  Data de vencimento: '2026-07-31'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Implementar funcionalidade de consultas históricas (point-in-time queries) no dashboard, permitindo que usuários consultem estado do classificador em datas específicas. Utilizar SQL raw para consultas temporais complexas.
+  
+  ### Entregas:
+  
+  - Views Django para consultas históricas
+  - Interface para seleção de data
+  - Consultas point-in-time implementadas
+  - Visualização de histórico
+  - Testes de consultas históricas
+  
+  ### Observações:
+  
+  - Consultas devem usar SQL raw para bitemporalidade
+  - Validar performance de consultas históricas
+  - Interface deve ser intuitiva para seleção de data
+---
+# regs
+
+- date: 2025-11-28T20:23:38Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T20:23:40Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T20:23:46Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T20:23:49Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:23:52Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:24:09Z
+  reg: milestone:added:Dashboard Público
+  author: carloshob
+
+- date: 2025-12-05T17:01:58Z
+  reg: relationship:parent_added
+  author: carloshob
+---

@@ -1,0 +1,94 @@
+---
+title: Mapeamento de Campos Excel para Modelo Relacional
+state: C
+author: carloshob
+created: '2025-11-28T19:51:34Z'
+updated: '2026-03-04T19:55:23Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Migração de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-02-02'
+  Data de vencimento: '2026-02-27'
+  Data Fim: '2026-02-27'
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Mapear todos os campos do Ementário Excel para o modelo relacional definido, identificando transformações necessárias, regras de negócio e tratamento de dados inconsistentes. Esta issue estabelece a ponte entre dados fonte e destino.
+  
+  ### Entregas:
+  
+  - Matriz de mapeamento Excel → Tabelas
+  - Documentação de transformações necessárias
+  - Regras de negócio para tratamento de dados
+  - Identificação de inconsistências e lacunas
+  - Plano de tratamento de dados problemáticos
+  
+  ### Observações:
+  
+  - Requer acesso completo ao Ementário Excel
+  - Validar mapeamento com DCAF
+  - Documentar decisões sobre tratamento de dados inconsistentes
+---
+# regs
+
+- date: 2025-11-28T19:51:35Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T19:51:37Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T19:51:43Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T19:51:47Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T19:51:53Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T19:52:25Z
+  reg: milestone:added:Migração de Dados
+  author: carloshob
+
+- date: 2025-12-05T16:58:27Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-03-04T19:55:23Z
+  reg: comment
+  author: carloshob
+  body: |-
+    See #12 
+
+- date: 2026-03-04T19:55:23Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-03-04T19:55:24Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

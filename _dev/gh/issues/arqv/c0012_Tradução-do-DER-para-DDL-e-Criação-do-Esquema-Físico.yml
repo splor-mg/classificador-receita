@@ -1,0 +1,95 @@
+---
+title: Tradução do DER para DDL e Criação do Esquema Físico
+state: C
+author: carloshob
+created: '2025-11-28T19:40:03Z'
+updated: '2026-03-04T19:51:36Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Implementação do Banco de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-02-02'
+  Data de vencimento: '2026-02-27'
+  Data Fim: '2026-02-27'
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Traduzir o Diagrama Entidade-Relacionamento (DER) para Data Definition Language (DDL), criando todas as tabelas, constraints, índices e estruturas necessárias no PostgreSQL. Esta issue materializa o modelo lógico em esquema físico executável.
+  
+  ### Entregas:
+  
+  - Scripts DDL completos (`src/sql/ddl/create_tables.sql`)
+  - Criação de todas as tabelas com constraints
+  - Definição de índices primários e secundários
+  - Scripts de inicialização do banco
+  - Validação de sintaxe SQL
+  
+  ### Observações:
+  
+  - Scripts devem ser versionados e idempotentes
+  - Considerar naming conventions consistentes
+  - Incluir comentários em SQL para documentação
+  
+---
+# regs
+
+- date: 2025-11-28T19:40:04Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T19:40:06Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T19:40:14Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T19:41:29Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T19:41:32Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T19:41:54Z
+  reg: milestone:added:Implementação do Banco de Dados
+  author: carloshob
+
+- date: 2025-12-05T16:57:23Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-03-04T19:51:36Z
+  reg: comment
+  author: carloshob
+  body: |-
+    See https://github.com/splor-mg/classificador-receita/blob/banco/docs/erd/erd.png
+
+- date: 2026-03-04T19:51:36Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-03-04T19:51:39Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

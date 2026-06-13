@@ -1,0 +1,95 @@
+---
+title: '[05/12/2025] Reunião 1 - Definições do projeto'
+state: C
+author: carloshob
+created: '2025-12-05T14:02:46Z'
+updated: '2026-05-27T18:32:40Z'
+labels:
+- meeting
+assignees:
+- carloshob
+milestone: Reuniões
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Data início: '2025-12-05'
+  Data de vencimento: '2025-12-05'
+  Data Fim: '2025-12-05'
+  Planejado: Sim
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  _[ [Gravação do encontro](https://www.youtube.com/playlist?list=PLX2MgvHSaqUu1lNODdj5nqNNE6AU9mXbd) | ~Reunião anterior~ | [Próxima reunião](https://github.com/splor-mg/classificador-receita/issues/56) ]_
+  
+  ### Descrição
+  
+  Encontro periódico para a sincronização entre as equipes de desenvolvimento (AID) e a equipe de negócio (DCAF) dedicado ao **repasse** das implementações realizadas desde a reunião anterior e ao **alinhamento** das decisões de modelagem, regras de negócio e próximos passos do projeto.
+  
+  
+  ## Pauta
+  - Alinhamento sobre o cronograma
+  - Alinhamento sobre condução do projeto
+  
+  ## Participantes
+  - @Laura-Dilly 
+  - @carloshob 
+  
+  ## Alinhamentos
+  - **Cronograma:** considerando que o cronograma ficou muito longo, combinamos que faremos encontros mensais no intuito de revisar o planejamento do mês subsequente.
+  - **Conceitos:** alinhamos que os conceitos de relevância para o projeto, tais como de "natureza de receita", "SGDB", "CRUD" deverão ser registrados na pasta `docs/conceitos/`
+  - **Fases e branches**: definimos que abriremos uma branch para cada fase/[milestone](https://github.com/splor-mg/classificador-receita/milestones)
+  - **Papeis**: combinamos que as partes mais conceituais serão conduzidas pela AID. No entanto, as partes mais operacionais, o ideal é que a DCAF atue de forma mais autônoma.
+  
+  - **Primeira Fase - Arquitetura de dados**: 
+    - #4: pontuamos o entendimento de que seria interessante nomear os atributos do banco de dados em português e, caso seja necessário fazer uma análise de compatibilidade com parâmetros internacionais, a exemplo do [GSIM](https://unece.org/statistics/publications/generic-statistical-information-model-version-20-user-guide), podemos implementar um catálogo em `docs/catalogos` com a respectiva matriz de correspondência
+    - para a primeira fase, foi alinhado que a AID fará as respectivas ADR's, que serão revisadas pela DCAF.
+---
+# regs
+
+- date: 2025-12-05T14:02:47Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-12-05T14:02:48Z
+  reg: label:added:meeting
+  author: carloshob
+
+- date: 2025-12-05T14:02:49Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-12-05T14:02:54Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-12-05T14:03:08Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-12-05T14:03:27Z
+  reg: milestone:added:Reuniões
+  author: carloshob
+
+- date: 2025-12-05T14:04:10Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2025-12-05T16:47:12Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2025-12-05T16:47:15Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

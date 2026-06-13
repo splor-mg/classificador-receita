@@ -1,0 +1,100 @@
+---
+title: Configuração do Projeto Django e Estrutura de Apps
+state: C
+author: carloshob
+created: '2025-11-28T19:59:38Z'
+updated: '2026-03-04T19:59:53Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: SGDB - App Web de Gestão
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: WONTFIX
+  Projeto: Datamart
+  Data início: null
+  Data de vencimento: null
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Configurar projeto Django inicial, definir estrutura de apps (core, gestao), configurar settings para PostgreSQL, configurar ambiente de desenvolvimento e estabelecer convenções de código e estrutura de diretórios.
+  
+  ### Entregas:
+  
+  - Projeto Django configurado
+  - Estrutura de apps definida
+  - Settings configurados (database, apps, middleware)
+  - Ambiente de desenvolvimento funcional
+  - Convenções de código documentadas
+  
+  **Data de Início:** 10/04/2026  
+  **Data de Fim:** 24/04/2026
+  
+  ### Observações:
+  
+  - Seguir boas práticas do Django (Two Scoops of Django)
+  - Configurar variáveis de ambiente para secrets
+  - Preparar estrutura para múltiplos ambientes
+---
+# regs
+
+- date: 2025-11-28T19:59:39Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T19:59:41Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T19:59:52Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T19:59:57Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:00:01Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:00:28Z
+  reg: milestone:added:SGDB - App Web de Gestão
+  author: carloshob
+
+- date: 2025-12-05T16:59:45Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-03-04T19:59:53Z
+  reg: comment
+  author: carloshob
+  body: |-
+    Fix after #19 
+
+- date: 2026-03-04T19:59:54Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-03-04T19:59:55Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-03-04T19:59:58Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+---

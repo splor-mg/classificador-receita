@@ -1,0 +1,113 @@
+---
+title: '[13/03/2026] Reunião PRODEMGE - Validação/Entrega/Sprint'
+state: C
+author: carloshob
+created: '2026-03-13T22:28:43Z'
+updated: '2026-05-28T18:14:02Z'
+labels:
+- meeting
+assignees:
+- carloshob
+milestone: Implementação do Banco de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-03-13'
+  Data de vencimento: '2026-03-13'
+  Data Fim: '2026-03-13'
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  _[ ~Gravação do encontro~ | [Reunião anterior](https://github.com/splor-mg/classificador-receita/issues/57) | [Próxima reunião](https://github.com/splor-mg/classificador-receita/issues/59) ]_
+  
+  
+  ## Pauta
+  - Evolução da implementação do orçamento da receita
+  
+  ## Participantes
+  - PRODEMGE (Nivaldo e demais)
+  - DCPPN (Izabella e demais)
+  - @Laura-Dilly 
+  - @marcelatsm 
+  - Túlio Gonzaga
+  - Pedro Fonseca (DCMEFO)
+  - @carloshob 
+  
+  ## Assuntos tratados
+  - Parseamento de consultas de receita
+    Nivaldo ponderou que o parse das consultas de receitas, com o objetivo de permitir buscas tanto por texto livre quanto por códigos parciais de receita, foi implementado apenas na etapa de interpretação da entrada no campo de busca. Nesse modelo, o parsing é aplicado ao dropdown de sugestões do próprio campo de busca, mas não é aplicado ao conjunto de resultados retornados pela consulta.
+  
+    Como o usuário somente pode selecionar uma das opções apresentadas no dropdown, a consulta efetivamente executada sempre fica vinculada a um código de receita específico, correspondente ao item selecionado na lista de sugestões.
+  
+    Nivaldo argumentou que, na implementação atual, seria necessário optar por uma única estratégia de parsing: 
+      - aplicar o parsing na geração das sugestões do dropdown, ou
+      - aplicar o parsing diretamente na consulta que gera o resultado da busca.
+  
+    @carloshob apresentou um contraponto, sugerindo a implementação de um “dropdown híbrido”, que:
+      - renderize sugestões obtidas via fetch com base nos termos parciais digitados; e
+      - inclua também a opção de executar a busca exatamente com o texto informado no campo, sem exigir a seleção de uma sugestão específica.
+  
+     Com essa abordagem, seria possível interpretar (parsear) a string de busca no backend e retornar resultados que contemplem múltiplos matches, inclusive para códigos parciais ou termos textuais, ampliando a flexibilidade da consulta.
+  
+  - API para acessar novo sistema
+    @marcelatsm e @carloshob voltaram a pontuar a existência de esforço de criação de um novo sistema de governança de ementários, cuja arquitetura e pontos de implementação diferem significativamente do modelo atualmente adotado pelo sistema de governança de classificadores existentes, apesar de os elementos básicos serem idênticos.
+  
+    Ao questionarmos Nivaldo sobre a possibilidade de disponibilização de um endpoint de API que permitisse o acesso programático ao novo sistema, viabilizando, por exemplo, processos automatizados de sincronização de dados entre os dois sistemas, Nivaldo informou que esse tipo de integração não foi contemplado no escopo original do projeto. Ressaltou também que a implementação de uma API com esse objetivo não é trivial do ponto de vista técnico e demandaria discussão e planejamento específicos em momento futuro.
+    
+    Segundo ele, o cronograma de desenvolvimento para o próximo ano está prioritariamente orientado à implementação das funcionalidades essenciais do sistema, não contemplando, neste momento, recursos adicionais de integração.
+  
+    Nivaldo acrescentou ainda que, caso seja necessário realizar transferência ou sincronização de dados entre os sistemas, isso poderia ser operacionalizado utilizando as funcionalidades já existentes de exportação e importação em bloco, atualmente disponíveis na aplicação.
+  
+  
+  
+---
+# regs
+
+- date: 2026-03-13T22:28:44Z
+  reg: label:added:meeting
+  author: carloshob
+
+- date: 2026-03-13T22:28:44Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-03-13T22:28:46Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-03-13T22:29:03Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-03-13T22:29:16Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-03-13T22:29:38Z
+  reg: milestone:added:Implementação do Banco de Dados
+  author: carloshob
+
+- date: 2026-03-13T22:29:54Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-03-13T22:30:03Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-03-13T22:30:04Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

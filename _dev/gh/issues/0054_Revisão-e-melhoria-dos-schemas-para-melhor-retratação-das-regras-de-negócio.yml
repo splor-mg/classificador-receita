@@ -1,0 +1,182 @@
+---
+title: Revisão e melhoria dos schemas para melhor retratação das regras de negócio
+state: O
+author: carloshob
+created: '2026-01-19T18:41:39Z'
+updated: '2026-01-26T19:39:52Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Modelagem de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Backlog
+  Projeto: Datamart
+  Data início: null
+  Data de vencimento: null
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição
+  
+  Ao criar a primeira versão dos schemas em #49, a retratação ERD das chaves primária e estrangeira não ficou satisfatória, conforme [comentado](https://github.com/splor-mg/classificador-receita/pull/49#discussion_r2643887340). 
+  
+  Além disso, foi feita a ponderação de necessidade de melhorias na explicação dos campos/atributos, por exemplo, com melhor exploração das propriedades dos atributos (e.x.: `description`) e eventual inclusão de exemplos, conforme [este comentário](https://github.com/splor-mg/classificador-receita/pull/49#discussion_r2643893010).
+---
+# regs
+
+- date: 2026-01-19T18:41:40Z
+  reg: milestone:added:Modelagem de Dados
+  author: carloshob
+
+- date: 2026-01-19T18:41:41Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-01-19T18:41:41Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-01-19T18:41:42Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-01-19T18:41:46Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-01-19T18:41:52Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2026-01-23T17:51:33Z
+  reg: comment
+  edited: 2026-01-23T17:52:33Z
+  author: carloshob
+  body: |-
+    @gabrielbdornas, uma dúvida que ficou sobre o `git rebase`. 
+    
+    Conforme é possível ver acima, eu fiz duas menções a esse issue (#54) por equívoco, quando na verdade a intenção era fazer menção ao #53. 
+    
+    ```
+    ➜  classificador-receita git:(banco) git log --oneline
+    04b279b (HEAD -> banco, origin/banco) chore(assets): adiciona arquivo de exemplo do ementário de receita MG See https://github.com/splor-mg/classificador-receita/issues/53
+    5a8d160 chore(gitignore): remove temporariamente arquivos de data .xls e .csv See https://github.com/splor-mg/classificador-receita/issues/53
+    d28e6ff docs(django): adiciona anotações sobre implementação do Django no projeto See https://github.com/splor-mg/classificador-receita/issues/54
+    1037bab feat(django): implementa arquivos iniciais do projeto django See https://github.com/splor-mg/classificador-receita/issues/54
+    5c8cdc4 feat(gitignore): adiciona arquivos de desenvolvimento e gerenciamento de Django See https://github.com/splor-mg/classificador-receita/issues/53
+    ```
+    
+    Para corrigir tal erro, eu fiz o `git rebase` com a devida correção da descrição do commit:
+    
+    ```
+    ➜  classificador-receita git:(banco) git rebase -i 5c8cdc4
+    [detached HEAD 9222899] feat(django): implementa arquivos iniciais do projeto django See https://github.com/splor-mg/classificador-receita/issues/53
+     Date: Fri Jan 23 14:15:04 2026 -0300
+     6 files changed, 194 insertions(+)
+     create mode 100644 classificador/__init__.py
+     create mode 100644 classificador/asgi.py
+     create mode 100644 classificador/settings.py
+     create mode 100644 classificador/urls.py
+     create mode 100644 classificador/wsgi.py
+     create mode 100755 manage.py
+    [detached HEAD 23d79d0] docs(django): adiciona anotações sobre implementação do Django no projeto See https://github.com/splor-mg/classificador-receita/issues/53
+     Date: Fri Jan 23 14:15:57 2026 -0300
+     1 file changed, 42 insertions(+)
+     create mode 100644 _dev/spec_django.md
+    Successfully rebased and updated refs/heads/banco.
+    ➜  classificador-receita git:(banco) git push --force-with-lease origin banco
+    Enumerating objects: 25, done.
+    Counting objects: 100% (25/25), done.
+    Delta compression using up to 16 threads
+    Compressing objects: 100% (19/19), done.
+    Writing objects: 100% (21/21), 843.61 KiB | 5.17 MiB/s, done.
+    Total 21 (delta 8), reused 0 (delta 0), pack-reused 0
+    remote: Resolving deltas: 100% (8/8), completed with 4 local objects.
+    To github.com:splor-mg/classificador-receita.git
+     + 04b279b...fd4a78f banco -> banco (forced update)
+    ```
+    
+    Como a lógica do `rebase`, smj, é a reconstrução do histórico, eu esperava que este issue parasse de fazer menção aos commits anteriores com a mensagem equivocada, porém a referência continua aqui. 
+    
+    Fiz algo errado no rebase ou é uma inconsistência/regra de negócio do GitHub? 
+    
+    
+    
+    
+
+- date: 2026-01-24T14:05:30Z
+  reg: comment
+  author: gabrielbdornas
+  body: |-
+    > [@gabrielbdornas](https://github.com/gabrielbdornas), uma dúvida que ficou sobre o `git rebase`.
+    > 
+    > Conforme é possível ver acima, eu fiz duas menções a esse issue ([#54](https://github.com/splor-mg/classificador-receita/issues/54)) por equívoco, quando na verdade a intenção era fazer menção ao [#53](https://github.com/splor-mg/classificador-receita/issues/53).
+    > 
+    > ```
+    > ➜  classificador-receita git:(banco) git log --oneline
+    > 04b279b (HEAD -> banco, origin/banco) chore(assets): adiciona arquivo de exemplo do ementário de receita MG See https://github.com/splor-mg/classificador-receita/issues/53
+    > 5a8d160 chore(gitignore): remove temporariamente arquivos de data .xls e .csv See https://github.com/splor-mg/classificador-receita/issues/53
+    > d28e6ff docs(django): adiciona anotações sobre implementação do Django no projeto See https://github.com/splor-mg/classificador-receita/issues/54
+    > 1037bab feat(django): implementa arquivos iniciais do projeto django See https://github.com/splor-mg/classificador-receita/issues/54
+    > 5c8cdc4 feat(gitignore): adiciona arquivos de desenvolvimento e gerenciamento de Django See https://github.com/splor-mg/classificador-receita/issues/53
+    > ```
+    > 
+    > Para corrigir tal erro, eu fiz o `git rebase` com a devida correção da descrição do commit:
+    > 
+    > ```
+    > ➜  classificador-receita git:(banco) git rebase -i 5c8cdc4
+    > [detached HEAD 9222899] feat(django): implementa arquivos iniciais do projeto django See https://github.com/splor-mg/classificador-receita/issues/53
+    >  Date: Fri Jan 23 14:15:04 2026 -0300
+    >  6 files changed, 194 insertions(+)
+    >  create mode 100644 classificador/__init__.py
+    >  create mode 100644 classificador/asgi.py
+    >  create mode 100644 classificador/settings.py
+    >  create mode 100644 classificador/urls.py
+    >  create mode 100644 classificador/wsgi.py
+    >  create mode 100755 manage.py
+    > [detached HEAD 23d79d0] docs(django): adiciona anotações sobre implementação do Django no projeto See https://github.com/splor-mg/classificador-receita/issues/53
+    >  Date: Fri Jan 23 14:15:57 2026 -0300
+    >  1 file changed, 42 insertions(+)
+    >  create mode 100644 _dev/spec_django.md
+    > Successfully rebased and updated refs/heads/banco.
+    > ➜  classificador-receita git:(banco) git push --force-with-lease origin banco
+    > Enumerating objects: 25, done.
+    > Counting objects: 100% (25/25), done.
+    > Delta compression using up to 16 threads
+    > Compressing objects: 100% (19/19), done.
+    > Writing objects: 100% (21/21), 843.61 KiB | 5.17 MiB/s, done.
+    > Total 21 (delta 8), reused 0 (delta 0), pack-reused 0
+    > remote: Resolving deltas: 100% (8/8), completed with 4 local objects.
+    > To github.com:splor-mg/classificador-receita.git
+    >  + 04b279b...fd4a78f banco -> banco (forced update)
+    > ```
+    > 
+    > Como a lógica do `rebase`, smj, é a reconstrução do histórico, eu esperava que este issue parasse de fazer menção aos commits anteriores com a mensagem equivocada, porém a referência continua aqui.
+    > 
+    > Fiz algo errado no rebase ou é uma inconsistência/regra de negócio do GitHub?
+    
+    @carloshob, acho que você fez tudo certinho sim, neste caso, acredito ser apenas a forma que o GitHub trabalha, ele não apaga a menção anterior no Issue, ele somente adiciona a menção ao novo Issue, veja:
+    
+    <img width="1144" height="682" alt="Image" src="https://github.com/user-attachments/assets/9ec3c211-d368-46a1-ac15-ba21f8fdc3cf" />
+    
+    By the way, eu nunca tinha feito o `rebase` como você fez (passando apenas o número do commit). Em Geral, eu passava uma lista de commits usando o [`HEAD~3`](https://braico.me/notes/2025/03_Mar%C3%A7o/20250314_como_modificar_mensagem_commit/).  Gostei do jeito que você fez e achei, inclusive, mais prático!! Valeu pela dica.
+
+- date: 2026-01-26T19:39:52Z
+  reg: comment
+  author: carloshob
+  body: |-
+    entendi, @gabrielbdornas , obrigado pelo Help! Achei o `git rebase -i` na documentação!
+---

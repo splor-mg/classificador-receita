@@ -1,0 +1,97 @@
+---
+title: Habilitação Técnica - Estudo Django Framework e Implementação MVP
+state: C
+author: carloshob
+created: '2025-11-28T19:58:01Z'
+updated: '2026-03-04T19:50:01Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: SGDB - App Web de Gestão
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-02-02'
+  Data de vencimento: '2026-02-27'
+  Data Fim: '2026-03-27'
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Realizar estudo e capacitação em Django, cobrindo fundamentos do framework, ORM, views, templates, autenticação, admin interface, management commands e testes. Esta issue garante competência técnica para desenvolvimento da aplicação web.
+  
+  ### Entregas:
+  
+  - Conclusão de estudos de Django (documentação oficial, cursos)
+  - Exercícios práticos de Django
+  - Projeto Django de exemplo funcional
+  - Documentação de aprendizados
+  - Ambiente de desenvolvimento Django configurado
+  
+  ### Observações:
+  
+  - Pode ser executada parcialmente em paralelo com outras atividades
+  - Focar em aspectos relevantes para o projeto (ORM, PostgreSQL, bitemporalidade)
+---
+# regs
+
+- date: 2025-11-28T19:58:02Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T19:58:03Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T19:58:14Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T19:58:18Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T19:58:23Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T19:58:46Z
+  reg: milestone:added:SGDB - App Web de Gestão
+  author: carloshob
+
+- date: 2025-12-05T16:59:41Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-01-19T18:14:23Z
+  reg: title:changed:"Habilitação Técnica - Estudo Django Framework":"Habilitação Técnica - Estudo Django Framework e Implementação MVP"
+  author: carloshob
+
+- date: 2026-03-04T19:50:01Z
+  reg: comment
+  author: carloshob
+  body: |-
+    Conforme orientado por @gabrielbdornas, poderíamos não realizar #11 e #10 e já partir para o estudo do Django que englobará tudo isso.
+
+- date: 2026-03-04T19:50:01Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-03-04T19:50:03Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

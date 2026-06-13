@@ -1,0 +1,181 @@
+---
+title: '[EPIC] Implantação do Database do Classificador de Natureza de Receita Orçamentária do Estado'
+state: O
+author: carloshob
+created: '2025-10-10T20:47:29Z'
+updated: '2026-06-01T19:27:52Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: null
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: In Progress
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2025-10-01'
+  Data de vencimento: '2026-12-31'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição
+  
+  O projeto tem como escopo central a migração e estruturação do classificador orçamentário da natureza de receita orçamentária do Estado, atualmente geridos em planilhas Excel, com versionamento fragmentado e controle manual, para uma arquitetura unificada em formato de database relacional, normalizado,  com rastreabilidade de versões e integração analítica dos dados.
+  
+  ## Participantes
+  
+  @carloshob @Laura-Dilly @marcelatsm @gllisboads 
+  
+  ### Reuniões
+  - [x] #47 
+  
+  ### Etapas
+  
+  **[Construção do Projeto](https://github.com/splor-mg/classificador-receita/milestone/1)**
+  
+  - [x] #2
+  - [x] #3
+  - [x] #50
+  
+  **[Arquitetura de Dados](https://github.com/splor-mg/classificador-receita/milestone/2)**
+  
+  - [x] #4
+  - [x] #5
+  - [x] #6
+  
+  **[Modelagem de Dados](https://github.com/splor-mg/classificador-receita/milestone/3)**
+  
+  - [x] #7
+  - [x] #8
+  - [x] #9
+  
+  
+  **[Implementação do Banco de Dados](https://github.com/splor-mg/classificador-receita/milestone/4)**
+   
+  - [x] #10
+  - [x] #11
+  - [x] #12
+  - [x] #13
+  - [x] #14
+  - [x] #15
+   
+  
+  **[Migração de Dados](https://github.com/splor-mg/classificador-receita/milestone/5)**
+  
+  - [x] #16
+  - [x] #17
+  - [ ] #18
+  
+  **[SGDB - App Web de Gestão](https://github.com/splor-mg/classificador-receita/milestone/6)**
+  
+  - [x] #19
+  - [x] #20
+  - [x] #21
+  - [ ] #22
+  - [ ] #23
+  - [ ] #24
+  - [ ] #25
+  - [ ] #26
+  - [ ] #27
+  - [ ] #28
+  - [ ] #29
+  
+  **[Dashboard Público](https://github.com/splor-mg/classificador-receita/milestone/7)**
+  
+  - [ ] #30
+  - [ ] #31
+  - [ ] #32
+  - [ ] #33
+  - [ ] #34
+  - [ ] #35
+  - [ ] #36
+  - [ ] #37
+  
+  **[Integração Bidirecional com SISOR](https://github.com/splor-mg/classificador-receita/milestone/8)**
+  
+  - [ ] #38
+  - [x] #39
+  - [ ] #40
+  - [ ] #41
+  - [ ] #42
+  - [ ] #43
+  - [ ] #44
+  - [ ] #45
+  
+  
+---
+# regs
+
+- date: 2025-10-10T20:56:14Z
+  reg: comment
+  edited: 2025-10-10T21:16:30Z
+  author: carloshob
+  body: |-
+    @Laura-Dilly, @marcelatsm e @gllisboads , nesse issue eu comecei a esboçar o escopo e aspectos gerais do projeto, conforme havíamos combinado no nosso encontro de quarta-feira (08/10). Ainda não está como eu gostaria, porém acredito que a ideia seja irmos evoluindo ele também.
+    
+    Quando ao nosso próximo encontro, apesar de eu ter comentado com vocês de fazermos um encontro na segunda-feira (13/10), porém é semana das crianças, e nessas semanas as mães/pais costumam ter que fazer jornada dobrada rsrs então me ausentarei. 
+    
+    E acabei de lembrar também que na semana do dia 20-24/out estaremos (AID) em São Paulo, no encontro Python Brasil....
+    
+    Retomamos dia 27, pode ser?
+
+- date: 2025-10-10T20:56:18Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-10-10T20:56:23Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-10-10T20:56:30Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-10-10T20:56:33Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-10-10T20:56:42Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-10-13T17:13:11Z
+  reg: comment
+  author: gabrielbdornas
+  body: |-
+    > Entender os dados que o datamart vai conter.
+    
+    @carloshob, só porque o nome das coisas importam, acredito que utilizar o termos datamart não seria o mais adequado para este processo. Coloco duas referências rápidas buscadas onlie para tomarmos esta decisão:
+    
+    -  [Database vs DataMart vs Data Warehouse vs Data Lake](https://stackoverflow.com/questions/61751650/database-vs-datamart-vs-data-warehouse-vs-data-lake).
+    - [Database vs. Data Warehouse vs. Data Mart vs. Data Lake | Business Intelligence For Beginners
+    ](https://www.youtube.com/watch?v=fcsXVJyxFbA).
+
+- date: 2025-10-17T13:53:36Z
+  reg: comment
+  author: gabrielbdornas
+  body: |-
+    @carloshob, como combinamos, a entrega deste mês seria a programação, **em Issues**, deste projeto, com o escopo claro do que será feito, prazos e ordem das execuções. Sendo assim, somente fecharemos este Issue inicial com a aprovação deste planejamento. Por isso passei a data de vencimento dele para 31/10/2025.
+
+- date: 2025-10-20T12:46:52Z
+  reg: comment
+  author: Laura-Dilly
+  body: |-
+    @carloshob Bom dia, Carlos!
+    Peço desculpas a demora, semana passada foi puxada pra nós!
+    
+    Quanto ao retorno dia 27, sem problemas. Vamos aproveitar essa semana para ler tudo com calma e inserir nossas sugestões. 
+    Como dia 27 é feriado, sugiro que o próximo encontro seja no dia 29/10 (quarta-feira), às 10h30, o que acha? Podemos agendar uma sala igual da última vez.
+---

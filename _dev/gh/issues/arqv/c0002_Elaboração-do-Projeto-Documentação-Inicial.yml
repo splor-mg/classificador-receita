@@ -1,0 +1,84 @@
+---
+title: Elaboração do Projeto - Documentação Inicial
+state: C
+author: carloshob
+created: '2025-11-28T18:50:58Z'
+updated: '2025-12-10T13:44:58Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Contrução do Projeto
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2025-11-03'
+  Data de vencimento: '2025-11-28'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição
+  
+  Elaborar a documentação completa do projeto, incluindo definição de escopo, requisitos funcionais e não-funcionais, identificação de stakeholders, análise de riscos, matriz RACI, premissas e restrições. Esta issue estabelece a base conceitual e organizacional do projeto, garantindo alinhamento entre todas as partes interessadas.
+  
+  ### Entregas:
+  
+  - Documento de contexto do projeto (seção 1 do projeto.md)
+  - Documentação de problemas identificados (seção 2)
+  - Definição de escopo e requisitos MVP (seção 3)
+  - Matriz RACI e detalhamento de stakeholders (seção 4)
+  - Matriz de riscos e dependências críticas (seção 5)
+  - Documento de projeto completo e revisado
+  
+---
+# regs
+
+- date: 2025-11-28T18:50:58Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T18:50:59Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T18:51:01Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T18:51:06Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T18:51:13Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T18:51:45Z
+  reg: milestone:added:Contrução do Projeto
+  author: carloshob
+
+- date: 2025-12-05T16:56:31Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2025-12-10T13:44:58Z
+  reg: state:closed
+  author: gabrielbdornas
+
+- date: 2025-12-10T13:44:59Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

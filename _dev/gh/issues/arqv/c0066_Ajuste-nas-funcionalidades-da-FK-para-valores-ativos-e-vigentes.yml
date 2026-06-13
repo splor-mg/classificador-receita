@@ -1,0 +1,76 @@
+---
+title: Ajuste nas funcionalidades da FK para valores ativos e vigentes
+state: C
+author: carloshob
+created: '2026-05-05T20:43:35Z'
+updated: '2026-05-05T20:44:24Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Migração de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-04-01'
+  Data de vencimento: '2026-04-30'
+  Data Fim: '2026-04-29'
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição
+  
+  Considerando que o formato bitemporal utilizado nas tabelas prevê múltiplos registros, ativos e inativos, para uma mesma codificação, é necessário que, na ferramenta de seleção da FK associada a uma determinada classificação, é necessário que estejam disponíveis somente FK ativas.
+  
+  Para além disso, no submit para o banco, é necessário também validar de essa FK, para além de ativo, tem vigência correspondente ao registro atual.
+---
+# regs
+
+- date: 2026-05-05T20:43:36Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-05-05T20:43:39Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-05-05T20:43:39Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-05-05T20:43:45Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2026-05-05T20:43:47Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-05-05T20:44:06Z
+  reg: milestone:added:Migração de Dados
+  author: carloshob
+
+- date: 2026-05-05T20:44:14Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-05-05T20:44:22Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-05-05T20:44:24Z
+  reg: state:closed
+  author: carloshob
+---

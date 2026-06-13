@@ -1,0 +1,46 @@
+---
+title: Definir modelo de gerenciamento de versão do pacote e do classificador
+state: O
+author: carloshob
+created: '2026-01-19T18:50:27Z'
+updated: '2026-01-19T18:50:27Z'
+labels: []
+assignees: []
+milestone: null
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Backlog
+  Data início: null
+  Data de vencimento: null
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição
+  
+  Ao implementar a primeira versão da modelagem e arquitetura de dados, conforme PR #49 , @gabrielbdornas [sugeriu](https://github.com/splor-mg/classificador-receita/pull/49#discussion_r2643909133) incluirmos a versão da package como uma `constraints` no arquivo `schemas/versao_classificacao.yaml`. 
+  
+  No entanto, em conversa do dia 19/01/2026, ponderamos que são dois tipos de versionamentos a serem identificados, tanto um para o package, como um para as diferentes versões do classificador e, a princípio, nos schemas da pacote seriam a gestão do versionamento do classificador, não do pacote.
+  
+  Ficamos de definir o modelo de definição/gestão desse versionamento junto com a DCAF, idealmente seguindo a mesma estrutura do [versionamento semântico](https://semver.org/lang/pt-BR/) e da [PEP 404](https://peps.python.org/pep-0440/)
+---
+# regs
+
+- date: 2026-01-19T18:50:28Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-01-19T18:50:30Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

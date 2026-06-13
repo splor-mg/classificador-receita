@@ -1,0 +1,82 @@
+---
+title: Desenvolvimento de Visualização Hierárquica do Classificador
+state: O
+author: carloshob
+created: '2025-11-28T20:20:58Z'
+updated: '2026-01-13T17:37:05Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Dashboard Público
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: ToDo
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-07-01'
+  Data de vencimento: '2026-07-31'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Desenvolver visualização hierárquica do classificador mostrando os 9 níveis hierárquicos em formato de árvore. Interface deve permitir navegação entre níveis, expansão/colapso de nós e visualização clara da estrutura.
+  
+  ### Entregas:
+  
+  - Visualização hierárquica implementada
+  - Navegação entre níveis funcional
+  - Expansão/colapso de nós
+  - Templates Django para hierarquia
+  - JavaScript/CSS para interatividade
+  - Testes da visualização
+  
+  ### Observações:
+  
+  - Considerar uso de bibliotecas JavaScript (D3.js, vis.js, ou similar)
+  - Otimizar performance para grandes hierarquias
+  - Interface deve ser responsiva e acessível
+  @...
+---
+# regs
+
+- date: 2025-11-28T20:20:59Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T20:20:59Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T20:21:07Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T20:21:10Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:21:14Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:21:33Z
+  reg: milestone:added:Dashboard Público
+  author: carloshob
+
+- date: 2025-12-05T17:01:11Z
+  reg: relationship:parent_added
+  author: carloshob
+---

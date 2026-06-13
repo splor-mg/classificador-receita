@@ -1,0 +1,70 @@
+---
+title: Implementação de filtros usuais no gerenciamento dos itens de classificação
+state: C
+author: carloshob
+created: '2026-05-05T20:46:55Z'
+updated: '2026-05-05T20:47:32Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Migração de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-04-01'
+  Data de vencimento: '2026-04-30'
+  Data Fim: '2026-04-29'
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição
+  
+  Na changelist da tabela de Itens de Classificação, é necessário implementar filtros que agilizam a operacionalização do ementário, tal como filtros de Categoria, Categoria-Origem e Nivel.
+---
+# regs
+
+- date: 2026-05-05T20:46:55Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-05-05T20:46:57Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-05-05T20:46:59Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-05-05T20:47:04Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2026-05-05T20:47:10Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-05-05T20:47:27Z
+  reg: milestone:added:Migração de Dados
+  author: carloshob
+
+- date: 2026-05-05T20:47:33Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-05-05T20:47:35Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

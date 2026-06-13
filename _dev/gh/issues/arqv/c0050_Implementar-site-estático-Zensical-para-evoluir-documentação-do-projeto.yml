@@ -1,0 +1,135 @@
+---
+title: Implementar site estático Zensical para evoluir documentação do projeto
+state: C
+author: carloshob
+created: '2026-01-13T16:40:54Z'
+updated: '2026-01-19T19:21:18Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Contrução do Projeto
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Data início: '2026-01-01'
+  Data de vencimento: '2026-01-30'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ## Descrição
+  
+  Transformar documentação Markdown em site estático navegável usando [Zensical](https://zensical.org/docs/get-started/).
+  
+  ## Checklist
+  
+  - [x] 1. Instalar Zensical via Poetry
+  - [x] 2. Criar `zensical.toml`
+  - [x] 3. Adicionar tasks ao `pyproject.toml`
+  - [x] 4. Configurar CI/CD
+  - [x] 5. Habilitar GitHub Pages
+  - [x] 6. Atualizar `.gitignore`
+  
+  ## 1. Instalação
+  
+  ```bash
+  poetry add zensical
+  ```
+  
+  ## 2. Configuração
+  
+  1. Criar `zensical.toml` na raiz do projeto com:
+     - `site_name`: "Classificador de Natureza de Receita - MG"
+     - `site_url`: URL de hospedagem (GitHub Pages ou servidor interno)
+     - `docs_dir`: "docs" (já existe)
+     - `site_dir`: "site" (será criado)
+  
+  2. O Zensical detecta automaticamente a estrutura em `docs/`. A estrutura atual já está adequada.
+  
+  
+  ## Adicionar tasks ao `pyproject.toml`
+  
+  ```toml
+  [tool.taskipy.tasks]
+  build-docs = "zensical build --clean"
+  serve = "zensical serve"
+  ```
+  
+  ### Uso:
+  
+  - **Preview local**: `poetry run task serve` (http://localhost:8000)
+  - **Build**: `poetry run task build-docs` (gera `site/`)
+  
+  
+  ## 3. Configurar CI/CD
+  
+  Criar `.github/workflows/deploy-docs.yml` com workflow para:
+  - Instalar Poetry e dependências
+  - Instalar Zensical
+  - Executar `zensical build --clean`
+  - Deploy para GitHub Pages via `actions/deploy-pages@v4`
+  
+  
+  ## 4. Habilitar GitHub Pages
+  
+   Habilitar GitHub Pages nas configurações do repositório (Settings > Pages > Source: GitHub Actions).
+  
+  
+  ## 5. Ajustes Necessários
+  
+  1. **`.gitignore`**: Adicionar `site/` e `.zensical-cache/`
+  
+  2. **Diagramas ERD**: Referenciar `docs/erd/erd.png` nos arquivos Markdown quando necessário
+  
+  3. **Front matter (opcional)**: Adicionar metadados YAML no topo dos arquivos principais para melhor controle
+---
+# regs
+
+- date: 2026-01-13T16:40:54Z
+  reg: milestone:added:Contrução do Projeto
+  author: carloshob
+
+- date: 2026-01-13T16:40:54Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-01-13T16:40:55Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-01-13T16:40:56Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2026-01-13T16:40:56Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-01-13T16:41:04Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-01-13T16:41:48Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-01-19T19:21:18Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-01-19T19:21:19Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

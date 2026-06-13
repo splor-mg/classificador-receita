@@ -1,0 +1,81 @@
+---
+title: Criação de App Django para Dashboard Público
+state: O
+author: carloshob
+created: '2025-11-28T20:19:55Z'
+updated: '2026-01-13T17:37:00Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Dashboard Público
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: ToDo
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-07-01'
+  Data de vencimento: '2026-07-31'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Criar app Django dedicado para dashboard público (ou módulo no projeto existente), configurando rotas públicas, estrutura de views e templates. App deve ser separado da aplicação de gestão.
+  
+  ### Entregas:
+  
+  - App Django `dashboard` criado
+  - Estrutura de diretórios configurada
+  - Rotas públicas configuradas
+  - Views base implementadas
+  - Templates base criados
+  - Configuração de URLs
+  
+  ### Observações:
+  
+  - App pode ser módulo do mesmo projeto ou aplicação separada
+  - Rotas devem ser públicas (sem autenticação obrigatória)
+  - Considerar separação de concerns (gestão vs consulta)
+---
+# regs
+
+- date: 2025-11-28T20:19:55Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T20:19:57Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T20:20:04Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T20:20:06Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:20:09Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:20:28Z
+  reg: milestone:added:Dashboard Público
+  author: carloshob
+
+- date: 2025-12-05T17:01:07Z
+  reg: relationship:parent_added
+  author: carloshob
+---

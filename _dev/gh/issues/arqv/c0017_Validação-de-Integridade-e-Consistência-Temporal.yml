@@ -1,0 +1,95 @@
+-----------------------------------------------------------------
+title: Validação de Integridade e Consistência Temporal
+state: C
+author: carloshob
+created: '2025-11-28T19:53:10Z'
+updated: '2026-03-31T19:27:19Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Migração de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-03-23'
+  Data de vencimento: '2026-03-27'
+  Data Fim: '2026-03-31'
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+-------------------------------------------------------------------------
+# description
+
+body: |-
+  ### Descrição:
+  
+  Validar integridade referencial, consistência hierárquica, ausência de duplicidades e consistência temporal dos dados migrados. Criar scripts de validação pós-migração e executar validação Frictionless nos dados.
+  
+  ### Entregas:
+  
+  - Scripts de validação pós-migração (`tests/etl/`)
+  - Validação de integridade referencial
+  - Validação de hierarquia (9 níveis)
+  - Validação de consistência temporal
+  - Relatório de validação completo
+  - Execução de validação Frictionless
+  
+  ### Observações:
+  
+  - Validações devem ser automatizadas
+  - Gerar relatório de inconsistências encontradas
+  - Requer aprovação da DCAF sobre tratamento de dados problemáticos
+---
+# regs
+
+- date: 2025-11-28T19:53:11Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T19:53:12Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T19:53:19Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T19:53:40Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T19:53:45Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T19:54:11Z
+  reg: milestone:added:Migração de Dados
+  author: carloshob
+
+- date: 2025-12-05T16:59:33Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-03-31T19:27:19Z
+  reg: comment
+  author: carloshob
+  body: |-
+    Na branch [banco](https://github.com/splor-mg/classificador-receita/tree/banco), [PR 63](https://github.com/splor-mg/classificador-receita/pull/63), a governança foi construída de forma a impedir sobreposição de vigência para todas as operações, de criação, exclusão e bloqueio. 
+
+- date: 2026-03-31T19:27:19Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-03-31T19:27:21Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

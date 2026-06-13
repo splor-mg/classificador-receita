@@ -1,0 +1,85 @@
+---
+title: Incorporação de Colunas Temporais e Validação Frictionless
+state: C
+author: carloshob
+created: '2025-11-28T19:32:31Z'
+updated: '2026-01-19T19:21:18Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Modelagem de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2025-12-08'
+  Data de vencimento: '2025-12-16'
+  Data Fim: '2025-12-31'
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Incorporar colunas temporais (valid_from, valid_to, transaction_time) no modelo de dados e configurar validação de schemas usando Frictionless Data Package. Esta issue garante que o modelo suporte bitemporalidade e tenha validação automatizada de estrutura.
+  
+  ### Entregas:
+  
+  - Modelo atualizado com colunas temporais
+  - Dicionário de dados estruturado em `datapackage.yaml`
+  - Schemas das entidades em `schemas/*.yaml`
+  - Pipeline de validação Frictionless funcional
+  - Testes de validação de schemas
+  
+  ### Observações:
+  - Documentar formato e estrutura dos schemas
+---
+# regs
+
+- date: 2025-11-28T19:32:32Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T19:32:33Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T19:32:41Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T19:32:45Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T19:32:52Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T19:33:14Z
+  reg: milestone:added:Modelagem de Dados
+  author: carloshob
+
+- date: 2025-12-05T16:57:11Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-01-19T19:21:18Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-01-19T19:21:18Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

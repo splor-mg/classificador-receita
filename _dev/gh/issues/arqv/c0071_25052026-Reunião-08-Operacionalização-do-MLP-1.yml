@@ -1,0 +1,108 @@
+---
+title: '[25/05/2026] Reunião 08 - Operacionalização do MLP - 1'
+state: C
+author: carloshob
+created: '2026-05-22T18:42:40Z'
+updated: '2026-05-27T18:22:07Z'
+labels:
+- meeting
+assignees:
+- carloshob
+milestone: Migração de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-05-25'
+  Data de vencimento: '2026-05-25'
+  Data Fim: '2026-05-25'
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  _[ [Gravação do encontro](https://www.youtube.com/watch?v=Au2K8UGdRQI&list=PLX2MgvHSaqUu1lNODdj5nqNNE6AU9mXbd&index=5&t=10s&pp=iAQBsAgC) | [Reunião anterior](https://github.com/splor-mg/classificador-receita/issues/64) | [Próxima reunião](https://github.com/splor-mg/classificador-receita/issues/72) ]_
+  
+  ### Descrição
+  
+  Encontro da série **Operacionalização do MLP** dedicado ao início do **uso assistido** das ferramentas e protocolos já implementados no gerenciador (Django Admin). 
+  
+  Cada encontro combina (i) **revisão dos conceitos centrais** que sustentam o modelo de dados e as regras de negócio do classificador, (ii) **repasse das implementações** disponíveis para operação, (iii) **testes práticos** sobre o gerenciador e (iv) coleta de **observações de uso** que possam indicar ajustes no modelo, na interface ou nos protocolos.
+  
+  ## Pauta
+  - primeiro encontro de operacionalização do ~MVP~ MLP
+  - encaminhamentos da [reunião de 21/05](https://github.com/splor-mg/classificador-receita/issues/64)
+  
+  
+  ## Participantes
+  - @carloshob 
+  - @Laura-Dilly 
+  - @marcelatsm 
+  
+  
+  ## Assuntos tratados
+  - [Coerência semântica das FK's](https://github.com/splor-mg/classificador-receita/issues/64#:~:text=1.%20Coer%C3%AAncia%20sem%C3%A2ntica%20das%20FK%27s)
+  
+  - [Autocomplete de Item Mãe e Nível Hierárquico](https://github.com/splor-mg/classificador-receita/issues/64#:~:text=2.%20Autocomplete%20de%20Item%20Pai%20M%C3%A3e%20e%20Nivel%20Hir%C3%A1rquico%20na%20cria%C3%A7%C3%A3o%20de%20nova%20codifica%C3%A7%C3%A3o%20da%20receita)
+  
+  - [Assistente de nomenclatura e lista de abreviações](https://github.com/splor-mg/classificador-receita/issues/64#:~:text=3.%20Ferramenta%20para%20aux%C3%ADlio%20na%20defini%C3%A7%C3%A3o%20de%20nomenclatura%20da%20classifica%C3%A7%C3%A3o%20%2D%20lista%20de%20abrevia%C3%A7%C3%B5es)
+  
+  ## Encaminhamentos
+  - Continuidade dos encontros de repasses e operacionalização do MLP
+  
+---
+# regs
+
+- date: 2026-05-22T18:42:40Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-05-22T18:42:40Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-05-22T18:42:41Z
+  reg: label:added:meeting
+  author: carloshob
+
+- date: 2026-05-22T18:42:42Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-05-22T18:43:04Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-05-22T18:46:43Z
+  reg: milestone:added:Migração de Dados
+  author: carloshob
+
+- date: 2026-05-22T18:46:55Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-05-25T17:59:17Z
+  reg: title:changed:"25/05/2026] Reunião 08 - Operacionalização do MVP - 1":"25/05/2026] Reunião 08 - Operacionalização do MLP - 1"
+  author: carloshob
+
+- date: 2026-05-27T17:12:48Z
+  reg: title:changed:"25/05/2026] Reunião 08 - Operacionalização do MLP - 1":"[25/05/2026] Reunião 08 - Operacionalização do MLP - 1"
+  author: carloshob
+
+- date: 2026-05-27T17:57:04Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-05-27T17:57:05Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

@@ -1,0 +1,83 @@
+---
+title: Construção do Cronograma e Plano de Trabalho
+state: C
+author: carloshob
+created: '2025-11-28T18:56:30Z'
+updated: '2025-12-10T13:44:58Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Contrução do Projeto
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2025-11-24'
+  Data de vencimento: '2025-11-28'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Desenvolver o plano de trabalho detalhado do projeto, definindo fases, atividades, dependências, critérios de aceite e sequenciamento lógico das entregas. Esta issue transforma os requisitos e escopo definidos em um plano executável, com estimativas de esforço e cronograma realista.
+  
+  ### Entregas:
+  
+  - Plano de trabalho com todas as fases (F1 a F7)
+  - Definição detalhada de atividades por fase
+  - Mapeamento de dependências entre fases
+  - Critérios de aceite por fase
+  - Cronograma macro do projeto
+  - Documento de plano de trabalho complet
+---
+# regs
+
+- date: 2025-11-28T18:56:31Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T18:56:33Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T18:56:33Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T18:56:37Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T18:56:44Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T18:57:10Z
+  reg: milestone:added:Contrução do Projeto
+  author: carloshob
+
+- date: 2025-12-05T16:56:39Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2025-12-10T13:44:58Z
+  reg: state:closed
+  author: gabrielbdornas
+
+- date: 2025-12-10T13:44:59Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

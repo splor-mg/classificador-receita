@@ -1,0 +1,143 @@
+---
+title: Alinhamento Técnico com Prodemge sobre Interface SISOR
+state: C
+author: carloshob
+created: '2025-11-28T20:32:15Z'
+updated: '2026-06-01T14:48:36Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Integração Bidirecional com SISOR
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-05-29'
+  Data de vencimento: '2026-05-29'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Realizar reuniões técnicas com Prodemge para alinhar interface de integração do SISOR, incluindo API disponível, endpoints, autenticação, protocolos de comunicação e documentação técnica. Estabelecer canal formal de comunicação.
+  
+  ### Entregas:
+  
+  - Documentação da API do SISOR (atual)
+  - Protocolo de comunicação definido
+  - Métodos de autenticação identificados
+  - Endpoints mapeados
+  - Documento de alinhamento técnico
+  - Canal de comunicação estabelecido
+  
+  ### Observações:
+  
+  - **CRÍTICO:** Esta issue é dependência D3 e deve ser priorizada
+  - Requer coordenação com Prodemge
+  - Documentar informações sobre novo SISOR (2026) quando disponível
+  - Estabelecer SLA de comunicação
+---
+# regs
+
+- date: 2025-11-28T20:32:16Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T20:32:18Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T20:32:22Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T20:32:24Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:32:27Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:32:49Z
+  reg: milestone:added:Integração Bidirecional com SISOR
+  author: carloshob
+
+- date: 2025-12-05T17:02:15Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2025-12-10T13:47:17Z
+  reg: comment
+  author: gabrielbdornas
+  body: |-
+    @carloshob, anotei algumas observações aqui #46 e aqui https://github.com/splor-mg/classificador-receita/pull/46#pullrequestreview-3562619585 e acho que este Issue (ou qualquer outro que vá tratar deste alinhamento) deveria ser uma das prioridades, sob pena de retrabalho. Digo isso porque ele está planejado para agosto de 2026.
+    
+    É só uma sugestão!
+
+- date: 2026-01-09T21:34:03Z
+  reg: comment
+  edited: 2026-01-09T21:50:37Z
+  author: carloshob
+  body: |-
+    @gabrielbdornas, considerando que essa etapa inicial é mais conceitual, não tinha conseguido antever quais eventuais retrabalhos poderiam acontecer. 
+    Talvez você esteja pensando, inclusive, em retratarmos os avanços/melhorias que estamos pensando, de certa forma, para o novo sistema também, e faz todo sentido. 
+    Acolho sua sugestão e vou iniciar os contatos com PRODEMGE na atual sprint/[milestone](https://github.com/splor-mg/classificador-receita/milestone/4).
+     
+    @carolfmoreira, qual o ponto focal na Prodemge para cuidar desse assunto?
+    
+    @Laura-Dilly, você ou alguém da DCAF está participando das especificações envolvendo o universo da classificação da receita?
+
+- date: 2026-01-09T21:34:06Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-01-13T14:11:26Z
+  reg: comment
+  edited: 2026-01-16T18:50:28Z
+  author: gabrielbdornas
+  body: |-
+    > [@gabrielbdornas](https://github.com/gabrielbdornas), considerando que essa etapa inicial é mais conceitual, não tinha conseguido antever quais eventuais retrabalhos poderiam acontecer. Talvez você esteja pensando, inclusive, em retratarmos os avanços/melhorias que estamos pensando, de certa forma, para o novo sistema também, e faz todo sentido. Acolho sua sugestão e vou iniciar os contatos com PRODEMGE na atual sprint/[milestone](https://github.com/splor-mg/classificador-receita/milestone/4).
+    > 
+    > [@carolfmoreira](https://github.com/carolfmoreira), qual o ponto focal na Prodemge para cuidar desse assunto?
+    > 
+    > [@Laura-Dilly](https://github.com/Laura-Dilly), você ou alguém da DCAF está participando das especificações envolvendo o universo da classificação da receita?
+    
+    @Izabellabranco e @gabriel-amelo, poderiam nos ajudar nisso?
+
+- date: 2026-01-19T12:37:59Z
+  reg: comment
+  author: Laura-Dilly
+  body: |-
+    > [@carolfmoreira](https://github.com/carolfmoreira), qual o ponto focal na Prodemge para cuidar desse assunto?
+    > 
+    > [@Laura-Dilly](https://github.com/Laura-Dilly), você ou alguém da DCAF está participando das especificações envolvendo o universo da classificação da receita?
+    
+    Bom dia!
+    
+    O ponto focal da Prodemge sobre o novo sisor é o Nivaldo, se não me engano. Ele que está coordenando a construção. 
+    NIVALDO FREIRE PASSOS - nivaldo.passos@prodemge.gov.br  [ele costuma responder mais pelo teams]
+    
+    Participei das reuniões de apoio à construção da parte da receita, mas as discussões foram focadas na interface, requisitos e usabilidade, então não tenho noção quanto às possibilidades de integração do sistema (APIs).
+
+- date: 2026-03-04T19:57:44Z
+  reg: comment
+  author: carloshob
+  body: |-
+    @gabrielbdornas, isso não foi previsto para o novo SISOR, sendo assim, continuamos com o desenvolvimento do projeto.
+    
+    Agora bastará, assim que o sistema novo for lançado, descobrir como iremos fazer a interface das duas coisas.
+---

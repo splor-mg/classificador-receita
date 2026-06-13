@@ -1,0 +1,96 @@
+---
+title: Implementação de Triggers para Bitemporalidade
+state: C
+author: carloshob
+created: '2025-11-28T19:44:43Z'
+updated: '2026-03-31T19:29:00Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Implementação do Banco de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-02-02'
+  Data de vencimento: '2026-03-31'
+  Data Fim: '2026-03-31'
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Implementar triggers PostgreSQL para gerenciar automaticamente a bitemporalidade, garantindo que transaction_time seja preenchido automaticamente e que valid_time seja gerenciado corretamente em operações de INSERT, UPDATE e DELETE.
+  
+  ### Entregas:
+  
+  - Triggers BEFORE INSERT para transaction_time
+  - Triggers AFTER UPDATE para versionamento
+  - Funções PostgreSQL para lógica bitemporal
+  - Testes SQL para validar triggers
+  - Documentação de triggers e funções
+  
+  ### Observações:
+  
+  - Triggers devem ser testados extensivamente
+  - Considerar performance impact de triggers
+  - Documentar comportamento esperado de cada trigger
+  
+---
+# regs
+
+- date: 2025-11-28T19:44:43Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T19:44:45Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T19:44:53Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T19:44:59Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T19:45:03Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T19:45:21Z
+  reg: milestone:added:Implementação do Banco de Dados
+  author: carloshob
+
+- date: 2025-12-05T16:57:27Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-03-31T19:29:00Z
+  reg: comment
+  author: carloshob
+  body: |-
+    Na branch [banco](https://github.com/splor-mg/classificador-receita/tree/banco), [PR 63](https://github.com/splor-mg/classificador-receita/pull/63), os triggers de bitemporalidade foram pensando em scripts de auxilio na construção das datas de vigência, de forma a tanto impedir a sobreposição de vigência, como a lacuna. 
+    Esses triggers são observados nas telas de confirmação de edição/exclusão-bloqueio dos classificadors.
+
+- date: 2026-03-31T19:29:00Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-03-31T19:29:02Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

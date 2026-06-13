@@ -1,0 +1,119 @@
+---
+title: '[04/05/2026] Reunião 06 - Repasses e Alinhamentos'
+state: C
+author: carloshob
+created: '2026-03-16T17:18:42Z'
+updated: '2026-05-27T17:45:22Z'
+labels:
+- meeting
+assignees:
+- carloshob
+milestone: Implementação do Banco de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-05-04'
+  Data de vencimento: '2026-05-04'
+  Data Fim: '2026-05-04'
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  _[ [Gravação do encontro](https://www.youtube.com/watch?v=Sh7gc0eNcxk&list=PLX2MgvHSaqUu1lNODdj5nqNNE6AU9mXbd&index=3&t=1s&pp=iAQBsAgC) | [Reunião anterior](https://github.com/splor-mg/classificador-receita/issues/59) | [Próxima reunião](https://github.com/splor-mg/classificador-receita/issues/64) ]_
+  
+  ### Descrição
+  
+  Encontro periódico para a sincronização entre as equipes de desenvolvimento (AID) e a equipe de negócio (DCAF) dedicado ao **repasse** das implementações realizadas desde a reunião anterior e ao **alinhamento** das decisões de modelagem, regras de negócio e próximos passos do projeto.
+  
+  
+  ## Pauta
+  
+  - [Envio de solicitação](https://github.com/splor-mg/classificador-receita/issues/62) de base de dados históricos à STN
+  - Replicar estrutura de `Série de Classificações` para demais recursos 
+      - Implementado padrão para `Classificação`
+      - Implementado padrão para `NivelHierarquico`
+      - Implementado padrão para `ItemClassificacao`
+  - Campo **justificativa de alteração** - avaliar posteriormente a implementação desse recurso _**vs**_ campo **informações gerenciais**. Problematizar necessidade de expandir para além do versionamento semântico.
+  - Campo **destinação legal** - avaliar a construção de tabela para evolução do conceito e escopo da vinculação legal e manter regra normal de atomização do registro.
+  - Tratamento amplo para **valores vazios** no momento do export - padrão assumido para `NULL`
+  - **Validação de FK** no evento de lookup (lupa) para somente [valores ativos](https://github.com/splor-mg/classificador-receita/commit/0415600c72f5e30c8080da9207a9e818b3116343)
+  - **Validação de FK** para apenas aquelas que contenham período de vigência do [correspondente registro](https://github.com/splor-mg/classificador-receita/commit/1358e5ef5130a62b173a5159739759aed9003951)
+  - **parent_item** - implamentada [especificação](https://github.com/splor-mg/classificador-receita/commit/9af97833a40e36ba9489ae26c05b3812fa4964ee) e [validação de parent_item_id](https://github.com/splor-mg/classificador-receita/commit/37fe83f519fb0de9bba3c97135e877154d070d83)
+  - **bloqueio de edição do código** - alinhar entendimento se deve ou não ser possível alterar um código de receita uma vez criado, em detrimento do que ocorre com as demais tabelas já implementadas. A princípio, a ponderação que faço é no sentido de bloquear, considerando que a possibilidade de alterar o código torne ainda mais complexa a capacidade de rastreamento do conteúdo lógico classificado ao longo do tempo.
+  - **filtros** - adicionei parseamentos de códigos para retratar filtros usuais na gestão do ementário, com parâmetros de descrição conforme último registro vigente.
+  - **estrutura do código** - [ajuste da estrutura de codificação](https://github.com/splor-mg/classificador-receita/commit/bbc1e196765ca92ce6ce50d8f2f7daafa6a8185e) na tabela de nível hierárquico, de forma a retratar o acréscimo de códigos feitos por MG, bem como [renderização da máscara](https://github.com/splor-mg/classificador-receita/commit/05695e5cce2e269d365c8f0940463176556213ef) ao criar receitas
+  - **implementação** - alinhamento de cronograma
+  ## Participantes
+  - @carloshob 
+  - @gabrielbdornas 
+  - @Laura-Dilly 
+  - @marcelatsm 
+  
+  ## Assuntos tratados
+  - Foram repassados cada um dos tópicos, sem objeções que implicassem em alteração do curso central até o momento.
+  - Foi corroborada, em detrimento dos demais tabelas, a decisão pelo bloqueio de edição do código canônico do classificador uma vez criado.
+  - Ficou validada a estratégia de validação da estrutura de códigos da União, que historicamente tem menos dígitos que os de MG, por meio do campo "Estrutura do Código", detalhada na tabela de "Nível Hierárquico". Essa alternativa prestigia a preservação da informação a respeito da quantidade originária de dígitos do classificador disponibilizado pela União, ao passo que operacionaliza a validação da estrutura de códigos.
+  - O início da implementação em produção do atual classificador ficou alinhada para o dia 18/mai, após finalizada a LDO.
+  
+  ## Encaminhamentos
+  - Corrigir erros ainda existentes envolvendo as FK's do nível hierárquico
+  - Fazer a incorporação de fato das tabelas históricas do classificador
+  
+---
+# regs
+
+- date: 2026-03-16T17:18:43Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-03-16T17:18:44Z
+  reg: label:added:meeting
+  author: carloshob
+
+- date: 2026-03-16T17:18:45Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-03-16T17:49:13Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-03-16T17:49:38Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-03-30T19:06:00Z
+  reg: title:changed:"[30/03/2026] Reunião 06 - Repasses e Alinhamentos":"[13/04/2026] Reunião 06 - Repasses e Alinhamentos"
+  author: carloshob
+
+- date: 2026-03-30T19:06:15Z
+  reg: milestone:added:Implementação do Banco de Dados
+  author: carloshob
+
+- date: 2026-03-30T19:06:23Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-04-29T20:12:28Z
+  reg: title:changed:"[13/04/2026] Reunião 06 - Repasses e Alinhamentos":"[04/05/2026] Reunião 06 - Repasses e Alinhamentos"
+  author: carloshob
+
+- date: 2026-05-04T19:22:34Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-05-04T19:22:36Z
+  reg: state:closed
+  author: carloshob
+---

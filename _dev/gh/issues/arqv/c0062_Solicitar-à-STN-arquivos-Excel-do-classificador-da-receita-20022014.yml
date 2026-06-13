@@ -1,0 +1,152 @@
+---
+title: Solicitar à STN arquivos Excel do classificador da receita 2002–2014
+state: C
+author: carloshob
+created: '2026-03-16T20:05:23Z'
+updated: '2026-05-04T19:58:21Z'
+labels:
+- documentation
+assignees:
+- carloshob
+milestone: Implementação do Banco de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-03-16'
+  Data de vencimento: '2026-04-30'
+  Data Fim: '2026-04-30'
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição
+  
+  Precisamos obter, junto à STN, as versões finais do classificador da receita (ementário da receita orçamentária) em formato Excel, para os exercícios de 2002 a 2014, com o objetivo de reconstituir a evolução histórica das classificações de receita e montar tabelas de correspondência entre versões.
+  
+  No site da STN já estão disponíveis arquivos Excel para 2015–2024, mas não para os anos anteriores. Por isso, será necessário enviar um e-mail formal à STN solicitando esses arquivos e, se possível, documentação complementar (notas metodológicas ou registros de alterações relevantes).
+  
+  ## Atividades
+  - [x] Abrir [protocolo junto STN](https://e-servicos.tesouro.gov.br/#/public/loginExterno) solicitando os arquivos Excel do classificador da receita (2002–2014). - protocolo CH202605231 (senha no Bitwarden da AID)
+  - [x] Acompanhar a resposta e registrar neste issue o que foi recebido.
+  - [x] Armazenar os arquivos recebidos no repositório/estrutura definida no projeto.
+  
+  
+  
+---
+# regs
+
+- date: 2026-03-16T20:05:24Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-03-16T20:05:27Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-03-16T20:05:31Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-03-16T20:05:59Z
+  reg: milestone:added:Implementação do Banco de Dados
+  author: carloshob
+
+- date: 2026-03-16T20:06:07Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-03-16T20:07:45Z
+  reg: comment
+  author: carloshob
+  body: |-
+    ## Protocolo aberto junto à STN - 16/03/2026
+    
+    _chamado: **CH202605231**_
+    
+    Prezadas(os), boa tarde!
+    
+    Meu nome é Carlos Henrique e trabalho na Assessoria de Inteligência de Dados (AID), da Subsecretaria de Planejamento e Orçamento do Estado de Minas Gerais (SPLOR/SEPLAG).
+    
+    Estamos conduzindo um projeto de modelagem e construção de ferramentas voltadas à modernização da gestão de nossos bancos taxonômicos (a exemplo dos ementários), inspirados, entre outros referenciais, pelo [GSIM](https://unece.org/statistics/publications/generic-statistical-information-model-version-20-user-guide) (Generic Statistical Information Model) – UNECE/ONU.
+    
+    Como projeto-piloto, estamos utilizando o ementário do classificador da receita, para o qual estamos desenvolvendo uma ferramenta em ambiente aberto, disponível [neste link](https://github.com/splor-mg/classificador-receita).
+    
+    Na atual etapa do trabalho, estamos realizando a reconstituição da evolução histórica das classificações de receita, bem como a construção de tabelas de correspondência entre diferentes versões do classificador. Para isso, necessitamos das versões finais do ementário da receita orçamentária de anos anteriores em formatos que permitam o processamento de dados (como Excel, CSV, JSON ou qualquer outro formato de base estruturada).
+    
+    No [site da STN](https://www.gov.br/tesouronacional/pt-br/contabilidade-e-custos/federacao/edicoes-anteriores-ementario-da-receita-orcamentaria/edicao_anterior_ementario-da-classificacao-por-natureza-de-receita-tabela-de-codigos), localizamos arquivos em Excel para os exercícios de 
+    
+    - [2024](https://github.com/splor-mg/classificador-receita/blob/banco/docs/assets/referencias/ementario_receita_uniao_2024.xlsx)
+    - [2023](https://github.com/splor-mg/classificador-receita/blob/banco/docs/assets/referencias/ementario_receita_uniao_2023.xlsx)
+    - [2022](https://github.com/splor-mg/classificador-receita/blob/banco/docs/assets/referencias/ementario_receita_uniao_2022.xlsx)
+    - [2021](https://github.com/splor-mg/classificador-receita/blob/banco/docs/assets/referencias/ementario_receita_uniao_2021.xlsx)
+    - [2020](https://github.com/splor-mg/classificador-receita/blob/banco/docs/assets/referencias/ementario_receita_uniao_2020.xlsx)
+    - [2018](https://github.com/splor-mg/classificador-receita/blob/banco/docs/assets/referencias/ementario_receita_uniao_2018.xlsx)
+    - [2017](https://github.com/splor-mg/classificador-receita/blob/banco/docs/assets/referencias/ementario_receita_uniao_2017.xlsx)
+    - [2016](https://github.com/splor-mg/classificador-receita/blob/banco/docs/assets/referencias/ementario_receita_uniao_2016.xlsx)
+    - [2015](https://github.com/splor-mg/classificador-receita/blob/banco/docs/assets/referencias/ementario_receita_uniao_2015.xlsx)
+    
+    Gostaríamos, portanto, de solicitar, se possível, o envio das versões finais do classificador da receita para os exercícios de 2002 a 2014. Ressaltamos que qualquer formato digital disponível que facilite a leitura automatizada (Excel, CSV, TXT, etc.) será de extrema utilidade para complementar a série histórica necessária ao projeto.
+    
+    Caso existam observações, notas metodológicas ou registros de alterações relevantes associados a essas versões, seu compartilhamento também seria de grande valia para a correta compreensão da evolução do classificador.
+    
+    Agradeço desde já pela atenção e colaboração.
+    
+    Atenciosamente,
+    
+    Carlos Henrique de Oliveira Brocahdo
+    carlos.oliveira@planejamento.mg.gov.br
+    Assessoria de Inteligência de Dados (AID)
+    Subsecretaria de Planejamento e Orçamento (SPLOR)
+    Secretaria de Estado de Planejamento e Gestão (SEPLAG)
+    Governo do Estado de Minas Gerais
+
+- date: 2026-03-16T20:29:53Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-03-16T20:30:08Z
+  reg: label:added:documentation
+  author: carloshob
+
+- date: 2026-05-04T19:28:26Z
+  reg: comment
+  author: carloshob
+  body: |-
+    ## Resposta STN
+    
+    Prezado Carlos Henrique,
+    
+    As naturezas de receita foram estabelecidas pela Secretaria do Tesouro Nacional (STN) e pela Secretaria de Orçamento Federal (SOF) a partir da Portaria Interministerial nº 163/2001.
+    
+    A primeira atualização ocorreu em 2004, com a publicação da 1ª edição do Manual de Receita Nacional, que permaneceu em constante revisão até o exercício de 2008.
+    
+    Somente a partir de 2009 passou a vigorar o MCASP propriamente dito, por meio do qual se deu a atualização do ementário de natureza de receita.
+    
+    O ementário em formato Excel passou a ser disponibilizado apenas em 2015, com a publicação da 6ª edição do MCASP.
+    
+    Dessa forma, encaminhamos em anexo os arquivos disponíveis com as naturezas de receita referentes aos exercícios de 2002 a 2014.
+    
+    Atenciosamente,
+    
+    Gerência de Normas e Procedimentos Contábeis – GENOC/CNORM/CCONF/SUCON-STN
+    
+
+- date: 2026-05-04T19:57:02Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-05-04T19:57:04Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

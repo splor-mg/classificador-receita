@@ -1,0 +1,100 @@
+---
+title: Habilitação Técnica - Estudo PostgreSQL
+state: C
+author: carloshob
+created: '2025-11-28T19:37:28Z'
+updated: '2026-03-04T19:42:06Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Implementação do Banco de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Data início: null
+  Data de vencimento: null
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Realizar estudo e capacitação em PostgreSQL, cobrindo tipos de dados, triggers, funções, extensões e Dockerização. Esta issue garante que a equipe tenha competência técnica necessária em PostgreSQL para implementação do banco de dados.
+  
+  ### Entregas:
+  
+  - Conclusão de cursos de PostgreSQL:
+    - [Curso completo de PostgreSQL](https://www.udemy.com/course/curso-de-postgresql/?couponCode=CP251120G2V2)
+    - [Curso de FastAPI 2025 - Dockerizando a nossa aplicação e introduzindo o PostgreSQL - Eduardo Mendes](https://www.youtube.com/watch?v=faf7jhti5tg)
+  - Ambiente Docker local configurado (PostgreSQL + volumes)
+  - Exercícios práticos de PostgreSQL (tipos de dados, triggers, funções, extensões)
+  - Documentação de aprendizados e referências
+  
+  ### Observações:
+  
+  - Esta issue pode ser executada em paralelo com outras atividades
+  - Priorizar estudos práticos com exercícios hands-on
+  - Manter registro de dúvidas e soluções encontradas
+  - Foco em: tipos de dados (TEXT, TIMESTAMP, JSONB), triggers (BEFORE INSERT, AFTER UPDATE), funções PostgreSQL, extensões (temporal_tables, pg_partman), Dockerização
+  
+---
+# regs
+
+- date: 2025-11-28T19:37:29Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T19:37:31Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T19:37:39Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T19:37:43Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T19:37:47Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T19:39:12Z
+  reg: milestone:added:Implementação do Banco de Dados
+  author: carloshob
+
+- date: 2025-12-05T16:57:19Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-03-04T19:41:06Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-03-04T19:42:06Z
+  reg: comment
+  author: carloshob
+  body: |-
+    Deixaremos para o futuro, caso precise See #58.
+
+- date: 2026-03-04T19:42:06Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-03-04T19:42:07Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

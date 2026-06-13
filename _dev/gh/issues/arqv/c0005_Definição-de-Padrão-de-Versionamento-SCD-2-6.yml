@@ -1,0 +1,88 @@
+---
+title: Definição de Padrão de Versionamento (SCD 2-6)
+state: C
+author: carloshob
+created: '2025-11-28T19:18:17Z'
+updated: '2026-06-01T19:14:05Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Arquitetura de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2025-12-01'
+  Data de vencimento: '2025-12-16'
+  Data Fim: '2025-12-31'
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Realizar estudo aprofundado sobre modelos de dados temporais e bitemporais, definindo a estratégia que será adotada no projeto. Esta issue estabelece os fundamentos técnicos para rastreamento de valid_time (tempo de validade) e transaction_time (tempo de transação), essenciais para auditoria histórica e consultas point-in-time.
+  
+  ### Entregas:
+  
+  - ADR-001: Estratégia de bitemporalidade
+  - Documentação técnica sobre valid_time vs transaction_time
+  - Decisão sobre implementação (triggers PostgreSQL, aplicação, híbrido)
+  - Exemplos de consultas as-of e point-in-time
+  - Revisão e aprovação pela DCAF
+  
+  ### Observações:
+  
+  - Requer pesquisa bibliográfica sobre temporal databases
+  - Consultar referências: "Temporal Data & the Relational Model" (Date, Darwen, Lorentzos)
+  - ADR deve documentar trade-offs e decisões arquiteturais
+---
+# regs
+
+- date: 2025-11-28T19:18:17Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T19:18:19Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T19:18:31Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T19:18:35Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T19:18:37Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T19:18:58Z
+  reg: milestone:added:Arquitetura de Dados
+  author: carloshob
+
+- date: 2025-12-05T16:56:46Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-01-19T19:22:32Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-01-19T19:22:34Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

@@ -1,0 +1,81 @@
+---
+title: Implementação de Fluxo de Aprovação de Alterações
+state: O
+author: carloshob
+created: '2025-11-28T20:08:25Z'
+updated: '2026-01-13T17:36:59Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: SGDB - App Web de Gestão
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: ToDo
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-05-15'
+  Data de vencimento: '2026-05-29'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Implementar workflow de aprovação para alterações no classificador, permitindo que alterações sejam submetidas, revisadas e aprovadas antes de serem efetivadas. Sistema deve rastrear status de cada solicitação.
+  
+  ### Entregas:
+  
+  - Model de workflow implementado
+  - Views para submissão e aprovação
+  - Notificações de mudanças de status
+  - Interface de gestão de aprovações
+  - Histórico de aprovações
+  - Testes do workflow
+  
+  ### Observações:
+  
+  - Considerar uso de bibliotecas como django-workflows ou implementação custom
+  - Workflow deve integrar com sistema bitemporal
+  - Notificações podem ser por email ou in-app
+---
+# regs
+
+- date: 2025-11-28T20:08:25Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T20:08:26Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T20:08:34Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T20:08:52Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:08:56Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:09:44Z
+  reg: milestone:added:SGDB - App Web de Gestão
+  author: carloshob
+
+- date: 2025-12-05T17:00:40Z
+  reg: relationship:parent_added
+  author: carloshob
+---

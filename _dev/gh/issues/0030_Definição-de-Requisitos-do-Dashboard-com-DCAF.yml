@@ -1,0 +1,80 @@
+---
+title: Definição de Requisitos do Dashboard com DCAF
+state: O
+author: carloshob
+created: '2025-11-28T20:18:35Z'
+updated: '2026-01-13T17:36:56Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Dashboard Público
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: ToDo
+  Projeto: Datamart
+  Data início: '2026-06-01'
+  Data de vencimento: '2026-06-30'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Realizar reuniões com DCAF para definir requisitos do dashboard público, incluindo funcionalidades de consulta, visualização hierárquica, busca, filtros e consultas históricas. Validar se dashboard está no escopo do MVP.
+  
+  ### Entregas:
+  
+  - Documento de requisitos do dashboard
+  - Casos de uso de consulta pública
+  - Definição de funcionalidades
+  - Protótipos ou wireframes
+  - Confirmação de inclusão no MVP
+  - Aprovação da DCAF
+  
+  ### Observações:
+  
+  - Requer alinhamento com DCAF sobre necessidade do dashboard
+  - Considerar requisitos de transparência e acesso público
+  - Validar requisitos de performance para acesso público
+---
+# regs
+
+- date: 2025-11-28T20:18:36Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T20:18:37Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T20:18:43Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T20:18:46Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:18:49Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:19:09Z
+  reg: milestone:added:Dashboard Público
+  author: carloshob
+
+- date: 2025-12-05T17:01:03Z
+  reg: relationship:parent_added
+  author: carloshob
+---

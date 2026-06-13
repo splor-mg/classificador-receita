@@ -1,0 +1,81 @@
+---
+title: Criação de Serviço de Sincronização com Celery
+state: O
+author: carloshob
+created: '2025-11-28T20:36:12Z'
+updated: '2025-11-28T20:36:45Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Integração Bidirecional com SISOR
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: ToDo
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-09-01'
+  Data de vencimento: '2026-09-30'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Criar serviço de sincronização usando Celery para tarefas assíncronas, implementando workers que processam fila de sincronizações pendentes. Serviço deve suportar retry automático e tratamento de erros.
+  
+  ### Entregas:
+  
+  - Serviço de sincronização Celery implementado
+  - Workers Celery configurados
+  - Tarefas de sincronização criadas
+  - Sistema de fila implementado
+  - Retry logic implementado
+  - Testes do serviço de sincronização
+  
+  ### Observações:
+  
+  - Celery deve ser configurado com broker (Redis ou RabbitMQ)
+  - Implementar retry com backoff exponencial
+  - Considerar priorização de sincronizações
+---
+# regs
+
+- date: 2025-11-28T20:36:12Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T20:36:15Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T20:36:20Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T20:36:23Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:36:30Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:36:45Z
+  reg: milestone:added:Integração Bidirecional com SISOR
+  author: carloshob
+
+- date: 2025-12-05T17:02:26Z
+  reg: relationship:parent_added
+  author: carloshob
+---

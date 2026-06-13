@@ -1,0 +1,128 @@
+---
+title: Testes de Integração Django + Banco Bitemporal
+state: O
+author: carloshob
+created: '2025-11-28T20:15:10Z'
+updated: '2026-02-13T13:29:20Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: SGDB - App Web de Gestão
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: ToDo
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-06-08'
+  Data de vencimento: '2026-06-26'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Criar suite completa de testes de integração validando funcionamento da aplicação Django com banco bitemporal, incluindo testes de CRUD, consultas temporais, triggers e integridade de dados.
+  
+  ### Entregas:
+  
+  - Testes de integração (`tests/integration/`)
+  - Testes de CRUD com bitemporalidade
+  - Testes de consultas temporais
+  - Testes de triggers e integridade
+  - Relatório de cobertura de testes
+  - Pipeline CI/CD executando testes
+  
+  ### Observações:
+  
+  - Testes devem usar banco de teste isolado
+  - Cobrir casos de sucesso e falha
+  - Validar comportamento bitemporal em todos os cenários
+  
+  ### Regras a observar: 
+  - 1. Um mesmo objeto (id) em uma entidade/tabela, não pode ter instâncias com datas de vigências concorrentes. Por exemplo, se um código  123 teve o nome ABC vigente entre 2020-01-01 e 2021-01-01, a partir da data 2021-01-01 passou a ter o nome ABCD, o correto é identificar o início da vigência do novo nome como sendo (`data-fim-da-vigencia-anterior` + 1).
+    - cod: 123
+      nome: ABC
+      data-vigencia-inicio: 2020-01-01
+      data-vigencia-fim: 2021-01-01
+      data-registro-inicio: 2020-01-01
+      data-registro-fim: 9999-12-31
+    - cod: 123
+      nome: ABCD
+      data-vigencia-inicio: 2021-01-02
+      data-vigencia-fim: 9999-12-31
+      data-registro-inicio: 2021-01-02
+      data-registro-fim: 9999-12-31
+    Essa regra visa garantir que somente exista uma vigência possível para um objeto em uma mesma data
+  
+  - 2. Um mesmo objeto (id) em uma entidade/tabela, não pode ter instâncias com datas de registros concorrentes. Por exemplo, se um código 123 teve o nome ABC registrado em 2020-01-01, a partir da data 2021-01-02 passou a ter o nome ABCD, o correto é identificar o início da vigência do novo nome como sendo (`data-fim-do-registro-anterior` + 1).
+    - cod: 123
+      nome: ABC
+      data-vigencia-inicio: 2020-01-01
+      data-vigencia-fim: 2021-01-01
+      data-registro-inicio: 2020-01-01
+      data-registro-fim: 9999-12-31
+    - cod: 123
+      nome: ABCD
+      data-vigencia-inicio: 2021-01-02
+      data-vigencia-fim: 9999-12-31
+      data-registro-inicio: 2021-01-02
+      data-registro-fim: 9999-12-31
+    Essa regra visa garantir que somente exista um registro possível para um objeto em uma mesma data
+  
+  - 3. Tabelas que tenham foreign keys não podem ter instâncias com datas de vigências fora do período de vigência da foreign key. 
+    Por exemplo, se uma série tem uma foreign key para uma versão de classificação, a versão de classificação não pode ter uma data de vigência fora do período de vigência da série.
+  
+  - 4. Gerar alerta quando o conjunto de instâncias ativas (`data_registro_fim` = 31/12/9999) para a mesma entidade-objeto (coluna `[nome-da-tabela]_id`) não perfazer período de vigência sequencial. 
+    
+    - cod: 10
+      nome: "receita tributária"
+      data_vigencia_inicio: 01/01/2002
+      data_vigencia_fim: 01/01/2010
+    - cod: 10
+      nome: "receita tributária e de taxas"
+      data_vigencia_inicio: 01/01/2011
+      data_vigencia_fim: 31/12/9999
+  
+    Nesse exemplo, a regra deve gerar alerta porque o período de vigência da segunda instância não é sequencial ao período de vigência da primeira instância, sendo que indicaria ausência de vigência entre 02/01/2010 a 31/12/2010.
+---
+# regs
+
+- date: 2025-11-28T20:15:10Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T20:15:12Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T20:15:13Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T20:15:25Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:15:29Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:15:49Z
+  reg: milestone:added:SGDB - App Web de Gestão
+  author: carloshob
+
+- date: 2025-12-05T17:00:58Z
+  reg: relationship:parent_added
+  author: carloshob
+---

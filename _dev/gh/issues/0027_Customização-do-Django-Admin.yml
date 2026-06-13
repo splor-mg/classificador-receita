@@ -1,0 +1,81 @@
+---
+title: Customização do Django Admin
+state: O
+author: carloshob
+created: '2025-11-28T20:11:52Z'
+updated: '2026-01-13T17:37:00Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: SGDB - App Web de Gestão
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: ToDo
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-06-01'
+  Data de vencimento: '2026-06-19'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Customizar Django Admin para gestão administrativa do classificador, incluindo filtros personalizados, ações em massa, visualizações hierárquicas e relatórios. Admin deve facilitar gestão operacional.
+  
+  ### Entregas:
+  
+  - Django Admin customizado
+  - Filtros personalizados implementados
+  - Ações em massa configuradas
+  - Visualizações hierárquicas
+  - Relatórios administrativos
+  - Documentação de uso do admin
+  
+  ### Observações:
+  
+  - Admin deve ser intuitivo para usuários não-técnicos
+  - Considerar performance em grandes volumes de dados
+  - Implementar exportação de dados quando necessário
+---
+# regs
+
+- date: 2025-11-28T20:11:53Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T20:11:54Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T20:12:02Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T20:12:07Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:12:10Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:12:36Z
+  reg: milestone:added:SGDB - App Web de Gestão
+  author: carloshob
+
+- date: 2025-12-05T17:00:49Z
+  reg: relationship:parent_added
+  author: carloshob
+---

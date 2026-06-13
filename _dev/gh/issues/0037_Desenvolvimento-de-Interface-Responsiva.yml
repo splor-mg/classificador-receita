@@ -1,0 +1,81 @@
+---
+title: Desenvolvimento de Interface Responsiva
+state: O
+author: carloshob
+created: '2025-11-28T20:27:34Z'
+updated: '2025-11-28T20:28:12Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Dashboard Público
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: ToDo
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-08-03'
+  Data de vencimento: '2026-08-28'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Desenvolver interface responsiva do dashboard usando CSS moderno e JavaScript, garantindo que funcione bem em diferentes dispositivos (desktop, tablet, mobile). Interface deve seguir princípios de UX/UI.
+  
+  ### Entregas:
+  
+  - Interface responsiva implementada
+  - CSS moderno e organizado
+  - JavaScript para interatividade
+  - Testes em diferentes dispositivos
+  - Acessibilidade implementada
+  - Documentação de interface
+  
+  ### Observações:
+  
+  - Considerar uso de framework CSS (Bootstrap, Tailwind) ou CSS custom
+  - Garantir acessibilidade (WCAG)
+  - Testar em navegadores principais
+---
+# regs
+
+- date: 2025-11-28T20:27:35Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T20:27:36Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T20:27:43Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T20:27:46Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:27:49Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:28:12Z
+  reg: milestone:added:Dashboard Público
+  author: carloshob
+
+- date: 2025-12-05T17:02:10Z
+  reg: relationship:parent_added
+  author: carloshob
+---

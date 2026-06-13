@@ -1,0 +1,80 @@
+---
+title: Implementação de Detecção de Mudanças no Sistema
+state: O
+author: carloshob
+created: '2025-11-28T20:34:49Z'
+updated: '2026-01-13T17:36:58Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Integração Bidirecional com SISOR
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: ToDo
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-09-01'
+  Data de vencimento: '2026-09-30'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Implementar mecanismo de detecção de mudanças no novo sistema, utilizando Django signals ou triggers PostgreSQL para identificar quando classificações são criadas, alteradas ou inativadas. Sistema deve registrar mudanças para sincronização.
+  
+  ### Entregas:
+  
+  - Sistema de detecção de mudanças implementado
+  - Django signals ou triggers configurados
+  - Fila de mudanças pendentes
+  - Logging de mudanças
+  - Testes de detecção de mudanças
+  
+  ### Observações:
+  
+  - Sistema deve ser eficiente e não impactar performance
+  - Considerar uso de eventos assíncronos
+  - Garantir que todas as mudanças sejam capturadas
+---
+# regs
+
+- date: 2025-11-28T20:34:50Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T20:34:51Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T20:34:59Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T20:35:02Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:35:06Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:35:27Z
+  reg: milestone:added:Integração Bidirecional com SISOR
+  author: carloshob
+
+- date: 2025-12-05T17:02:23Z
+  reg: relationship:parent_added
+  author: carloshob
+---

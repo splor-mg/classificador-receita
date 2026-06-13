@@ -1,0 +1,215 @@
+---
+title: '[21/05/2026] Reunião 07 - Repasses e Alinhamentos'
+state: C
+author: carloshob
+created: '2026-05-04T19:25:57Z'
+updated: '2026-06-01T14:49:03Z'
+labels:
+- meeting
+assignees:
+- carloshob
+milestone: Migração de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-05-18'
+  Data de vencimento: '2026-05-18'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  _[ [Gravação do encontro](https://www.youtube.com/watch?v=a2JeUsj7mek&list=PLX2MgvHSaqUu1lNODdj5nqNNE6AU9mXbd&index=4&t=5s&pp=iAQBsAgC) | [Reunião anterior](https://github.com/splor-mg/classificador-receita/issues/61) | [Próxima reunião](https://github.com/splor-mg/classificador-receita/issues/71) ]_
+  
+  
+  ### Descrição
+  
+  Encontro periódico para a sincronização entre as equipes de desenvolvimento (AID) e a equipe de negócio (DCAF) dedicado ao **repasse** das implementações realizadas desde a reunião anterior e ao **alinhamento** das decisões de modelagem, regras de negócio e próximos passos do projeto.
+  
+  
+  ## Pauta
+  
+  - **0. Atenção!**
+  > Reforçar atenção às eventuais tensões/falhas de intuitividade das ferramentas e protocolos implementados! Por favor, compartilhar, pois podem apontar para uma falha no modelo de dados implementados.
+  
+  - **1. Operacionalização do MVP e início das atividades práticas**
+  > Alinhamento sobre o marco de início da operacionalização e da implementação do MVP do classificador de receita, com ênfase no uso real das ferramentas já disponíveis no Django Admin. 
+  > Definição de cronograma de operacionalização assistida
+  
+  - **2. Revisão geral das implementações já realizadas**
+  > Revisão de conceitos gerais do projeto, tais 
+  
+  
+  ## Participantes
+  - @carloshob 
+  - @Laura-Dilly 
+  - @marcelatsm 
+  
+  ## Encaminhamentos
+  
+  - Ficou acertada a realização de encontros voltadas ao início da operacionalização do ~~MVP~~ MLP do classificador de receita. Espera-se uma revisão geral das implementações já realizadas e conceitos centrais, bem como realização de testes práticos.
+  
+  Abaixo seguem tópicos que a serem tratados nos encontros:
+  
+  - [x]  **1. Coerência semântica das FK's** 
+  
+  > Corrigido comportamento das FK que antes estavam associadas a um registro específico, para agora estarem relacionadas à ORM da entidade semântica/surrogada, conforme [aqui ](https://github.com/splor-mg/classificador-receita/commit/57aad6ece9d671dc34a28e833164cde47bce0001) e [aqui](https://github.com/splor-mg/classificador-receita/commit/27d446a93f3038a61ce74344ef0bffde995aa5a1). 
+  
+  > Antes, as FK estavam apontando fixamente para um registro em específico, o qual poderia, eventualmente, se tornar deprecado/inativo. 
+  
+  > ***atenção!*** - fallback de última classificação vigente, para os casos de, por alguma inconsistência/especificidade, um metadado superior, ganhe duas vigências e a codificação subordinada não apresentar vigência inteiramente aderente. Ex.: alteração do nome da CLASS-RECEITA-UNIAO-2018 e subsequente atualização de `nível hierárquico` dela dependente. 
+  
+  > Foi implementada **[expansão da validação de vigência de uma FK](https://github.com/splor-mg/classificador-receita/commit/333ae1702d5368eb07121873a6bd1994905ad09f)** para agora validar em conformidade com a **união contígua das vigência** de uma `entidade_ref`.
+  
+  > Agora a validação de coerência da vigência de um `item filho` em relação às FK's verifica o "somatório" das diferentes vigência do `entidade_ref` selecionada.
+  
+  - [x] **2. Autocomplete de Item ~Pai~ Mãe e Nivel Hirárquico na criação de nova codificação da receita**
+  
+  > Uma vez unificada a `estrutura_codigo` como fonte da verdade da [máscara do código de classificação](https://github.com/splor-mg/classificador-receita/commit/4ff05ef614d8604c342a2e28329382bb2402e2ab), foi implementado o [autocomplete](https://github.com/splor-mg/classificador-receita/commit/267daf77a32eb096c74df2459456d1484c706150) para os campos `item mãe` e `nível hierárquico`, que são **atualizados conforme a `classificação` selecionada.** 
+  
+  > ***atenção!*** Foi fixado como 
+  >> - **erro** quando não existir `item mãe` ou `nível hierárquico` cadastrado para o período de vigência da classificação selecionada; e como
+  >> - **alerta** quando, apesar de existir, estarem discriminados como pertencentes a outra classificação de receita, que não a selecionada no formulário. 
+  
+  > O caso de alerta foi implementado no intuito de lembrar ao usuário sobre o que se presume aqui, de que uma codificação (`item de classificação` mãe) tende a ser detalhada por uma outra codificação (`item de classificação` filho) que pertença à mesma `classificação` à qual a codificação mãe pertence. 
+  
+  > Exceções são esperadas, tal como o foi o protocolo adotado para a **CLASS-RECEITA-UNIAO-2001**, vigente até 2017, que permitia que os Estados inserissem códigos próprios quando os respectivos níveis da codificação não houvesse sido detalhados pela União, bem como na própria etapa de se inserir/acoplar os dígitos de MG à estrutura da União, tal como o foi a partir da entrada em vigor da CLASS-RECEITA-UNIAO-2018.
+  
+  > Verificar exemplos de variações nos autocompletes dos campos: 
+  > - `Item Mãe`
+  > - `Nivel Hirárquico`
+  > - `Data Início de Vigência`
+  > - `Data Fim de Vigência` 
+  
+  
+  - [x] **3. Ferramenta para auxílio na definição de nomenclatura da classificação - lista de abreviações**
+  
+  > Implementada ferramenta para auxiliar na definição de nomenclara. Ela se baseou em duas regras de negócio assumidas: 
+  
+  > - i) a replicação do  no nome da `codificação mãe`, utilizado como radical do nome do `item filho`, conforme implementado [aqui](https://github.com/splor-mg/classificador-receita/commit/f6626b7ecd8a443409f7659a839adb79d222197a); 
+  
+  > - ii) a adoção de um léxico de abreviações padronizado (lista_abreviacoes), sustentado pela regra de negócio baseada na decomposição das nomenclaturas em segmentos separados por traço. Foram implementados a [especificação](https://github.com/splor-mg/classificador-receita/commit/9d993178c9e5ba7fdbc4c3910097a579f06c32c7) e os [ajustes necessários dos fluxos](https://github.com/splor-mg/classificador-receita/commit/fb1fe4ab5ef26607ce7cbac1204dadb00dbc8b65) para adoção do protocolo de abreviações.
+  
+  > Com isso foi possível inferir e curar pares `termo→abreviação` e aplicá-los ao modo «Radical Baseado no Item Mãe`— Abreviado», de modo que novos itens herdem o radical codificado da mãe e reutilizem o mesmo padrão de siglas e encurtamentos já utilizados.
+  
+  > Esse protocolo de atualização da listagem é gatilhado quando há qualquer atualização no banco de codificações (`itens de classificação`).
+  
+  > Porém, considerando que os protocolos de identificação de padrões de abreviação (siglas e encurtamentos) podem resultar em pares `termo->abreviação` indesejados, não é necessário editar o script, basta utilizar a interface de edição de `listas de abreviação` e desativar a abreviação pretendida que ela não será mais reativada/utilizada.
+  
+  
+  - [x] **4. Coerência Hirárquica e o Salto de Nível do `item mãe`**
+  
+  > A regra geral antes implementada impunha que, um código de classificação que fosse de nível >1, deveria informar um `item mãe` cujo nível fosse imediatamente anterior. No entanto, posteriormente percebeu-se que essa restrição não abrangia os casos em que a União, em alguns trechos da codificação, implementou `item mãe` de mais de 1 nível superior ao `item filho`. 
+  
+  > Com os ajustes implementados, [aqui](https://github.com/splor-mg/classificador-receita/commit/c3653e0f9de83ee7f70657722cc5bfd28b0ef42c) e [aqui](https://github.com/splor-mg/classificador-receita/commit/1354e4558b1c97a6ece6db0a8b6e869dffd4d125), flexibilizou-se o conceito de **coerência hierárquica**, permitindo **salto de nível maior que 1** entre `item mãe` e `item filho` quando os **níveis intermediários entre eles fossem *zeros canônicos**, no próprio código que está sendo criado. Para os demais casos, devolve **alerta de bloqueio**.
+  
+  >> Exemplo de bloqueio: 
+  >>> item mãe: 1.1.1.2.52.0.0.00.000
+  >>> item filho: 1.1.1.2.52.1.1.00.000
+  
+  >> Exemplo permitido no novo modelo: 
+  >>> item mãe: 1.1.1.2.52.0.0.00.000
+  >>> item filho: 1.1.1.2.52.0.1.00.000
+  
+  > Para além disso, foi implementada ferramenta de validação para quando, mesmo preenchido o **condicionante de salto de nível** mencionado anteriormente, exista estrutura detalhada, isto é, algum outro código vigente tenha os níveis intermediários entre nível do `item mãe` e o nível do `item filho` diferentes de zero canônico.
+  
+  >> Exemplo de alerta: 
+  >>> item mãe: 1.1.1.2.52.0.0.00.000
+  >>> item filho: 1.1.1.2.52.0.1.00.000
+  >>> outro item vigente: 1.1.1.2.52.1.1.00.000
+  
+  
+  - [x] **5. Método de Criação Assistida - `item filho` criado a partir de `item mãe`**
+  
+  > Foi [implementado](https://github.com/splor-mg/classificador-receita/commit/d0e267597a88392f1d6444552fbe298c578c2828) fluxo que permite a criação de uma nova codificação da receita (`receita_cod`) a partir do `item mãe`. Nesse protocolo, uma vez selecionado o `item mãe`, o campo de `receita_cod` é auto-preenchido com o próximo código disponível que pertença à hierarquia do `item mãe` selecionado.
+  
+  > O fluxo criação assistida também foi implementado na interface de edição do código
+  
+  
+  - [x] **6. Bloqueio de edição de `receita_cod` na change e navegação por digitação do código**
+  
+  > Foi [implementado](https://github.com/splor-mg/classificador-receita/commit/64c7ec3f2e1817706fd2d4023fde5b2d9d349888) o protocolo descrito em [`_dev/spec_itemClassificacao_editar_codigo.md`](https://github.com/splor-mg/classificador-receita/blob/migracao/_dev/spec_itemClassificacao_editar_codigo.md) (ver também [issue #18](https://github.com/splor-mg/classificador-receita/issues/18)).
+  
+  > **Regra de negócio:** uma vez criado, o código canônico **não pode ser substituído na mesma linha de registro** (mesmo PK / mesma entidade bitemporal). Na tela de **alteração** de `ItemClassificacao`, alterar o campo `receita_cod` serve para **navegar** para outro registro ou para a tela de **criação**, ou deve ser **desfeito** — **não** para gravar outro código via **Salvar** ou **Editar vigência**.
+  
+  > Dois eixos complementares:
+  >> - **Navegação (blur — G-cod.blur):** ao sair do campo com **COD-2 ≠ COD-1**, o sistema classifica o novo código (**C1–C4**), abre modais **M2–M4** e, se o usuário confirmar, redireciona para a **change** do registro vigente encontrado ou para a **add** (código inexistente), via endpoint [`resolve-code-navigation`](https://github.com/splor-mg/classificador-receita/commit/64c7ec3f2e1817706fd2d4023fde5b2d9d349888). Na change, o blur **não** reconcilia `item mãe` / `nível hierárquico` do registro aberto.
+  >> - **Persistência (Salvar / Editar vigência — G-cod.save):** com **COD-2 ≠ COD-1**, **Salvar** e o lápis **Editar vigência** são bloqueados no cliente e no servidor (`BitemporalChangeHandler`), com modal informativo **M-cod-block** — sem abrir a confirmação bitemporal.
+  
+  > Foi incluída a borracha **(R-revert)** na change para restaurar o **COD-1** (código original ao carregar a página), sem recarregar o formulário, e rebaseline de `receita_cod` / `item_id` para evitar aviso falso de «alterações não guardadas» ao confirmar a navegação por blur.
+  
+  > ***atenção!*** Este protocolo é **distinto** da navegação estrutural por setas (tópico **7**): aqui o gatilho é **digitar outro código** no input; lá, o gatilho são os botões de percurso sem alterar o código do registro em edição.
+  
+  
+  - [ ] **7. Navegação estrutural por setas na change de `ItemClassificacao`**
+  
+  > Foi [implementado](https://github.com/splor-mg/classificador-receita/commit/b7dac7584d319c943531ae41ee4567582df0059e) o protocolo especificado em [`_dev/spec_itemClassificacao_navegacao.md`](https://github.com/splor-mg/classificador-receita/blob/migracao/_dev/spec_itemClassificacao_navegacao.md) (ver também [issue #18](https://github.com/splor-mg/classificador-receita/issues/18)).
+  
+  > Na view **change**, barra de controles com quatro ações para percorrer códigos **já existentes** e com **vigência atual** em relação ao registro aberto (**(T-cod.2)** vs **V1**), **sem** alterar o `receita_cod` do item em edição:
+  >> - **(G-nav.next-code)** — próximo código
+  >> - **(G-nav.next-level)** — próximo nível
+  >> - **(G-nav.prev-code)** — código anterior
+  >> - **(G-nav.prev-level)** — nível anterior
+  
+  > A resolução do destino usa a máscara (**MASK-EDIT**) já aplicada ao código em edição, deriva o nível estrutural (**NV-EDIT**) a partir dos segmentos do código (não do `nivel_id` gravado) e consulta o endpoint [`resolve-structural-navigation`](https://github.com/splor-mg/classificador-receita/commit/b7dac7584d319c943531ae41ee4567582df0059e). O redirecionamento abre sempre a **change** do PK desempatado (mesma regra de desempate de vigência que o tópico **6**).
+  
+  > ***atenção!*** Os protocolos **podem** levar a registro com `classificacao_id` diferente do aberto, desde que o código seja navegável na vigência de referência; a interface **deve** avisar quando a classificação do destino divergir. Controles ficam inativos quando não há candidato na direção pedida. Ao sair da página, aplica-se o mesmo cuidado de **alterações não guardadas** já previsto para outros fluxos de navegação na change ([`spec_itemClassificacao_criar_filho.md`](https://github.com/splor-mg/classificador-receita/blob/migracao/_dev/spec_itemClassificacao_criar_filho.md), **v2**).
+  
+  
+  - [ ] **8. Implementação da Documentação Orienta a Especificação de Domínio (SDD)**
+  
+  > Implementação do pacote de regras de negócio `code_*`. 
+---
+# regs
+
+- date: 2026-05-04T19:25:58Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-05-04T19:26:00Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-05-04T19:26:38Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-05-04T19:26:41Z
+  reg: label:added:meeting
+  author: carloshob
+
+- date: 2026-05-04T19:26:46Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-05-04T19:27:06Z
+  reg: milestone:added:Migração de Dados
+  author: carloshob
+
+- date: 2026-05-04T19:27:16Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-05-18T19:29:23Z
+  reg: title:changed:"[18/05/2026] Reunião 07 - Repasses e Alinhamentos":"[21/05/2026] Reunião 07 - Repasses e Alinhamentos"
+  author: carloshob
+
+- date: 2026-06-01T14:49:03Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-06-01T14:49:05Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

@@ -1,0 +1,68 @@
+---
+title: Implementação MVP de Aplicação Web Django com ORM Bitemporal
+state: C
+author: carloshob
+created: '2026-01-19T18:28:32Z'
+updated: '2026-03-31T19:24:15Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: SGDB - App Web de Gestão
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-01-19'
+  Data de vencimento: '2026-03-31'
+  Data Fim: '2026-03-31'
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição
+  
+  Implementar o MVP da aplicação web em Django para gestão do Classificador de Natureza de Receita, utilizando o ORM existente e os modelos bitemporais alinhados à estrutura GSIM, com foco nas funcionalidades essenciais do sistema. 
+  
+  O escopo inclui uma interface administrativa básica, visualização hierárquica das classificações, gestão de versões, comandos de gerenciamento para importação de dados, testes unitários iniciais e documentação de instalação e uso, priorizando CRUD básico e aderência às ADRs aprovadas, sem contemplar funcionalidades avançadas nesta fase.
+---
+# regs
+
+- date: 2026-01-19T18:28:32Z
+  reg: milestone:added:SGDB - App Web de Gestão
+  author: carloshob
+
+- date: 2026-01-19T18:28:33Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-01-19T18:28:33Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-01-19T18:28:34Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-01-19T18:28:34Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2026-01-19T18:28:36Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-01-19T18:28:40Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+---

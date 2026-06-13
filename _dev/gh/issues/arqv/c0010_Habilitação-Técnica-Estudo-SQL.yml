@@ -1,0 +1,99 @@
+---
+title: Habilitação Técnica - Estudo SQL
+state: C
+author: carloshob
+created: '2025-11-28T19:34:54Z'
+updated: '2026-03-04T19:42:41Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Implementação do Banco de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Data início: null
+  Data de vencimento: null
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Realizar estudo e capacitação em SQL, cobrindo sintaxe básica, DDL e consultas avançadas. Esta issue garante que a equipe tenha competência técnica necessária em SQL para implementação do banco de dados.
+  
+  ### Entregas:
+  
+  - Conclusão de cursos de SQL:
+    - [Curso FGV SQL](https://educacao-executiva.fgv.br/cursos/online/curta-media-duracao-online/sql-structured-query-language)
+    - [CS50's Introduction to Databases with SQL](https://pll.harvard.edu/course/cs50s-introduction-databases-sql)
+  - Exercícios práticos de SQL (sintaxe básica, DDL, JOIN, GROUP BY, subconsultas)
+  - Documentação de aprendizados e referências
+  
+  ### Observações:
+  
+  - Esta issue pode ser executada em paralelo com outras atividades
+  - Priorizar estudos práticos com exercícios hands-on
+  - Manter registro de dúvidas e soluções encontradas
+  - Foco em: SELECT, INSERT, UPDATE, DELETE, CREATE TABLE, ALTER, constraints, JOIN, GROUP BY, subconsultas
+  
+---
+# regs
+
+- date: 2025-11-28T19:34:54Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T19:34:56Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T19:35:03Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T19:35:09Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T19:35:12Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T19:35:39Z
+  reg: milestone:added:Implementação do Banco de Dados
+  author: carloshob
+
+- date: 2025-12-05T16:57:15Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-03-04T18:54:05Z
+  reg: project:status_changed:unknown-project:unknown
+  author: gabrielbdornas
+
+- date: 2026-03-04T19:42:41Z
+  reg: comment
+  author: carloshob
+  body: |-
+    Deixaremos para o futuro, caso precise See #58.
+
+- date: 2026-03-04T19:42:41Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-03-04T19:42:42Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

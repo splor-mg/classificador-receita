@@ -1,0 +1,94 @@
+---
+title: Estruturação de Relacionamentos e Normalização
+state: C
+author: carloshob
+created: '2025-11-28T19:29:17Z'
+updated: '2026-01-19T19:21:17Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Modelagem de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2025-12-08'
+  Data de vencimento: '2025-12-16'
+  Data Fim: '2025-12-31'
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Definir relacionamentos entre entidades, chaves primárias (PKs), chaves estrangeiras (FKs) e cardinalidades. Aplicar normalização até 3ª Forma Normal (3FN), garantindo integridade referencial e eliminação de redundâncias, mantendo balanceamento com performance.
+  
+  ### Entregas:
+  
+  - Diagrama Entidade-Relacionamento (DER) completo
+  - Definição de PKs, FKs e constraints
+  - Documentação de cardinalidades e relacionamentos
+  - Análise de normalização (3FN)
+  - DER validado pela DCAF
+---
+# regs
+
+- date: 2025-11-28T19:29:18Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T19:29:20Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T19:29:27Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T19:29:30Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T19:29:33Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T19:29:35Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T19:30:24Z
+  reg: milestone:added:Arquitetura de Dados
+  author: carloshob
+
+- date: 2025-11-28T19:31:28Z
+  reg: milestone:removed:Arquitetura de Dados
+  author: carloshob
+
+- date: 2025-11-28T19:31:28Z
+  reg: milestone:added:Modelagem de Dados
+  author: carloshob
+
+- date: 2025-12-05T16:57:05Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-01-19T19:21:17Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-01-19T19:21:18Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

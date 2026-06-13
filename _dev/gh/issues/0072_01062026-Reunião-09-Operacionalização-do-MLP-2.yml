@@ -1,0 +1,105 @@
+---
+title: '[01/06/2026] Reunião 09 - Operacionalização do MLP - 2'
+state: O
+author: carloshob
+created: '2026-05-27T18:21:30Z'
+updated: '2026-06-01T18:33:50Z'
+labels:
+- meeting
+assignees:
+- carloshob
+milestone: Migração de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: ToDo
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-06-01'
+  Data de vencimento: '2026-06-01'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  _[ [Gravação do encontro]() | [Reunião anterior](https://github.com/splor-mg/classificador-receita/issues/71) | [Próxima reunião](https://github.com/splor-mg/classificador-receita/issues/) ]_
+  
+  ### Descrição
+  
+  Encontro da série **Operacionalização do MLP** dedicado ao início do **uso assistido** das ferramentas e protocolos já implementados no gerenciador (Django Admin). 
+  
+  Cada encontro combina (i) **revisão dos conceitos centrais** que sustentam o modelo de dados e as regras de negócio do classificador, (ii) **repasse das implementações** disponíveis para operação, (iii) **testes práticos** sobre o gerenciador e (iv) coleta de **observações de uso** que possam indicar ajustes no modelo, na interface ou nos protocolos.
+  
+  ## Pauta
+  - segundo encontro de operacionalização do MLP
+  - encaminhamentos da [reunião de 21/05](https://github.com/splor-mg/classificador-receita/issues/64)
+  - repassar comentário de Tadeu a respeito de validação no GRP sobre **"salto de nível"**
+  
+  ## Participantes
+  - @carloshob
+  - @gllisboads 
+  - @GuilhermeReisSeplag 
+  - @Laura-Dilly
+  - @marcelatsm
+  
+  ## Assuntos tratados
+  - Tópico 1
+  - Tópico 2
+  
+  ## Dúvidas
+  - Decisão 1
+  - Decisão 2
+  
+  ## Ideias / Ações
+  - [ ] Pendência 1
+  - [ ] Pendência 2
+  
+---
+# regs
+
+- date: 2026-05-27T18:21:30Z
+  reg: milestone:added:Migração de Dados
+  author: carloshob
+
+- date: 2026-05-27T18:21:32Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-05-27T18:21:32Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-05-27T18:21:33Z
+  reg: label:added:meeting
+  author: carloshob
+
+- date: 2026-05-27T18:21:34Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-05-28T18:35:42Z
+  reg: title:changed:"[28/05/2026] Reunião 09 - Operacionalização do MLP - 2":"[01/06/2026] Reunião 09 - Operacionalização do MLP - 2"
+  author: carloshob
+
+- date: 2026-05-28T18:36:50Z
+  reg: comment
+  author: carloshob
+  body: |-
+    A reunião foi remarcada do dia 28/05 (15:00-16:00) para o dia 01/06 (10:30-11:30) a pedido da DCAF.
+
+- date: 2026-06-01T08:54:01Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-06-01T08:54:26Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+---

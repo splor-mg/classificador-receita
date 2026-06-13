@@ -1,0 +1,81 @@
+---
+title: Implementação de Envio de Atualizações para SISOR
+state: O
+author: carloshob
+created: '2025-11-28T20:38:28Z'
+updated: '2026-01-13T17:37:00Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Integração Bidirecional com SISOR
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: ToDo
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-09-01'
+  Data de vencimento: '2026-09-30'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Implementar lógica de envio de atualizações para SISOR, incluindo criação, alteração e inativação de classificações. Sistema deve fazer chamadas à API do SISOR e tratar respostas adequadamente.
+  
+  ### Entregas:
+  
+  - Cliente de API do SISOR implementado
+  - Envio de criações implementado
+  - Envio de alterações implementado
+  - Envio de inativações implementado
+  - Tratamento de respostas do SISOR
+  - Testes de envio de atualizações
+  
+  ### Observações:
+  
+  - Implementar tratamento robusto de erros
+  - Validar dados antes de envio
+  - Considerar validação de resposta do SISOR
+---
+# regs
+
+- date: 2025-11-28T20:38:29Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T20:38:30Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T20:38:35Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T20:38:37Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:38:40Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:38:56Z
+  reg: milestone:added:Integração Bidirecional com SISOR
+  author: carloshob
+
+- date: 2025-12-05T17:02:30Z
+  reg: relationship:parent_added
+  author: carloshob
+---

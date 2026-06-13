@@ -1,0 +1,81 @@
+---
+title: Otimização de Performance e Cache
+state: O
+author: carloshob
+created: '2025-11-28T20:26:10Z'
+updated: '2025-11-28T20:26:49Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Dashboard Público
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: ToDo
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-08-03'
+  Data de vencimento: '2026-08-28'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Otimizar performance do dashboard através de cache, índices adicionais, otimização de queries (select_related, prefetch_related) e outras técnicas. Garantir que dashboard responda rapidamente mesmo com grandes volumes de dados.
+  
+  ### Entregas:
+  
+  - Cache implementado (Redis ou Memcached)
+  - Índices PostgreSQL otimizados
+  - Queries otimizadas
+  - Análise de performance realizada
+  - Relatório de otimizações
+  - Testes de carga
+  
+  ### Observações:
+  
+  - Cache deve ser invalidado adequadamente
+  - Considerar cache de queries, templates e objetos
+  - Validar performance em ambiente de produção simulado
+---
+# regs
+
+- date: 2025-11-28T20:26:11Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T20:26:13Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T20:26:18Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T20:26:21Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:26:26Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:26:49Z
+  reg: milestone:added:Dashboard Público
+  author: carloshob
+
+- date: 2025-12-05T17:02:06Z
+  reg: relationship:parent_added
+  author: carloshob
+---

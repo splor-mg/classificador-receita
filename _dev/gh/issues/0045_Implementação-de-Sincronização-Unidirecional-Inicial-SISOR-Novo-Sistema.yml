@@ -1,0 +1,81 @@
+---
+title: Implementação de Sincronização Unidirecional Inicial (SISOR → Novo Sistema)
+state: O
+author: carloshob
+created: '2025-11-28T20:48:59Z'
+updated: '2025-11-28T20:49:37Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Integração Bidirecional com SISOR
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: ToDo
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-11-02'
+  Data de vencimento: '2026-11-27'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Implementar sincronização unidirecional inicial do SISOR para o novo sistema, permitindo importação inicial de classificações ativas. Esta funcionalidade é necessária para bootstrap do sistema.
+  
+  ### Entregas:
+  
+  - Sincronização unidirecional implementada
+  - Importação de classificações ativas do SISOR
+  - Mapeamento e transformação de dados
+  - Validação de dados importados
+  - Scripts de importação inicial
+  - Testes de sincronização unidirecional
+  
+  ### Observações:
+  
+  - Importação inicial deve ser idempotente
+  - Validar dados importados antes de carga
+  - Considerar reconciliação com dados já existentes
+---
+# regs
+
+- date: 2025-11-28T20:49:00Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T20:49:02Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T20:49:07Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T20:49:10Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:49:12Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:49:37Z
+  reg: milestone:added:Integração Bidirecional com SISOR
+  author: carloshob
+
+- date: 2025-12-05T17:02:37Z
+  reg: relationship:parent_added
+  author: carloshob
+---

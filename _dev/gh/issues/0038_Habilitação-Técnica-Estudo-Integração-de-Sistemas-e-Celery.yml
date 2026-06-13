@@ -1,0 +1,80 @@
+---
+title: Habilitação Técnica - Estudo Integração de Sistemas e Celery
+state: O
+author: carloshob
+created: '2025-11-28T20:30:40Z'
+updated: '2026-01-13T17:36:57Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: Integração Bidirecional com SISOR
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: ToDo
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-08-03'
+  Data de vencimento: '2026-08-31'
+  Data Fim: null
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Realizar estudo e capacitação em integração de sistemas (APIs REST/SOAP, autenticação, tratamento de erros) e Celery para tarefas assíncronas. Esta issue garante competência técnica para implementação da integração com SISOR.
+  
+  ### Entregas:
+  
+  - Conclusão de estudos de APIs e integração
+  - Conclusão de estudos de Celery
+  - Exercícios práticos de integração
+  - Ambiente Celery configurado
+  - Documentação de aprendizados
+  
+  ### Observações:
+  
+  - Pode ser executada parcialmente em paralelo
+  - Focar em aspectos relevantes para integração com SISOR
+  - Praticar com APIs mockadas
+---
+# regs
+
+- date: 2025-11-28T20:30:40Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T20:30:43Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T20:30:51Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T20:30:54Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:30:59Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:31:21Z
+  reg: milestone:added:Integração Bidirecional com SISOR
+  author: carloshob
+
+- date: 2025-12-05T17:02:12Z
+  reg: relationship:parent_added
+  author: carloshob
+---
