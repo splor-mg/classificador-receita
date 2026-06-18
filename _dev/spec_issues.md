@@ -1,6 +1,6 @@
 # Convenção de issues (GitHub)
 
-Normas básicas de título e redação para issues em repositórios que adotam specs compartilhados (variante trabalho: issues em **português do Brasil**).
+Normas básicas de título e redação para issues em repositórios que adotam specs compartilhados. **Baseline do catálogo:** título e corpo em **inglês** (§ **3**). Overrides locais em `_dev/spec_<nome-repo>.md` § **Issues** — **AGENTS-22**, **AGENTS-25**.
 
 ## Objetivo
 
@@ -8,17 +8,17 @@ Issues registram **trabalho planejado** antes de PR e commit: contexto, escopo e
 
 Esta spec complementa [`spec_commits.md`](spec_commits.md) (execução) e [`spec_agents.md`](spec_agents.md) (SDD). **Não** substitui specs de ferramenta locais (ex.: formato YAML em `toolkit/gtt/specs/spec_issues.md`).
 
-**Idioma deste arquivo:** português (instruções a quem desenvolve no projeto). **Idioma do título e corpo do issue:** português do Brasil (§ **3**).
+**Idioma deste arquivo:** português (instruções a quem desenvolve no projeto). **Idioma do título e corpo do issue:** inglês (§ **3**).
 
 **Onde esta norma vale no projeto**
 
-| Situação                                                   | Arquivo                                                                                  |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Sync do catálogo (variante `trb` / `specs-trb`, **PT-BR**) | `_dev/spec_issues.md` — **este arquivo** (upstream `spec_issues-trb.md`)               |
-| Variante `sdd` (issues em **inglês**)                      | `spec_issues.md` no catálogo EN                                                          |
-| Contrato maduro em `docs/specs/` ou `specs/` (raiz)        | Regras de issue **do projeto** nessa pasta **prevalecem** sobre `_dev/`. **(ISSUES-06)** |
+| Situação                                            | Arquivo                                                                              |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Sync do catálogo (`sdd … -pl`)                      | `_dev/spec_issues.md` — cópia **read-only** deste documento                          |
+| Overrides deste repositório                         | `_dev/spec_<nome-repo>.md` § **Issues** — prevalece sobre o catálogo (**AGENTS-25**) |
+| Contrato maduro em `docs/specs/` ou `specs/` (raiz) | Regras de issue do projeto **prevalecem** sobre `_dev/`. **(ISSUES-06)**             |
 
-Precedência e pastas: [`spec_agents.md`](spec_agents.md) § **1.2** (**AGENTS-02**–**04**).
+Precedência: [`spec_agents.md`](spec_agents.md) § **1.2** (**AGENTS-02**–**05**, **AGENTS-25**).
 
 ## Referências
 
@@ -46,6 +46,7 @@ Os principais **conceitos** e **referências externas** que orientam **como redi
     - [`spec_agents.md`](spec_agents.md) — SDD, precedência, assistente de IA.
     - [`spec_commits.md`](spec_commits.md) — linhas `See`, `Closes #N`, escopos de commit.
     - [`spec_conventions.md`](spec_conventions.md) — prefixos de ID, índice § **2**.
+    - `_dev/spec_<nome-repo>.md` — overrides locais de issues (idioma, prefixos, exemplos).
 
 ??? note "Linguagem normativa e IDs"
 
@@ -55,11 +56,11 @@ Os principais **conceitos** e **referências externas** que orientam **como redi
 
 ## Como citar este documento
 
-| Mecanismo           | Uso                                                                   |
-| ------------------- | --------------------------------------------------------------------- |
-| **Seção numerada**  | `§ 2.1` — navegação neste arquivo.                                    |
-| **ID normativo**    | `ISSUES-02` — citação estável (variante EN e TRB usam os mesmos IDs). |
-| **Índice completo** | [`spec_conventions.md`](spec_conventions.md) § **2**.                 |
+| Mecanismo           | Uso                                                   |
+| ------------------- | ----------------------------------------------------- |
+| **Seção numerada**  | `§ 2.1` — navegação neste arquivo.                    |
+| **ID normativo**    | `ISSUES-02` — citação estável.                        |
+| **Índice completo** | [`spec_conventions.md`](spec_conventions.md) § **2**. |
 
 **Índice de IDs deste arquivo:**
 
@@ -69,7 +70,7 @@ Os principais **conceitos** e **referências externas** que orientam **como redi
 | ISSUES-02 | 2.1    | Título em sentence case (só primeira palavra com maiúscula inicial) |
 | ISSUES-03 | 2.2    | Seguir prefixo temático do repo quando existir (ex. `(scope) - …`)  |
 | ISSUES-04 | 2.1    | Não usar título inteiro em CAIXA ALTA                               |
-| ISSUES-05 | 3      | Título e corpo do issue em **português do Brasil**                  |
+| ISSUES-05 | 3      | Título e corpo do issue em **inglês**                               |
 | ISSUES-06 | (obj.) | Contrato maduro de issues prevalece sobre cópia em `_dev/`          |
 | ISSUES-07 | 1.2    | Nome de arquivo local alinhado ao padrão de `.github/issues/`       |
 | ISSUES-08 | 4      | Referenciar issue no commit conforme `spec_commits.md`              |
@@ -94,10 +95,10 @@ Antes de **criar** ou **sugerir** um issue, o autor **deve** consultar issues j�
 Quando o repositório usa escopo entre parênteses:
 
 ```text
-(classificador) - Refatorar validação de código em componentes modulares
+(profile) - Refactor file into modular components for better maintainability
 ```
 
-- Escopo: `(classificador)` — tema ou módulo.
+- Escopo: `(profile)` — tema ou módulo.
 - Separador: ` - ` (espaço, hífen, espaço).
 - Descrição: **sentence case** — ver § **2.1**.
 
@@ -111,16 +112,16 @@ Se **nenhum** issue existir ainda em `.github/issues/`, registrar o padrão esco
 
 O título do issue **deve** usar **sentence case**: apenas a **primeira letra da primeira palavra** em maiúscula, salvo:
 
-- nomes próprios e marcas (`GitHub`, `Django`, …);
+- nomes próprios e marcas (`GitHub`, `Windows`, …);
 - siglas e acrónimos (`API`, `SDD`, `YAML`, …);
 - identificadores técnicos que já vêm capitalizados no código.
 
 **Não deve** escrever o título inteiro em CAIXA ALTA. Prefixos curtos acordados (`Epic:`) **podem** ter maiúscula inicial no rótulo; o resto do título permanece em sentence case.
 
-| Evitar                              | Preferir                                                      |
-| ----------------------------------- | ------------------------------------------------------------- |
-| `REFATORAR VALIDAÇÃO DE CÓDIGO`     | `Refatorar validação de código em componentes modulares`     |
-| `(django) - REFATORAR VALIDAÇÃO`    | `(django) - Refatorar validação de código em componentes`     |
+| Evitar                      | Preferir                                            |
+| --------------------------- | --------------------------------------------------- |
+| `REFACTOR PROFILE FILE`     | `Refactor profile file into modular components`     |
+| `(profile) - REFACTOR FILE` | `(profile) - Refactor file into modular components` |
 
 ### 2.2 Prefixo temático **(ISSUES-03)**
 
@@ -130,7 +131,7 @@ Quando `.github/issues/` já usa **escopo explícito**, novos issues **devem** s
 (<escopo>) - <descrição em sentence case>
 ```
 
-- `<escopo>`: módulo, ferramenta ou área (`django`, `itemClassificacao`, `specs`, …) — minúsculas salvo nome próprio.
+- `<escopo>`: módulo, ferramenta ou área (`profile`, `specs`, `gtt`, …) — minúsculas salvo nome próprio.
 - **Epic** (opcional): se o projeto distinguir epics, usar prefixo acordado (`Epic: …` ou label `type::epic`) **sem** duplicar metadata no título e nas labels sem necessidade.
 
 **Não** inventar outro separador (`:`, `/`, `[scope]`) se o repositório já padronizou `(scope) - …`.
@@ -139,13 +140,15 @@ Quando `.github/issues/` já usa **escopo explícito**, novos issues **devem** s
 
 ## 3. Idioma do título e do corpo
 
-| Parte                         | Idioma                  |
-| ----------------------------- | ----------------------- |
-| **Título** do issue           | **Português do Brasil** |
-| **Corpo** (`body`)            | **Português do Brasil** |
-| Este arquivo `spec_issues.md` | Português               |
+| Parte                         | Idioma     |
+| ----------------------------- | ---------- |
+| **Título** do issue           | **Inglês** |
+| **Corpo** (`body`)            | **Inglês** |
+| Este arquivo `spec_issues.md` | Português  |
 
-Título e corpo **devem** estar em **português do Brasil**, seja redação manual ou sugerida pelo assistente de IA. **(ISSUES-05)**
+Título e corpo **devem** estar em **inglês** nesta baseline do catálogo, seja redação manual ou sugerida pelo assistente de IA (mesmo quando a conversa na IDE for em português). **(ISSUES-05)**
+
+Para **outro idioma** ou convenções locais, documentar em `_dev/spec_<nome-repo>.md` § **Issues** — essa secção **prevalece** sobre este arquivo (**AGENTS-25**).
 
 ---
 
@@ -154,7 +157,7 @@ Título e corpo **devem** estar em **português do Brasil**, seja redação manu
 Ao implementar trabalho rastreado por issue:
 
 - Incluir referência no commit conforme [`spec_commits.md`](spec_commits.md) (linhas `See …`, `Closes #NN`, `Refs #NN`).
-- Manter coerência entre escopo do issue (`(django)`) e escopo do commit (`django`), quando aplicável.
+- Manter coerência entre escopo do issue (`(profile)`) e escopo do commit (`profile`), quando aplicável.
 
 ---
 
@@ -167,6 +170,6 @@ Ao implementar trabalho rastreado por issue:
 
 ## 6. Manutenção
 
-Ao acrescentar norma citável neste arquivo: próximo `ISSUES-NN` livre; atualizar § **Como citar** e § **2** em [`spec_conventions.md`](spec_conventions.md) (**CONV-04**).
+Ao acrescentar norma citável neste arquivo: próximo `ISSUES-NN` livre; atualizar § **Como citar** e § **2** em [`spec_conventions.md`](spec_conventions.md) (**CONV-04**). Overrides locais: `spec_<nome-repo>.md` § **Issues**.
 
-Alterações ao **modelo compartilhado** do catálogo: elevar ao repositório canônico (`docs/spec_issues-trb.md` upstream) — **AGENTS-14**.
+Alterações ao **modelo compartilhado** do catálogo: elevar ao repositório canônico (`docs/spec_issues.md` upstream) — **AGENTS-14**.
