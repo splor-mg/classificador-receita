@@ -1,390 +1,292 @@
-# Anotações sobre Implementação do Django no Projeto
+# Django no Classificador de Receita
 
-## Estrutura de Arquivos e Pastas
+Arquitetura Django do repositório: layout na raiz, app `core` bitemporal, padrões de Admin (changelist, popups) e pipeline de atualização bitemporal. **Não substitui** specs de domínio (`spec_itemClassificacao_*.md`) nem ADRs em `docs/adr/`.
 
-Ao seguir as orientações do curso [CS50's Web Programming - Week 3: Django](https://cs50.harvard.edu/web/weeks/3/), foi executado o comando `django-admin startproject classificador` dentro do repositório `classificador-receita`, que já continha uma estrutura pré-existente com `schemas`, `scripts`, `docs/` dentre outros.
+## Objetivo
 
-Isso resultou na criação de uma estrutura aninhada, confusa de  `classificador-receita/classificador/classificador/`, onde:
-- `classificador/` (pasta externa) contém `manage.py` e a pasta de configurações
-- `classificador/classificador/` (pasta interna) contém `settings.py`, `urls.py`, `wsgi.py`, etc.
+Documentar como o projeto **deve** estruturar o Django, registrar models bitemporais e aplicar padrões transversais do Admin (pré-filtros, recolhimento de sidebar, popups FK, filtro de campos no pipeline bitemporal).
 
-### Decisão: Django na Raiz
+Premissa: descreve implementação vigente em `classificador/`, `apps/core/` e mixins em `admin_mixins.py`.
 
-Tomando como referência [cookiecutter-django](https://cookiecutter-django.readthedocs.io/en/latest/index.html), foi decidido implementar o **Django na raiz** para reestruturar o projeto, movendo:
-- `manage.py` para a raiz do repositório
-- `classificador/classificador/` → `classificador/` (configurações do projeto Django)
+## Referências
 
-Optar por Django na raiz simplifica o acesso direto aos recursos já existentes no projeto (`schemas/`, `scripts/` e `docs/`), proporciona uma estrutura plana e intuitiva ao eliminar pastas aninhadas desnecessárias, segue as práticas recomendadas por projetos modernos, facilita o uso dos comandos com `manage.py` na raiz e faz sentido já que Django será a principal interface de gerenciamento do classificador.
+- [cookiecutter-django](https://cookiecutter-django.readthedocs.io/en/latest/index.html) — inspiração layout na raiz.
+- **ADR-001** — bitemporalidade (`docs/adr/adr-001_bitemporalidade.md`).
+- **ADR-002** — GSIM (`docs/adr/adr-002_gsim.md`).
+- **ADR-005** — layout `docs/assets/`, `data-raw/`, `data/`.
+- `_dev/spec_conventions.md` — módulos `code_*`, glossário temporal.
+- `_dev/spec_agents.md` — SDD e agentes.
+- [`spec_itemClassificacao_formulario.md`](spec_itemClassificacao_formulario.md) — formulário `ItemClassificacao`.
+- [`spec_itemClassificacao_criar_nome.md`](spec_itemClassificacao_criar_nome.md) — `receita_nome_base_mode` (caso **DJANGO-28**).
+- [`spec_classificador-receita.md`](spec_classificador-receita.md) § **Convenções** — prefixo `DJANGO`.
 
+Termos *deve* / *não deve* / *pode* conforme RFC 2119 (ver `_dev/spec_conventions.md` **Referências**).
 
-Estrutura pensada: 
+**Migração de símbolos legados:**
 
-```
-classificador-receita/              # Repositório raiz
-├── manage.py                       # Django na raiz
-├── pyproject.toml                  # Poetry
-├── classificador/                  # Configurações do projeto Django
-│   ├── __init__.py
-│   ├── settings.py                 # BASE_DIR aponta para raiz
-│   ├── urls.py
-│   ├── wsgi.py
-│   └── asgi.py
-├── apps/                           # Apps Django (criar quando necessário)
-│   └── core/                       # App principal
-├── scripts/                        # Scripts utilitários (mantém)
-│   ├── validate_datapackage.py
-│   └── (...)
-|   
-├── schemas/                        # Schemas Frictionless (mantém)
-├── docs/                           # Documentação (mantém)
-├── data-raw/                       # Normalização tabular do import (ADR-005)
-├── data/                           # Lançamentos do import antes da gravação no BD (ADR-005)
-└── README.md
-```
+| Legado                | ID atual                |
+| --------------------- | ----------------------- |
+| `B-pipe.1`–`B-pipe.4` | `DJANGO-25`–`DJANGO-28` |
 
-Layout de `docs/assets/`, `data-raw/` e `data/`: **`docs/adr/adr-005_layout-dados.md`**.
+## Como citar este documento
 
-### Observação: Organização de Apps em `apps/`
+| Mecanismo          | Uso                                                                 |
+| ------------------ | ------------------------------------------------------------------- |
+| **Seção numerada** | `§ N` / `§ N.M` — navegação neste arquivo.                          |
+| **ID normativo**   | `DJANGO-NN` — citação estável.                                      |
+| **Prefixo**        | `DJANGO` — ver § **Convenções** em `spec_classificador-receita.md`. |
 
-Os apps Django foram organizados dentro da pasta `apps/` visando **escalabilidade** e **padronização**, seguindo recomendações para projetos Django. Esta estrutura permite adicionar múltiplos apps de forma organizada (ex: `apps/core/`, `apps/api/`, `apps/dashboard/`) sem poluir a raiz do repositório.
+**Índice de IDs normativos deste arquivo:**
 
-No entanto, para criar novos apps nesta estrutura, o comando deve ser adaptado para especificar o caminho completo:
+| ID        | Tema       | Seção | Resumo                                                                                                                      |
+| --------- | ---------- | ----- | --------------------------------------------------------------------------------------------------------------------------- |
+| DJANGO-01 | Layout     | 1.1   | `manage.py` e pacote `classificador/` (settings, urls) na **raiz** do repositório.                                          |
+| DJANGO-02 | Layout     | 1.2   | Apps Django em `apps/`; `startapp` com caminho `apps/<nome>`.                                                               |
+| DJANGO-03 | Layout     | 1.3   | `sys.path.insert(0, BASE_DIR / "apps")`; `INSTALLED_APPS` usa `"core"`, não `"apps.core"`.                                  |
+| DJANGO-04 | Models     | 2.1   | `BitemporalModel` abstrata com 4 campos temporais e `clean()` de intervalos.                                                |
+| DJANGO-05 | Models     | 2.2   | Sentinels `VALID_TIME_SENTINEL` e `TRANSACTION_TIME_SENTINEL` (`9999-12-31`).                                               |
+| DJANGO-06 | Models     | 2.3   | PK `id` auto + `UniqueConstraint` bitemporal — **sem** PK composta nativa.                                                  |
+| DJANGO-07 | Admin      | 3.1   | Popups FK na **add**: `popup_default_registro_ativo_ano_corrente` → `registro_ativo=ativo_corrente` na query da lupa.       |
+| DJANGO-08 | Admin      | 3.1   | **Não** aplicar pop-up default na **change** nem em FKs sem a flag.                                                         |
+| DJANGO-09 | Changelist | 4.1   | Entrada «fria» (GET sem filtros) → redirect 302 com `changelist_default_filters` do `ModelAdmin`.                           |
+| DJANGO-10 | Changelist | 4.1   | Após «Limpar todos os filtros» → mesma changelist **sem** filtros e **sem** reaplicar default (sessão).                     |
+| DJANGO-11 | Changelist | 4.1   | Sair da changelist e voltar com GET vazio → **reaplica** default.                                                           |
+| DJANGO-12 | Changelist | 4.2   | `ChangelistDefaultFilterRedirectMixin` intercepta `changelist_view` quando GET vazio e sem flag skip.                       |
+| DJANGO-13 | Changelist | 4.2   | `RegistroAtivoFilter`: «Todos» = sentinela `registro_ativo=todos` (no-op), não GET vazio.                                   |
+| DJANGO-14 | Changelist | 4.2   | «Limpar todos»: `__changelist_skip_default=1` → flag sessão + redirect sem query.                                           |
+| DJANGO-15 | Changelist | 4.2   | Popups `raw_id` (`?_popup=1`) **não** disparam redirect (GET nunca vazio).                                                  |
+| DJANGO-16 | Changelist | 4.2   | `AdminChangelistSkipDefaultScopeMiddleware` invalida flags ao sair da changelist do model.                                  |
+| DJANGO-17 | Changelist | 4.3   | Defaults por entidade — ver tabela § **4.3** (`ativo_historico` vs `ativo_corrente`).                                       |
+| DJANGO-18 | Sidebar    | 5.1   | `ChangelistSidebarFilterCollapseMixin`: a cada GET, expandir só `changelist_expanded_filters` (+ filtros com valor activo). |
+| DJANGO-19 | Sidebar    | 5.1   | Stateless — interação abrir/fechar **não** persiste entre entradas na changelist.                                           |
+| DJANGO-20 | Sidebar    | 5.2   | Default `DEFAULT_CHANGELIST_EXPANDED_FILTERS` = `{registro_ativo, data_registro_inicio}`.                                   |
+| DJANGO-21 | Sidebar    | 5.2   | `BaseLegalTecnicaAdmin` **sem** mixin collapse; `AliasLexico` no-op (≤3 filtros).                                           |
+| DJANGO-22 | Sidebar    | 5.3   | Override `apps/core/static/admin/js/filters.js` — **sem** `sessionStorage` (conflito Django 6+).                            |
+| DJANGO-23 | Sidebar    | 5.3   | Auto-expand: união de filtros declarados + filtros com parâmetro activo em `request.GET`.                                   |
+| DJANGO-24 | Sidebar    | 5.4   | Template `apps/core/templates/admin/filter.html` — título sem prefixo «Por …».                                              |
+| DJANGO-25 | Pipeline   | 6.1   | `BitemporalChangeHandler._apply_user_edits`: `new_values` só campos concretos do model (`get_field`).                       |
+| DJANGO-26 | Pipeline   | 6.2   | `apply_bitemporal_update`: filtrar `new_values` a `{f.name for f in concrete_fields}`.                                      |
+| DJANGO-27 | Pipeline   | 6.3   | **Proibido** chaves em `new_values` que não sejam campo do model — usar parâmetros explícitos da função.                    |
+| DJANGO-28 | Pipeline   | 6.4   | Campos auxiliares de `ModelForm`: `required=False`; `pop` no fluxo oposto (`add` xor `change`).                             |
+| DJANGO-29 | Teste      | 7     | Testes manuais/automatizados § **7** e `tests_admin_changelist_default_filters.py` **devem** ser respeitados.               |
 
-```bash
-poetry run python manage.py startapp <nome_do_app> apps/<nome_do_app>
-```
+**Índice por tema:**
 
-Além disso, o arquivo `classificador/settings.py` precisa ser configurado para que o Django encontre os apps dentro de `apps/`. Para isso, é necessário adicionar as seguintes linhas logo após a definição de `BASE_DIR`:
-
-```python
-import sys
-
-# Add apps directory to Python path
-sys.path.insert(0, str(BASE_DIR / "apps"))
-```
-
-Com essa configuração, os apps podem ser referenciados diretamente no `INSTALLED_APPS` (ex: `"core"`) sem necessidade de usar o prefixo `apps.` (ex: `"apps.core"`).
+| Tema        | IDs                   |
+| ----------- | --------------------- |
+| Layout      | DJANGO-01 … DJANGO-03 |
+| Models      | DJANGO-04 … DJANGO-06 |
+| Admin popup | DJANGO-07, DJANGO-08  |
+| Changelist  | DJANGO-09 … DJANGO-17 |
+| Sidebar     | DJANGO-18 … DJANGO-24 |
+| Pipeline    | DJANGO-25 … DJANGO-28 |
+| Teste       | DJANGO-29             |
 
 ---
 
-## Implementação do App Core - Models Bitemporais
+## 1. Layout do projeto **(DJANGO-01**–**DJANGO-03)**
 
-### Módulos de regras de negócio (`code_`)
-
-A lógica de domínio reutilizável do classificador (nome, máscara, hierarquia,
-FK temporal, normalização de placeholders, etc.) vive em `apps/core/code_*.py`.
-Convenções, glossário temporal e inventário atual: **`_dev/spec_conventions.md`**.
-Protocolo SDD e orientações para agentes de IA: **`_dev/spec_agents.md`**.
-
-### Resumo da Implementação
-
-Foi implementada a estrutura básica do app `core` para gerenciamento das estruturas do Classificador de Natureza de Receita, seguindo os schemas definidos em `schemas/` e alinhado com os ADRs do projeto (ADR-001: Bitemporalidade e ADR-002: GSIM).
-
-### Models Implementados
-
-#### 1. Classe Base: `BitemporalModel`
-- Classe abstrata que implementa os 4 campos bitemporais:
-  - `data_vigencia_inicio` / `data_vigencia_fim` (valid_time)
-  - `data_registro_inicio` / `data_registro_fim` (transaction_time)
-- Validação básica de intervalos temporais no método `clean()`
-- Constantes para valores sentinelas: `VALID_TIME_SENTINEL` e `TRANSACTION_TIME_SENTINEL`
-
-#### 2. Models Principais (6 entidades)
-
-1. **`SerieClassificacao`** (GSIM ClassificationSeries)
-   - Campos: `serie_id`, `serie_nome`, `descricao`, `orgao_responsavel`
-   - Sem dependências (entidade raiz)
-
-2. **`Classificacao`** (GSIM StatisticalClassification)
-   - Campos: `classificacao_id`, `serie` (FK), `classificacao_nome`, `descricao`, `tipo_classificacao`, `numero_niveis`
-   - FK: `serie` → `SerieClassificacao`
-
-3. **`NivelHierarquico`** (GSIM ClassificationLevel)
-   - Campos: `nivel_id`, `classificacao` (FK), `nivel_numero`, `nivel_nome`, `descricao`, `estrutura_codigo`, `tipo_codigo`
-   - FK: `classificacao` → `Classificacao`
-   - Constraint: `unique_nivel_numero_classificacao` (garante unicidade do número do nível por classificação)
-
-4. **`ItemClassificacao`** (GSIM ClassificationItem)
-   - Campos: `item_id`, `codigo_completo`, `codigo_numerico`, `nivel` (FK), `parent_item` (FK self), `nome_oficial`, `descricao`, `item_gerado`, `valido_atualmente`
-   - FKs: `nivel` → `NivelHierarquico`, `parent_item` → `ItemClassificacao` (auto-relacionamento)
-   - Constraint: `unique_codigo_numerico_registro` (garante unicidade do código numérico por registro)
-
-5. **`VersaoClassificacao`** (GSIM ClassificationVersion)
-   - Campos: `versao_id`, `classificacao` (FK), `versao_numero`, `versao_nome`, `descricao`, `data_lancamento`
-   - FK: `classificacao` → `Classificacao`
-
-6. **`VarianteClassificacao`** (GSIM ClassificationVariant)
-   - Campos: `variante_id`, `classificacao` (FK), `versao` (FK opcional), `variante_nome`, `tipo_variante`, `descricao`, `proposito`
-   - FKs: `classificacao` → `Classificacao`, `versao` → `VersaoClassificacao` (opcional)
-
-### Características Implementadas
-
-#### Constraints e Índices
-- **UniqueConstraint**: Garante unicidade bitemporal usando `(identificador, data_registro_inicio)`
-- **Índices compostos**: Otimizam queries temporais e hierárquicas
-- **Índices em FKs**: Melhoram performance de joins
-- **Índices em campos de busca**: `codigo_numerico`, `codigo_completo`, `item_id`
-
-#### Validações
-- Validação de intervalos temporais (início < fim)
-- Validação de enum (tipo_classificacao, tipo_codigo, tipo_variante)
-- Validação de range numérico (numero_niveis: 1-9, codigo_numerico: 13 dígitos)
-
-#### Django Admin
-- Todos os 6 models registrados no `admin.py`
-- Configurações básicas: `list_display`, `list_filter`, `search_fields`
-- Campos `data_registro_*` marcados como `readonly_fields`
-- `date_hierarchy` para navegação temporal
-- `raw_id_fields` para FKs (melhor performance)
-
-##### Lupa (raw id) na criação de registros: filtro «Ativos (Ano Corrente)»
-
-Em formulários de **adicionar** (`…_add`) para `Classificacao`, `NivelHierarquico` e `ItemClassificacao`, o `href` da lupa de algumas FKs inclui na query string o mesmo parâmetro que o filtro de sidebar **Status do Registro → Ativos (Ano Corrente)** (`registro_ativo=ativo_corrente`, constantes em `apps.core.admin_mixins`). Assim a changelist do popup abre já com esse critério; o usuário pode mudar para «Todos» ou outra opção na barra lateral.
-
-Campos configurados (via `popup_default_registro_ativo_ano_corrente` em `semantic_fk_config`):
-
-| ModelAdmin (origem) | FK                                                          |
-| ------------------- | ----------------------------------------------------------- |
-| `Classificacao`     | `serie_id` (Série de Classificação)                         |
-| `NivelHierarquico`  | `classificacao_id`                                          |
-| `ItemClassificacao` | `classificacao_id`, `parent_item_id` (item mãe), `nivel_id` |
-
-Formulário admin de `ItemClassificacao`: largura de `receita_cod` (**37ch**, paridade com FK semânticos) e ação «Limpar formulário e recomeçar» (ícone vassourinha, somente **add**) — ver `_dev/spec_itemClassificacao_formulario.md`.
-
-Não se aplica à vista de **alterar** nem a FKs sem essa flag (ex.: base legal técnica em classificação/item). O critério «Ano Corrente» é o já definido em `RegistroAtivoFilter` (sobreposição da vigência com o ano civil corrente e registo ativo em tempo de transação), não «vigente apenas no dia de hoje».
-
-### Migrations
-
-Migrations iniciais criadas com sucesso:
-- `apps/core/migrations/0001_initial.py`
-- Inclui criação de todas as tabelas, constraints, índices e relacionamentos
-
-### Estrutura de Arquivos Criada
+### 1.1 Django na raiz **(DJANGO-01)**
 
 ```
-apps/core/
-├── models.py          # 6 models + classe base BitemporalModel
-├── admin.py           # Registro de todos os models no Django Admin
-└── migrations/
-    └── 0001_initial.py
+classificador-receita/
+├── manage.py
+├── classificador/          # settings, urls, wsgi
+├── apps/
+├── scripts/
+├── schemas/
+├── docs/
+├── data-raw/
+└── data/
 ```
 
-### Pontos de Atenção
+Layout de `docs/assets/`, `data-raw/`, `data/`: ADR-005.
 
-1. **Chaves Primárias Compostas**: Django não suporta PKs compostas nativamente. A solução implementada usa `id` como PK única (auto-increment) + `UniqueConstraint` para garantir unicidade bitemporal. Isso permite múltiplos registros históricos do mesmo identificador.
+### 1.2 Apps em `apps/` **(DJANGO-02)**
 
-2. **Valores Sentinelas**: 
-   - `data_vigencia_fim = '9999-12-31'` → vigência ativa
-   - `data_registro_fim = '9999-12-31'` → registro ativo
-   - Constantes definidas em `models.py` para facilitar uso
+```bash
+poetry run python manage.py startapp <nome> apps/<nome>
+```
 
-3. **Gerenciamento de `data_registro_fim`**: Conforme ADR-001, a responsabilidade é híbrida. Por enquanto, a aplicação deve gerenciar o fechamento de `data_registro_fim` ao criar novos registros. Triggers no PostgreSQL podem ser adicionados futuramente.
+### 1.3 `PYTHONPATH` e `INSTALLED_APPS` **(DJANGO-03)**
 
-4. **Queries Bitemporais**: Models básicos implementados. Managers customizados para queries "current" e "as-of" podem ser adicionados futuramente conforme necessidade.
-
-5. **Auto-relacionamento**: `ItemClassificacao.parent_item` permite hierarquia de 9 níveis. NULL para itens do nível 1 (raiz).
-
-6. **Nomes de Tabelas**: Usando `db_table` para manter nomes em português conforme schemas (ex: `serie_classificacao`, `classificacao`).
-
-7. **Próximos Passos**:
-   - Criar managers customizados para queries bitemporais
-   - Implementar signals para gerenciar `data_registro_fim` automaticamente
-   - Adicionar métodos helper para valores sentinelas
-   - Implementar validações customizadas mais complexas
-   - Criar views e templates para interface de gestão
-
-
-### Padrões de Changelist no Django Admin
-
-Esta secção documenta padrões transversais aplicados às telas de **listagem** (changelist) do Django Admin neste projeto, para além das configurações pontuais de cada `ModelAdmin`. O objectivo é uniformizar a experiência ao abrir cada changelist: o usuário deve chegar **já num recorte útil** e poder, a partir daí, navegar com os filtros do sidebar de forma previsível.
-
-#### Conceitos (ciclo de vida do filtro padrão)
-
-| Conceito                   | Comportamento esperado                                                                                                                                                                                                           |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Entrada na changelist**  | Navegação «fria» (menu, índice do admin, outro model, add/change/history, etc.) para `/admin/<app>/<model>/` com query **sem** filtros de negócio → **aplica** o `changelist_default_filters` desse `ModelAdmin` (redirect 302). |
-| **Modo sem filtro padrão** | Após «Limpar todos os filtros», o usuário permanece na **mesma** changelist **sem** filtros na URL e **sem** reaplicar o default (nem ao paginar/ordenar).                                                                    |
-| **Reentrada**              | Depois de sair da changelist (qualquer URL admin que não seja `/admin/<app>/<model>/` exactamente), voltar à lista → **reaplica** o filtro padrão (como na primeira entrada).                                                    |
-
-Comportamento **não** desejado: o default reaplicar-se a cada clique na sidebar enquanto o usuário tenta limpar ou escolher «Todos»; nem a flag de «limpei tudo» persistir entre visitas distintas à mesma changelist.
-
-#### Pré-filtro padrão por «Status do Registro»
-
-Comportamento: na **entrada** (ver tabela acima), o admin responde com um **redirect HTTP 302** para a **mesma URL** com o parâmetro do filtro `Status do Registro` já aplicado. A partir daí, todo o fluxo segue o padrão do Django Admin (filtros laterais, busca, paginação, `preserved_filters` para save/edit, etc.).
-
-Cada changelist define o seu próprio default **explicitamente** no respectivo `ModelAdmin` (`changelist_default_filters`). Não há valor global único: a tabela abaixo é a fonte de verdade do contrato por entidade.
-
-| Changelist (ModelAdmin) | Filtro                           | Valor default (query string)       | Rótulo na sidebar     | Significado                                                                                   |
-| ----------------------- | -------------------------------- | ---------------------------------- | --------------------- | --------------------------------------------------------------------------------------------- |
-| `SerieClassificacao`    | `RegistroAtivoFilter`            | `registro_ativo=ativo_historico`   | Ativos (Histórico)    | Registo activo em transaction time, qualquer vigência                                         |
-| `Classificacao`         | `RegistroAtivoFilter`            | `registro_ativo=ativo_historico`   | Ativos (Histórico)    | idem                                                                                          |
-| `NivelHierarquico`      | `RegistroAtivoFilter`            | `registro_ativo=ativo_corrente`    | Ativos (Ano Corrente) | Registo activo e vigência com sobreposição ao ano civil corrente                              |
-| `ItemClassificacao`     | `RegistroAtivoFilter`            | `registro_ativo=ativo_corrente`    | Ativos (Ano Corrente) | idem                                                                                          |
-| `VersaoClassificacao`   | `RegistroAtivoFilter`            | `registro_ativo=ativo_corrente`    | Ativos (Ano Corrente) | idem                                                                                          |
-| `VarianteClassificacao` | `RegistroAtivoFilter`            | `registro_ativo=ativo_historico`   | Ativos (Histórico)    | Registo activo em transaction time, qualquer vigência                                         |
-| `AliasLexico`           | `AliasLexicoRegistroAtivoFilter` | `lista_abreviacoes_registro=ativo` | Registro ativo        | `data_registro_fim` = sentinela (sem vigência orçamentária; default próprio desta changelist) |
-
-Constantes em `apps.core.admin_mixins`: `REGISTRO_ATIVO_VALUE_HISTORICO` → `ativo_historico`; `REGISTRO_ATIVO_VALUE_ANO_CORRENTE` → `ativo_corrente` (não usar `ativo_ano_corrente` na URL).
-
-#### Mecânica
-
-1. **Mixin de redirect**: `ChangelistDefaultFilterRedirectMixin` em `apps/core/admin_mixins.py`. O `ModelAdmin` declara um dicionário `changelist_default_filters = {param: value}`; o mixin sobrepõe `changelist_view(request, …)` e, se o request for `GET` com `request.GET` vazio **e** não existir flag de sessão «modo sem filtro padrão» para esse model (`admin_changelist_skip_default:<app>.<model>`), devolve um `HttpResponseRedirect` para `request.path + "?" + urlencode(changelist_default_filters)`. Em todas as demais situações (com parâmetros, POST, etc.) delega no `super().changelist_view(...)`.
-
-2. **«Todos» explícito (no-op) no filtro**: a entrada padrão «Todos» do `SimpleListFilter` gera, por defeito, uma URL **sem o parâmetro** — o que reentraria no redirect do mixin e devolveria o usuário ao default. Para preservar a semântica de «Todos», o `RegistroAtivoFilter` (e o `AliasLexicoRegistroAtivoFilter`) **sobrepõe `choices(changelist)`** para gerar a entrada «Todos» com um valor sentinela explícito (`registro_ativo=todos` ou `lista_abreviacoes_registro=todos`), interpretado como **no-op** no `queryset()` do próprio filtro. Assim:
-   - Primeira visita → GET vazio → redirect aplica o default.
-   - Clique em «Todos» pelo usuário → GET com `…=todos` → no-op, sem redirect, sem filtro.
-   - Clique em qualquer outra opção → GET com valor explícito → filtro normal.
-
-3. **«Limpar todos os filtros» (Django Admin 6+)** — compatível com o botão nativo da sidebar (`Clear all filters` / «Limpar todos os filtros»):
-   - O mixin usa `ChangelistWithClearAllSkipDefault` (`get_changelist`) para acrescentar à URL de limpar o parâmetro interno `__changelist_skip_default=1` (não é filtro de negócio).
-   - Ao receber esse parâmetro: grava em sessão `admin_changelist_skip_default:<app>.<model>`, responde com **302** para a mesma changelist **sem** query string.
-   - No GET vazio seguinte (com a flag activa **e** ainda na changelist desse model): **não** reaplica o default; a lista fica **sem** filtros na URL (não se usa `…=todos` como substituto de «limpar tudo»).
-   - A flag de sessão é **removida** quando:
-     - o usuário aplica qualquer parâmetro activo (filtros de sidebar, busca `q`, etc.) — paginação (`p`), ordenação (`o`), «mostrar tudo» (`all`), facetas (`_facets`) **não** contam como activos;
-     - o usuário **sai** da changelist desse model (ver ponto 6).
-   - **Reentrada:** após sair (menu, outro model, add/change/history, índice `/admin/`, etc.) e voltar à changelist com GET vazio → o middleware já removeu a flag → o mixin **reaplica** o default.
-
-4. **Popups (`raw_id` lookup)**: não são afectados. A URL do popup contém sempre, no mínimo, `?_popup=1&_to_field=…`, logo `request.GET` nunca é vazio e o redirect não dispara. O pré-filtro `popup_default_registro_ativo_ano_corrente` (ver subsecção «Lupa (raw id) na criação de registros») continua a funcionar de forma independente.
-
-5. **`preserved_filters`**: como o pré-filtro entra na query string, todo o mecanismo padrão do Django Admin (`_changelist_filters=…` após save/edit) preserva o recorte do usuário entre navegações.
-
-6. **Middleware de escopo** (`AdminChangelistSkipDefaultScopeMiddleware` em `apps/core/middleware.py`, registado em `classificador/settings.py` após `AuthenticationMiddleware`): em cada request `/admin/…`, antes da view, chama `clear_stale_changelist_skip_default_flags`. Mantém a flag só para o model cuja changelist está activa (`parse_admin_changelist_model_key` — path exactamente `/admin/<app_label>/<model_name>/`). Qualquer outro path admin (add, change, delete, history, outro model, `/admin/` índice) invalida as flags dos restantes models (e daquele model se não for changelist).
-
-#### Configuração por `ModelAdmin`
-
-Cada `ModelAdmin` que queira pré-filtrar a sua changelist deve:
-
-1. Acrescentar `ChangelistDefaultFilterRedirectMixin` à hierarquia de bases (recomenda-se posição cedo no MRO, para que `changelist_view` seja interceptado antes de qualquer outro mixin).
-2. Declarar `changelist_default_filters = { <param>: <value> }` apontando para o `SimpleListFilter` desejado.
-3. Garantir que esse `SimpleListFilter` tem o tratamento de «Todos» como no-op (override de `choices()` + branch no `queryset()`).
-
-Exemplos (um default por `ModelAdmin`):
+Em `classificador/settings.py` após `BASE_DIR`:
 
 ```python
-# SerieClassificacao, Classificacao, VarianteClassificacao → Ativos (Histórico)
-changelist_default_filters = {
-    REGISTRO_ATIVO_QUERY_PARAM: REGISTRO_ATIVO_VALUE_HISTORICO,
-}
-
-# NivelHierarquico, ItemClassificacao, VersaoClassificacao → Ativos (Ano Corrente)
-changelist_default_filters = {
-    REGISTRO_ATIVO_QUERY_PARAM: REGISTRO_ATIVO_VALUE_ANO_CORRENTE,
-}
+import sys
+sys.path.insert(0, str(BASE_DIR / "apps"))
 ```
 
-#### Notas de extensão
+`INSTALLED_APPS`: `"core"`, não `"apps.core"`.
 
-- O mixin é **genérico**: aceita múltiplos pares chave/valor em `changelist_default_filters`, podendo combinar mais filtros default no futuro (ex.: `nivel_numero_recente`, `tipo_classificacao`).
-- A escolha do default por changelist é **decisão de domínio** e fica explícita no `ModelAdmin` (não no mixin nem no filtro). O mixin transporta apenas a mecânica.
-- Para mudar o default sem mudar código de mixin/filtro, basta editar `changelist_default_filters` no `ModelAdmin` correspondente.
+---
 
-#### Testes manuais recomendados
+## 2. Models bitemporais (`apps/core`) **(DJANGO-04**–**DJANGO-06)**
 
-1. Menu → changelist `ItemClassificacao` → URL com `registro_ativo=ativo_corrente` (default).
-2. «Limpar todos os filtros» → URL sem query; lista sem filtro; sidebar sem opção de registro activa forçada.
-3. Paginar/ordenar na lista limpa → continua sem default.
-4. Menu → outra entidade → Menu → `ItemClassificacao` de novo → **default reaplicado**.
-5. Limpar tudo → abrir um registro (change) → breadcrumb ou link «voltar à lista» → **default reaplicado** (flag invalidada na change).
-6. Clique em «Todos» no filtro `Status do Registro` → `registro_ativo=todos`; **sem** redirect ao default.
+### 2.1 Classe base **(DJANGO-04)**
 
-#### Testes automatizados
+`BitemporalModel` (abstrata): `data_vigencia_inicio`/`fim`, `data_registro_inicio`/`fim`; validação de intervalos em `clean()`.
 
-`apps/core/tests_admin_changelist_default_filters.py` — redirect, flag, limpar, paginação, reentrada após `clear_stale_changelist_skip_default_flags` (simula saída da changelist).
+### 2.2 Sentinelas **(DJANGO-05)**
 
-#### Estado inicial dos filtros do sidebar (recolhimento)
+`9999-12-31` = vigência/registro ativos.
 
-Comportamento: ao entrar na changelist de um `ModelAdmin` configurado, o sidebar de filtros nasce com **somente os filtros declarados** abertos (`<details open>`); os demais ficam recolhidos. O estado é **recomputado a cada GET** — eventual interação anterior do utilizador (abrir/fechar) **é sobrescrita** ao navegar de volta à changelist. Não há persistência por sessão nem por cliente.
+### 2.3 Chaves e constraints **(DJANGO-06)**
 
-Mapa de filtros expandidos por changelist (default `DEFAULT_CHANGELIST_EXPANDED_FILTERS` = `{"registro_ativo", "data_registro_inicio"}`):
+PK `id` auto-increment; unicidade bitemporal via `UniqueConstraint` `(identificador, data_registro_inicio)`.
 
-| Changelist (ModelAdmin) | Filtros expandidos por default                        | Observação                                                                       |
-| ----------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `SerieClassificacao`    | «Por Status do Registro», «Por Data de Início do Registro» | 4 filtros (>3) — recolhimento aplicado.                                          |
-| `Classificacao`         | «Por Status do Registro», «Por Data de Início do Registro» | 7 filtros.                                                                       |
-| `NivelHierarquico`      | «Por Status do Registro», «Por Data de Início do Registro» | 6 filtros.                                                                       |
-| `ItemClassificacao`     | «Por Status do Registro», «Por Data de Início do Registro» | 10 filtros — caso mais saliente.                                                 |
-| `VersaoClassificacao`   | «Por Status do Registro»                              | 5 filtros; `data_registro_inicio` não existe na `list_filter` (apenas `Status`). |
-| `VarianteClassificacao` | «Por Status do Registro»                              | 6 filtros; idem.                                                                 |
-| `BaseLegalTecnica`      | — (mixin **não** aplicado)                            | Tabela não bitemporal; nenhum filtro casaria com o default — `BaseLegalTecnicaAdmin` fica sem o mixin para evitar todos os filtros recolhidos. |
-| `AliasLexico`           | — (no-op)                                              | Apenas 1 filtro (≤ `CHANGELIST_COLLAPSE_MIN_FILTERS`); mesmo aplicando o mixin, não tem efeito. |
+### Implementação de referência
 
-#### Mecânica
+Seis entidades GSIM: `SerieClassificacao`, `Classificacao`, `NivelHierarquico`, `ItemClassificacao`, `VersaoClassificacao`, `VarianteClassificacao`. Regras de domínio em specs temáticas e `code_*.py`.
 
-1. **Mixin**: `ChangelistSidebarFilterCollapseMixin` em `apps/core/admin_mixins.py`. O `ModelAdmin` declara, opcionalmente, `changelist_expanded_filters: frozenset[str]` (default em `DEFAULT_CHANGELIST_EXPANDED_FILTERS`). Os nomes são comparados contra `spec.parameter_name` (`SimpleListFilter` — ex.: `RegistroAtivoFilter`) e `spec.field_path` (`FieldListFilter` — ex.: `DateFieldListFilter` declarado em `list_filter` como `"data_registro_inicio"`).
+Admin: `list_display`, `list_filter`, `raw_id_fields`, `date_hierarchy`; `data_registro_*` readonly.
 
-2. **Critérios de aplicação a cada GET** (no-op se algum falhar):
-   - `request.method == "GET"`;
-   - `_popup` **não** presente em `request.GET` (popups de `raw_id` lookup preservam o comportamento padrão);
-   - `len(self.list_filter) > CHANGELIST_COLLAPSE_MIN_FILTERS` (= 3).
+Migrations iniciais: `apps/core/migrations/0001_initial.py`.
 
-3. **Injeção em `request`**: quando os critérios passam, o mixin anexa `request.changelist_expanded_filter_params` (um `frozenset[str]`).
+**Pontos de atenção (não normativos):** gestão híbrida de `data_registro_fim` (ADR-001); managers `as-of` futuros; `db_table` em português.
 
-4. **Anotação nas `filter_specs` (server-side)**: a `ChangeList` customizada `ChangelistWithClearAllSkipDefault` (devolvida por `get_changelist` em ambos os mixins, redirect e collapse) lê `request.changelist_expanded_filter_params` no `__init__` e anota cada `spec` com o atributo `core_collapse_open: bool`.
+---
 
-   Esta anotação **não** pode ser feita lendo `request` directamente no template `admin/filter.html`, porque a templatetag `admin_list_filter` (`django/contrib/admin/templatetags/admin_list.py`) renderiza esse template com **contexto plano** (sem `RequestContext`); apenas `title`, `choices` e `spec` ficam disponíveis. Daí a anotação ser feita na `ChangeList` e o template ler `spec.core_collapse_open`.
+## 3. Popups FK na add **(DJANGO-07**, **DJANGO-08)**
 
-5. **Decisão no template**: `apps/core/templates/admin/filter.html` (override do padrão do Django Admin) emite `<details open>` se `spec.core_collapse_open != False` — i.e. `True` (no set), atributo **ausente** (mixin não aplicado / popup / poucos filtros — preserva o padrão do Django) ou `True`. Apenas `False` recolhe.
+Em formulários **add** de `Classificacao`, `NivelHierarquico` e `ItemClassificacao`, lupas configuradas com `popup_default_registro_ativo_ano_corrente` abrem changelist com `registro_ativo=ativo_corrente` (`RegistroAtivoFilter`).
 
-6. **Rótulo do filtro (sem «Por …»)**: o template renderiza directamente `{{ title }}` no `<summary>`, em vez do `blocktranslate` `" By {{ filter_title }} "` do Django. Decisão de UX: enxugar o sidebar. O `title` já vem em pt-BR (atributo `title` em `SimpleListFilter` ou `verbose_name` do campo em `FieldListFilter`).
+| ModelAdmin (add)    | FKs                                              |
+| ------------------- | ------------------------------------------------ |
+| `Classificacao`     | `serie_id`                                       |
+| `NivelHierarquico`  | `classificacao_id`                               |
+| `ItemClassificacao` | `classificacao_id`, `parent_item_id`, `nivel_id` |
 
-7. **Stateless** + **override de `filters.js`** (Django 6+): o `change_list.html` nativo do Django 6 carrega `<script src="{% static 'admin/js/filters.js' %}" defer></script>`, e esse script persiste o estado abrir/recolher de cada `<details data-filter-title="…">` em `sessionStorage["django.admin.filtersState"]`. No carregamento da página, ele **sobrescreve** o atributo `open` renderizado pelo servidor, o que conflitaria com este protocolo declarativo. Por isso, `apps/core/static/admin/js/filters.js` **substitui** o ficheiro nativo (o `AppDirectoriesFinder` resolve primeiro o app `apps.core`, listado antes de `django.contrib.admin` em `INSTALLED_APPS` — ver `classificador/settings.py`). O override **não** lê nem persiste `sessionStorage`; apenas limpa eventual estado residual. Assim, qualquer recarregamento ou nova entrada na changelist recompõe o estado declarativo. É **comportamento intencional** — alinhado com a filosofia de «decisão de domínio explícita no `ModelAdmin`».
+**(DJANGO-08):** não na **change**; critério «Ano Corrente» = sobreposição com ano civil + registo ativo (não «só hoje»).
 
-8. **Filtros com valor aplicado** (auto-expand): a regra de expansão é a **união** de dois conjuntos —
-   - (i) os filtros declarados em `changelist_expanded_filters`, **e**
-   - (ii) **qualquer** filtro que tenha um parâmetro próprio com valor activo em `request.GET`.
+Formulário `ItemClassificacao`: ver `spec_itemClassificacao_formulario.md`.
 
-   A detecção usa `spec.expected_parameters()` (API do Django Admin) — cobre `SimpleListFilter` (`["<parameter_name>"]`), `DateFieldListFilter` (`["<field>__gte", "<field>__lt", "<field>__isnull"]`), `RelatedFieldListFilter` (`["<field>__exact", "<field>__isnull"]`) e demais subclasses de `FieldListFilter`. Valor é considerado activo se ≠ vazio e ≠ sentinela no-op (`_CHANGELIST_FILTER_NOOP_SENTINEL_VALUES`, hoje `{REGISTRO_ATIVO_VALUE_TODOS}`).
+---
 
-   Justificativa de UX: «aberto/recolhido» é estado visual recomputado a cada GET; mas se o filtro foi **aplicado** (afeta o queryset/URL), ele precisa estar visível para o utilizador entender o recorte da changelist e poder ajustar/limpar. Continua sem persistência — só «filtro aplicado» preserva expansão entre navegações, porque o próprio valor já vem na querystring.
+## 4. Pré-filtro padrão na changelist **(DJANGO-09**–**DJANGO-17)**
 
-#### Configuração por `ModelAdmin`
+### 4.1 Ciclo de vida **(DJANGO-09**–**DJANGO-11)**
+
+| Conceito                         | Comportamento                                                   |
+| -------------------------------- | --------------------------------------------------------------- |
+| Entrada fria **(DJANGO-09)**     | GET sem filtros → 302 com `changelist_default_filters`          |
+| Modo sem default **(DJANGO-10)** | Após «Limpar todos» → sem filtros; paginar/ordenar não reaplica |
+| Reentrada **(DJANGO-11)**        | Sair e voltar → default reaplicado                              |
+
+**Não desejado:** default a cada clique na sidebar; flag «limpei» persistir entre visitas distintas.
+
+### 4.2 Mecânica **(DJANGO-12**–**DJANGO-16)**
+
+1. **(DJANGO-12):** `ChangelistDefaultFilterRedirectMixin` — GET vazio + sem flag sessão → redirect com `changelist_default_filters`.
+2. **(DJANGO-13):** «Todos» → `registro_ativo=todos` (no-op em `queryset()`).
+3. **(DJANGO-14):** «Limpar todos» → `__changelist_skip_default=1`; sessão `admin_changelist_skip_default:<app>.<model>`.
+4. **(DJANGO-15):** popups com `?_popup=1` — sem redirect.
+5. **(DJANGO-16):** `AdminChangelistSkipDefaultScopeMiddleware` limpa flags stale.
+6. `preserved_filters` do Django preserva recorte após save/edit.
+
+Constantes: `REGISTRO_ATIVO_VALUE_HISTORICO` → `ativo_historico`; `REGISTRO_ATIVO_VALUE_ANO_CORRENTE` → `ativo_corrente`.
+
+### 4.3 Defaults por `ModelAdmin` **(DJANGO-17)**
+
+| Changelist                                                     | Default query                      | Rótulo                |
+| -------------------------------------------------------------- | ---------------------------------- | --------------------- |
+| `SerieClassificacao`, `Classificacao`, `VarianteClassificacao` | `registro_ativo=ativo_historico`   | Ativos (Histórico)    |
+| `NivelHierarquico`, `ItemClassificacao`, `VersaoClassificacao` | `registro_ativo=ativo_corrente`    | Ativos (Ano Corrente) |
+| `AliasLexico`                                                  | `lista_abreviacoes_registro=ativo` | Registro ativo        |
+
+Configuração: mixin + `changelist_default_filters = {REGISTRO_ATIVO_QUERY_PARAM: <valor>}`.
+
+---
+
+## 5. Recolhimento do sidebar de filtros **(DJANGO-18**–**DJANGO-24)**
+
+### 5.1 Comportamento **(DJANGO-18**, **DJANGO-19)**
+
+A cada GET na changelist (critérios: GET, sem `_popup`, `len(list_filter) > 3`): expandir apenas filtros em `changelist_expanded_filters` e filtros com valor activo. **Stateless** — nova entrada recomputa estado **(DJANGO-19)**.
+
+### 5.2 Defaults e exceções **(DJANGO-20**, **DJANGO-21)**
+
+| Changelist                                     | Expandidos default                       |
+| ---------------------------------------------- | ---------------------------------------- |
+| Bitemporais com >3 filtros                     | `registro_ativo`, `data_registro_inicio` |
+| `VersaoClassificacao`, `VarianteClassificacao` | só `registro_ativo`                      |
+| `BaseLegalTecnica`                             | mixin **não** aplicado **(DJANGO-21)**   |
+| `AliasLexico`                                  | ≤3 filtros — no-op **(DJANGO-21)**       |
+
+### 5.3 Implementação **(DJANGO-22**, **DJANGO-23)**
+
+- `ChangelistSidebarFilterCollapseMixin` → `request.changelist_expanded_filter_params`
+- `ChangelistWithClearAllSkipDefault` anota `spec.core_collapse_open`
+- **(DJANGO-22):** `filters.js` override sem `sessionStorage`
+- **(DJANGO-23):** auto-expand por `spec.expected_parameters()` com valor activo (exceto sentinela `todos`)
+
+### 5.4 Template **(DJANGO-24)**
+
+`apps/core/templates/admin/filter.html` — `{{ title }}` direto no `<summary>`.
+
+MRO recomendado:
 
 ```python
 class MeuAdmin(
     ChangelistDefaultFilterRedirectMixin,
-    ChangelistSidebarFilterCollapseMixin,   # ← logo após o redirect, antes dos demais mixins
+    ChangelistSidebarFilterCollapseMixin,
     …,
     admin.ModelAdmin,
 ):
-    list_filter = [RegistroAtivoFilter, …, "data_registro_inicio"]
-    # Opcional. Default: DEFAULT_CHANGELIST_EXPANDED_FILTERS
-    # changelist_expanded_filters = frozenset({REGISTRO_ATIVO_QUERY_PARAM})
+    changelist_expanded_filters = frozenset({REGISTRO_ATIVO_QUERY_PARAM})  # opcional
 ```
-
-#### Notas de extensão
-
-- **Mais filtros expandidos por changelist**: override de `changelist_expanded_filters` na classe do `ModelAdmin` (ex.: `frozenset({REGISTRO_ATIVO_QUERY_PARAM, "data_vigencia_inicio"})`).
-- **Filtros que não pertencem ao set padrão e não casam com nada**: se nenhum filtro casar, o sidebar fica todo recolhido — mantém-se acessível, mas com pouca informação visível. Por isso o mixin **não** é aplicado em `BaseLegalTecnicaAdmin` (sem nenhum filtro bitemporal).
-- **Compatibilidade com colapsável nativo do Django 6+**: o `<details>` continua sendo do Django; o JS nativo (clique no `<summary>`) preserva interação dentro da página. A recomposição só ocorre na próxima entrada (novo GET).
-
-#### Testes manuais recomendados
-
-1. Menu → changelist `ItemClassificacao` → apenas «Status do Registro» e «Data de Início do Registro» abertos; demais recolhidos.
-2. Expandir manualmente «Categoria» **sem** aplicar opção → navegar para um change → voltar à lista → «Categoria» volta a ficar recolhido (a regra é stateless).
-3. Aplicar filtro de «Categoria» (ex.: «7 - Receita Intraorçamentária») → URL passa a ter o parâmetro → «Categoria» nasce **aberto** (auto-expand por «filtro aplicado»), além dos 2 declarados; mudar de página/voltar à changelist mantém aberto enquanto o parâmetro permanecer.
-4. «Limpar todos os filtros» → URL vazia → apenas os 2 declarados abertos; «Categoria» recolhido de novo.
-5. Clicar em «Todos» no filtro `Status do Registro` (`?registro_ativo=todos`) → não conta como aplicado (sentinela no-op); «Status do Registro» continua aberto **apenas** porque está no set declarado.
-6. Abrir popup (`raw_id` lookup de FK) → sidebar com comportamento padrão do Django (não-colapsado).
-7. Acessar `AliasLexico` (1 filtro) → comportamento padrão do Django (filtro aberto).
 
 ---
 
-## Pipeline de atualização bitemporal — apenas campos do model
+## 6. Pipeline bitemporal — apenas campos do model **(DJANGO-25**–**DJANGO-28)**
 
-Esta seção formaliza um contrato transversal entre o `BitemporalChangeHandler` (admin) e o serviço `apply_bitemporal_update` (`apps/core/bitemporal_update.py`). O motivo é evitar que campos auxiliares de `ModelForm` — declarados para suportar a UI mas **sem** correspondência em colunas do banco — alcancem `Model.objects.create(**...)` e provoquem `TypeError: <Model>() got unexpected keyword argument: '<campo>'`.
+Contrato entre `BitemporalChangeHandler` e `apply_bitemporal_update` (`apps/core/bitemporal_update.py`).
 
-### Contrato
+| ID        | Regra                                                                       |
+| --------- | --------------------------------------------------------------------------- |
+| DJANGO-25 | Handler: só campos com `model._meta.get_field(name)` entram em `new_values` |
+| DJANGO-26 | Serviço: `new_values` ⊆ `concrete_fields`                                   |
+| DJANGO-27 | Sem metadados disfarçados de coluna em `new_values`                         |
+| DJANGO-28 | Campos auxiliares de form: `required=False`; `pop` no fluxo oposto          |
 
-- **B-pipe.1 (origem).** Em `BitemporalChangeHandler._apply_user_edits`, ao iterar `form.fields.keys()` para montar `new_values`, **apenas** nomes que correspondem a campos concretos do model — verificados via `self.model._meta.get_field(field)`, capturando `FieldDoesNotExist` — devem ser incluídos. Campos auxiliares do form (ex.: `receita_nome_base_mode` em `ItemClassificacaoForm`, usado só pelo protocolo de criação de nome no `add`) **devem** ser descartados nesse ponto.
-- **B-pipe.2 (defesa em profundidade).** Em `apply_bitemporal_update`, logo após resolver `Model = model`, `new_values` **deve** ser filtrado para conter apenas chaves em `{f.name for f in Model._meta.concrete_fields}`. Esse filtro protege também caminhos alternativos (rotinas de reativação, scripts utilitários, integrações futuras) que possam alimentar `apply_bitemporal_update` sem passar pelo handler.
-- **B-pipe.3 (sem novos *kwargs* implícitos).** É **proibido** adicionar chaves a `new_values` (ou a `create_data` / `version1_data` / `version2_data`) cujo nome **não** seja campo concreto do model. Para sinalizar metadados (ex.: estratégia, flags de auditoria), usar parâmetros explícitos da função (`strategy=...`) ou objetos de contexto, **não** o dicionário de valores que vira `kwargs` no `Model(...)`.
-- **B-pipe.4 (relação com o `ModelForm`).** Campos auxiliares do form devem ser declarados com `required=False` e tratados em `clean()` no escopo onde fazem sentido (ex.: `add`). Quando o campo só fizer sentido em um dos fluxos (`add` **xor** `change`), recomenda-se removê-lo do form no `__init__` do fluxo oposto (`self.fields.pop("<campo>", None)`), evitando renderização e POST espúrios.
+**Caso de referência:** `receita_nome_base_mode` em `ItemClassificacaoForm` — `spec_itemClassificacao_criar_nome.md`.
 
-### Caso de referência
+---
 
-`ItemClassificacaoForm.receita_nome_base_mode` (`apps/core/forms.py`) — campo `HiddenInput` declarado para o protocolo de criação de nome na tela de `add` (ver `_dev/spec_itemClassificacao_criar_nome.md`, em particular a seção «Escopo na tela de alteração (change view)»). Antes da formalização deste contrato, ele vazava em edições para `apply_bitemporal_update`, causando `ItemClassificacao() got unexpected keyword argument: 'receita_nome_base_mode'` ao salvar.
+## 7. Testes **(DJANGO-29)**
 
-### Testes recomendados
+### Changelist default
 
-- **T-pipe.1.** POST de change em `ItemClassificacao` alterando qualquer campo de negócio (ex.: `receita_nome`) **não deve** chamar `Model.objects.create(...)` com `receita_nome_base_mode` nos `kwargs`, mesmo que esse campo apareça no `request.POST` (caso de *replays* / formulários antigos).
-- **T-pipe.2.** Em qualquer model bitemporal, um `ModelForm` com um campo auxiliar (`forms.CharField` sem correspondência no model) **não deve** propagar esse campo a `apply_bitemporal_update`; o pipeline conclui a edição normalmente.
+1. Entrada `ItemClassificacao` → `registro_ativo=ativo_corrente`
+2. Limpar todos → sem query; sem default forçado
+3. Paginar na lista limpa → sem default
+4. Reentrada via menu → default reaplicado
+5. Limpar → change → voltar → default reaplicado
+6. «Todos» → `registro_ativo=todos`; sem redirect
+
+Automatizado: `apps/core/tests_admin_changelist_default_filters.py`.
+
+### Sidebar collapse
+
+1. `ItemClassificacao` → só Status + Data Início Registro abertos
+2. Expandir «Categoria» sem aplicar → change → volta recolhido
+3. Aplicar «Categoria» → auto-expand enquanto parâmetro na URL
+4. Limpar todos → só os 2 declarados
+5. Popup raw_id → comportamento Django padrão
+6. `AliasLexico` → padrão Django
+
+### Pipeline
+
+- **T-pipe.1:** change `ItemClassificacao` sem `receita_nome_base_mode` em `create(**kwargs)`
+- **T-pipe.2:** form com campo auxiliar sem coluna → update conclui
+
+---
+
+## Specs relacionadas
+
+| Spec                                   | Relação                      |
+| -------------------------------------- | ---------------------------- |
+| `spec_conventions.md`                  | `code_*`, idioma             |
+| `spec_itemClassificacao_formulario.md` | UI `ItemClassificacao`       |
+| `spec_itemClassificacao_criar_nome.md` | Campo auxiliar **DJANGO-28** |
+| ADR-001, ADR-005                       | Bitemporalidade e dados      |

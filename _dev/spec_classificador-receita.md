@@ -153,6 +153,7 @@ Consultar **nesta ordem** ao sugerir escopo:
 | `spec_itemClassificacao_mascara_apresentacao.md`   | `ITEMMASK` | Máscara visual admin (tier 1/2) e protocolo B1           |
 | `spec_itemClassificacao_criar_codigo_existente.md` | `ITEMCEX`  | Alerta/erro CE e próximo código na add                   |
 | `spec_itemClassificacao_validar_hierarquia.md`     | `ITEMVH`   | Salto de nível, zeros intermediários e submit na add     |
+| `spec_django.md`                                   | `DJANGO`   | Layout Django, Admin changelist e pipeline bitemporal    |
 
 ### Tipo vs arquivos (Django)
 
