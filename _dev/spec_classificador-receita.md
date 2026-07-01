@@ -129,6 +129,14 @@ Consultar **nesta ordem** ao sugerir escopo:
 | `spec_lista_abreviacoes.md`               | `lista`             |
 | `spec_django.md`                          | `django`            |
 | `spec_validar_codigos.md`                 | `validar`           |
+| `spec_validar_qualidade.md`               | `validar`           |
+
+### Prefixos de ID normativos (domínio local)
+
+| Arquivo                     | Prefixo   | Escopo                                              |
+| --------------------------- | --------- | --------------------------------------------------- |
+| `spec_validar_codigos.md`   | `VALCOD`  | Script `validate_code.py` e validação de `receita_cod` |
+| `spec_validar_qualidade.md` | `VALQUAL` | Script `validate_quality.py` e quality dimensions   |
 
 ### Tipo vs arquivos (Django)
 
