@@ -1,326 +1,283 @@
-# Especificação: Apresentação de `receita_cod` com máscara em telas do admin de `ItemClassificacao`
+# Apresentação de `receita_cod` com máscara no Admin
 
-Este documento define a política de aplicação de **máscara visual** sobre o
-campo `receita_cod` em **telas do Django Admin** de `ItemClassificacao` —
-incluindo a coluna `receita_cod_formatado` da changelist e o
-`semantic_value_resolver` de FKs semânticas que apontam para
-`ItemClassificacao` no formulário (campo "Item Mãe" / `parent_item_id`).
-Também define, em seção própria, o comportamento de **edição do input
-`receita_cod`** no formulário de add/change (protocolo B1: máscara preservada
-após primeira aplicação, saneamento no blur, e aceitação de colagem com/sem
-pontuação).
+Política de **máscara visual** sobre `receita_cod` em telas do Django Admin de `ItemClassificacao` — changelist, FK semântica (`parent_item_id`) e protocolo **B1** de edição no formulário add/change. **Não substitui** `spec_foreignKeys_vigencia.md` (união contígua em validação de FK) nem regra estrita em lookups JSON e sugestão de código filho.
 
-Tópicos:
+## Objetivo
 
-- [Contexto e motivação](#contexto-e-motivação)
-- [Decisão](#decisão)
-- [Resolução em dois níveis](#resolução-em-dois-níveis)
-- [Justificativa de não usar união contígua](#justificativa-de-não-usar-união-contígua)
-- [Edição do input `receita_cod` no formulário (B1)](#edição-do-input-receita_cod-no-formulário-b1)
-- [Implementação](#implementação)
-- [Casos de teste recomendados](#casos-de-teste-recomendados)
-- [Referências cruzadas](#referências-cruzadas)
+Definir como o projeto **deve** formatar `receita_cod` para **exibição** no Admin (tier estrito + tier secundário) e como o input editável **deve** aceitar entrada mascarada preservando persistência só com dígitos.
+
+Premissa: `receita_cod` armazenado como string numérica 8–13 dígitos; máscara derivada de `NivelHierarquico.numero_digitos` (bitemporal).
+
+## Referências
+
+- `apps/core/admin_formatters.py` — `format_receita_cod_by_vigencia`, tier 2, `format_receita_cod_for_admin_display`.
+- `apps/core/admin.py` — `receita_cod_formatado`, `semantic_value_resolver` de `parent_item_id`.
+- `apps/core/templates/admin/core/change_form.html` — protocolo **B1** no cliente.
+- `apps/core/forms.py` — `ItemClassificacaoForm.clean` (B1 persistência).
+- `apps/core/tests_classification_item_mascara.py`, `tests_admin_formatters.py`.
+- [`spec_foreignKeys_vigencia.md`](spec_foreignKeys_vigencia.md) — união contígua (distinta desta spec).
+- [`spec_itemClassificacao_foreignKeys_lookup.md`](spec_itemClassificacao_foreignKeys_lookup.md) — tier 1 puro nos endpoints JSON.
+- [`spec_itemClassificacao_formulario.md`](spec_itemClassificacao_formulario.md) — **ITEMFORM-03** (**B1.5** / **B1.8**).
+- [`spec_itemClassificacao_editar_codigo.md`](spec_itemClassificacao_editar_codigo.md) — normalização **B1** no blur da change.
+- [`spec_django.md`](spec_django.md) — convenções Django.
+- [`spec_classificador-receita.md`](spec_classificador-receita.md) § **Convenções** — prefixo `ITEMMASK`.
+
+Termos *deve* / *não deve* / *pode* conforme RFC 2119 (ver `_dev/spec_conventions.md` **Referências**).
+
+**Migração de símbolos legados:**
+
+| Legado                       | ID atual                    |
+| ---------------------------- | --------------------------- |
+| `D1`–`D4`                    | `ITEMMASK-01`–`ITEMMASK-04` |
+| `B1.1`–`B1.11`               | `ITEMMASK-12`–`ITEMMASK-22` |
+| `T-1`–`T-8`                  | `ITEMMASK-25`–`ITEMMASK-32` |
+| `T-B1.5`, `T-B1.6`, `T-B1.8` | `ITEMMASK-33`–`ITEMMASK-35` |
+
+## Como citar este documento
+
+| Mecanismo          | Uso                                                                   |
+| ------------------ | --------------------------------------------------------------------- |
+| **Seção numerada** | `§ N` / `§ N.M` — navegação neste arquivo.                            |
+| **ID normativo**   | `ITEMMASK-NN` — citação estável.                                      |
+| **Prefixo**        | `ITEMMASK` — ver § **Convenções** em `spec_classificador-receita.md`. |
+
+**Índice de IDs normativos deste arquivo:**
+
+| ID          | Tema          | Seção | Resumo                                                                                                                                  |
+| ----------- | ------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| ITEMMASK-01 | Decisão       | 2.1   | Tier 1: regra estrita `format_receita_cod_by_vigencia` permanece primária.                                                              |
+| ITEMMASK-02 | Decisão       | 2.2   | Tier 2: `_resolve_secondary_digit_mask_for_admin_display` **somente** quando tier 1 falha.                                              |
+| ITEMMASK-03 | Decisão       | 2.3   | Ambos falham → `receita_cod` **bruto**; sem terceiro fallback.                                                                          |
+| ITEMMASK-04 | Decisão       | 2.4   | Tier 2 **isolado** em `format_receita_cod_for_admin_display`; **não** em validação, lookups lógicos, sugestão filho, exports.           |
+| ITEMMASK-05 | Tier 1        | 3.1   | Por `nivel_ref`: linha ativa com vigência **contendo integralmente** a do item; `sum(numero_digitos) == len(codigo)`.                   |
+| ITEMMASK-06 | Tier 2        | 3.2   | **S1:** candidatas ativas com `vig_inicio ≤ registro.vig_fim` e `vig_fim ≥ registro.vig_fim` (âncora em `data_vigencia_fim` do item).   |
+| ITEMMASK-07 | Tier 2        | 3.2   | **S2:** desempate por maior `data_vigencia_fim` da candidata.                                                                           |
+| ITEMMASK-08 | Tier 2        | 3.2   | **S3:** empate → maior `data_registro_inicio`.                                                                                          |
+| ITEMMASK-09 | Tier 2        | 3.2   | Sem candidata **S1** para algum `nivel_ref` → **sem** relaxamento extra; tende a fallback bruto (**intencional**).                      |
+| ITEMMASK-10 | Tier          | 3.3   | `data_registro_fim ≠ sentinela` → **excluídas** de tier 1 e tier 2.                                                                     |
+| ITEMMASK-11 | Distinção     | 4     | Resolução de máscara (resposta **singular**) **≠** união contígua de FK (**ITEMMASK** vs `FKVIG`).                                      |
+| ITEMMASK-12 | B1            | 5.1   | Blur é autoridade: saneamento, validação de tamanho, reaplicação de máscara.                                                            |
+| ITEMMASK-13 | B1            | 5.2   | Após máscara aplicada uma vez na sessão, foco **não** remove pontos.                                                                    |
+| ITEMMASK-14 | B1            | 5.3   | Troca de `classificacao_id`/estrutura dispara reaplicação de máscara.                                                                   |
+| ITEMMASK-15 | B1            | 5.4   | Sem máscara resolvível → dígitos; blur formata quando passar a haver máscara.                                                           |
+| ITEMMASK-16 | B1            | 5.5   | Entrada add/change: aceitar `0-9` e `.`; bloquear/remover demais caracteres sem apagar pontos válidos.                                  |
+| ITEMMASK-17 | B1            | 5.6   | Colagem: sanitizar para `0-9` e `.`; pipeline de blur.                                                                                  |
+| ITEMMASK-18 | B1            | 5.7   | Blur corrige pontos inválidos/excedentes → forma canônica quando compatível.                                                            |
+| ITEMMASK-19 | B1            | 5.8   | Submit envia `receita_cod` **somente dígitos** (contrato model/BD).                                                                     |
+| ITEMMASK-20 | B1            | 5.9   | `maxlength` do widget pode exceder 13 para exibição/colagem; validação 8–13 no backend.                                                 |
+| ITEMMASK-21 | B1            | 5.10  | Sugestão automática de código filho deixa estado «máscara já aplicada».                                                                 |
+| ITEMMASK-22 | B1            | 5.11  | Lookups e fluxos dependentes operam sobre dígitos normalizados.                                                                         |
+| ITEMMASK-23 | Implementação | 6.1   | `format_receita_cod_for_admin_display` — sufixo `_for_admin_display`; só changelist e `semantic_value_resolver` de `ItemClassificacao`. |
+| ITEMMASK-24 | Implementação | 6.2   | Cache `_nivel_digit_cache`: chaves tier 1 `(vig_inicio, vig_fim)`; tier 2 `("secondary-admin-display", vig_fim)`.                       |
+| ITEMMASK-25 | Teste         | 7     | **T-1:** tier 1 sucede → formatação histórica (regressão).                                                                              |
+| ITEMMASK-26 | Teste         | 7     | **T-2:** split bitemporal; item cruza junção → tier 2 formata.                                                                          |
+| ITEMMASK-27 | Teste         | 7     | **T-3:** desempate tier 2 por `data_vigencia_fim`.                                                                                      |
+| ITEMMASK-28 | Teste         | 7     | **T-4:** desempate por `data_registro_inicio`.                                                                                          |
+| ITEMMASK-29 | Teste         | 7     | **T-5:** tier 2 falha → bruto (**ITEMMASK-03**).                                                                                        |
+| ITEMMASK-30 | Teste         | 7     | **T-6:** linhas encerradas em transação ignoradas.                                                                                      |
+| ITEMMASK-31 | Teste         | 7     | **T-7:** código vazio → `""` sem query.                                                                                                 |
+| ITEMMASK-32 | Teste         | 7     | **T-8:** `parent_item_id` display paridade changelist (cenário T-2).                                                                    |
+| ITEMMASK-33 | Teste         | 7     | **T-B1.5:** bloqueio de letras/vírgulas; pontos preservados.                                                                            |
+| ITEMMASK-34 | Teste         | 7     | **T-B1.6:** colagem com/sem máscara; blur canónico.                                                                                     |
+| ITEMMASK-35 | Teste         | 7     | **T-B1.8:** POST mascarado → gravação só dígitos.                                                                                       |
+
+**Índice por tema:**
+
+| Tema          | IDs                       |
+| ------------- | ------------------------- |
+| Decisão       | ITEMMASK-01 … ITEMMASK-04 |
+| Tier 1        | ITEMMASK-05               |
+| Tier 2        | ITEMMASK-06 … ITEMMASK-09 |
+| Exclusão      | ITEMMASK-10               |
+| Distinção FK  | ITEMMASK-11               |
+| B1            | ITEMMASK-12 … ITEMMASK-22 |
+| Implementação | ITEMMASK-23, ITEMMASK-24  |
+| Teste         | ITEMMASK-25 … ITEMMASK-35 |
 
 ---
 
-## Contexto e motivação
+## Escopo
 
-O `receita_cod` é armazenado em `ItemClassificacao` como **string apenas
-numérica** de 8 a 13 dígitos (`max_length=13`, regex `^[0-9]{8,13}$`). A
-"máscara" com pontos (`1.1.0.0.00.0.0.00.000`) é uma representação visual
-derivada dinamicamente da distribuição de dígitos por nível hierárquico
-(`NivelHierarquico.numero_digitos`).
+| Inclui                                                    | Não inclui                                          |
+| --------------------------------------------------------- | --------------------------------------------------- |
+| Coluna `receita_cod_formatado` na changelist              | Validação de FK por união contígua (**FKVIG**)      |
+| Display FK `parent_item_id` via `semantic_value_resolver` | Lookups JSON com tier 2 (**ITEMLKP** — tier 1 puro) |
+| Protocolo **B1** no input add/change                      | Sugestão de código filho (regra estrita)            |
+| Subtítulo do change form com máscara                      | Exports e consumidores não-admin                    |
 
-Como `NivelHierarquico` é bitemporal, suas "estruturas de dígitos" podem variar
-no tempo: por exemplo, o classificador da União teve 8 dígitos até 2017 e
-passou a 13 dígitos em 2018. Cada linha de `NivelHierarquico` tem sua própria
-`(data_vigencia_inicio, data_vigencia_fim)`, e a máscara aplicada a um item
-depende de **qual versão do nível** vigora durante a vigência daquele item.
+---
 
-A regra estrita aplicada hoje em formulários, lookups e validações
-(`format_receita_cod_by_vigencia` em `apps/core/admin_formatters.py`) exige,
-**por `nivel_ref`, uma única linha ativa de `NivelHierarquico` cuja vigência
-contenha integralmente** a janela do item. Essa é a política correta para
-contextos em que precisa-se de **uma resposta inequívoca** sobre qual máscara
-aplicar — o motivo está em ["Justificativa de não usar união
-contígua"](#justificativa-de-não-usar-união-contígua).
+## 1. Contexto
 
-Porém, em **telas de admin** essa regra estrita gera uma inconsistência
-visual indesejável: assim que qualquer `NivelHierarquico` sofre split
-bitemporal (ex.: faixa `[2018-01-01, 9999-12-31]` partida em
-`[2018-01-01, 2026-01-31]` e `[2026-02-01, 9999-12-31]`), os itens cuja
-vigência cruzar o ponto de junção deixam de ter uma única linha do nível
-cobrindo-os integralmente e passam a exibir o **código bruto** (sem pontos).
-Já os itens com vigência inteiramente contida em uma das novas faixas
-seguem **com máscara**.
+`receita_cod` persiste como `^[0-9]{8,13}$`. A máscara com pontos deriva de `NivelHierarquico.numero_digitos`, que varia no tempo (bitemporal).
 
-O sintoma se manifesta em pelo menos dois lugares:
+A regra estrita (`format_receita_cod_by_vigencia`) exige, por `nivel_ref`, **uma** linha ativa cuja vigência **contenha integralmente** a do item — correta quando a resposta deve ser **inequívoca**.
 
-1. **Changelist**: a coluna `receita_cod_formatado` exibe parte das linhas
-   formatadas e parte bruta, sem que o usuário tenha como inferir o motivo.
-2. **Formulário**: o display do campo "Item Mãe" (`parent_item_id`,
-   produzido pelo `semantic_value_resolver` da FK semântica) também sai
-   bruto quando o item mãe está numa janela de vigência afetada.
+Em telas de admin, splits bitemporais de nível podem fazer itens cuja vigência cruza a junção exibirem código **bruto** enquanto vizinhos permanecem mascarados — inconsistência visual indesejada na changelist e no display de «Item Mãe».
 
-Esse é o problema desta spec.
+---
 
-## Decisão
+## 2. Decisão de apresentação no Admin
 
-Em **telas de admin** que apresentam `receita_cod` (changelist;
-`semantic_value_resolver` de FKs semânticas que apontam para
-`ItemClassificacao`; subtítulo do change form), o sistema **sempre tenta
-apresentar o código com máscara**. Para isso:
+Em telas que **apresentam** `receita_cod`, o sistema **deve** **tentar** máscara sempre:
 
-- **D1.** Mantém-se a **regra estrita primária** existente
-  (`format_receita_cod_by_vigencia`) como tier 1.
-- **D2.** Adiciona-se uma **resolução secundária** específica de
-  apresentação no admin
-  (`_resolve_secondary_digit_mask_for_admin_display`), acionada **apenas
-  quando o tier 1 falha**. Detalhada na próxima seção.
-- **D3.** Quando ambos os tiers falham, devolve-se o `receita_cod` bruto.
-  Não há terceiro fallback nem placeholder explícito (UX discreta).
-- **D4.** A resolução secundária é **isolada** ao helper
-  `format_receita_cod_for_admin_display`. **Não é compartilhada** com
-  validações, lookups JSON cujo valor alimenta lógica do cliente, sugestões
-  de código filho, exports ou qualquer outro consumidor de máscara onde a
-  divergência possa virar comportamento errado de programa (e não apenas
-  inconsistência visual). Esses seguem usando exclusivamente a regra
-  estrita pura (`format_receita_cod_by_vigencia`).
+### 2.1 Tier 1 primário **(ITEMMASK-01)**
 
-## Resolução em dois níveis
+Manter `format_receita_cod_by_vigencia` como primeira tentativa.
 
-### Tier 1 — Estrito (inalterado)
+### 2.2 Tier 2 secundário **(ITEMMASK-02)**
 
-Igual à regra historicamente aplicada por `format_receita_cod_by_vigencia`:
+`_resolve_secondary_digit_mask_for_admin_display` **apenas** se tier 1 falhar.
 
-- Para cada `nivel_ref` distinto presente no sistema:
-  - `data_registro_fim = TRANSACTION_TIME_SENTINEL`;
-  - `data_vigencia_inicio ≤ registro.data_vigencia_inicio`;
-  - `data_vigencia_fim ≥ registro.data_vigencia_fim`.
-- Coletam-se `numero_digitos` na ordem de `nivel_ref`.
-- A máscara é considerada **compatível** se: não vazia, sem zeros/falsy, e
-  `sum(digit_mask) == len(receita_cod)`.
+### 2.3 Fallback bruto **(ITEMMASK-03)**
 
-### Tier 2 — Secundário (apresentação no admin)
+Ambos falham → dígitos sem pontos; sem placeholder explícito.
 
-Acionado quando o tier 1 não produz máscara compatível. Para cada `nivel_ref`
-distinto presente no sistema:
+### 2.4 Isolamento **(ITEMMASK-04)**
 
-- **Etapa S1 — Filtro de elegibilidade.** Considerar apenas linhas com:
-  - `data_registro_fim = TRANSACTION_TIME_SENTINEL`;
-  - `data_vigencia_inicio ≤ registro.data_vigencia_fim`;
-  - `data_vigencia_fim ≥ registro.data_vigencia_fim`.
+Tier 2 **somente** via `format_receita_cod_for_admin_display`. Validação, lookups que alimentam lógica do cliente, sugestão de filho e exports usam **tier 1 puro**.
 
-  A âncora aqui é o **`data_vigencia_fim` do registro** (e não o
-  `data_vigencia_inicio`), porque a versão semanticamente "canônica" para
-  apresentação é a que vale do `data_vigencia_fim` em diante — privilegiar
-  o passado (`data_vigencia_inicio`) numa visão orientada ao presente/futuro
-  geraria escolha contraintuitiva. Esse ponto é normativo desta spec; vê-lo
-  como "data-âncora da apresentação".
+---
 
-- **Etapa S2 — Desempate principal.** Entre as candidatas da Etapa S1, escolher
-  a com **maior `data_vigencia_fim`** própria.
+## 3. Resolução em dois níveis
 
-- **Etapa S3 — Desempate residual.** Se ainda houver empate, escolher a com
-  **`data_registro_inicio` mais recente**.
+### 3.1 Tier 1 — estrito **(ITEMMASK-05)**
 
-A máscara resultante é então submetida ao mesmo teste de compatibilidade do
-tier 1 (não vazia, sem zeros, soma igual a `len(receita_cod)`). Se passar,
-aplica-se; senão, devolve-se bruto.
+Por cada `nivel_ref` distinto:
 
-### Comportamento quando a Etapa S1 não retorna nenhuma candidata para algum `nivel_ref`
+- `data_registro_fim = TRANSACTION_TIME_SENTINEL`
+- `data_vigencia_inicio ≤ item.data_vigencia_inicio`
+- `data_vigencia_fim ≥ item.data_vigencia_fim`
+- Coletar `numero_digitos` ordenados por `nivel_ref`
 
-Por decisão explícita (alinhamento da spec), **não há relaxamento adicional**.
-O `nivel_ref` em questão simplesmente não contribui com `numero_digitos` para
-a máscara secundária, o que tipicamente fará `sum(digit_mask) ≠
-len(receita_cod)` e levará ao fallback bruto. Esse comportamento é intencional
-— manter a regra conservadora e tornar o problema **visível** (linha bruta na
-listagem) é preferível a inventar uma máscara potencialmente enganosa.
+Máscara compatível: não vazia, sem zeros/falsy, `sum(digit_mask) == len(receita_cod)`.
 
-### Linhas encerradas em transação
+### 3.2 Tier 2 — secundário **(ITEMMASK-06**–**ITEMMASK-09)**
 
-Linhas de `NivelHierarquico` com `data_registro_fim ≠ TRANSACTION_TIME_SENTINEL`
-(versões historicamente encerradas) **nunca** entram em nenhuma etapa do tier
-1 nem do tier 2. Só o estado "transação aberta" é considerado.
+Por `nivel_ref`, quando tier 1 falha:
 
-## Justificativa de não usar união contígua
+| Etapa  | Regra                                                                    | ID          |
+| ------ | ------------------------------------------------------------------------ | ----------- |
+| **S1** | Candidatas ativas; contenção ancorada em `data_vigencia_fim` do **item** | ITEMMASK-06 |
+| **S2** | Maior `data_vigencia_fim` da candidata                                   | ITEMMASK-07 |
+| **S3** | Empate → maior `data_registro_inicio`                                    | ITEMMASK-08 |
 
-A `_dev/spec_foreignKeys_vigencia.md` formaliza outra política temporal — a
-**união contígua** de vigências ativas com mesmo `nivel_ref` — usada para
-**validar FKs** (etapa 2 daquela spec). Por que essa política não é adotada
-aqui?
+Mesmo teste de compatibilidade do tier 1. Sem candidata S1 para um `nivel_ref` → sem relaxamento adicional → fallback bruto **(ITEMMASK-09)**.
 
-Porque os dois problemas têm naturezas distintas:
+### 3.3 Linhas encerradas **(ITEMMASK-10)**
 
-- **Validação de FK.** Pergunta: "as várias versões da FK, juntas, cobrem a
-  janela do filho?" — uma resposta booleana, simétrica entre as versões. A
-  união contígua resolve isso naturalmente.
-- **Resolução de máscara.** Pergunta: "qual `numero_digitos` aplicar para esse
-  `nivel_ref`?" — uma resposta singular. Se duas versões ativas contíguas têm
-  `numero_digitos` diferentes (cenário possível em transições estruturais), a
-  união contígua não tem critério interno para escolher entre elas.
+`data_registro_fim ≠ TRANSACTION_TIME_SENTINEL` → excluídas de ambos os tiers.
 
-Assim, a regra estrita (uma única linha contém a janela) é o que garante
-**inequivocidade**. O tier 2 desta spec não usa união contígua: ele preserva o
-princípio de "uma única linha por `nivel_ref`", apenas relaxando o critério de
-contenção (de "janela inteira" para "âncora em `data_vigencia_fim`"), com
-desempate explícito e determinístico (Etapas S2 e S3).
+---
 
-Em resumo:
+## 4. Distinção de `spec_foreignKeys_vigencia.md` **(ITEMMASK-11)**
 
-- **`spec_foreignKeys_vigencia.md`** → cobertura coletiva → união contígua.
-- **Esta spec** → identificação singular → linha única, com âncora pontual no
-  tier 2.
+| Política     | Pergunta                                       | Mecanismo                                                    |
+| ------------ | ---------------------------------------------- | ------------------------------------------------------------ |
+| **FKVIG**    | As versões da FK **juntas** cobrem o filho?    | União contígua                                               |
+| **ITEMMASK** | Qual `numero_digitos` aplicar por `nivel_ref`? | Linha única; tier 2 relaxa contenção com âncora em `vig_fim` |
 
-São políticas **complementares**, não conflitantes. A escolha entre elas em
-cada local do código deve ser explícita.
+Complementares, não conflitantes. Escolha explícita em cada ponto do código.
 
-## Edição do input `receita_cod` no formulário (B1)
+---
 
-Esta seção regula a UX do campo editável `receita_cod` no formulário de
-criação/edição de `ItemClassificacao` (admin add/change), sem alterar o
-contrato de persistência (BD continua a guardar apenas dígitos).
+## 5. Edição do input — protocolo B1
 
-### Escopo e princípios
+Contrato de persistência inalterado: BD só dígitos.
 
-- **B1.1.** O protocolo de blur permanece como autoridade de normalização:
-  ao perder foco, o campo deve passar por saneamento, validação de tamanho
-  (conforme classificação/vigência resolvidas) e reaplicação da máscara.
-- **B1.2.** Após a máscara ter sido aplicada com sucesso ao menos uma vez na
-  sessão do formulário, o foco subsequente no campo **não** deve remover os
-  pontos (máscara permanece visível durante edição).
-- **B1.3.** Mudanças que alterem a estrutura de máscara (ex. troca de
-  `classificacao_id` com outra `estrutura_codigo`) continuam a disparar
-  atualização e reaplicação da máscara.
-- **B1.4.** Na ausência de máscara resolvível no momento da edição, o campo
-  exibe dígitos; quando a máscara passar a ser resolvível, o blur volta a
-  formatar normalmente.
+### 5.1 Blur autoridade **(ITEMMASK-12)**
 
-### Digitação e colagem
+Saneamento, validação de tamanho, reaplicação de máscara ao perder foco.
 
-- **B1.5. (digitação)** Nas telas **add** e **change** de `ItemClassificacao`, o
-  input `receita_cod` deve aceitar **dígitos `0-9` e ponto `.`** como entrada do
-  usuário (o ponto como separador de níveis, alinhado à máscara visual). Demais
-  caracteres (`,`, espaço, `-`, letras, etc.) são **bloqueados** (`beforeinput`)
-  ou removidos no `input`/`compositionend` (fallback IME), **sem** remover os
-  pontos já digitados pelo usuário.
-- **B1.6. (colagem)** O sistema deve aceitar colagem de código mascarado ou sem
-  máscara. O texto colado é sanitizado para manter apenas **`0-9` e `.`**; em
-  seguida segue o mesmo pipeline do blur (validação e reaplicação da máscara
-  canônica quando aplicável).
-- **B1.7.** O blur corrige colocação indevida de pontos (pontos em posições
-  inválidas, pontos excedentes, separadores misturados), produzindo a forma
-  canônica da máscara quando houver máscara compatível.
+### 5.2 Máscara persistente no foco **(ITEMMASK-13)**
 
-### Persistência e limites
+Após primeira aplicação bem-sucedida na sessão, foco subsequente **não** remove pontos.
 
-- **B1.8.** O submit continua a enviar `receita_cod` sem pontuação
-  (normalização final para dígitos), preservando o contrato do model/BD.
-- **B1.9.** O limite de comprimento do campo no widget de formulário pode ser
-  maior para acomodar visualização mascarada e operações de colar (com ou sem
-  pontuação), sem alterar a validação normativa de 8–13 dígitos no backend.
+### 5.3 Reaplicação estrutural **(ITEMMASK-14)**
 
-### Interações com fluxos existentes
+Mudança de `classificacao_id`/estrutura → atualizar máscara.
 
-- **B1.10.** O protocolo de sugestão automática de código filho, quando
-  preencher `receita_cod` com valor de apresentação (`receita_cod_display`),
-  deve deixar o campo em estado "máscara já aplicada".
-- **B1.11.** O lookup inverso por código e os demais fluxos dependentes de
-  `receita_cod` continuam a operar sobre a versão normalizada (somente
-  dígitos), independentemente da forma visual no input.
+### 5.4 Ausência temporária de máscara **(ITEMMASK-15)**
 
-## Implementação
+Exibir dígitos; blur formata quando máscara ficar resolvível.
 
-Arquivos envolvidos (formulário / B1):
+### 5.5 Digitação **(ITEMMASK-16)**
 
-- `apps/core/templates/admin/core/change_form.html` — `beforeinput` (B1.5),
-  `enforceReceitaCodAllowedCharsOnInput`, colagem em `paste` (B1.6), blur
-  (`runCodeDigitValidation`, B1.1).
-- `apps/core/forms.py` — `ItemClassificacaoForm.clean`: aceita `receita_cod` com
-  pontos no POST; rejeita demais caracteres; persiste somente dígitos.
-- `apps/core/tests_classification_item_mascara.py` — testes backend de B1.5/B1.8
-  (`ItemClassificacaoForm.clean`, sanitização dígitos+ponto); UI/colagem em T-B1.5/T-B1.6
-  permanecem cobertura manual ou E2E no `change_form.html`.
+Add/change: `0-9` e `.`; demais caracteres bloqueados (`beforeinput`) ou removidos sem apagar pontos válidos.
 
-Arquivos envolvidos (apresentação tier 1/2):
+### 5.6 Colagem **(ITEMMASK-17)**
 
-- `apps/core/admin_formatters.py` — onde vivem
-  `format_receita_cod_by_vigencia` (tier 1 puro, para uso geral),
-  `_resolve_secondary_digit_mask_for_admin_display` (tier 2) e
-  `format_receita_cod_for_admin_display` (composição dos dois tiers).
-- `apps/core/admin.py`:
-  - `ItemClassificacaoAdmin.receita_cod_formatado` — consumidor para a
-    coluna da changelist;
-  - `ItemClassificacaoAdmin.semantic_fk_config["parent_item_id"]
-    ["semantic_value_resolver"]` — consumidor para o display do campo
-    "Item Mãe" no formulário.
+Sanitizar para `0-9` e `.`; mesmo pipeline do blur.
 
-Funções utilitárias:
+### 5.7 Correção no blur **(ITEMMASK-18)**
 
-- `_apply_digit_mask(codigo, digit_mask)` — aplica uma máscara em código e
-  devolve `None` quando incompatível (não-vazia, sem zeros, soma = `len`).
-  Reaproveitada por ambos os tiers.
+Pontos inválidos/excedentes → forma canônica quando compatível.
 
-Caching:
+### 5.8 Persistência **(ITEMMASK-19)**
 
-- O atributo `_nivel_digit_cache` (dict mutável) de `ItemClassificacaoAdmin`
-  serve a ambos os tiers. As chaves do tier 1 são tuplas
-  `(data_vigencia_inicio, data_vigencia_fim)`; as do tier 2 são
-  `("secondary-admin-display", data_vigencia_fim)`. Não há colisão.
+Submit/POST: apenas dígitos.
 
-Política de exposição e nomenclatura:
+### 5.9 `maxlength` do widget **(ITEMMASK-20)**
 
-- O nome `format_receita_cod_for_admin_display` é deliberadamente sufixado
-  com `_for_admin_display` para sinalizar que **só deve ser chamado em
-  contextos de apresentação no admin** — atualmente changelist e
-  `semantic_value_resolver` de FKs semânticas que apontam para
-  `ItemClassificacao`. Tentativas futuras de reuso em outros contextos
-  (mensagens contextuais, modais, payloads JSON que viram parâmetros de
-  programação no cliente) precisam primeiro revisitar esta spec; em
-  particular, **não** deve ser usado em validação ou em fluxos de criação
-  onde a máscara aplicada tem peso normativo (e não meramente visual).
+Pode ser >13 para UI; validação normativa 8–13 no backend.
 
-## Casos de teste recomendados
+### 5.10 Sugestão de filho **(ITEMMASK-21)**
 
-- **T-1.** Tier 1 sucede: para um registro cuja vigência está integralmente
-  contida em linhas únicas de todos os `nivel_ref` ativos, a saída é
-  formatada via tier 1 (igual ao histórico anterior). _Regressão._
-- **T-2.** Tier 1 falha, tier 2 sucede com candidata única: cenário do print
-  histórico de 2026-05-19 — split bitemporal de `NIVEL-3` em
-  `[2018-01-01, 2026-01-31]` e `[2026-02-01, 9999-12-31]`. Item com vigência
-  `[2026-01-01, 9999-12-31]` deve passar a ser formatado.
-- **T-3.** Tier 1 falha, tier 2 sucede com desempate por `data_vigencia_fim`:
-  duas linhas elegíveis para o mesmo `nivel_ref`, com `data_vigencia_fim`
-  diferentes; deve vencer a maior.
-- **T-4.** Tier 1 falha, tier 2 sucede com desempate por `data_registro_inicio`:
-  duas linhas elegíveis com `data_vigencia_fim` iguais; deve vencer a mais
-  recente em transação.
-- **T-5.** Tier 1 falha, tier 2 também falha (algum `nivel_ref` sem candidata
-  na Etapa S1): saída é o `receita_cod` bruto. _Garantia do D3 (sem
-  inventos)._
-- **T-6.** Linhas com `data_registro_fim ≠ sentinela` não influenciam nenhuma
-  resolução, em nenhum dos tiers.
-- **T-7.** `receita_cod` vazio devolve string vazia sem consultar banco.
-- **T-B1.5.** Digitar letra ou vírgula no `receita_cod` → caractere não entra
-  (ou é removido no mesmo instante); digitar dígitos e **ponto** continua
-  possível; pontos já presentes **não** são apagados ao corrigir caractere inválido.
-  _Backend parcial:_ `tests_classification_item_mascara.py` (`ReceitaCodInputSanitizationTests`).
-- **T-B1.6.** Colar `1.1.1.2.50` → pontos preservados; colar `1.1.1.2,50` → vírgula
-  removida (`1.1.1.250`); blur reaplica máscara canônica quando válida.
-- **T-B1.8.** Submit com valor mascarado no input → POST/gravação só com dígitos.
-  _Backend:_ `tests_classification_item_mascara.py` (`test_clean_rejects_invalid_separator`).
+Preenchimento com `receita_cod_display` → estado «máscara aplicada».
 
-- **T-8.** **Display de `parent_item_id` no formulário** (campo "Item Mãe"):
-  para um item mãe cuja vigência se enquadre no cenário do T-2 (split
-  bitemporal de `NivelHierarquico` que invalida o tier 1), o
-  `semantic_value_resolver` retorna o código formatado via tier 2,
-  garantindo paridade com a coluna da changelist. Não pode regredir a um
-  display bruto enquanto a regra estrita falhar.
+### 5.11 Fluxos dependentes **(ITEMMASK-22)**
 
-## Referências cruzadas
+Lookups e lógica usam versão normalizada (dígitos).
 
-- `_dev/spec_foreignKeys_vigencia.md` — política de **união contígua** usada
-  por validação de FK; esta spec **não** a estende para a apresentação.
-- `_dev/spec_itemClassificacao_foreignKeys_lookup.md` — endpoints JSON de
-  lookup; seguem usando a regra estrita (tier 1 puro).
-- `_dev/spec_django.md` — convenções gerais de implementação Django.
+---
+
+## 6. Implementação de referência
+
+### 6.1 Escopo da função composta **(ITEMMASK-23)**
+
+| Módulo / ponto                                                     | Papel                    |
+| ------------------------------------------------------------------ | ------------------------ |
+| `admin_formatters.format_receita_cod_by_vigencia`                  | Tier 1 puro (uso geral)  |
+| `admin_formatters._resolve_secondary_digit_mask_for_admin_display` | Tier 2                   |
+| `admin_formatters.format_receita_cod_for_admin_display`            | Composição admin         |
+| `admin.py` `receita_cod_formatado`                                 | Changelist               |
+| `semantic_fk_config["parent_item_id"]`                             | Display Item Mãe         |
+| `change_form.html`                                                 | B1 cliente               |
+| `forms.ItemClassificacaoForm.clean`                                | B1 servidor              |
+| `_apply_digit_mask`                                                | Utilitário compartilhado |
+
+**Não** reutilizar `format_receita_cod_for_admin_display` em validação, modais normativos ou JSON que vira parâmetro de programa.
+
+### 6.2 Cache **(ITEMMASK-24)**
+
+`_nivel_digit_cache` em `ItemClassificacaoAdmin`: chaves tier 1 `(data_vigencia_inicio, data_vigencia_fim)`; tier 2 `("secondary-admin-display", data_vigencia_fim)`.
+
+---
+
+## 7. Casos de teste recomendados **(ITEMMASK-25**–**ITEMMASK-35)**
+
+| ID          | Caso                                                                      |
+| ----------- | ------------------------------------------------------------------------- |
+| ITEMMASK-25 | Tier 1 sucede — regressão                                                 |
+| ITEMMASK-26 | Split `NIVEL-3` 2018–2026-01 / 2026-02–∞; item `[2026-01-01, ∞]` → tier 2 |
+| ITEMMASK-27 | Duas candidatas S1; vence maior `vig_fim`                                 |
+| ITEMMASK-28 | Empate `vig_fim`; vence `registro_inicio`                                 |
+| ITEMMASK-29 | Sem candidata S1 → bruto                                                  |
+| ITEMMASK-30 | Linhas encerradas ignoradas                                               |
+| ITEMMASK-31 | Código vazio → `""`                                                       |
+| ITEMMASK-32 | Display `parent_item_id` paridade T-2                                     |
+| ITEMMASK-33 | T-B1.5 — `tests_classification_item_mascara.py`                           |
+| ITEMMASK-34 | T-B1.6 — colagem manual/E2E                                               |
+| ITEMMASK-35 | T-B1.8 — `test_clean_rejects_invalid_separator`                           |
+
+---
+
+## Specs relacionadas
+
+| Spec                                                                                           | Relação                                           |
+| ---------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| [`spec_foreignKeys_vigencia.md`](spec_foreignKeys_vigencia.md)                                 | União contígua FK — **não** estendida aqui        |
+| [`spec_itemClassificacao_foreignKeys_lookup.md`](spec_itemClassificacao_foreignKeys_lookup.md) | Endpoints JSON — tier 1 puro                      |
+| [`spec_itemClassificacao_formulario.md`](spec_itemClassificacao_formulario.md)                 | Largura `37ch`; **ITEMMASK-16** / **ITEMMASK-19** |
+| [`spec_itemClassificacao_editar_codigo.md`](spec_itemClassificacao_editar_codigo.md)           | Blur change com **B1**                            |
+| [`spec_django.md`](spec_django.md)                                                             | Convenções Django                                 |
