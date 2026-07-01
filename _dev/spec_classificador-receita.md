@@ -146,6 +146,7 @@ Consultar **nesta ordem** ao sugerir escopo:
 | `spec_importar.md`                             | `IMPORT`   | Protocolo de importação (MINUTA; pipeline ADR-005)       |
 | `spec_itemClassificacao_formulario.md`         | `ITEMFORM` | Formulário admin: largura `receita_cod` e limpar add     |
 | `spec_itemClassificacao_foreignKeys_lookup.md` | `ITEMLKP`  | Endpoints JSON lookup-parent / lookup-hierarchy no Admin |
+| `spec_itemClassificacao_editar_codigo.md`      | `ITEMEC`   | Edição de `receita_cod` na change (blur, save, revert)   |
 
 ### Tipo vs arquivos (Django)
 

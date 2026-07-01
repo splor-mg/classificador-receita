@@ -1,190 +1,260 @@
-# Item de classificação — edição de `receita_cod` na tela de alteração (change)
+# Edição de `receita_cod` na change (`ItemClassificacao`)
 
-Esta especificação define o comportamento quando o usuário **altera** o campo **Código Canônico da Natureza de Receita** (`receita_cod`) na view **change** de `ItemClassificacao` no Django Admin.
+Comportamento quando o usuário **altera** o campo **Código Canônico da Natureza de Receita** na view **change** do Django Admin. **Não substitui** lookups na **add**, navegação estrutural **(G-nav.\*)** nem validação de domínio no `clean()`.
 
-**Regra de negócio:** uma vez criado, o código canônico **não pode ser substituído na mesma linha de registro** (mesmo PK / mesma entidade bitemporal). Na change, alterar o código no input serve para **navegar** (outro registro ou tela de inclusão) ou deve ser **desfeito**; **não** para gravar outro código via **Salvar** ou via **Editar vigência** (confirmação bitemporal).
+## Objetivo
 
-**Dois eixos de comportamento:**
+Definir como o projeto **deve** tratar alteração de `receita_cod` na change: **navegação** (blur → redirecionar ou restaurar) ou **bloqueio de persistência** (Salvar / Editar vigência) — **nunca** gravar **COD-2** na mesma linha de registro.
 
-| Eixo                              | Gatilho                                                       | Efeito                                                          |
-| --------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------- |
-| **Navegação** **(G-cod.blur)**    | `blur` em `receita_cod` com **COD-2 ≠ COD-1**                 | Modais **M2–M4**: redirecionar ou restaurar **COD-1**.          |
-| **Persistência** **(G-cod.save)** | **Salvar** ou lápis **Editar vigência** com **COD-2 ≠ COD-1** | **Não** abrir `bitemporal_confirm.html`; modal **M-cod-block**. |
+Premissa: implementação em `change_form.html`, `admin_handlers.py` (`BitemporalChangeHandler`) e `classification_item_code_lookup.py` (`resolve-code-navigation`).
 
-**Implementação de referência (alvo):** `apps/core/templates/admin/core/change_form.html` (`showCoreAttentionModal`, blur, validação de dígitos); `apps/core/admin_handlers.py` (`BitemporalChangeHandler`); novo endpoint JSON em `ItemClassificacaoAdmin` (família `lookup-*-by-code` / `resolve-code-navigation` em `apps/core/classification_item_code_lookup.py`).
+## Referências
 
-**Specs relacionadas (não substituídas, salvo onde indicado):**
+- `apps/core/templates/admin/core/change_form.html` — blur, modais, **(R-revert)**.
+- `apps/core/admin_handlers.py` — bloqueio servidor **(G-cod.save)**.
+- `apps/core/classification_item_code_lookup.py` — `resolve-code-navigation`.
+- [`spec_itemClassificacao_formulario.md`](spec_itemClassificacao_formulario.md) — `37ch`; **ITEMFORM-05**–**10** (add); **ITEMEC-19**–**23** (change).
+- [`spec_itemClassificacao_mascara_apresentacao.md`](spec_itemClassificacao_mascara_apresentacao.md) — **B1** normalização/máscara.
+- [`spec_itemClassificacao_foreignKeys_lookup.md`](spec_itemClassificacao_foreignKeys_lookup.md) — **ITEMEC-12** (sem hierarquia no blur da change).
+- [`spec_itemClassificacao_criar_filho.md`](spec_itemClassificacao_criar_filho.md) — **(T6)**, **(T7)**; **(G6)**.
+- [`spec_itemClassificacao_navegacao.md`](spec_itemClassificacao_navegacao.md) — **(G-nav.\*)** (distinto de blur).
+- [`spec_itemClassificacao_criar_nome.md`](spec_itemClassificacao_criar_nome.md) — protocolos add após redirecionamento **C4**.
+- [`spec_classificador-receita.md`](spec_classificador-receita.md) § **Convenções** — prefixo `ITEMEC`.
 
-| Spec                                                  | Relação                                                                                                         |
-| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `_dev/spec_itemClassificacao_formulario.md`           | Largura `37ch`; **(R-clear)** só na **add**; **(R-revert)** na **change** (esta spec).                          |
-| `_dev/spec_itemClassificacao_mascara_apresentacao.md` | **B1** — normalização e máscara no blur.                                                                        |
-| `_dev/spec_itemClassificacao_foreignKeys_lookup.md`   | Lookups na **add**; na **change** com código alterado, **não** reconciliar hierarquia no blur (**G-cod.blur**). |
-| `_dev/spec_itemClassificacao_criar_filho.md`          | **(T6)**, **(T7)**; aviso de alterações não guardadas na navegação (**v2**).                                    |
-| `_dev/spec_itemClassificacao_navegacao.md`            | Botões **(G-nav.\*)** na change; distinto de **(G-cod.blur)**.                                                  |
-| `_dev/spec_itemClassificacao_criar_nome.md`           | Protocolos da add após redirecionamento (**C4**).                                                               |
-| `_dev/toDo.md`                                        | Alerta «código já existente» na add — fora desta spec.                                                          |
+Termos *deve* / *não deve* / *pode* conforme RFC 2119 (ver `_dev/spec_conventions.md` **Referências**).
+
+**Migração de símbolos legados:**
+
+| Legado                            | ID atual                             |
+| --------------------------------- | ------------------------------------ |
+| `(G-cod.blur)`                    | `ITEMEC-10`                          |
+| `(G-cod.save)`                    | `ITEMEC-13`                          |
+| `(G-cod.save.1)`–`(G-cod.save.5)` | `ITEMEC-14`–`ITEMEC-18`              |
+| `(T-cod.0)`–`(T-cod.4)`           | `ITEMEC-02`, `ITEMEC-04`–`ITEMEC-08` |
+| `(R-revert.1)`–`(R-revert.5)`     | `ITEMEC-19`–`ITEMEC-23`              |
+| `C1`–`C4`                         | `ITEMEC-24`–`ITEMEC-27`              |
+| `M2`–`M4`                         | `ITEMEC-33`–`ITEMEC-36`              |
+| `M-cod-block`                     | `ITEMEC-37`, `ITEMEC-38`             |
+
+## Como citar este documento
+
+| Mecanismo          | Uso                                                                 |
+| ------------------ | ------------------------------------------------------------------- |
+| **Seção numerada** | `§ N` / `§ N.M` — navegação neste arquivo.                          |
+| **ID normativo**   | `ITEMEC-NN` — citação estável.                                      |
+| **Prefixo**        | `ITEMEC` — ver § **Convenções** em `spec_classificador-receita.md`. |
+
+**Índice de IDs normativos deste arquivo:**
+
+| ID        | Tema         | Seção | Resumo                                                                                                                                           |
+| --------- | ------------ | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ITEMEC-01 | Regra        | 1     | Código canônico **não pode** ser substituído na **mesma linha** (mesmo PK); change serve para **navegar** ou **desfazer**, não gravar **COD-2**. |
+| ITEMEC-02 | Termo        | 2     | **(T-cod.0):** **COD-2** não vazio **e** **COD-2 ≠ COD-1**.                                                                                      |
+| ITEMEC-03 | Termo        | 2     | Normalização obrigatória: remover `.` e espaços; autoridade **COD-1** vs **COD-2** (não só `form.has_changed()`).                                |
+| ITEMEC-04 | Termo        | 2     | **(T-cod.1):** ao menos um registro **(T6)** com `receita_cod` = **COD-2**.                                                                      |
+| ITEMEC-05 | Termo        | 2     | **(T-cod.2):** **(T-cod.1)** e existe **(T6)** de **COD-2** com **(T7)** vs **V1**.                                                              |
+| ITEMEC-06 | Termo        | 2     | **(T-cod.3):** **(T-cod.1)** e **nenhum** **(T6)** de **COD-2** com **(T7)** vs **V1**.                                                          |
+| ITEMEC-07 | Termo        | 2     | **(T-cod.4):** `len(COD-2)` compatível com máscara do item ou `estrutura_codigo` **(T6)**.                                                       |
+| ITEMEC-08 | Termo        | 2     | **(T-cod.2)** e **(T-cod.3)** excludentes e exaustivos para **COD-2** existente.                                                                 |
+| ITEMEC-10 | Navegação    | 3     | Eixo **blur:** **COD-2 ≠ COD-1** → classificar **ITEMEC-24**–**27**, modais **ITEMEC-33**–**36** ou restaurar **COD-1**.                         |
+| ITEMEC-11 | Navegação    | 3.1   | Pipeline blur: add → encerrar; change → **B1** + dígitos; sem **(T-cod.0)** → encerrar; com **(T-cod.0)** → cenários.                            |
+| ITEMEC-12 | Navegação    | 3.2   | Na **change** com **(T-cod.0)**, cliente **não deve** chamar `syncHierarchyFromCode('code_blur')` nem alterar `parent_item_id` / `nivel_id`.     |
+| ITEMEC-13 | Persistência | 4     | Eixo **Salvar** / **Editar vigência:** **(T-cod.0)** → **não** abrir `bitemporal_confirm.html`; exibir **ITEMEC-37**.                            |
+| ITEMEC-14 | Persistência | 4.1   | Gatilhos: `name="_save"` e `name="_edit_vigencia"` `value="1"`; demais submits change com `receita_cod` alterado → mesma regra.                  |
+| ITEMEC-15 | Persistência | 4.2   | **(T-cod.0)** no submit → bloquear confirmação bitemporal **independentemente** de outros campos alterados.                                      |
+| ITEMEC-16 | Persistência | 4.3   | Cliente: interceptar submit; **(T-cod.0)** → `preventDefault()` + **ITEMEC-37**; senão fluxo normal.                                             |
+| ITEMEC-17 | Persistência | 4.4   | Servidor: `BitemporalChangeHandler` rejeita confirmação e segunda etapa se **(T-cod.0)**; reexibir change com mensagem equivalente.              |
+| ITEMEC-18 | Persistência | 4.5   | Após **ITEMEC-19**–**23**, Salvar/Editar vigência voltam ao fluxo bitemporal padrão.                                                             |
+| ITEMEC-19 | Revert       | 5.1   | Borracha à direita de `receita_cod` na **change** (layout par **ITEMFORM-06**).                                                                  |
+| ITEMEC-20 | Revert       | 5.2   | Restaura **somente** `receita_cod` para **COD-1** (valor + máscara); **sem** recarregar página.                                                  |
+| ITEMEC-21 | Revert       | 5.3   | Ação imediata, **sem** modal.                                                                                                                    |
+| ITEMEC-22 | Revert       | 5.4   | `title` / `aria-label`: «Restaurar código original».                                                                                             |
+| ITEMEC-23 | Revert       | 5.5   | Pós-restauração: `clearReceitaCodMessages`, `setCustomValidity('')`, `syncItemIdPreview()`, `__coreRebaselineReceitaCodNavigationDirtyState()`.  |
+| ITEMEC-24 | Cenário      | 6     | **C1:** **não** **(T-cod.4)** → erro inline `showReceitaCodError`; sem modais navegação.                                                         |
+| ITEMEC-25 | Cenário      | 6     | **C2:** **(T-cod.4)** + **(T-cod.1)** + **(T-cod.2)** → modal **ITEMEC-33**.                                                                     |
+| ITEMEC-26 | Cenário      | 6     | **C3:** **(T-cod.4)** + **(T-cod.1)** + **(T-cod.3)** → modal **ITEMEC-34**.                                                                     |
+| ITEMEC-27 | Cenário      | 6     | **C4:** **(T-cod.4)** + **não** **(T-cod.1)** → modal **ITEMEC-35**.                                                                             |
+| ITEMEC-28 | API          | 7     | `GET …/resolve-code-navigation/` com `code`, `vigencia_inicio`, `vigencia_fim`, `exclude_pk` opcional.                                           |
+| ITEMEC-29 | API          | 7     | Resposta: `scenario` `C2`\|`C3`\|`C4` + `target`, ou `C1` com `message`.                                                                         |
+| ITEMEC-30 | API          | 7     | Desempate C2/C3: maior `data_vigencia_fim` → `data_vigencia_inicio` → `pk`.                                                                      |
+| ITEMEC-31 | Modal        | 8     | **M2**–**M4:** `showCoreAttentionModal`, «Atenção!», **Cancelar** \| **Sim**; cancelar restaura **COD-1**.                                       |
+| ITEMEC-32 | Modal        | 8     | «Sim» em M2–M4: `__coreRebaselineReceitaCodNavigationDirtyState()` + `__coreConfirmUnsavedIfDirty(go)`; preservar `_changelist_filters`.         |
+| ITEMEC-33 | Modal        | 8.1   | **M2** (C2): «Já existe registro ativo e vigente para o código \<código\>…» → change do PK desempatado.                                          |
+| ITEMEC-34 | Modal        | 8.2   | **M3** (C3): «O \<código\> digitado tem vigência diversa…» → change desempatado.                                                                 |
+| ITEMEC-35 | Modal        | 8.3   | **M4** (C4): «Não foi encontrado registro…» → **add** pré-preenchida (**ITEMEC-36**).                                                            |
+| ITEMEC-36 | Modal        | 8.3   | **C4** «Sim» → add com `receita_cod` pré-preenchido; protocolos add (**B1**, `syncHierarchyFromCode`, **(V3)**, **P-mãe**).                      |
+| ITEMEC-37 | Modal        | 9     | **M-cod-block:** informativo; botão único **Entendi**; **não** submete nem redireciona.                                                          |
+| ITEMEC-38 | Modal        | 9     | Texto normativo de **M-cod-block** (três parágrafos — § **9**).                                                                                  |
+| ITEMEC-39 | Teste        | 10    | Checklist manual § **10** **deve** cobrir navegação, persistência, revert e paridade com add.                                                    |
+
+**Índice por tema:**
+
+| Tema         | IDs                   |
+| ------------ | --------------------- |
+| Regra        | ITEMEC-01             |
+| Termo        | ITEMEC-02 … ITEMEC-08 |
+| Navegação    | ITEMEC-10 … ITEMEC-12 |
+| Persistência | ITEMEC-13 … ITEMEC-18 |
+| Revert       | ITEMEC-19 … ITEMEC-23 |
+| Cenário      | ITEMEC-24 … ITEMEC-27 |
+| API          | ITEMEC-28 … ITEMEC-30 |
+| Modal        | ITEMEC-31 … ITEMEC-38 |
+| Teste        | ITEMEC-39             |
 
 ---
 
 ## Escopo
 
-| Inclui                                                          | Não inclui                                                               |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| View **change** de `ItemClassificacao`                          | Fluxos na view **add** (sugestão de filho, **R-clear**, lookups normais) |
-| **(G-cod.blur)** — blur, cenários **C1–C4**, modais **M2–M4**   | `readonly` permanente em `receita_cod`                                   |
-| **(G-cod.save)** — bloqueio de **Salvar** e **Editar vigência** | Persistir **COD-2** no mesmo registro (domínio + UI)                     |
-| Borracha na change — **(R-revert)**                             | «Limpar formulário inteiro» da add — **(R-clear)**                       |
-| Endpoint `resolve-code-navigation` (recomendado)                | Detalhe interno de estratégias bitemporais além do bloqueio              |
+| Inclui                                                                                           | Não inclui                                                          |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| View **change**; **ITEMEC-10** blur **C1**–**C4**; **ITEMEC-13** bloqueio Salvar/Editar vigência | View **add** (sugestão filho, **ITEMFORM** limpar, lookups normais) |
+| **ITEMEC-19**–**23** borracha change                                                             | `readonly` permanente em `receita_cod`                              |
+| Endpoint `resolve-code-navigation` **(ITEMEC-28)**                                               | Persistir **COD-2** no mesmo registro                               |
+|                                                                                                  | «Limpar formulário» add — **ITEMFORM-05**                           |
 
 ---
 
-## Notação
+## 1. Regra de negócio **(ITEMEC-01)**
 
-| Símbolo                                 | Significado                                                                                                                            |
-| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| **COD-1**                               | Código canônico (somente dígitos `0-9`) do registro em edição **ao carregar** a change; snapshot até sair da página ou **(R-revert)**. |
-| **COD-2**                               | Código canônico normalizado do input no momento da avaliação (**B1**: sem pontuação de máscara).                                       |
-| **(T-cod.0) Código alterado na change** | **COD-2** não vazio **e** **COD-2 ≠ COD-1**.                                                                                           |
-| **V1**                                  | Vigência do registro aberto: `data_vigencia_inicio` e `data_vigencia_fim` do `instance` na change.                                     |
-| **`<código>`**                          | `receita_cod` **formatado** (máscara) para exibição em modais.                                                                         |
+Uma vez criado, o código canônico **não pode** ser substituído na mesma linha bitemporal. Na change, editar `receita_cod` serve para **navegar** (outro registro ou add) ou **desfazer** (**ITEMEC-19**); **não** para gravar via **Salvar** ou **Editar vigência**.
 
-**Normalização (obrigatória em todos os eixos):** remover `.` e espaços; comparar apenas dígitos. Não usar somente `form.has_changed()` em `receita_cod` — máscara e `padEnd` podem marcar alteração sem mudança semântica; a autoridade é **COD-1** vs **COD-2**.
+| Eixo                         | Gatilho                                    | Efeito                                             |
+| ---------------------------- | ------------------------------------------ | -------------------------------------------------- |
+| Navegação **(ITEMEC-10)**    | `blur` com **(T-cod.0)**                   | Modais **ITEMEC-33**–**35** ou restaurar **COD-1** |
+| Persistência **(ITEMEC-13)** | Salvar / Editar vigência com **(T-cod.0)** | **ITEMEC-37**; sem `bitemporal_confirm.html`       |
 
 ---
 
-## Terminologia (alinhada ao projeto)
+## 2. Notação e terminologia
 
-- **(T6) Registro ativo:** `data_registro_fim` = `TRANSACTION_TIME_SENTINEL` (`transaction_time_sentinel_for_query()`).
-- **(T7) Sobreposição de vigência:** intervalos **A** e **B** (datas inclusivas): `início_A ≤ fim_B` e `fim_A ≥ início_B`.
-- **(T-cod.1) Código existente:** ao menos um registro **(T6)** com `receita_cod` = **COD-2** (sem exigir **(T7)** com **V1**).
-- **(T-cod.2) Vigência atual (vs. COD-1):** **(T-cod.1)** e existe registro **(T6)** de **COD-2** com **(T7)** em relação a **V1**.
-- **(T-cod.3) Vigência diversa (vs. COD-1):** **(T-cod.1)** e **nenhum** registro **(T6)** de **COD-2** tem **(T7)** com **V1**.
-- **(T-cod.4) Máscara compatível:** `len(COD-2)` igual à soma da máscara do item em edição **ou** à soma de alguma máscara de `estrutura_codigo` em nível **(T6)** (critério de `fetchReceitaCodDigitLimit` / `runCodeDigitValidation`).
+### 2.1 Símbolos (sem ID próprio)
 
-**(T-cod.2)** e **(T-cod.3)** são excludentes e exaustivos para um **COD-2** existente.
+| Símbolo        | Significado                                                                   |
+| -------------- | ----------------------------------------------------------------------------- |
+| **COD-1**      | Dígitos do registro ao carregar a change; snapshot até sair ou **ITEMEC-20**. |
+| **COD-2**      | Dígitos normalizados do input na avaliação (**B1**).                          |
+| **V1**         | `data_vigencia_inicio` / `data_vigencia_fim` do `instance` na change.         |
+| **\<código\>** | `receita_cod` formatado para modais.                                          |
 
----
+### 2.2 Termos normativos **(ITEMEC-02**–**ITEMEC-08)**
 
-## Eixo navegação — blur **(G-cod.blur)**
+- **(ITEMEC-02)** **(T-cod.0):** **COD-2** não vazio **e** **COD-2 ≠ COD-1**.
+- **(ITEMEC-03)** Remover `.` e espaços; comparar só dígitos.
+- **(ITEMEC-04)** **(T-cod.1):** ≥1 registro **(T6)** com `receita_cod` = **COD-2**.
+- **(ITEMEC-05)** **(T-cod.2):** **(T-cod.1)** + **(T7)** de algum **(T6)** de **COD-2** vs **V1**.
+- **(ITEMEC-06)** **(T-cod.3):** **(T-cod.1)** + nenhum **(T7)** vs **V1**.
+- **(ITEMEC-07)** **(T-cod.4):** `len(COD-2)` vs máscara (`fetchReceitaCodDigitLimit` / `runCodeDigitValidation`).
+- **(ITEMEC-08)** **(T-cod.2)** e **(T-cod.3)** excludentes e exaustivos.
 
-### Ordem do pipeline
-
-| Etapa | Condição                          | Ação                                                |
-| ----- | --------------------------------- | --------------------------------------------------- |
-| 0     | View **add**                      | **Encerrar** — esta spec não se aplica.             |
-| 0     | View **change**                   | Prosseguir.                                         |
-| 1     | `blur` em `receita_cod`           | Início do pipeline.                                 |
-| 2     | **B1** + `runCodeDigitValidation` | Se inválido → **C1**; **não** abrir **M2–M4**.      |
-| 3     | **não** **(T-cod.0)**             | **Encerrar** — sem modal de navegação.              |
-| 4     | **(T-cod.0)** e dígitos válidos   | Classificar **C2–C4** e abrir modal correspondente. |
-
-### `syncHierarchyFromCode`
-
-Na **change**, após **(T-cod.0)** no blur, o cliente **não deve** chamar `syncHierarchyFromCode('code_blur')` nem alterar `parent_item_id` / `nivel_id` do registro aberto. Na **add**, vale `spec_itemClassificacao_foreignKeys_lookup.md`.
+**(T6)** registro ativo e **(T7)** sobreposição de vigência: ver `spec_itemClassificacao_criar_filho.md`.
 
 ---
 
-## Eixo persistência — Salvar e Editar vigência **(G-cod.save)**
+## 3. Eixo navegação — blur **(ITEMEC-10)**
 
-### Contexto
+### 3.1 Pipeline **(ITEMEC-11)**
 
-No admin, alterações na change passam por `BitemporalChangeHandler` (`admin_mixins.BitemporalAdminMixin` → `admin_handlers.py`): POST válido com `form.has_changed()` **ou** flag `_edit_vigencia` (lápis ✎ em `admin_bitemporal_date_shortcuts.js`) renderiza `admin/core/bitemporal_confirm.html`.
+| Etapa | Condição                          | Ação                                 |
+| ----- | --------------------------------- | ------------------------------------ |
+| 0     | View **add**                      | Encerrar — spec não aplica           |
+| 0     | View **change**                   | Prosseguir                           |
+| 1     | `blur` em `receita_cod`           | Início                               |
+| 2     | **B1** + `runCodeDigitValidation` | Inválido → **ITEMEC-24**; sem modais |
+| 3     | **não** **(T-cod.0)**             | Encerrar                             |
+| 4     | **(T-cod.0)** + dígitos válidos   | **ITEMEC-25**–**27** + modal         |
 
-Esse fluxo pressupõe **atualizar a mesma entidade**. Trocar `receita_cod` no formulário viola a regra de negócio e **não deve** chegar à tela de confirmação.
+### 3.2 Hierarquia no blur **(ITEMEC-12)**
 
-### **(G-cod.save.1) Gatilhos bloqueados**
-
-| Gatilho             | Identificação                                                                                                       |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| **Salvar**          | `submit` do formulário de change com `name="_save"` (botão padrão do admin).                                        |
-| **Editar vigência** | `submit` com `name="_edit_vigencia"` e `value="1"` (lápis ao lado de `data_vigencia_inicio` / `data_vigencia_fim`). |
-
-Qualquer outro botão de submit da change que dispare o mesmo POST para `BitemporalChangeHandler` com alterações no formulário **deve** respeitar a mesma regra se incluir `receita_cod` alterado.
-
-### **(G-cod.save.2) Condição de bloqueio**
-
-- Avaliar **(T-cod.0)** sobre **COD-2** obtido do input **no momento do submit** (mesma normalização **B1**).
-- Se **(T-cod.0)** for verdadeiro → **bloquear** redirecionamento para `bitemporal_confirm.html`, **independentemente** de outros campos alterados (`receita_nome`, vigência, FKs, etc.).
-
-### **(G-cod.save.3) Ação na UI (cliente)**
-
-1. Interceptar o `submit` do formulário na change **antes** do envio ao servidor.
-2. Se **(T-cod.0)** → `preventDefault()`; exibir **M-cod-block**; manter o usuário na change com os dados atuais do formulário.
-3. Se **não** **(T-cod.0)** → fluxo atual (POST → confirmação bitemporal quando houver alterações).
-
-**Ordem típica vs. blur:** o usuário pode **Salvar** sem ter disparado blur; o bloqueio **(G-cod.save)** ainda assim se aplica. Se antes houve blur com modal de navegação e **Cancelar**, o campo pode continuar com **COD-2 ≠ COD-1** → **Salvar** exibe **M-cod-block**.
-
-### **(G-cod.save.4) Ação no servidor (obrigatória)**
-
-Em `BitemporalChangeHandler.handle`, **antes** de montar o contexto de `bitemporal_confirm.html`:
-
-- Se `change` e **(T-cod.0)** entre `receita_cod` normalizado do POST e `obj.receita_cod` do `instance` → **não** retornar a template de confirmação.
-- Reexibir a change com mensagem equivalente a **M-cod-block** (`message_user` e/ou erro em `receita_cod`), preservando o POST quando possível.
-
-Repetir a verificação na **segunda etapa** (quando `edit_strategy` já veio preenchido), para impedir gravação bitemporal com código divergente.
-
-### **(G-cod.save.5) Após **(R-revert)**
-
-Com **COD-2** restaurado para **COD-1**, **Salvar** e **Editar vigência** voltam ao comportamento bitemporal padrão do projeto.
+Na **change** com **(T-cod.0)**: **não** `syncHierarchyFromCode('code_blur')`; **não** alterar `parent_item_id` / `nivel_id`. Na **add**: `spec_itemClassificacao_foreignKeys_lookup.md`.
 
 ---
 
-## Borracha na change **(R-revert)**
+## 4. Eixo persistência **(ITEMEC-13)**
 
-| Regra            | Descrição                                                                                                                                                                                                                                                                                        |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **(R-revert.1)** | Controle à direita de `receita_cod`, mesmo layout da add (**(R-clear.2)**).                                                                                                                                                                                                                      |
-| **(R-revert.2)** | Restaura **somente** `receita_cod` (valor + máscara) para **COD-1**; sem recarregar a página.                                                                                                                                                                                                    |
-| **(R-revert.3)** | Ação imediata, **sem** modal.                                                                                                                                                                                                                                                                    |
-| **(R-revert.4)** | `title` / `aria-label`: «Restaurar código original».                                                                                                                                                                                                                                             |
-| **(R-revert.5)** | Após restaurar: `clearReceitaCodMessages` no `.form-row` do campo (remove erro **C1**, avisos e warnings inline); `setCustomValidity('')`; `syncItemIdPreview()`; `__coreRebaselineReceitaCodNavigationDirtyState()` para `receita_cod` e `item_id` deixarem de contar como alteração não salva. |
+Contexto: `BitemporalChangeHandler` renderiza `bitemporal_confirm.html` quando há alterações ou `_edit_vigencia`. Trocar `receita_cod` viola **ITEMEC-01**.
 
-**Implementação:** `restoreReceitaCodOrigem()` em `change_form.html` (também usada ao **Cancelar** modais **M2–M4**).
+### 4.1 Gatilhos **(ITEMEC-14)**
+
+| Gatilho             | Identificação                       |
+| ------------------- | ----------------------------------- |
+| **Salvar**          | `name="_save"`                      |
+| **Editar vigência** | `name="_edit_vigencia"` `value="1"` |
+
+### 4.2 Condição **(ITEMEC-15)**
+
+**(T-cod.0)** no submit (normalização **B1**) → bloquear confirmação bitemporal mesmo com outros campos alterados.
+
+### 4.3 Cliente **(ITEMEC-16)**
+
+Interceptar submit na change; **(T-cod.0)** → `preventDefault()` + **ITEMEC-37**. Salvar sem blur prévio ainda bloqueia.
+
+### 4.4 Servidor **(ITEMEC-17)**
+
+`BitemporalChangeHandler.handle`: antes de `bitemporal_confirm.html` e na segunda etapa (`edit_strategy` preenchido) — **(T-cod.0)** → não confirmar; mensagem equivalente a **ITEMEC-38**.
+
+### 4.5 Após revert **(ITEMEC-18)**
+
+**COD-2** = **COD-1** após **ITEMEC-20** → fluxo bitemporal padrão.
 
 ---
 
-## Classificação no blur (cenários **C1–C4**)
+## 5. Borracha na change **(ITEMEC-19**–**ITEMEC-23)**
 
-Após **(G-cod.blur)** etapas 2–3, aplicar a **primeira** linha válida:
+| ID        | Regra                                                            |
+| --------- | ---------------------------------------------------------------- |
+| ITEMEC-19 | Controle à direita de `receita_cod` (layout par **ITEMFORM-06**) |
+| ITEMEC-20 | Restaura só `receita_cod` → **COD-1**; sem reload                |
+| ITEMEC-21 | Sem modal                                                        |
+| ITEMEC-22 | `title` / `aria-label`: «Restaurar código original»              |
+| ITEMEC-23 | Pós-ação: limpar mensagens, rebaseline dirty state               |
 
-| ID     | Condições                                   | UI                                                                                                     |
-| ------ | ------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| **C1** | **não** **(T-cod.4)**                       | Erro inline (`showReceitaCodError`), mesmo texto da add quando o comprimento não casa com a estrutura. |
-| **C2** | **(T-cod.4)**; **(T-cod.1)**; **(T-cod.2)** | **M2**                                                                                                 |
-| **C3** | **(T-cod.4)**; **(T-cod.1)**; **(T-cod.3)** | **M3**                                                                                                 |
-| **C4** | **(T-cod.4)**; **não** **(T-cod.1)**        | **M4**                                                                                                 |
+**Implementação:** `restoreReceitaCodOrigem()` — também no **Cancelar** de **ITEMEC-31**.
 
-### Endpoint `resolve-code-navigation` (recomendado)
+---
+
+## 6. Cenários no blur **(ITEMEC-24**–**ITEMEC-27)**
+
+Primeira linha válida após pipeline § **3.1**:
+
+| ID        | Condições                                     | UI            |
+| --------- | --------------------------------------------- | ------------- |
+| ITEMEC-24 | **não** **(T-cod.4)**                         | Erro inline   |
+| ITEMEC-25 | **(T-cod.4)** + **(T-cod.1)** + **(T-cod.2)** | **ITEMEC-33** |
+| ITEMEC-26 | **(T-cod.4)** + **(T-cod.1)** + **(T-cod.3)** | **ITEMEC-34** |
+| ITEMEC-27 | **(T-cod.4)** + **não** **(T-cod.1)**         | **ITEMEC-35** |
+
+---
+
+## 7. Endpoint `resolve-code-navigation` **(ITEMEC-28**–**ITEMEC-30)**
 
 `GET …/admin/core/itemclassificacao/resolve-code-navigation/`
 
-| Parâmetro         | Obrigatório | Descrição                 |
-| ----------------- | ----------- | ------------------------- |
-| `code`            | Sim         | **COD-2** (dígitos).      |
-| `vigencia_inicio` | Sim         | Início de **V1**.         |
-| `vigencia_fim`    | Sim         | Fim de **V1**.            |
-| `exclude_pk`      | Não         | PK do registro em edição. |
+| Parâmetro         | Obrigatório | Descrição           |
+| ----------------- | ----------- | ------------------- |
+| `code`            | Sim         | **COD-2** (dígitos) |
+| `vigencia_inicio` | Sim         | Início **V1**       |
+| `vigencia_fim`    | Sim         | Fim **V1**          |
+| `exclude_pk`      | Não         | PK em edição        |
 
-Resposta sugerida: `{ "ok": true, "scenario": "C2"|"C3"|"C4", "codigo_display": "...", "target": { "view": "change"|"add", "pk": "", "change_url": "", "add_url": "" } }` ou `{ "ok": false, "scenario": "C1", "message": "..." }`.
+Resposta sugerida **(ITEMEC-29):** `{ "ok": true, "scenario": "C2"|"C3"|"C4", "codigo_display": "...", "target": { "view", "pk", "change_url", "add_url" } }` ou `{ "ok": false, "scenario": "C1", "message" }`.
 
-**Desempate (C2 / C3):** maior `data_vigencia_fim`; empate → maior `data_vigencia_inicio`; empate → maior `pk`.
+Desempate **(ITEMEC-30):** `data_vigencia_fim` → `data_vigencia_inicio` → `pk`.
 
 ---
 
-## Modais
+## 8. Modais de navegação **(ITEMEC-31**–**ITEMEC-36)**
 
-### Padrão comum (navegação **M2–M4**)
+### 8.1 Padrão comum **(ITEMEC-31**, **ITEMEC-32)**
 
-- `showCoreAttentionModal`, título «Atenção!».
-- Botões: **Cancelar** | **Sim**.
-- **Cancelar**, **Escape**, overlay: fechar; restaurar `receita_cod` para **COD-1**.
-- **Sim**: `location.assign` para URL do endpoint; preservar `_changelist_filters` quando existir.
-- **Alterações não guardadas (navegação M2–M4):** após «Sim», chamar `__coreRebaselineReceitaCodNavigationDirtyState()` (rebaseline de `receita_cod` e `item_id` — preview derivado atualizado no blur por `syncItemIdPreview`) e em seguida `__coreConfirmUnsavedIfDirty(go)`. Assim, **somente** a troca de código + `item_id` **não** dispara o segundo `confirm`; se **outros** campos estiverem alterados, o aviso **deve** aparecer.
+- `showCoreAttentionModal`, «Atenção!», **Cancelar** \| **Sim**.
+- Cancelar / Escape / overlay → **COD-1** via `restoreReceitaCodOrigem()`.
+- «Sim» → `location.assign`; **ITEMEC-32** rebaseline + `__coreConfirmUnsavedIfDirty`.
 
-#### **M2** — vigência atual (**C2**)
+### 8.2 Textos **(ITEMEC-33**–**ITEMEC-35)**
 
-```
+**ITEMEC-33 (M2 / C2):**
+
+```text
 Atenção!
 
 Já existe registro ativo e vigente para o código <código>.
@@ -192,11 +262,9 @@ Já existe registro ativo e vigente para o código <código>.
 Deseja ser direcionado para a tela de edição desse código?
 ```
 
-- **`<código>`** — valor formatado (`codigo_display` do endpoint), não apenas dígitos crus.
+**ITEMEC-34 (M3 / C3):**
 
-#### **M3** — vigência diversa
-
-```
+```text
 Atenção!
 
 O <código> digitado tem vigência diversa do código atual.
@@ -204,9 +272,9 @@ O <código> digitado tem vigência diversa do código atual.
 Deseja ser direcionado para a tela de edição do <código>?
 ```
 
-#### **M4** — código inexistente
+**ITEMEC-35 (M4 / C4):**
 
-```
+```text
 Atenção!
 
 Não foi encontrado registro para o <código>.
@@ -214,21 +282,20 @@ Não foi encontrado registro para o <código>.
 Deseja ser direcionado para a tela de criação de um novo código?
 ```
 
-| Cenário        | «Sim»                                                                                                             |
-| -------------- | ----------------------------------------------------------------------------------------------------------------- |
-| **C2**, **C3** | `change` do PK desempatado.                                                                                       |
-| **C4**         | `add` com `receita_cod` pré-preenchido; protocolos da add (**B1**, `syncHierarchyFromCode`, **(V3)**, **P-mãe**). |
+| Cenário            | «Sim»                                |
+| ------------------ | ------------------------------------ |
+| C2, C3             | `change` do PK desempatado           |
+| C4 **(ITEMEC-36)** | `add` pré-preenchida; protocolos add |
 
-### **M-cod-block** — bloqueio de persistência **(G-cod.save)**
+---
 
-Modal **informativo** (não oferece redirecionamento nem gravação).
+## 9. Modal de bloqueio **(ITEMEC-37**, **ITEMEC-38)**
 
-- Botão único: **Entendi** (fecha o modal; **não** submete o formulário).
-- **Sem** ação «Sim» para confirmação bitemporal.
+Informativo; botão **Entendi** apenas; não submete.
 
-**Texto (corpo — três parágrafos ou lista equivalente):**
+**Texto normativo (ITEMEC-38):**
 
-```
+```text
 Atenção!
 
 Uma vez criado, o código canônico não pode ser substituído na mesma linha de registro. Não é possível gravar outro código neste item por meio de Salvar ou Editar vigência.
@@ -240,32 +307,43 @@ Para cadastrar um código novo: use Adicionar Item de Classificação.
 Para desfazer o que foi digitado nesta tela: use o ícone Restaurar código original ao lado do campo.
 ```
 
-**Implementação:** `showCoreAttentionModal` com um botão (ex.: `okLabel: 'Entendi'`, sem `cancelLabel` ou cancelar oculto); ou variante dedicada com a mesma família visual.
+---
+
+## 10. Testes manuais **(ITEMEC-39)**
+
+### Navegação
+
+1. Blur sem alterar → sem modal.
+2. Dígitos incompatíveis → **ITEMEC-24**.
+3. **(T-cod.2)** → **ITEMEC-33** → Cancelar → **COD-1**.
+4. **ITEMEC-33** → Sim → change correta (desempate).
+5. **(T-cod.3)** → **ITEMEC-34**.
+6. Inexistente → **ITEMEC-35** → Sim → add sem `confirm` extra se só código alterado.
+7. **ITEMEC-35** → Sim com outro campo alterado → `confirm` alterações não guardadas.
+
+### Persistência
+
+8. Só `receita_cod` → Salvar → **ITEMEC-37**; sem `bitemporal_confirm.html`.
+9. `receita_nome` + código → Salvar ainda bloqueia com **(T-cod.0)**.
+10. Editar vigência → **ITEMEC-37**.
+11. Salvar sem blur → **ITEMEC-37**.
+12. **ITEMEC-20** → Salvar → fluxo bitemporal normal.
+
+### Revert e add
+
+13. **ITEMEC-20** após **ITEMEC-24** → limpa erro, sem aviso falso.
+14. **ITEMEC-20** sem reload.
+15. Na **add**: **ITEMFORM** inalterado; sem eixos desta spec.
 
 ---
 
-## Testes manuais recomendados (change)
+## Specs relacionadas
 
-### Navegação **(G-cod.blur)**
-
-1. Blur sem alterar código → sem modal.
-2. Blur com dígitos incompatíveis → **C1**, sem **M2–M4**.
-3. **COD-2** com **(T-cod.2)** → **M2** → Cancelar → campo volta a **COD-1**.
-4. **M2** → Sim → change do registro correto (desempate se várias vigências).
-5. **(T-cod.3)** → **M3** e redirecionamento.
-6. Código inexistente → **M4** → Sim → add pré-preenchida **sem** segundo `confirm` de alterações não guardadas (somente `receita_cod` alterado).
-7. **M4** → Sim com `receita_cod` e outro campo alterados → `confirm` de alterações não guardadas antes de sair.
-
-### Persistência **(G-cod.save)**
-
-8. Alterar só `receita_cod` → **Salvar** → **M-cod-block**; permanece na change; **não** exibe `bitemporal_confirm.html`.
-9. Mesmo com `receita_nome` (ou outro campo) alterado junto → **Salvar** ainda bloqueia se **(T-cod.0)**.
-10. Alterar código → lápis **Editar vigência** → **M-cod-block** (sem confirmação bitemporal).
-11. Alterar código → **Salvar** sem blur prévio → **M-cod-block**.
-12. **(R-revert)** → **Salvar** → fluxo bitemporal normal se houver outras alterações.
-
-### Borracha e add
-
-13. **(R-revert)** após erro **C1** (ex.: dígitos a mais) → borracha → valor **COD-1**, mensagem vermelha removida, sem aviso de saída só por `receita_cod`/`item_id`.
-14. **(R-revert)** restaura **COD-1** sem recarregar a página.
-15. Na **add**, vassourinha **(R-clear)** inalterada; sem **(G-cod.save)** nem **(G-cod.blur)** de redirecionamento na change.
+| Spec                                                                                               | Relação                              |
+| -------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| [`spec_itemClassificacao_formulario.md`](spec_itemClassificacao_formulario.md)                     | Largura; limpar add vs revert change |
+| [`spec_itemClassificacao_mascara_apresentacao.md`](spec_itemClassificacao_mascara_apresentacao.md) | **B1**                               |
+| [`spec_itemClassificacao_foreignKeys_lookup.md`](spec_itemClassificacao_foreignKeys_lookup.md)     | Lookups add; **ITEMEC-12**           |
+| [`spec_itemClassificacao_criar_filho.md`](spec_itemClassificacao_criar_filho.md)                   | **(T6)**, **(T7)**, **(G6)**         |
+| [`spec_itemClassificacao_navegacao.md`](spec_itemClassificacao_navegacao.md)                       | **(G-nav.\*)**                       |
+| [`spec_itemClassificacao_criar_nome.md`](spec_itemClassificacao_criar_nome.md)                     | Add pós-**C4**                       |
