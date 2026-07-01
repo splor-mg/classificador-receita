@@ -157,6 +157,7 @@ Consultar **nesta ordem** ao sugerir escopo:
 | `spec_itemClassificacao_criar_nome.md`             | `ITEMNOM`  | Criação add: `receita_nome`, modos de radical, P-mãe     |
 | `spec_itemClassificacao_criar_filho.md`            | `ITEMCF`   | Sugestão de código filho na add e atalho change → add    |
 | `spec_itemClassificacao_navegacao.md`              | `ITEMNAV`  | Navegação estrutural na change (`<< < > >>`)             |
+| `spec_lista_abreviacoes.md`                        | `LISTABR`  | Protocolo `lista_abreviacoes` / inferência `AliasLexico` |
 
 ### Tipo vs arquivos (Django)
 

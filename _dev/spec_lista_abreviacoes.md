@@ -1,16 +1,96 @@
-# Lista de Abreviações
+# Lista de Abreviações (`AliasLexico`)
 
-<Conjunto de regras em relação às quais quero sua avaliação crítica em termos de existir ou não alternativa mais simples para o que pretendo, e se é convergente ou não com as melhores práticas de gestão de um banco de dados.>
+Protocolo de inferência e manutenção da tabela `lista_abreviacoes` a partir de `ItemClassificacao` e do léxico persistido. **Não substitui** modo Abreviado no admin (**ITEMNOM** § **7.2**) — partilha conectivos via `code_name_connectives.py`.
 
-A missão aqui é criar um protocolo/script que, analisando o banco de dados, consiga entender/derivar quais abreviações foram de fato implementadas. Aqueles casos que preencherem os requisitos de cada uma das regras, devem gerar um registro na tabela de lista de abreviações. 
+## Objetivo
 
-O padrão geral é que vamos pesquisar, no banco de dados `ItemClassificacao`, cada **filho** com **registro ativo** (valor sentinela fixo em `data_registro_fim`) e com **vigência orçamentária** que **compreenda o instante de análise T** (ver subsecção em *Design*), e cujo **pai** resolvido esteja **compatível com T** (registro ativo e vigência que também compreenda **T**, com o intervalo do filho contido no do mãe quando a resolução temporal assim o exigir). A análise, para entender se houve alguma abreviação ou não, parte da comparação dos nomes/nomenclatura do item mãe em relação ao do item filho. 
+Derivar pares `(termo_nome, abreviacao)` implementados na base: analisar filhos **ativos** com vigência em **T**, comparar nomenclatura mãe–filho quando aplicável (regras **PF**), e regras **ND** independentes de mãe. Persistir só candidatos válidos **(vii)**/**(viii)**; respeitar unicidade, conflitos e filtros **(M)** / **Regra 7**.
 
-Apesar de essa ser a principal fonte de análise, haverá análises que não dependerão dessa comparação entre mãe e filho. As regras que dependerem de mãe e filho serão identificadas como (PF), e as que não dependerem, serão identificadas como (ND) - "não-dependente".
+Premissa: `alias_lexico_infer.py`, `alias_lexico_protocol.py`, `alias_lexico_termo_policy.py`, `manage.py atualizar_lista_abreviacoes`, seed `docs/assets/seed_lista_abreviacoes.csv`.
 
-## Alinhamento terminológico:
+## Referências
 
-- (i) Em uma nomenclatura, como `Nome da Classificação por Natureza de Receita`, deve-se entender por `segmento` cada uma das partes que compõem o nome, separadas entre si pelo caractere traço (-).
+- `apps/core/alias_lexico_infer.py`, `alias_lexico_protocol.py`, `alias_lexico_termo_policy.py`
+- `apps/core/models_alias_lexico.py`, `bitemporal_registry.py`
+- `apps/core/code_name_connectives.py` — `LEXICO_CONNECTIVOS_FIXOS` (**LISTABR-38**)
+- [`spec_itemClassificacao_criar_nome.md`](spec_itemClassificacao_criar_nome.md) — **ITEMNOM** protocolo **A6**
+- [`spec_classificador-receita.md`](spec_classificador-receita.md) § **Convenções** — prefixo `LISTABR`
+
+Termos *deve* / *não deve* / *pode* conforme RFC 2119 (ver `_dev/spec_conventions.md` **Referências**).
+
+**Migração de símbolos legados:**
+
+| Legado                        | ID atual                  |
+| ----------------------------- | ------------------------- |
+| `(i)`–`(viii)` notação        | `LISTABR-10`–`LISTABR-17` |
+| `(A)`–`(La)` políticas Design | `LISTABR-20`–`LISTABR-45` |
+| Regra 1 (PF)                  | `LISTABR-50`              |
+| Regra 1.2 (PF)                | `LISTABR-51`              |
+| Regra 2–7                     | `LISTABR-52`–`LISTABR-57` |
+| Testes v1                     | `LISTABR-100`             |
+
+## Como citar este documento
+
+| Mecanismo          | Uso                                                                  |
+| ------------------ | -------------------------------------------------------------------- |
+| **Seção numerada** | `§ N` / `§ N.M` — navegação neste arquivo.                           |
+| **ID normativo**   | `LISTABR-NN` — citação estável.                                      |
+| **Prefixo**        | `LISTABR` — ver § **Convenções** em `spec_classificador-receita.md`. |
+
+**Índice de IDs normativos deste arquivo:**
+
+| ID          | Tema      | Seção | Resumo                                                                   |
+| ----------- | --------- | ----- | ------------------------------------------------------------------------ |
+| LISTABR-10  | Notação   | 2     | **(i)** `segmento` — partes separadas por ` - `.                         |
+| LISTABR-11  | Notação   | 2     | **(ii)** `abreviação` — sigla, encurtamento, remoção de conectivos.      |
+| LISTABR-12  | Notação   | 2     | **(iii)** abreviação simples — só remoção de conectivos.                 |
+| LISTABR-13  | Notação   | 2     | **(iv)** abreviação por encurtamento (`Rec.`, `Princ.`).                 |
+| LISTABR-14  | Notação   | 2     | **(v)** `sigla` — letras maiúsculas contíguas.                           |
+| LISTABR-15  | Notação   | 2     | **(vi)** redundância composicional — **Regra 7**.                        |
+| LISTABR-16  | Notação   | 2     | **(vii)** `termo_nome` canônico lexical.                                 |
+| LISTABR-17  | Notação   | 2     | **(viii)** termo inválido se contém token **(iv)** (excepção **1.2.5**). |
+| LISTABR-20  | Política  | 4     | **(A)** colunas do modelo; `termo` ≡ `termo_nome` no CSV.                |
+| LISTABR-21  | Política  | 4     | **(A′)** validação **(vii)**/**(viii)** em todo INSERT.                  |
+| LISTABR-22  | Política  | 4     | **(B)** INSERT só se `termo` novo; sem UPDATE automático.                |
+| LISTABR-23  | Política  | 4     | **(C)** conflito silencioso na mesma execução.                           |
+| LISTABR-24  | Política  | 4     | **(E)** ordem das regras PF/ND.                                          |
+| LISTABR-25  | Política  | 4     | **(M)** omissão por junção `termo + abreviacao` no mapa.                 |
+| LISTABR-26  | Política  | 4     | **(F)** `--print-conflicts` / `--print-conflicts-resolve`.               |
+| LISTABR-30  | Vigência  | 5     | Instante **T**, filho/mãe ativos e vigência orçamentária.                |
+| LISTABR-31  | BD        | 5     | Unicidade `LOWER(termo)` (`unique_lista_abrev_termo_ci`).                |
+| LISTABR-38  | Conectivo | 4     | **(H)** `LEXICO_CONNECTIVOS_FIXOS` — SSOT.                               |
+| LISTABR-40  | Export    | 4     | Export seed via `export_resource`; critério «nova linha».                |
+| LISTABR-50  | Regra PF  | 6     | **Regra 1** — mãe monosegmento; 1.º segmento filho abrevia mãe.          |
+| LISTABR-51  | Regra PF  | 7     | **Regra 1.2** — caminhos A/B; **1.2.9**; filtro **(M)**.                 |
+| LISTABR-52  | Regra ND  | 8     | **Regra 2** — 2 segmentos; sigla no 2.º.                                 |
+| LISTABR-53  | Regra ND  | 9     | **Regra 3** — sigla entre parênteses no fim.                             |
+| LISTABR-54  | Regra PF  | 10    | **Regra 4** — alinhamento segmento-a-segmento; cabeça+sigla.             |
+| LISTABR-55  | Regra PF  | 11    | **Regra 5** — junção de abreviações A+B.                                 |
+| LISTABR-56  | Regra ND  | 12    | **Regra 6** — derivação atômica pós-processamento.                       |
+| LISTABR-57  | Regra ND  | 13    | **Regra 7** — omissão por redundância composicional.                     |
+| LISTABR-100 | Teste     | 14    | Casos § **14** (PF, **(M)**, regressões **1.2**).                        |
+
+**Índice por tema:**
+
+| Tema      | IDs                                             |
+| --------- | ----------------------------------------------- |
+| Notação   | LISTABR-10 … LISTABR-17                         |
+| Política  | LISTABR-20 … LISTABR-26, LISTABR-38, LISTABR-40 |
+| Vigência  | LISTABR-30, LISTABR-31                          |
+| Regras PF | LISTABR-50, LISTABR-51, LISTABR-54, LISTABR-55  |
+| Regras ND | LISTABR-52, LISTABR-53, LISTABR-56, LISTABR-57  |
+| Teste     | LISTABR-100                                     |
+
+---
+
+## 1. Escopo e missão
+
+O protocolo analisa, no PostgreSQL, cada **filho** com **registro ativo** (`data_registro_fim` = sentinela) e **vigência orçamentária** que compreenda o instante de análise **T** (**LISTABR-30**), com **pai** compatível em **T**. A inferência principal compara nomenclatura mãe–filho; regras **(PF)** dependem desse par, regras **(ND)** não.
+
+
+## 2. Notação canónica (**LISTABR-10**–**LISTABR-17**)
+
+- **LISTABR-10** (i) Em uma nomenclatura, como `Nome da Classificação por Natureza de Receita`, deve-se entender por `segmento` cada uma das partes que compõem o nome, separadas entre si pelo caractere traço (-).
   Exemplos:
     - nome/nomenclatura: "Cota Parte dos Municípios"
       quantidade de segmentos: 1
@@ -22,7 +102,7 @@ Apesar de essa ser a principal fonte de análise, haverá análises que não dep
       segmento 2: "CPM"
       segmento 3: "Fundeb"
 
-- (ii) Uma `abreviação` é feita por:
+- **LISTABR-11** (ii) Uma `abreviação` é feita por:
   - sigla;
   - encurtamento de uma única palavra/nome;
   - encurtamento de um conjunto de palavras/nomes com a remoção de conectivos tais como "de", "da", "com", "para" etc
@@ -31,11 +111,11 @@ Apesar de essa ser a principal fonte de análise, haverá análises que não dep
       - "Principal" -> "Princ." (encurtamento palavara/nome)
       - "Taxas de Inspeção, Controle e Fiscalização" -> "Tx. Insp. Contr. Fisc. " (encurtamento de um conjunto de palavras/nomes)
 
-- (iii) Uma `abreviação simples` deve ser entendida como aquela em que, a única diferença entre sua versão original e sua versão abreviada é a remoção dos conectivos, não existindo nem palavras encurtadas, nem siglas.
+- **LISTABR-12** (iii) Uma `abreviação simples` deve ser entendida como aquela em que, a única diferença entre sua versão original e sua versão abreviada é a remoção dos conectivos, não existindo nem palavras encurtadas, nem siglas.
 
-- (iv) Uma `abreviação por encurtamento`, ou `palavra/nome encurtados` são todos aqueles termos seguidos de ponto, sem espaço entre o ponto e o termo (exemplo: "Rec.", como encurtamento de "Receita"; "Exec." como encurtamento de "Execução").
+- **LISTABR-13** (iv) Uma `abreviação por encurtamento`, ou `palavra/nome encurtados` são todos aqueles termos seguidos de ponto, sem espaço entre o ponto e o termo (exemplo: "Rec.", como encurtamento de "Receita"; "Exec." como encurtamento de "Execução").
 
-- (v) Uma `sigla` deve ser entendida como sendo um conjunto de letras, todas maiúsculas, que não são separadas entre si por espaço, mas que no seu ínterim podem ter traços, pontos ou outros caracteres, desde que não seja espaço em branco.
+- **LISTABR-14** (v) Uma `sigla` deve ser entendida como sendo um conjunto de letras, todas maiúsculas, que não são separadas entre si por espaço, mas que no seu ínterim podem ter traços, pontos ou outros caracteres, desde que não seja espaço em branco.
   Exemplos de siglas:
     - "ICMS"
     - "DA-MJM"
@@ -48,11 +128,11 @@ Apesar de essa ser a principal fonte de análise, haverá análises que não dep
     - "IuIE"
     - "IuiE"
 
-- (vi) Diz-se que um par candidato `(termo_nome, abreviação)` é **redundante em sentido composicional** quando a abreviação proposta para o **termo frasal** (duas ou mais palavras significativas, no sentido do protocolo) não acrescenta informação além do que já está no **mapa vigente** de pares palavra→token: a `abreviação` coincide, token a token e na mesma ordem, com a junção dos tokens já associados a cada palavra significativa do `termo_nome`. Nesse caso o protocolo **omite** o registro da linha frasal (vide **Regra 7 (ND)**). O mapa vigente inclui **todas** as linhas já persistidas com aquele vocabulário de termos (incluindo registros **desativados** em transaction time, isto é, `data_registro_fim` diferente da sentinela), bem como inferências e manuais aceites na mesma execução, **e** os átomos derivados conforme a **Regra 6** quando aplicável.
+- **LISTABR-15** (vi) Diz-se que um par candidato `(termo_nome, abreviação)` é **redundante em sentido composicional** quando a abreviação proposta para o **termo frasal** (duas ou mais palavras significativas, no sentido do protocolo) não acrescenta informação além do que já está no **mapa vigente** de pares palavra→token: a `abreviação` coincide, token a token e na mesma ordem, com a junção dos tokens já associados a cada palavra significativa do `termo_nome`. Nesse caso o protocolo **omite** o registro da linha frasal (vide **Regra 7 (ND)**). O mapa vigente inclui **todas** as linhas já persistidas com aquele vocabulário de termos (incluindo registros **desativados** em transaction time, isto é, `data_registro_fim` diferente da sentinela), bem como inferências e manuais aceites na mesma execução, **e** os átomos derivados conforme a **Regra 6** quando aplicável.
 
-- (vii) **`termo_nome` canônico (lexical)** — definição operacional: o valor persistido em `termo` / `termo_nome` deve ser uma **expressão lexical de referência**, composta apenas por **palavras por extenso** (e conectivos, vírgulas, etc., conforme já tratados no protocolo) **e/ou siglas** no sentido **(v)**, **sem** incorporar **abreviação por encurtamento** no sentido **(iv)** no interior do `termo_nome`, salvo excepção explícita na subsecção *Excepções ao termo_nome canônico*.
+- **LISTABR-16** (vii) **`termo_nome` canônico (lexical)** — definição operacional: o valor persistido em `termo` / `termo_nome` deve ser uma **expressão lexical de referência**, composta apenas por **palavras por extenso** (e conectivos, vírgulas, etc., conforme já tratados no protocolo) **e/ou siglas** no sentido **(v)**, **sem** incorporar **abreviação por encurtamento** no sentido **(iv)** no interior do `termo_nome`, salvo excepção explícita na subsecção *Excepções ao termo_nome canônico*.
 
-- (viii) **`termo_nome` inválido para persistência (só encurtamento (iv))** — critério booleano: decomponha o `termo_nome` em **tokens lexicais** delimitados por **espaços em branco**; após remover **pontuação de fronteira** comum de cada token **sem** retirar o ponto final que integra um token no padrão **(iv)** (isto é: retiram-se vírgulas, `;`, `:`, `!`, `?`, parênteses/chevrons/aspas, etc., das extremidades do token; o padrão **(iv)** continua a ser `^[letras]{1,8}\.$` sobre o token assim normalizado), se **qualquer** token restante for classificável como **abreviação por encurtamento** no sentido **(iv)** no papel de forma curta (ex.: `Contrib.`, `Princ.`), o par candidato **não** pode ser objecto de **INSERT** na lista (protocolo automático, carga a partir de seed, criação via admin, e inserções da fase `--print-conflicts-resolve`). **Siglas (v)** no interior do `termo_nome` **não** por si só violam (viii). Exemplos: **inválido** — `Contrib. Patronal` (token `Contrib.`); **válido** — `Contribuição Patronal` (sem token (iv)); **válido** — segmento que inclua `ICMS` como sigla **(v)** sem token terminado em ponto (iv).
+- **LISTABR-17** (viii) **`termo_nome` inválido para persistência (só encurtamento (iv))** — critério booleano: decomponha o `termo_nome` em **tokens lexicais** delimitados por **espaços em branco**; após remover **pontuação de fronteira** comum de cada token **sem** retirar o ponto final que integra um token no padrão **(iv)** (isto é: retiram-se vírgulas, `;`, `:`, `!`, `?`, parênteses/chevrons/aspas, etc., das extremidades do token; o padrão **(iv)** continua a ser `^[letras]{1,8}\.$` sobre o token assim normalizado), se **qualquer** token restante for classificável como **abreviação por encurtamento** no sentido **(iv)** no papel de forma curta (ex.: `Contrib.`, `Princ.`), o par candidato **não** pode ser objecto de **INSERT** na lista (protocolo automático, carga a partir de seed, criação via admin, e inserções da fase `--print-conflicts-resolve`). **Siglas (v)** no interior do `termo_nome` **não** por si só violam (viii). Exemplos: **inválido** — `Contrib. Patronal` (token `Contrib.`); **válido** — `Contribuição Patronal` (sem token (iv)); **válido** — segmento que inclua `ICMS` como sigla **(v)** sem token terminado em ponto (iv).
 
 ### Excepções ao termo_nome canônico
 
@@ -60,13 +140,13 @@ Apesar de essa ser a principal fonte de análise, haverá análises que não dep
 - Entradas históricas inválidas fora desta excepção devem ser corrigidas manualmente ou por migração de dados se a governança o exigir.
 
 
-## Fluxo de dados e artefactos
+## 3. Fluxo de dados e artefactos
 
 - A **fonte de verdade** operacional da lista de abreviações é a **tabela** `lista_abreviacoes` no PostgreSQL (modelo `AliasLexico` no código Django). O ficheiro `docs/assets/seed_lista_abreviacoes.csv` é um **artefacto derivado**: deve refletir o conteúdo persistido após export, pelo **mesmo caminho técnico** que o admin usa (`export_resource` para o recurso `lista_abreviacoes` definido em `apps/core/bitemporal_registry.py`, alinhado ao `datapackage.yaml`).
 - A **carga inicial** ou reposição de ambiente a partir de ficheiros segue a **mesma política** que as demais tabelas do classificador (comando de carga do datapackage, p.ex. `carregar_classificador`, e metadados em `datapackage.yaml`). Não há segunda verdade paralela ao BD após adoção deste fluxo; o seed versionado existe como **export** do estado persistido, não como origem paralela de mutações correntes.
 
 
-## Design e regras de negócio
+## 4. Design e políticas transversais
 
 - (A) *atributos* - a tabela de listagem de abreviações deve ter as seguintes colunas no modelo persistido: `termo`, `alias_lexico_ref`, `abreviacao`, `data_registro_inicio`, `data_registro_fim`. No CSV de seed (`seed_lista_abreviacoes.csv`), o campo `termo` é exportado com o cabeçalho `termo_nome` (equivalência semântica usada nesta spec).
 
@@ -78,7 +158,7 @@ Apesar de essa ser a principal fonte de análise, haverá análises que não dep
 
 - (D) *fonte* - a fonte de dados para **inferência** é o **Banco de Dados** (`ItemClassificacao` e `lista_abreviacoes`). O ficheiro `docs/assets/seed_lista_abreviacoes.csv` é **subsidiário**: artefacto de export; carga inicial segue o datapackage e o comando de carga, como nas demais tabelas.
 
-- (E) *ordem das regras* - as regras abaixo devem ser aplicadas nessa ordem, sendo que a primeira que se aplicar, encerra a tentativa **na passagem PF por par mãe–filho** (regras **ND** por item, **Regra 4**, **Regra 5** e pós-processamento **6**/**7** seguem o desenho de cada secção). Na passagem PF, ordem recomendada: **Regra 1** (1.1–1.4), **Regra 1.2**, **Regra 4**, **Regra 5**. Independentemente dessa ordem, **toda** candidatura a **INSERT** automático na lista (PF ou ND) fica sujeita ao filtro **(M)** antes de gravar, consultando o **mapa vigente** acumulado até ao momento (ver **(M)**).
+- (E) *ordem das regras* - as regras abaixo devem ser aplicadas nessa ordem, sendo que a primeira que se aplicar, encerra a tentativa **na passagem PF por par mãe–filho** (regras **ND** por item, **Regra 4**, **Regra 5** e pós-processamento **6**/**7** seguem o desenho de cada secção). Na passagem PF, ordem recomendada: **Regra 1** (1.1–1.4), **Regra 1.2**, **Regra 4**, **Regra 5**. Independentemente dessa ordem, **toda** candidatura a **INSERT** automático na lista (PF ou ND) fica sujeita ao filtro **LISTABR-25** (**(M)**) antes de gravar, consultando o **mapa vigente** acumulado até ao momento (ver **LISTABR-25** (**(M)**)).
 
 - (M) *omissão por junção de `termo` já decomposto* — antes de **persistir** (INSERT automático) qualquer par candidato `(termo_nome, abreviacao)` produzido pela **inferência** nesta execução, o protocolo **omite** o candidato se existir **alguma** linha **já** presente no **mapa vigente** da lista (ver abaixo) cujo `termo_nome` e `abreviacao`, quando concatenados pelo **mesmo** delimitador de segmento major que o resto do protocolo (`' - '`, espaço–traço–espaço), formem uma string **equivalente** ao `termo_nome` do candidato após a **normalização (M.1)**.
 
@@ -88,7 +168,7 @@ Apesar de essa ser a principal fonte de análise, haverá análises que não dep
 
   - (M.3) **Motivação / exemplo** — Se já existe `Contribuição para Financiamento da Seguridade Social` → `COFINS` (ex.: **Regra 1**), então **não** se deve acrescentar linha cujo `termo_nome` seja `Contribuição para Financiamento da Seguridade Social - COFINS` com `abreviacao` igual ao primeiro segmento major de um filho (ex.: par **295** / inferência **Regra 1.2** sobre o mesmo ramo): o `termo_nome` do candidato **não acrescenta** relação lexical nova face à **decomposição** já registada `(T, A)` com `join(T, A) = termo_nome` do candidato.
 
-  - (M.4) **Limites** — (M) é **independente** da **(vi)** (redundância composicional token-a-token / **Regra 7**): critérios distintos; um candidato pode falhar só um dos dois. (M) **não** substitui conflitos **(C)** nem unicidade **(B)**. Carga manual no admin ou fluxo **(F)** interactivo seguem as suas regras próprias; **(M)** documenta sobretudo o **motor de inferência automática** e o seed como reflexo exportado.
+  - (M.4) **Limites** — (M) é **independente** da **(vi)** (redundância composicional token-a-token / **Regra 7**): critérios distintos; um candidato pode falhar só um dos dois. (M) **não** substitui conflitos **LISTABR-23** (**(C)**) nem unicidade **LISTABR-22** (**(B)**). Carga manual no admin ou fluxo **LISTABR-26** (**(F)**) interactivo seguem as suas regras próprias; **LISTABR-25** (**(M)**) documenta sobretudo o **motor de inferência automática** e o seed como reflexo exportado.
 
 - (F) *ferramentas, flags e conflitos*
   - **`--print-conflicts`:** no fim da execução, **lista** os conflitos que permaneceram **silenciosos** durante a corrida (mesmo `termo`, múltiplas `abreviacao` candidatas na mesma execução, sem gravação automática). Não altera o BD.
@@ -100,7 +180,7 @@ Apesar de essa ser a principal fonte de análise, haverá análises que não dep
 
 - (G) *carga banco* - ao ler o CSV, valida `alias_lexico_ref` numérico de forma que, duplicata de `termo_nome` (segunda ocorrência) é ignorada na lista reconstruída, mas o termo continua no conjunto que bloqueia inferência/derivação. Linhas cujo `termo_nome` viole **(viii)** devem ser **omitidas** na carga (sem abortar o recurso completo) e o operador deve poder inspeccionar contagem em log; não persistir entradas inválidas.
 
-- (H) *conectivos* - no scopo/topo do script, deve haver lista fixa de conectivos ignorados na extração de palavras significativas. **Fonte única de implementação:** `LEXICO_CONNECTIVOS_FIXOS` em `apps/core/code_name_connectives.py` (consumida por `alias_lexico_infer.py` e pelo modo Abreviado em `code_name_abbrev.py`). A compactação **A6** do modo Abreviado (criar item) reutiliza a mesma noção de fronteira de pontuação que **(viii)** para `,;:!:` e preserva ponto em token **(iv)** — ver `spec_itemClassificacao_criar_nome.md` (**A6.1**–**A6.3**).
+- (H) *conectivos* - no scopo/topo do script, deve haver lista fixa de conectivos ignorados na extração de palavras significativas. **Fonte única de implementação:** `LEXICO_CONNECTIVOS_FIXOS` em `apps/core/code_name_connectives.py` (consumida por `alias_lexico_infer.py` e pelo modo Abreviado em `code_name_abbrev.py`). A compactação **A6** do modo Abreviado (criar item) reutiliza a mesma noção de fronteira de pontuação que **(viii)** para `,;:!:` e preserva ponto em token **(iv)** — ver [`spec_itemClassificacao_criar_nome.md`](spec_itemClassificacao_criar_nome.md) (**A6.1**–**A6.3**).
 
 - (I) *trigger de atualização* - os protocolos automatizados de atualização da lista de abreviações devem ser acionados toda vez que houver um **Create** ou **Update** de um item de classificação na tabela `ItemClassificacao` (disparando inferência; o **export** do seed segue a subsecção *Export do seed* abaixo).
 
@@ -123,6 +203,7 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
 
 **Nova linha (critério para (ii)):** conta-se como **nova linha** qualquer **`INSERT`** bem-sucedido em `lista_abreviacoes` durante a execução do protocolo disparada pelo `save_model` em `ItemClassificacao` (isto é, contagem de linhas criadas com novo `id` / novo PK). Duplicata do mesmo termo em sentido **case-insensitive** (violando a constraint `unique_lista_abrev_termo_ci` em `LOWER(termo)`) **não** conta como nova linha: a implementação deve usar o mesmo critério que `insert_alias_lexico_if_new` em `apps/core/alias_lexico_protocol.py` (retorno `inserted is True` após tentativa de `INSERT` isolada em `transaction.atomic`, mapeando `IntegrityError` para “não houve insert”). **Não** contam: apenas `UPDATE` em linhas já existentes (incl. reativação ou correção de `abreviacao` sem insert); execuções do protocolo que não persistem alterações; falhas silenciosas ou conflitos sem gravação. Se o protocolo correr mas o número de linhas da tabela **não** aumentar em relação ao estado lido no início daquele disparo, **não** se exporta ao abrigo de (ii). Opcionalmente, a implementação pode usar o retorno explícito do serviço de inferência (`inseridos > 0`) em vez de comparar contagens globais, desde que seja **equivalente** a esta definição.
 
+## 5. Vigência, unicidade e convenções de data
 
 ### Instante de análise (T) e vigência (`ItemClassificacao`)
 
@@ -131,30 +212,17 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
 - **Filho (candidato a inferência):** além de registo ativo, a **vigência orçamentária** do filho deve **conter T**, isto é, `data_vigencia_inicio ≤ T ≤ data_vigencia_fim`, com comparação de datas definida de forma **inclusiva** nas duas extremidades, salvo decisão explícita contrária no código (deve ser única e documentada no repositório).
 - **mãe (resolvido):** deve estar com **registo ativo** e com vigência que **compreenda T** (`data_vigencia_inicio ≤ T ≤ data_vigencia_fim`, mesma regra de inclusão). Onde a resolução temporal de FK exigir, o intervalo de vigência do filho (em T) deve permanecer **contido** no intervalo de vigência do pai.
 
-
 ### Unicidade do termo
 
 - Existe **constraint de unicidade** em **PostgreSQL** sobre `LOWER(termo)` (`UniqueConstraint` com expressão `Lower("termo")`, nome `unique_lista_abrev_termo_ci` na migração `0001_initial` do app `core`): **não** podem coexistir duas linhas cujo `termo` coincida **sem distinguir maiúsculas/minúsculas**, **independentemente** de `data_registro_fim` (ativa ou desativada). Isto implica que correções por `--print-conflicts-resolve` são **UPDATE** na linha existente quando o termo já está mapeado (após confirmação explícita [y/N] pelo operador), e não um segundo insert.
 - O modelo aplica também validação em `clean()` com `termo__iexact` para mensagem de erro amigável antes do `INSERT`.
-
 
 ### Convenção `date` vs `datetime` no código
 
 - Os campos de **vigência orçamentária** em `ItemClassificacao` são **`DateField`**: o instante **T** (`timezone.now()` em UTC) deve ser **normalizado** para **data de calendário** em UTC antes de comparar com `data_vigencia_inicio` / `data_vigencia_fim`, de modo que a regra “contém T” use **o mesmo tipo** nos dois membros da comparação (data com data).
 - Evitar comparar `datetime` a `date` sem conversão explícita; a implementação canónica é `calendar_date_utc` + `budget_period_contains_instant` em `apps/core/alias_lexico_protocol.py` (reutilizar **apenas** estas funções na inferência e na resolução de FK temporal).
 
-
-### Testes automatizados (v1)
-
-- Recomenda-se pelo menos: (1) cenário pai/filho em BD que dispara uma regra PF e **assert** de que `AliasLexico` contém o par esperado; (1b) par **Regra 1.2** caminho A (eco literal) com `termo_nome` = nome integral da mãe; (1c) par **Regra 1.2** caminho **B** subcritério **B.1**, p.ex. `Cota-Parte IOF-Ouro` → nome integral da mãe IOF-Ouro / Comercialização do Ouro; (1c′) par **Regra 1.2** caminho **B** subcritério **B.2** (fallback), **com igual número ou menos segmentos major no filho do que na mãe** (`N_f ≤ N`), p.ex. `SUS-Saúde` → `Transf. Convênios União SUS-Saúde - Principal`; regressão **negativa** do **B.2**: mãe `Compensações Ambientais - Dívida Ativa` e filho `Compensações Ambientais - DA - Reposição Florestal` (`N_f > N`) **não** deve produzir par **1.2** por caminho **B**; (1c″) regressão negativa **1.2.4.5.5** (cauda alinhada ≈ **Regra 4**): `Alienação Bens Imóveis - Principal` / `Alienação Bens Imóveis - Princ.` — **não** par nome integral → primeiro segmento por **caminho B** (esperável par **Principal**/`Princ.` pela **4** na mesma cascata PF); (1c‴) regressão **1.2.9** (mesmo `receita_nome` mãe/filho após **1.2.9.1** — ex. caso **296** duplicado): sem par **Regra 1.2**; (1e) regressão **(M)** — com entrada **37** no mapa vigente (`Contribuição para Financiamento da Seguridade Social` → `COFINS`), **não** inferir par tipo **295** (`termo_nome` = junção **37**, `abreviacao` = primeiro segmento de filho `… - COFINS sobre o Faturamento`); (1d) par **Regra 4** cabeça + sigla da cauda, p.ex. `Atenção MAC` → `Atenção de Média e Alta Complexidade`; (2) segunda execução do comando **sem** `--print-conflicts-resolve` **não** aumenta o número de linhas para o mesmo termo; (3) opcionalmente, smoke de que o ficheiro exportado contém o `termo_nome` esperado após `export_resource`.
-
-
-### Evolução — desempenho (documentação em código)
-
-- **v1:** varredura completa (*full scan*) de itens e de abreviações em cada execução do comando de atualização em lote; documentar essa escolha na **docstring** do comando (ou do serviço de orquestração), explicitando que otimizações incrementais (watermark / `updated_at` / fila de alterações) ficam para **evolução futura** se o volume o justificar.
-
-
-## Regra 1 (PF)
+## 6. Regra 1 (**LISTABR-50**) (PF)
 
 - 1.1. item mãe tem nome de segmento único, isto é, a nomenclatura não contém nenhum traço " - " no seu nome
 - 1.2. item filho tem pelo menos 2 segmentos
@@ -173,8 +241,7 @@ O seed `seed_lista_abreviacoes.csv` é atualizado pelo mesmo caminho de export q
   
   "Tx. Insp. Contr. Fisc" deve ser registrado como abreviação de "Taxas de Inspeção, Controle e Fiscalização"
 
-
-## Regra 1.2 (PF) — abreviação do nome integral da mãe pelo primeiro segmento do filho
+## 7. Regra 1.2 (**LISTABR-51**) (PF)
 
 Regra para pares mãe–filho em que o **primeiro segmento major** do filho condensa, de forma reconhecível, a nomenclatura **completa** da mãe (vários segmentos major), e não apenas um segmento isolado da mãe. Há **dois caminhos** de candidatura (A e B); basta **um** deles, **salvo** **1.2.9** (nome integral repetido entre mãe e filho). A contagem de segmentos major usa o separador ` - ` (espaços–traço–espaços), alinhada à **Regra 4** — **não** confundir com traços **internos** a um segmento (ex.: `Cota-Parte`, `IOF-Ouro`).
 
@@ -259,9 +326,9 @@ Quando **B.1** **não** se verifica (existe pelo menos um `i` sem correspondênc
 
 ### Registro e política (1.2.5–1.2.7)
 
-- 1.2.5. quando **1.2.3** (caminho A) **ou** caminho **B** (**1.2.4.4 / 1.2.4.5**, **incluindo 1.2.4.5.5**) se verifica **e passou por 1.2.9** (não há duplicado nominal mãe/filho pelo **1.2.9.1**), o **primeiro** segmento major do filho (`S_f`) deve ser registrado como `abreviacao` do **nome completo** do item mãe (`termo_nome` = string integral do `receita_nome` da mãe) **desde que** o par candidato **não** seja omitido pelo filtro **(M)** (junção `termo` + ` - ` + `abreviacao` já presente no mapa vigente). Esse `termo_nome` está **isento de (viii)** quando contiver tokens **(iv)** como parte da nomenclatura oficial da mãe (ver *Excepções ao termo_nome canônico*)
+- 1.2.5. quando **1.2.3** (caminho A) **ou** caminho **B** (**1.2.4.4 / 1.2.4.5**, **incluindo 1.2.4.5.5**) se verifica **e passou por 1.2.9** (não há duplicado nominal mãe/filho pelo **1.2.9.1**), o **primeiro** segmento major do filho (`S_f`) deve ser registrado como `abreviacao` do **nome completo** do item mãe (`termo_nome` = string integral do `receita_nome` da mãe) **desde que** o par candidato **não** seja omitido pelo filtro **LISTABR-25** (**(M)**) (junção `termo` + ` - ` + `abreviacao` já presente no mapa vigente). Esse `termo_nome` está **isento de (viii)** quando contiver tokens **(iv)** como parte da nomenclatura oficial da mãe (ver *Excepções ao termo_nome canônico*)
 - 1.2.6. **não** se exige o critério **1.3** da Regra 1 (primeiro segmento do filho como sigla/encurtamento formal): nos caminhos A e B o par é candidato mesmo com palavra por extenso repetida (caminho A, ex.: `Cultura`) ou com condensação lexical (caminho B)
-- 1.2.7. **ordem (PF):** na implementação, avaliar **depois** das heurísticas da **Regra 1** (1.1–1.4) e **antes** da **Regra 4**; dentro da Regra 1.2: aplicar **1.2.9**; testar **primeiro** o caminho A (1.2.3), **depois** o caminho **B** tentando na ordem interna **1.2.4.4 (B.1)** e, se falhar, **1.2.4.5 (B.2)** — aplicando sempre **1.2.4.5.5** antes de declarar êxito por **caminho B**, e (**só para B.2**) a verificação **`len(filho) ≤ len(mãe)`** em segmentos major (1.2.4.5.3); se outra regra PF tiver sido aplicada ao mesmo par mãe–filho na mesma execução, aplica-se **(E)**. Qualquer par **1.2** aceite por critério interno fica ainda sujeito a **(M)** antes de INSERT (ex.: **295** omitido quando já existe **37** no mapa vigente).
+- 1.2.7. **ordem (PF):** na implementação, avaliar **depois** das heurísticas da **Regra 1** (1.1–1.4) e **antes** da **Regra 4**; dentro da Regra 1.2: aplicar **1.2.9**; testar **primeiro** o caminho A (1.2.3), **depois** o caminho **B** tentando na ordem interna **1.2.4.4 (B.1)** e, se falhar, **1.2.4.5 (B.2)** — aplicando sempre **1.2.4.5.5** antes de declarar êxito por **caminho B**, e (**só para B.2**) a verificação **`len(filho) ≤ len(mãe)`** em segmentos major (1.2.4.5.3); se outra regra PF tiver sido aplicada ao mesmo par mãe–filho na mesma execução, aplica-se **LISTABR-24** (**(E)**). Qualquer par **1.2** aceite por critério interno fica ainda sujeito a **LISTABR-25** (**(M)**) antes de INSERT (ex.: **295** omitido quando já existe **37** no mapa vigente).
 
 ### Algoritmo de palavras significativas (1.2.8)
 
@@ -310,8 +377,7 @@ Mãe `P - Q`, filho `R - Órgão`, com `W_f` intersectando **nenhum** dos dois s
 
 O primeiro segmento do filho (`Compensações Ambientais`) tem intersecção lexical com o primeiro segmento da mãe e típicamente **não** com o segundo (`Dívida Ativa`) — cenário compatível com **no máximo** uma falha no **último** segmento da mãe. Contudo **`N_f = 3 > N = 2`**, logo por **1.2.4.5.3** o fallback **B.2 não se aplica**; **B.1** também falha → **não** se registra par **Regra 1.2** por caminho **B** para esse par (outras regras PF/ND continuam avaliadas nos termos próprios).
 
-
-## Regra 2 (ND)
+## 8. Regra 2 (**LISTABR-52**) (ND)
 
 - 2.1. item de classificação tem nome com 2 segmentos
 - 2.2. o segundo segmento do nome é uma sigla
@@ -328,8 +394,7 @@ O primeiro segmento do filho (`Compensações Ambientais`) tem intersecção lex
 
   "IOF-Ouro" deve ser registrado como abreviação de "Imposto sobre Operações Financeiras Incidente sobre o Ouro" (primeiro segmento antes de ` - IOF-Ouro`)
 
-
-## Regra 3 (ND)
+## 9. Regra 3 (**LISTABR-53**) (ND)
 
 - 3.1. item mãe tem nome de segmento único e é terminado com uma sigla entre parênteses
 - 3.2. a sigla entre parênteses deve ser entendida como sendo abreviação do restante do nome do item mãe (desconsiderado a parte entre parênteses ao final)
@@ -338,8 +403,7 @@ O primeiro segmento do filho (`Compensações Ambientais`) tem intersecção lex
   
   "IVVC" deve ser registrado como abreviação de "Imposto sobre Vendas a Varejo de Combustíveis Líquidos e Gasosos"
 
-
-## Regra 4 (PF)
+## 10. Regra 4 (**LISTABR-54**) (PF)
 
 - 4.1. item mãe tem nome com X segmentos, sendo X maior ou igual a 2
 - 4.2. o item filho tem X+1 segmentos
@@ -417,8 +481,7 @@ O primeiro segmento do filho (`Compensações Ambientais`) tem intersecção lex
 
   `Atenção MAC` deve ser registrado como abreviação de `Atenção de Média e Alta Complexidade` (par **por segmento**, como `Principal` → `Princ.`).
 
-
-## Regra 5 (PF)
+## 11. Regra 5 (**LISTABR-55**) (PF)
 
 - 5.1. item mãe tem nome com X segmentos, sendo X maior ou igual a 2
 - 5.2. o item filho tem, igualmente, X segmentos
@@ -435,8 +498,7 @@ O primeiro segmento do filho (`Compensações Ambientais`) tem intersecção lex
 
   "DA-MJM" deve ser registrado como abreviação de "Dívida Ativa - Multas e Juros de Mora"
 
-
-## Regra 6 (ND) - Derivação atômica
+## 12. Regra 6 (**LISTABR-56**) (ND)
 
 - 6.1. a derivação atômica é um **pós-processamento**: opera sobre pares `(termo_nome, abreviação)` que **já constam** na lista de abreviações (seed ou tabela) ou que acabaram de ser **aceitos** na mesma execução do protocolo por outras regras — **sem** nova leitura comparativa pai/filho naquele passo (daí a marcação (ND))
 - 6.2. somente pares cuja `abreviação` seja interpretável como **cabeça alinhada** ao `termo_nome`, isto é: a `abreviação` se decompõe em **dois ou mais** tokens separados por espaço; existe correspondência **um a um**, na mesma ordem, entre cada token da cabeça e cada **palavra significativa** extraída do `termo_nome` (vide conectivos ignorados alinhados ao protocolo); há **pelo menos** um token no formato de `abreviação por encurtamento` conforme (iv) (letras imediatas + ponto final). Para cada posição, **compatibilidade** token↔palavra é avaliada assim (token **com** ponto final: compara-se a parte **sem** o ponto com a palavra): (a) se a parte sem ponto tem **mais de duas** letras, deve ser **prefixo** da palavra (comparação sem distinção de maiúsculas/minúsculas); (b) se tem **exatamente uma** letra, essa letra deve ser o **início** da palavra (ex.: `G.` com `Geral`); (c) se tem **exatamente duas** letras e a palavra tem **três ou mais** letras, vale o padrão **1.ª e 3.ª** letras da palavra iguais, na ordem, às duas letras do token (ex.: `Tx` com `Taxas` → `Tx.`). Token **sem** ponto naquela posição só é válido se for **igual** por extenso à palavra correspondente do `termo_nome` (repetição literal da mesma palavra do nome longo)
@@ -478,10 +540,9 @@ O primeiro segmento do filho (`Compensações Ambientais`) tem intersecção lex
 
   não há derivação atômica adicional por 6.5 (não há conjunto de átomos a registrar além do par já existente)
 
+## 13. Regra 7 (**LISTABR-57**) (ND)
 
-## Regra 7 (ND) - Redundância composicional
-
-- 7.0. **Independente** da redundância composicional, candidatos cujo `termo_nome` viole **(viii)** (encurtamento (iv) como token lexical no termo) são sempre **omitidos** da persistência; ver **(A′)** e **(vii)**.
+- 7.0. **Independente** da redundância composicional, candidatos cujo `termo_nome` viole **(viii)** (encurtamento (iv) como token lexical no termo) são sempre **omitidos** da persistência; ver **LISTABR-21** (**(A′)**) e **(vii)**.
 
 - 7.1. a redundância composicional é um critério de **omissão**: não compara mãe e filho; apenas decide se um par candidato `(termo_nome, abreviação)` **não** deve ser acrescentado à lista porque seria **derivável sem ambiguidade** a partir de mapeamentos já presentes no **mapa vigente** (vide **(vi)**)
 - 7.2. o **mapa vigente** é uma estrutura lógica `palavra_significativa → token` (o token é o valor de `abreviação` guardado para aquela palavra como `termo_nome` atômico). Inicialmente contém todos os pares das linhas **já existentes** no seed; ao longo da execução do protocolo, passa a incluir também cada par **aceite** na mesma ordem de processamento (inferências resolvidas, entradas manuais não colidentes) e os **átomos** inferidos pela **Regra 6** assim que o par frasal que os originou é aceite (cada átomo entra com `setdefault`, ou seja, **não** altera token já associado à mesma palavra)
@@ -517,3 +578,11 @@ O primeiro segmento do filho (`Compensações Ambientais`) tem intersecção lex
   `abreviação`: "Contrib. Serviços"
 
   duas palavras significativas, duas partes na abreviação, mas a segunda parte `"Serviços"` **não** coincide com o token mapeado `"Serv."` para a palavra "Serviços" — junção dos tokens do mapa seria `"Contrib. Serv."` ≠ candidata → **não** é redundância composicional por 7.4 (7.6)
+
+## 14. Testes automatizados (**LISTABR-100**)
+
+- Recomenda-se pelo menos: (1) cenário pai/filho em BD que dispara uma regra PF e **assert** de que `AliasLexico` contém o par esperado; (1b) par **Regra 1.2** caminho A (eco literal) com `termo_nome` = nome integral da mãe; (1c) par **Regra 1.2** caminho **B** subcritério **B.1**, p.ex. `Cota-Parte IOF-Ouro` → nome integral da mãe IOF-Ouro / Comercialização do Ouro; (1c′) par **Regra 1.2** caminho **B** subcritério **B.2** (fallback), **com igual número ou menos segmentos major no filho do que na mãe** (`N_f ≤ N`), p.ex. `SUS-Saúde` → `Transf. Convênios União SUS-Saúde - Principal`; regressão **negativa** do **B.2**: mãe `Compensações Ambientais - Dívida Ativa` e filho `Compensações Ambientais - DA - Reposição Florestal` (`N_f > N`) **não** deve produzir par **1.2** por caminho **B**; (1c″) regressão negativa **1.2.4.5.5** (cauda alinhada ≈ **Regra 4**): `Alienação Bens Imóveis - Principal` / `Alienação Bens Imóveis - Princ.` — **não** par nome integral → primeiro segmento por **caminho B** (esperável par **Principal**/`Princ.` pela **4** na mesma cascata PF); (1c‴) regressão **1.2.9** (mesmo `receita_nome` mãe/filho após **1.2.9.1** — ex. caso **296** duplicado): sem par **Regra 1.2**; (1e) regressão **LISTABR-25** (**(M)**) — com entrada **37** no mapa vigente (`Contribuição para Financiamento da Seguridade Social` → `COFINS`), **não** inferir par tipo **295** (`termo_nome` = junção **37**, `abreviacao` = primeiro segmento de filho `… - COFINS sobre o Faturamento`); (1d) par **Regra 4** cabeça + sigla da cauda, p.ex. `Atenção MAC` → `Atenção de Média e Alta Complexidade`; (2) segunda execução do comando **sem** `--print-conflicts-resolve` **não** aumenta o número de linhas para o mesmo termo; (3) opcionalmente, smoke de que o ficheiro exportado contém o `termo_nome` esperado após `export_resource`.
+
+### Evolução — desempenho (não normativo)
+
+- **v1:** varredura completa (*full scan*) de itens e de abreviações em cada execução do comando de atualização em lote; documentar essa escolha na **docstring** do comando (ou do serviço de orquestração), explicitando que otimizações incrementais (watermark / `updated_at` / fila de alterações) ficam para **evolução futura** se o volume o justificar.
