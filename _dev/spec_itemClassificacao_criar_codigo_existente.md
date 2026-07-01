@@ -1,305 +1,289 @@
-# Item de classificação — criação (add): alerta/erro para código já existente e ação "próximo código"
+# Código já existente na add (`ItemClassificacao`)
 
-Esta especificação define o comportamento na tela **add** de `ItemClassificacao` quando o usuário informa em `receita_cod` um código que **já existe ativo** e com vigência **sobreposta** à vigência do formulário.
-
-O objetivo é orientar o usuário sem bloquear a edição inicial (estado de **alerta**), permitindo ajuste de vigência no próprio formulário; e, no **submit**, bloquear a gravação caso o conflito permaneça (estado de **erro**).
-
-**Implementação (repositório):** `apps/core/classification_item_existing_code.py`; endpoint
-`lookup-existing-code-conflict/` em `ItemClassificacaoAdmin`; validação na add em
-`ItemClassificacaoForm.clean()`; alerta amarelo e reavaliação por vigência em
-`change_form.html` (`scheduleExistingCodeConflictCheck`, classe
-`existing-code-conflict-warning`).
-
-**Referências de contexto já implementado:**
-
-- `_dev/spec_itemClassificacao_criar_filho.md` (protocolo canônico de "próximo código disponível", conceitos **T6/T7**, notificações, integração com `change_form.html`);
-- `_dev/spec_itemClassificacao_foreignKeys_lookup.md` (padrão visual/contratual de mensagens inline e links semânticos no admin);
-- `_dev/spec_itemClassificacao_criar_nome.md` (autocompletes e protocolo de nomenclatura após alteração de código/mãe);
-- `_dev/spec_itemClassificacao_validar_hierarquia.md` (pipeline de validações no submit e padrão de mensagens de bloqueio).
-
----
+Comportamento na tela **add** quando `receita_cod` coincide com registro **ativo** e vigência **sobreposta** à do formulário: **alerta** amarelo na edição; **erro** bloqueante no submit. **Não substitui** `spec_itemClassificacao_editar_codigo.md` (change) nem o algoritmo canônico de «próximo código» em `spec_itemClassificacao_criar_filho.md`.
 
 ## Objetivo
 
-Na add de `ItemClassificacao`:
+Na add, o projeto **deve**:
 
-1. detectar conflito quando `receita_cod` informado coincide com registro já existente, ativo e com vigência sobreposta;
-2. exibir **mensagem de alerta amarela inline** associada ao campo de código;
-3. oferecer dois caminhos no próprio alerta:
-   - abrir o registro conflitante em **nova aba**;
-   - aplicar "próximo código disponível" **na própria página**, reutilizando o protocolo de sugestão já definido;
-4. no submit, se o conflito persistir, transformar o estado em **erro vermelho** e bloquear gravação.
+1. detectar conflito **CE** e exibir alerta inline amarelo;
+2. oferecer link do **CE★** em nova aba e «próximo código disponível» no formulário;
+3. bloquear gravação com erro vermelho se **CE** persistir no submit.
+
+Premissa: `classification_item_existing_code.py`, endpoint `lookup-existing-code-conflict/`, `ItemClassificacaoForm.clean()`, `change_form.html` (`scheduleExistingCodeConflictCheck`).
+
+## Referências
+
+- `apps/core/classification_item_existing_code.py`
+- `apps/core/tests_classification_item_existing_code.py`
+- [`spec_itemClassificacao_criar_filho.md`](spec_itemClassificacao_criar_filho.md) — protocolo «próximo código»; **(T6)** / **(T7)**.
+- [`spec_itemClassificacao_foreignKeys_lookup.md`](spec_itemClassificacao_foreignKeys_lookup.md) — padrão de mensagens inline e links.
+- [`spec_itemClassificacao_criar_nome.md`](spec_itemClassificacao_criar_nome.md) — **P-mãe** após mudança de código.
+- [`spec_itemClassificacao_validar_hierarquia.md`](spec_itemClassificacao_validar_hierarquia.md) — pipeline de submit.
+- [`spec_itemClassificacao_editar_codigo.md`](spec_itemClassificacao_editar_codigo.md) — fluxos da **change**.
+- [`spec_classificador-receita.md`](spec_classificador-receita.md) § **Convenções** — prefixo `ITEMCEX`.
+
+Termos *deve* / *não deve* / *pode* conforme RFC 2119 (ver `_dev/spec_conventions.md` **Referências**).
+
+**Migração de símbolos legados:**
+
+| Legado                          | ID atual                  |
+| ------------------------------- | ------------------------- |
+| `CE-1`                          | `ITEMCEX-03`              |
+| `CE-2`                          | `ITEMCEX-04`              |
+| `CE-3`                          | `ITEMCEX-05`              |
+| `CE-3a`–`CE-3d`                 | `ITEMCEX-06`–`ITEMCEX-09` |
+| `CE-4`                          | `ITEMCEX-11`              |
+| `CE-5` (submit cliente)         | `ITEMCEX-10`              |
+| `CE-5` (efeitos próximo código) | `ITEMCEX-12`              |
+| `CE-6`–`CE-12`                  | `ITEMCEX-13`–`ITEMCEX-22` |
+| `DP1`–`DP6`                     | `ITEMCEX-23`–`ITEMCEX-28` |
+
+## Como citar este documento
+
+| Mecanismo          | Uso                                                                  |
+| ------------------ | -------------------------------------------------------------------- |
+| **Seção numerada** | `§ N` / `§ N.M` — navegação neste arquivo.                           |
+| **ID normativo**   | `ITEMCEX-NN` — citação estável.                                      |
+| **Prefixo**        | `ITEMCEX` — ver § **Convenções** em `spec_classificador-receita.md`. |
+
+**Índice de IDs normativos deste arquivo:**
+
+| ID         | Tema     | Seção | Resumo                                                                                                                                                         |
+| ---------- | -------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ITEMCEX-01 | Termo    | 2     | **CE:** mesmo `receita_cod` (dígitos), registo **(T6)**, vigência **(T7)** com a vigência efetiva do formulário.                                               |
+| ITEMCEX-02 | Termo    | 2     | **CE★:** entre CE, desempate `-data_vigencia_inicio`, `-data_registro_inicio`, `-pk`.                                                                          |
+| ITEMCEX-03 | Detecção | 3.1   | Blur/change na add → resolver CE; se sim, alerta amarelo com **CE★**; se não, remover aviso.                                                                   |
+| ITEMCEX-04 | Mensagem | 3.2   | Fragmento HTML único `existing_code_conflict_message_html` (alerta e erro); link código `target="_blank"`; «Clique aqui» `js-existing-code-conflict-next`.     |
+| ITEMCEX-05 | Submit   | 3.3   | Submit com CE persistente → bloquear gravação; mesmo HTML de **ITEMCEX-04** em erro vermelho.                                                                  |
+| ITEMCEX-06 | UX       | 3.4   | **Não** exibir alerta amarelo e erro vermelho CE simultaneamente no mesmo campo.                                                                               |
+| ITEMCEX-07 | Servidor | 3.5   | `clean()` na add usa `existing_code_conflict_message_html` (`format_html`), não texto plano.                                                                   |
+| ITEMCEX-08 | UX       | 3.6   | Pós-POST com erro CE: remover `.existing-code-conflict-warning`; não repor amarelo; vincular handler no `errorlist` servidor.                                  |
+| ITEMCEX-09 | UX       | 3.7   | Ao resolver CE sem POST: limpar alerta/erro CE e banner «Por favor, corrija…» se sem outros erros (`onExistingCodeConflictResolved` + `syncFormErrorSummary`). |
+| ITEMCEX-10 | Submit   | 3.8   | Cliente: antes do POST, após `syncHierarchyFromCode('submit')`, consultar endpoint; `has_conflict` → erro vermelho e cancelar submit.                          |
+| ITEMCEX-11 | Próximo  | 4.1   | «Clique aqui» reutiliza protocolo de próximo código de `spec_itemClassificacao_criar_filho.md`.                                                                |
+| ITEMCEX-12 | Próximo  | 4.2   | Após próximo código: pipeline completo (nível, classificação, **P-mãe**, validações) — não atalho parcial.                                                     |
+| ITEMCEX-13 | Vigência | 5.1   | Vigência efetiva do formulário (par início/fim; fallbacks alinhados a lookups/sugestão); comparação **(T7)**.                                                  |
+| ITEMCEX-14 | Vigência | 5.2   | Mudança de datas reavalia CE do `receita_cod` atual; remove ou mantém alerta conforme resultado.                                                               |
+| ITEMCEX-15 | API      | 6.1   | `lookup-existing-code-conflict/`: `ok: true`, `has_conflict: true` + `message_html`, `conflict` (CE★), `code_digits`, `code_display`.                          |
+| ITEMCEX-16 | API      | 6.2   | Sem conflito: `ok: true`, `has_conflict: false`.                                                                                                               |
+| ITEMCEX-17 | API      | 6.3   | Erro técnico: `ok: false`, `message`.                                                                                                                          |
+| ITEMCEX-18 | UX       | 7.1   | Alerta: `messagelist existing-code-conflict-warning` + `li.warning`; erro: `errorlist` com mesmo HTML interno.                                                 |
+| ITEMCEX-19 | UX       | 7.2   | Mensagem não deve «piscar» sem mudança real dos critérios CE.                                                                                                  |
+| ITEMCEX-20 | UX       | 7.3   | Link do código: nova aba; próximo código: mesma página.                                                                                                        |
+| ITEMCEX-21 | Submit   | 8.1   | Ordem: após validações de formato/hierarquia → CE → cancelar ou continuar.                                                                                     |
+| ITEMCEX-22 | Submit   | 8.2   | Cliente antecipa bloqueio; servidor repete em `clean()` (defesa em profundidade).                                                                              |
+| ITEMCEX-23 | Decisão  | 9     | **DP1:** edição = alerta; submit = erro bloqueante.                                                                                                            |
+| ITEMCEX-24 | Decisão  | 9     | **DP2:** fragmento HTML único; muda só container (amarelo vs vermelho).                                                                                        |
+| ITEMCEX-25 | Decisão  | 9     | **DP3:** link do conflito em nova aba.                                                                                                                         |
+| ITEMCEX-26 | Decisão  | 9     | **DP4:** próximo código no formulário atual com pipeline completo.                                                                                             |
+| ITEMCEX-27 | Decisão  | 9     | **DP5:** mensagem referencia apenas **CE★**.                                                                                                                   |
+| ITEMCEX-28 | Decisão  | 9     | **DP6:** resolver CE localmente remove banner global se sem outros erros.                                                                                      |
+| ITEMCEX-29 | Teste    | 10    | Casos § **10** **devem** ser respeitados (alerta, vigência, submit, próximo código, paridade).                                                                 |
+
+**Índice por tema:**
+
+| Tema     | IDs                                              |
+| -------- | ------------------------------------------------ |
+| Termo    | ITEMCEX-01, ITEMCEX-02                           |
+| Detecção | ITEMCEX-03                                       |
+| Mensagem | ITEMCEX-04                                       |
+| Submit   | ITEMCEX-05, ITEMCEX-10, ITEMCEX-21, ITEMCEX-22   |
+| UX       | ITEMCEX-06 … ITEMCEX-09, ITEMCEX-18 … ITEMCEX-20 |
+| Próximo  | ITEMCEX-11, ITEMCEX-12                           |
+| Vigência | ITEMCEX-13, ITEMCEX-14                           |
+| API      | ITEMCEX-15 … ITEMCEX-17                          |
+| Decisão  | ITEMCEX-23 … ITEMCEX-28                          |
+| Teste    | ITEMCEX-29                                       |
 
 ---
 
-## Escopo e fora de escopo
+## Escopo
 
-### Escopo (v1)
-
-- Tela **add** de `ItemClassificacao` no admin.
-- Campo **Código Canônico da Natureza de Receita** (`receita_cod`).
-- Estado visual **alerta** (amarelo) durante edição.
-- Estado visual **erro** (vermelho) no submit com conflito remanescente.
-- Link do código conflitante para tela change em nova aba.
-- Ação "Clique aqui" para próximo código disponível no mesmo formulário.
-- Escolha do conflito por registro ativo mais recente quando houver múltiplos.
-
-### Fora de escopo (v1)
-
-- Fluxos da tela **change** (já cobertos por `_dev/spec_itemClassificacao_editar_codigo.md`).
-- Alteração do algoritmo canônico de "próximo código disponível" (reuso semânticamente idêntico ao `_dev/spec_itemClassificacao_criar_filho.md`).
-- Mudança de regras de domínio de unicidade/bitemporalidade no backend além do bloqueio no submit aqui definido.
+| Inclui (v1)                              | Fora de escopo (v1)                                |
+| ---------------------------------------- | -------------------------------------------------- |
+| Add admin; campo `receita_cod`           | Change — `spec_itemClassificacao_editar_codigo.md` |
+| Alerta amarelo + erro vermelho no submit | Alterar algoritmo canônico de próximo código       |
+| Link CE★ nova aba; «Clique aqui» local   | Regras de unicidade além do bloqueio aqui definido |
+| Desempate **CE★**                        |                                                    |
 
 ---
 
-## Terminologia (alinhada às specs existentes)
+## 2. Terminologia **(ITEMCEX-01**, **ITEMCEX-02)**
 
-- **(T6) Registro ativo:** `data_registro_fim = TRANSACTION_TIME_SENTINEL`.
-- **(T7) Sobreposição de vigência (inclusiva):** `inicio_form <= fim_item` e `fim_form >= inicio_item`.
-- **Conflito de código existente (CE):** existe ao menos um registro com:
-  - `receita_cod` igual ao código informado (normalizado em dígitos),
-  - `data_registro_fim = sentinela`,
-  - vigência em **(T7)** com a vigência efetiva do formulário.
-- **Conflito mais recente (CE★):** entre conflitos CE, selecionar o mais recente por:
-  `-data_vigencia_inicio`, depois `-data_registro_inicio`, depois `-pk`.
+- **(T6)** / **(T7):** ver `spec_itemClassificacao_criar_filho.md`.
+- **CE (ITEMCEX-01):** `receita_cod` normalizado igual; `data_registro_fim = sentinela`; **(T7)** com vigência efetiva do formulário.
+- **CE★ (ITEMCEX-02):** entre CE, ordenar por `-data_vigencia_inicio`, `-data_registro_inicio`, `-pk`.
 
 ---
 
-## Regra funcional principal
+## 3. Regras funcionais
 
-### (CE-1) Detecção durante preenchimento
+### 3.1 Detecção na edição **(ITEMCEX-03)**
 
-Ao preencher/alterar `receita_cod` na add (blur/change e eventos equivalentes de validação já existentes), o sistema deve resolver se há **CE** para a vigência efetiva do formulário.
+Ao preencher/alterar `receita_cod` na add: se **CE** → alerta amarelo referenciando **CE★**; senão → remover aviso CE.
 
-Se houver CE:
+### 3.2 Mensagem canônica **(ITEMCEX-04)**
 
-- renderizar mensagem **amarela** inline no campo `receita_cod`;
-- a mensagem referencia apenas **CE★**;
-- manter a mensagem enquanto o conflito permanecer.
-
-Se não houver CE:
-
-- remover aviso/erro CE do campo.
-
-### (CE-2) Mensagem canônica (alerta e erro)
-
-Existe **um único fragmento HTML** de mensagem CE, gerado no servidor
-(`existing_code_conflict_message_html`) e reutilizado em todos os canais.
+Um único fragmento HTML no servidor (`existing_code_conflict_message_html`).
 
 Formato orientativo:
 
-> Já existe o [<código informado>](<link-change>) com vigência de <data-início> até <data-fim>. [Clique aqui](ação-local-próximo-código) para ir para o próximo código disponível ou ajuste a data de vigência do código atual.
+> Já existe o [<código>](<link-change>) com vigência de <DD/MM/YYYY> até <DD/MM/YYYY>. [Clique aqui](ação-local) para ir para o próximo código disponível ou ajuste a data de vigência do código atual.
 
-Requisitos do fragmento:
+- Link do código: `target="_blank"`, `rel="noopener noreferrer"`.
+- «Clique aqui»: `class="js-existing-code-conflict-next"`, `href="#"`, ação local.
+- Alerta: `<ul class="messagelist existing-code-conflict-warning"><li class="warning">`.
 
-- `[<código informado>]` abre em **nova aba** (`target="_blank"` e `rel="noopener noreferrer"`).
-- `[Clique aqui]` usa `class="js-existing-code-conflict-next"`, `href="#"` e ação local (sem navegação externa).
-- Datas em `DD/MM/YYYY` no texto visível.
+Persiste enquanto **CE** em edição; some quando vigência/código deixam de conflitar ou após próximo código sem conflito.
 
-**Modo alerta (edição):** renderizar o fragmento em `<ul class="messagelist existing-code-conflict-warning">` com `<li class="warning">`.
+### 3.3 Submit com CE **(ITEMCEX-05)**
 
-O aviso deve persistir enquanto houver CE em edição e só desaparecer quando:
+Bloquear gravação; mesmo HTML em erro vermelho em `receita_cod`; manter links e «Clique aqui».
 
-- vigência e/ou código deixarem de conflitar; ou
-- usuário acionar "próximo código" e o novo resultado deixar de conflitar.
+### 3.4 Exclusividade alerta × erro **(ITEMCEX-06)**
 
-### (CE-3) Transição para erro no submit
+| Fase                  | Exibição                       |
+| --------------------- | ------------------------------ |
+| Edição                | Somente alerta amarelo         |
+| Submit bloqueado      | Somente erro vermelho          |
+| CE resolvido          | Nenhuma mensagem CE            |
+| Novo CE após correção | Somente alerta até novo submit |
 
-No submit da add:
+Ao passar para erro de submit, remover `.existing-code-conflict-warning`.
 
-- se CE ainda existir, bloquear gravação;
-- exibir o **mesmo fragmento HTML** de **(CE-2)** como **erro vermelho** em `receita_cod` (`errorlist` do Django no servidor; `errorlist` cliente antes do POST em **(CE-5)**);
-- **manter** link do código e ação "Clique aqui" com o mesmo comportamento.
+### 3.5 `clean()` na add **(ITEMCEX-07)**
 
-### (CE-3a) Exclusividade visual alerta × erro
+`ItemClassificacaoForm.clean()` usa `existing_code_conflict_message_html` via `format_html`.
 
-**Não** exibir alerta amarelo CE e erro vermelho CE **simultaneamente** no mesmo campo.
+### 3.6 Pós-submit / `init` **(ITEMCEX-08)**
 
-| Fase | Exibição |
-| ---- | -------- |
-| Edição (sem submit pendente) | Somente alerta amarelo |
-| Submit bloqueado (cliente ou POST com erro) | Somente erro vermelho (com links) |
-| Conflito resolvido | Nenhuma mensagem CE |
-| Novo conflito após correção | Somente alerta amarelo (até novo submit) |
+Add recarregada com `errorlist` CE em `receita_cod`:
 
-Ao passar para erro de submit, o cliente **deve remover** `.existing-code-conflict-warning`.
+1. Remover `.existing-code-conflict-warning`.
+2. **Não** chamar `scheduleExistingCodeConflictCheck` para repor amarelo.
+3. Vincular `js-existing-code-conflict-next` no `errorlist` do servidor.
 
-### (CE-3b) Erro no servidor (`clean()`)
+### 3.7 Banner global **(ITEMCEX-09)**
 
-`ItemClassificacaoForm.clean()` na add deve usar `existing_code_conflict_message_html` (HTML seguro via `format_html`), **não** texto plano alternativo.
+Resolver CE sem novo POST → remover alerta, erro CE e `errorlist` com `js-existing-code-conflict-next`; se sem outros `ul.errorlist`, remover `p.errornote` (cliente e Django).
 
-### (CE-3c) Pós-submit / `init`
+### 3.8 Bloqueio no submit (cliente) **(ITEMCEX-10)**
 
-Quando a add recarregar com `errorlist` de CE em `receita_cod` (POST rejeitado):
-
-1. **remover** qualquer `.existing-code-conflict-warning`;
-2. **não** chamar `scheduleExistingCodeConflictCheck` para repor o amarelo;
-3. **vincular** `js-existing-code-conflict-next` no `errorlist` do servidor (mesmo handler do alerta).
-
-### (CE-3d) Banner global «Por favor, corrija o erro abaixo.»
-
-Quando o submit é bloqueado por CE (cliente ou POST), o admin exibe o banner genérico (`p.errornote`) no topo do formulário, além do erro em `receita_cod`.
-
-Ao **resolver** o conflito CE **sem novo POST** (próximo código, ajuste de vigência ou código que deixe de conflitar):
-
-1. remover alerta amarelo, erro vermelho CE no campo e `errorlist` do servidor que contenha `js-existing-code-conflict-next`;
-2. se **não** restar nenhum `ul.errorlist` com itens no formulário, remover também:
-   - `p.errornote.client-submit-errornote` (banner injetado no submit cliente);
-   - `p.errornote` do Django no topo do formulário (banner após POST rejeitado).
-
-Se ainda houver outros erros de campo no formulário, o banner global **permanece**.
-
-Implementação: `onExistingCodeConflictResolved()` + `syncFormErrorSummary(form)` no `change_form.html`.
-
-### (CE-5) Bloqueio no submit (cliente)
-
-Antes do POST nativo, após `syncHierarchyFromCode('submit')`:
-
-1. consultar o endpoint CE;
-2. se `has_conflict` → remover alerta amarelo, exibir erro vermelho com `message_html` e **cancelar** submit;
-3. servidor repete validação em `clean()` (**CE-12**).
+Após `syncHierarchyFromCode('submit')`: consultar endpoint; `has_conflict` → erro vermelho com `message_html`, cancelar POST. Servidor repete **(ITEMCEX-22)**.
 
 ---
 
-## Reuso do protocolo "próximo código disponível"
+## 4. Próximo código disponível
 
-### (CE-4) Ação "Clique aqui"
+### 4.1 Reuso do protocolo **(ITEMCEX-11)**
 
-Ao acionar "próximo código disponível", reutilizar o protocolo de `_dev/spec_itemClassificacao_criar_filho.md` para cálculo e aplicação de código sugerido.
+«Clique aqui» delega a `spec_itemClassificacao_criar_filho.md`.
 
-### (CE-5) Efeitos obrigatórios após aplicar próximo código
+### 4.2 Pipeline completo **(ITEMCEX-12)**
 
-A aplicação deve disparar os mesmos efeitos normativos do preenchimento programático de código na add:
+Após aplicar próximo código:
 
-- atualização/reconciliação de `nivel_id`;
-- atualização/reconciliação de `classificacao_id` quando aplicável ao fluxo vigente;
-- execução do protocolo de nomenclatura/autocomplete vinculado ao código/mãe (ex.: `P-mãe` e correlatos de `_dev/spec_itemClassificacao_criar_nome.md`);
-- reaplicação das validações de `receita_cod` e hierarquia que normalmente rodam após mudança do código.
-
-Em outras palavras, "próximo código" **não** é atalho parcial: ele deve equivaler a um preenchimento de código completo no mesmo pipeline já existente.
+- reconciliar `nivel_id` e `classificacao_id` quando aplicável;
+- executar **P-mãe** e autocompletes de `spec_itemClassificacao_criar_nome.md`;
+- reaplicar validações de código e hierarquia do fluxo normal.
 
 ---
 
-## Vigência de referência para detecção de conflito
+## 5. Vigência de referência
 
-### (CE-6) Fonte de vigência
+### 5.1 Fonte **(ITEMCEX-13)**
 
-Usar a vigência efetiva já adotada nos fluxos de lookup/sugestão:
+1. `data_vigencia_inicio` / `data_vigencia_fim` do formulário quando preenchidos;
+2. fallbacks normativos do fluxo (ex.: mãe), alinhados a módulos de lookup/sugestão;
+3. comparação sempre por **(T7)**.
 
-1. se formulário tiver `data_vigencia_inicio` e `data_vigencia_fim`, usar esse par;
-2. onde houver fallback normativo de contexto no fluxo atual (ex.: mãe selecionada), respeitar a mesma regra já vigente no módulo correspondente;
-3. comparação de conflito sempre por **(T7)**.
+### 5.2 Reatividade **(ITEMCEX-14)**
 
-### (CE-7) Atualização reativa
-
-Mudanças em `data_vigencia_inicio` e/ou `data_vigencia_fim` devem reavaliar CE para o `receita_cod` atual:
-
-- conflito resolvido -> remover alerta/erro CE;
-- conflito mantido -> manter (alerta em edição; erro no submit bloqueado).
+Alteração de datas → reavaliar CE para `receita_cod` atual; atualizar ou remover alerta/erro conforme resultado.
 
 ---
 
-## Contrato de dados (proposto)
+## 6. Contrato API `lookup-existing-code-conflict/`
 
-Para manter paridade com endpoints existentes de lookup JSON:
+### 6.1 Com conflito **(ITEMCEX-15)**
 
-- Pode-se adotar endpoint dedicado (ex.: `lookup-existing-code-conflict/`) ou ampliar endpoint já existente, desde que preserve contrato claro.
+```json
+{
+  "ok": true,
+  "has_conflict": true,
+  "code_digits": "...",
+  "code_display": "...",
+  "message_html": "<fragmento ITEMCEX-04>",
+  "message": "texto sem tags",
+  "conflict": {
+    "pk": "...",
+    "display_label": "...",
+    "link_url": "...",
+    "vigencia_inicio": "...",
+    "vigencia_fim": "..."
+  }
+}
+```
 
-### Resposta com conflito (`ok: true`, `has_conflict: true`)
+### 6.2 Sem conflito **(ITEMCEX-16)**
 
-Campos recomendados:
+`{ "ok": true, "has_conflict": false }`
 
-- `ok: true`
-- `has_conflict: true`
-- `code_digits`
-- `code_display`
-- `message_html` — fragmento canônico **(CE-2)** (mesmo HTML do `clean()`)
-- `message` — texto sem tags (fallback / acessibilidade)
-- `conflict`:
-  - `pk`
-  - `display_label`
-  - `link_url` (change URL do CE★)
-  - `vigencia_inicio`
-  - `vigencia_fim`
+### 6.3 Erro técnico **(ITEMCEX-17)**
 
-### Resposta sem conflito (`ok: true`, `has_conflict: false`)
-
-- `ok: true`
-- `has_conflict: false`
-
-### Resposta de erro técnico (`ok: false`)
-
-- `ok: false`
-- `message` com causa (`vigência inválida`, `código inválido`, etc.).
+`{ "ok": false, "message": "..." }`
 
 ---
 
-## UX e renderização
+## 7. UX e renderização **(ITEMCEX-18**–**ITEMCEX-20)**
 
-### (CE-8) Padrão visual
-
-- **Alerta:** `messagelist existing-code-conflict-warning` + `li.warning`.
-- **Erro de submit:** `errorlist` (servidor ou `existing-code-conflict-submit-error` no cliente), **mesmo HTML** interno que o alerta.
-- **Exclusividade:** ver **(CE-3a)**.
-
-### (CE-9) Persistência de mensagem
-
-A mensagem não deve "piscar" ou desaparecer por efeitos colaterais de polling/refresh sem mudança real dos critérios CE.
-
-### (CE-10) Abertura de link
-
-- Link do código conflitante: **nova aba**.
-- Ação "próximo código": **mesma aba/página**, sem navegar.
+- **(ITEMCEX-18):** classes de alerta/erro; mesmo HTML interno.
+- **(ITEMCEX-19):** sem flicker sem mudança de critérios CE.
+- **(ITEMCEX-20):** código conflitante → nova aba; próximo código → mesma página.
 
 ---
 
-## Regras de bloqueio no submit
+## 8. Pipeline de submit **(ITEMCEX-21**, **ITEMCEX-22)**
 
-### (CE-11) Ordem no pipeline
+**(ITEMCEX-21):** após validações de formato e hierarquia existentes → verificar CE → cancelar ou continuar.
 
-Na submissão da add, após validações de formato de código e pré-condições de hierarquia já existentes:
-
-1. verificar CE com dados finais do formulário;
-2. se CE -> erro em `receita_cod` e **cancelar submit**;
-3. se não CE -> fluxo normal continua.
-
-### (CE-12) Coerência servidor + cliente
-
-- Cliente pode antecipar bloqueio para UX imediata.
-- Servidor deve repetir validação CE antes de persistir (defesa em profundidade).
+**(ITEMCEX-22):** cliente antecipa; servidor valida em `clean()` antes de persistir.
 
 ---
 
-## Casos de teste recomendados
+## 9. Decisões de produto **(ITEMCEX-23**–**ITEMCEX-28)**
 
-1. **Alerta básico:** informar código existente com CE -> aparece aviso amarelo com link + "Clique aqui".
-2. **Ajuste de vigência resolve:** manter código, alterar datas para eliminar sobreposição -> aviso desaparece sem submit.
-3. **Submit bloqueado:** manter CE e clicar salvar -> mensagem vira erro vermelho e gravação não ocorre.
-4. **Próximo código aplica pipeline completo:** clicar "Clique aqui" -> novo código aplicado e autocompletes (`nivel_id`, `classificacao_id`, nomenclatura) executados.
-5. **Link em nova aba:** clicar no código do alerta abre change em aba nova.
-6. **Múltiplos conflitos:** quando houver vários CE, mensagem referencia apenas CE★ (mais recente pelo desempate normativo).
-7. **Reavaliação por data:** alterar somente `data_vigencia_inicio`/`fim` reprocessa CE do código atual.
-8. **Sem conflito:** código inexistente ou sem sobreposição -> nenhuma mensagem CE.
-9. **Paridade cliente/servidor:** forçar submit direto (sem JS) com CE -> backend também bloqueia.
-10. **Banner após resolver CE:** submit bloqueado por CE -> «Clique aqui» ou ajuste que elimine CE -> some erro em `receita_cod` **e** o banner «Por favor, corrija o erro abaixo.» (se não houver outros erros).
+| ID         | Decisão                                                |
+| ---------- | ------------------------------------------------------ |
+| ITEMCEX-23 | Severidade dual: alerta na edição, erro no submit      |
+| ITEMCEX-24 | Fragmento HTML único                                   |
+| ITEMCEX-25 | Link do conflito em nova aba                           |
+| ITEMCEX-26 | Próximo código local com pipeline completo             |
+| ITEMCEX-27 | Exibir apenas **CE★**                                  |
+| ITEMCEX-28 | Banner global removido ao resolver CE sem outros erros |
 
 ---
 
-## Decisões de produto registradas nesta spec
+## 10. Casos de teste **(ITEMCEX-29)**
 
-- **DP1. Severidade dual:** edição = alerta; submit = erro bloqueante.
-- **DP2. Fragmento único:** alerta e erro usam o mesmo `message_html`; muda só o container (amarelo vs vermelho) e a exclusividade **(CE-3a)**.
-- **DP3. Navegação:** link do código conflitado abre em nova aba.
-- **DP4. Ação local:** "próximo código" atua no formulário atual e reaproveita pipeline completo já existente.
-- **DP5. Múltiplos conflitos:** exibir o conflito ativo sobreposto mais recente (CE★).
-- **DP6. Banner global:** ao resolver CE localmente, retirar «Por favor, corrija o erro abaixo.» se não houver outros erros (**CE-3d**).
+1. Código com CE → alerta amarelo com link + «Clique aqui».
+2. Ajuste de vigência elimina CE → aviso some sem submit.
+3. Submit com CE → erro vermelho; sem gravação.
+4. «Clique aqui» → pipeline completo (`nivel_id`, classificação, nomenclatura).
+5. Link do código → change em nova aba.
+6. Múltiplos CE → mensagem só **CE★**.
+7. Alterar só datas → reprocessa CE.
+8. Sem CE → sem mensagem.
+9. POST direto sem JS com CE → backend bloqueia.
+10. Resolver CE após submit bloqueado → some erro e banner se sem outros erros.
 
 ---
 
 ## Manutenção
 
-Qualquer mudança de contrato de lookup, critérios de vigência, ordenação de conflito CE★ ou integração com o protocolo de "próximo código" deve manter este documento alinhado a:
+Alterações em lookup, vigência, desempate **CE★** ou integração com próximo código **devem** manter alinhados:
 
-- módulo de lookup/sugestão de código de `ItemClassificacao`;
-- JavaScript do `change_form.html` que orquestra mensagens e preenchimentos programáticos;
-- validações de submit no cliente e no servidor.
+- `classification_item_existing_code.py`;
+- `change_form.html` (mensagens e preenchimento programático);
+- validações cliente e `ItemClassificacaoForm.clean()`.
