@@ -1,411 +1,297 @@
-# Especificação: validação de item mãe, salto de nível no admin e listagem de intermediários
+# Validação de hierarquia no Admin (salto de nível e intermediários)
 
-## Objetivo e escopo
+Comportamento **técnico** no Django Admin ao **adicionar** `ItemClassificacao`: aviso de **salto de nível**, validação de zeros canônicos intermediários, listagem de intermediários e integração no submit. **Não substitui** `spec_itemClassificacao_regras_hierarquia.md` (domínio) nem endpoints de lookup em `spec_itemClassificacao_foreignKeys_lookup.md`.
 
-Documentar o comportamento **técnico** implementado em torno de `parent_item_id` no **Django Admin** ao **adicionar** `ItemClassificacao`: aviso de **salto de nível** (mãe não está em `L_filho − 1`), contagem/listagem de **itens intermediários** na base, e a relação com a **validação de domínio** já descrita em `_dev/spec_itemClassificacao_regras_hierarquia.md`.
+## Objetivo
 
-Esta especificação **não** substitui `spec_itemClassificacao_regras_hierarquia.md` nas regras de negócio gerais; complementa o que foi feito no **código** (`apps/core/code_parent_item_validation.py`, `apps/core/admin.py`, `apps/core/templates/admin/core/change_form.html`) para o fluxo de **confirmação antes do submit** e para a **análise de intermediários**.
+Documentar como o projeto **deve** orquestrar confirmação antes do submit e análise de intermediários em torno de `parent_item_id` na **add**, alinhado a `code_parent_item_validation.py`, `admin.py` e `change_form.html`.
 
-Lookups JSON de **código / hierarquia** no mesmo admin (lupa de mãe por código exacto e derivação de nível + mãe matriz): `_dev/spec_itemClassificacao_foreignKeys_lookup.md` (`apps/core/classification_item_code_lookup.py`).
+Premissa: regras de negócio gerais permanecem em **ITEMRH**; esta spec cobre o **fluxo Admin** implementado.
 
-## Glossário (implementação)
+## Referências
 
-| Termo                    | Significado no código                                                                                                                                     |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `LP`                     | `nivel_numero` do **item mãe** (`parent.nivel_id.nivel_numero`).                                                                                          |
-| `L` / `L_filho`          | `nivel_numero` do **nível do item em criação** (registo `NivelHierarquico` cujo PK vem no campo `nivel_id` do formulário).                                |
-| Salto de nível           | `LP < L_filho − 1` (mãe **não** é o nível imediatamente abaixo do filho).                                                                                 |
-| Radical (intermediários) | Primeiros `sum(mask[0:LP])` **dígitos** do `receita_cod` do mãe (apenas caracteres numéricos; o BD armazena sem pontuação de máscara).                    |
-| Zero canônico            | Segmento em que todos os caracteres são `'0'` (função `_canonical_zero_segment`).                                                                         |
-| Registo ativo            | `data_registro_fim` igual ao sentinela de tempo de transação retornado por `transaction_time_sentinel_for_query()` (mesma convenção do admin bitemporal). |
+- `apps/core/code_parent_item_validation.py`
+- `apps/core/admin.py` — `ItemClassificacaoAdmin`
+- `apps/core/templates/admin/core/change_form.html`
+- `apps/core/forms.py` — estado raiz na change
+- [`spec_itemClassificacao_regras_hierarquia.md`](spec_itemClassificacao_regras_hierarquia.md) — **ITEMRH**
+- [`spec_itemClassificacao_foreignKeys_lookup.md`](spec_itemClassificacao_foreignKeys_lookup.md) — **ITEMLKP**; **R-nivel-submit**
+- [`spec_itemClassificacao_criar_filho.md`](spec_itemClassificacao_criar_filho.md) — **(G5)** / **(G6)**
+- [`spec_itemClassificacao_formulario.md`](spec_itemClassificacao_formulario.md) — **ITEMFORM** (limpar add)
+- [`spec_classificador-receita.md`](spec_classificador-receita.md) § **Convenções** — prefixo `ITEMVH`
 
-## Três fluxos distintos (importante para manutenção)
+Termos *deve* / *não deve* / *pode* conforme RFC 2119 (ver `_dev/spec_conventions.md` **Referências**).
 
-### A) Gatilho do aviso (`level_jump`) — **só níveis**
+**Migração de símbolos legados:**
 
-**Onde:** `ItemClassificacaoAdmin.warn_parent_level_jump_view` (`apps/core/admin.py`) apenas orquestra GET/ORM; a decisão e o payload JSON ficam em `warn_parent_level_jump_json_dict` (`apps/core/code_parent_item_validation.py`).
+| Legado                         | ID atual                 |
+| ------------------------------ | ------------------------ |
+| Fluxo A `level_jump`           | `ITEMVH-01`, `ITEMVH-02` |
+| Fluxo B zeros intermediários   | `ITEMVH-03`–`ITEMVH-05`  |
+| Fluxo C intermediários         | `ITEMVH-06`, `ITEMVH-07` |
+| `R-nivel-submit`               | `ITEMVH-26`–`ITEMVH-29`  |
+| `R-root.1`–`R-root.5`          | `ITEMVH-30`–`ITEMVH-34`  |
+| `T-nivel-submit.*`, `T-root.*` | § **10** (referência)    |
 
-**Condição para `level_jump: true`:** existem `parent_item_id`, `nivel_id`, `classificacao_id`, `vigencia_inicio`, `vigencia_fim` válidos no GET; o `ItemClassificacao` mãe e o `NivelHierarquico` do filho existem; `child_n > 1`; `parent_n < child_n`; e **`parent_n != child_n − 1`**.
+## Como citar este documento
 
-**O que não entra neste gatilho:** o `receita_cod` do filho **não** altera `true`/`false` de `level_jump`. Ou seja: o modal pode aparecer mesmo que a lista de intermediários venha vazia.
+| Mecanismo          | Uso                                                                 |
+| ------------------ | ------------------------------------------------------------------- |
+| **Seção numerada** | `§ N` / `§ N.M` — navegação neste arquivo.                          |
+| **ID normativo**   | `ITEMVH-NN` — citação estável.                                      |
+| **Prefixo**        | `ITEMVH` — ver § **Convenções** em `spec_classificador-receita.md`. |
 
-### B) Validação de zeros canônicos nos níveis intermédios — **bloqueio no código**
+**Índice de IDs normativos deste arquivo:**
 
-**Onde:** `find_intermediate_non_canonical_zero_message` / `validate_intermediate_canonical_zeros_json_dict` e `validate_item_parent_item_rules` em `apps/core/code_parent_item_validation.py`; endpoint `validate-intermediate-canonical-zeros/` no admin.
+| ID        | Tema           | Seção | Resumo                                                                                                                                                                                      |
+| --------- | -------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ITEMVH-01 | Salto          | 3.A   | `level_jump: true` quando mãe/nível/classificação/vigência válidos; `child_n > 1`; `parent_n < child_n`; **`parent_n ≠ child_n − 1`**.                                                      |
+| ITEMVH-02 | Salto          | 3.A   | `receita_cod` do filho **não** altera `level_jump`; modal pode aparecer com `intermediate_count: 0`.                                                                                        |
+| ITEMVH-03 | Zeros          | 3.B   | Se `parent_n < nivel_n − 1`, segmentos do filho em `LP..L−2` **devem** ser zeros canônicos; senão erro em `receita_cod`.                                                                    |
+| ITEMVH-04 | Zeros          | 3.B   | Mensagem: «Os campos correspondentes aos níveis entre… (nível **F**) e… (nível **M**)… zeros canônicos.»                                                                                    |
+| ITEMVH-05 | Zeros          | 3.B   | No submit add, validar zeros **antes** do modal de salto; `ok: false` → erro vermelho, **sem** pop-up.                                                                                      |
+| ITEMVH-06 | Intermediários | 3.C   | `analyze_intermediate_items_for_level_jump` monta `intermediate_count`, `intermediate_rows` para o modal.                                                                                   |
+| ITEMVH-07 | Salto          | 3     | `level_jump` (níveis) e listagem (query) são **independentes** — ver **ITEMVH-02**.                                                                                                         |
+| ITEMVH-08 | Endpoint       | 4     | `GET …/warn-parent-level-jump/`; URL name `admin:core_itemclassificacao_warn_parent_level_jump`; template `item_parent_level_jump_warn_url`.                                                |
+| ITEMVH-09 | Endpoint       | 4     | GET: `parent_item_id`, `nivel_id`, `classificacao_id`, `vigencia_inicio`, `vigencia_fim`, `receita_cod` (opcional para máscara/exclude).                                                    |
+| ITEMVH-10 | Endpoint       | 4     | Parâmetros obrigatórios em falta → `{"ok": true, "level_jump": false}`.                                                                                                                     |
+| ITEMVH-11 | Algoritmo      | 5     | Saída antecipada se `parent_n >= child_n − 1` ou máscara indisponível.                                                                                                                      |
+| ITEMVH-12 | Algoritmo      | 5     | Radical = primeiros `sum(mask[0:LP])` dígitos do **código do pai** (não do filho).                                                                                                          |
+| ITEMVH-13 | Algoritmo      | 5     | Query: mesma `classificacao_id` do form, registo ativo, `receita_cod__startswith=radical`, **(T7)** com vigência **do form**, `nivel_numero` entre `parent_n+1` e `child_n−1` inclusive.    |
+| ITEMVH-14 | Algoritmo      | 5     | Pós-filtro: excluir linhas com segmento de nível `nn` zero canônico ou `exclude_receita_cod` igual ao código da linha.                                                                      |
+| ITEMVH-15 | Algoritmo      | 5     | Amostras no JSON: até `sample_limit` (admin: **3**).                                                                                                                                        |
+| ITEMVH-16 | Decisão        | 6.1   | Vigência na query de intermediários = **somente** datas do formulário (sem união com vigência do mãe).                                                                                      |
+| ITEMVH-17 | Decisão        | 6.1   | Fallback de máscara com vigência do mãe **só** para obter `mask`; **não** expande filtros `data_vigencia_*` da query.                                                                       |
+| ITEMVH-18 | Decisão        | 6.2   | `classificacao_pk` na busca = PK do **formulário** (`busca_intermediarios_class_pk`).                                                                                                       |
+| ITEMVH-19 | Modal          | 6.3   | Modal salto ao gravar: título «Atenção!»; texto mãe + filho; parágrafo «Além disso, existe…» se `intermediate_count > 0`; lista até 3; «Deseja continuar e gravar o registo?»; Cancelar/OK. |
+| ITEMVH-20 | Modal          | 6.4   | **(G5)** troca de mãe com código preenchido — ver `spec_itemClassificacao_criar_filho.md` (resumo UX em § **6.4**).                                                                         |
+| ITEMVH-21 | Submit         | 7     | Ordem add: `runCodeDigitValidation` → `syncHierarchyFromCode` → zeros intermediários → naming → `requestParentLevelJumpConfirmation` → POST/`clean()`.                                      |
+| ITEMVH-22 | Submit         | 7     | No blur/change/init: lookup **pode** atualizar `parent_item_id` quando `parent.found`; no **submit** preservar mãe manual se lookup falhar ou PK diferente.                                 |
+| ITEMVH-23 | Submit         | 7     | Após `.errornote` do Django, `syncHierarchyFromCode('init')` **não** corre.                                                                                                                 |
+| ITEMVH-26 | Nível          | 8.1   | **R-nivel-submit — blur/init:** cliente **pode** autofill `nivel_id` por `derived_level.pk`.                                                                                                |
+| ITEMVH-27 | Nível          | 8.2   | **R-nivel-submit — submit:** cliente **não** substitui `nivel_id`; compara PK selecionado com `derived_level.number`.                                                                       |
+| ITEMVH-28 | Nível          | 8.3   | Servidor: `validate_item_nivel_id_receita_cod_derivation` em `clean()` — mesma regra.                                                                                                       |
+| ITEMVH-29 | Nível          | 8.4   | Mensagem: «O nível hierárquico selecionado (nível **S**) não corresponde… (nível **D**)…»                                                                                                   |
+| ITEMVH-30 | Raiz           | 9.1   | **R-root.1:** estado «raiz somente leitura» de `parent_item_id` quando `nivel_numero === 1` (change server-side; add client-side).                                                          |
+| ITEMVH-31 | Raiz           | 9.2   | **R-root.2:** transição **reversível** para `nivel_numero > 1`.                                                                                                                             |
+| ITEMVH-32 | Raiz           | 9.3   | **R-root.3:** ao ativar raiz, `parent_item_id` hidden **vazio** (`""`).                                                                                                                     |
+| ITEMVH-33 | Raiz           | 9.4   | **R-root.4:** `semantic-lookup` com `metadata.nivel_numero` para PK de `nivel_id`; derivação por código via **ITEMLKP**.                                                                    |
+| ITEMVH-34 | Raiz           | 9.5   | **R-root.5:** fora do submit, `syncHierarchyFromCode` **pode** recalcular `nivel_id` e estado raiz; no submit aplica **ITEMVH-27** antes de `setParentRootReadonlyState`.                   |
+| ITEMVH-35 | Raiz           | 9.6   | `syncParentRootStateFromNivel` em `init`, `change` e `semantic-fk-changed` de `nivel_id`.                                                                                                   |
+| ITEMVH-36 | Raiz           | 9.7   | Display raiz: «Sem item mãe», hachurado, lupa oculta, mensagem «Item raiz, de nível 1, não possui item mãe.»                                                                                |
+| ITEMVH-37 | Teste          | 10    | Casos **T-nivel-submit***, **T-root*** e regressão de intermediários § **10** **devem** ser respeitados.                                                                                    |
 
-Quando `parent_n < nivel_n − 1`, os segmentos do **filho** nos índices `LP .. L−2` devem ser **zeros canônicos**; caso contrário, erro **apenas** em `receita_cod`:
+**Índice por tema:**
 
-> Os campos correspondentes aos níveis entre o código atual (nível **F**) e o código mãe selecionado (nível **M**), devem conter apenas zeros canônicos.
-
-(**F** = `nivel_numero` do filho; **M** = `nivel_numero` da mãe.)
-
-No **Salvar** (add), o cliente chama este endpoint **antes** do modal de salto (fluxo A). Se `ok: false`, exibe erro vermelho sob o código e **não** abre o pop-up. É **independente** da query de intermediários na base (fluxo C).
-
-### C) Listagem de intermediários — **outros registos em `ItemClassificacao`**
-
-**Onde:** `analyze_intermediate_items_for_level_jump` (`apps/core/code_parent_item_validation.py`), chamada a partir de `warn_parent_level_jump_json_dict` (mesmo módulo).
-
-Objetivo: montar `intermediate_count`, `intermediate_rows` e rótulos de nível para o texto “Além disso, existe …” no modal.
-
----
-
-## Endpoint HTTP
-
-- **Rota:** `GET …/admin/core/itemclassificacao/warn-parent-level-jump/`  
-  (nome URL: `admin:core_itemclassificacao_warn_parent_level_jump`).
-- **Registro da URL no template:** `item_parent_level_jump_warn_url` em `render_change_form` do `ItemClassificacaoAdmin`.
-
-### Parâmetros GET (origem: `change_form.html`, `requestParentLevelJumpConfirmation`)
-
-| Parâmetro                         | Origem no formulário                    | Uso                                                                                                                 |
-| --------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `parent_item_id`                  | Valor do campo mãe (PK)                 | Carrega `ItemClassificacao` pai.                                                                                    |
-| `nivel_id`                        | PK do nível do **item novo**            | `child_n` = `nivel_numero` desse nível.                                                                             |
-| `classificacao_id`                | PK da classificação selecionada         | **Filtro da query** de intermediários (`classificacao_id_id`).                                                      |
-| `vigencia_inicio`, `vigencia_fim` | Datas do formulário (ISO `YYYY-MM-DD`)  | **Sobreposição de vigência** na análise de intermediários e formatação de códigos mascarados no JSON.               |
-| `receita_cod`                     | Dígitos do código do filho (sem pontos) | Máscara no JSON; `exclude_receita_cod` na análise (não listar o próprio rascunho se coincidir com um PK existente). |
-
-Se faltar qualquer um dos obrigatórios da primeira linha (pai, nível, classificação, vigência), a view devolve `{"ok": true, "level_jump": false}` e o front segue o submit sem modal.
-
----
-
-## Algoritmo: `analyze_intermediate_items_for_level_jump`
-
-**Assinatura relevante:** `classificacao_pk`, `parent_item`, `child_nivel_numero`, `vig_ini`, `vig_fim`, `reg_sent`, `sample_limit`, `exclude_receita_cod` opcional.
-
-### 1. Saída antecipada (estrutura vazia)
-
-- `parent_n` ou `child_nivel_numero` nulos.
-- `parent_n >= child_nivel_numero − 1` (não há “faixa” estrita entre mãe e filho para esta função).
-
-### 2. Máscara de dígitos
-
-1. `mask = digit_mask_for_classificacao_vigencia(classificacao_pk, vig_ini, vig_fim)`.
-2. Se `mask` vazio: **fallback** com `data_vigencia_inicio` / `data_vigencia_fim` do **item mãe** (só para resolver `estrutura_codigo` quando a janela do formulário não produz máscara; **não** altera o filtro de vigência da query abaixo).
-
-Se ainda não houver máscara ou `parent_n > len(mask)`, retorna contagem zero.
-
-### 3. Radical
-
-- `p_digits` = apenas dígitos de `parent_item.receita_cod`.
-- `radical_len = sum(mask[0:parent_n])`.
-- `radical = p_digits[:radical_len]`; se o mãe tiver menos dígitos que `radical_len`, retorna vazio.
-
-**Decisão de produto:** o radical vem **sempre do código do pai**, para ancorar a árvore sob o mesmo prefixo até `LP`, incluindo ramos irmãos no nível seguinte (ex.: mesmo prefixo `111252` com dígito `9` vs `0` no segmento de nível intermediário), desde que o registo exista na **classificação** usada na query.
-
-### 4. Intervalo de níveis (limites **inclusivos**)
-
-- `nivel_min = parent_n + 1`
-- `nivel_max = child_nivel_numero − 1`
-
-### 5. Query ORM (`ItemClassificacao`)
-
-Filtros **simultâneos**:
-
-- `classificacao_id_id = classificacao_pk`
-- `data_registro_fim = reg_sent`
-- `receita_cod__startswith = radical`
-- Sobreposição de vigência: `data_vigencia_inicio <= vig_fim` e `data_vigencia_fim >= vig_ini` com **`vig_ini` / `vig_fim` passados pelo chamador** (no admin: **apenas as datas do formulário**).
-- `nivel_id__nivel_numero` entre `nivel_min` e `nivel_max` (**inclusive**).
-
-### 6. Pós-processamento em Python (por linha)
-
-1. Se `exclude_receita_cod` (só dígitos) for igual ao código da linha, pular.
-2. `split_receita_cod_segments_tolerant(receita_cod, mask)`.
-3. `nn` = `nivel_numero` da linha; confirmar `nivel_min <= nn <= nivel_max`.
-4. Segmento do nível `nn`: índice `nn − 1`. Se `None` ou zero canônico, **excluir** da contagem.
-
-Amostras: até `sample_limit` (no admin: **3**) para o JSON.
-
-### Retorno da função
-
-- `count`, `nivel_numeros`, `nivel_semantic_by_numero`, `samples` (cada amostra: `pk`, `receita_cod`, `display_label`, `admin_url`, `nivel_numero`).
+| Tema               | IDs                             |
+| ------------------ | ------------------------------- |
+| Salto (A)          | ITEMVH-01, ITEMVH-02, ITEMVH-07 |
+| Zeros (B)          | ITEMVH-03 … ITEMVH-05           |
+| Intermediários (C) | ITEMVH-06                       |
+| Endpoint           | ITEMVH-08 … ITEMVH-10           |
+| Algoritmo          | ITEMVH-11 … ITEMVH-15           |
+| Decisão            | ITEMVH-16 … ITEMVH-18           |
+| Modal              | ITEMVH-19, ITEMVH-20            |
+| Submit             | ITEMVH-21 … ITEMVH-23           |
+| Nível (submit)     | ITEMVH-26 … ITEMVH-29           |
+| Raiz               | ITEMVH-30 … ITEMVH-36           |
+| Teste              | ITEMVH-37                       |
 
 ---
 
-## Decisões registradas (contexto técnico)
+## Escopo
 
-### 1. Vigência na análise de intermediários = **somente formulário**
-
-**Problema anterior:** união do intervalo do formulário com o do mãe alargava a janela e podia incluir vigências irrelevantes para o **item filho que se pretende criar**.
-
-**Decisão:** `analyze_intermediate_items_for_level_jump` recebe `vig_ini` / `vig_fim` **iguais** às datas do GET do formulário, sem `min`/`max` com o pai.
-
-**Exceção mantida:** o **fallback da máscara** com vigência do mãe (secção 2 acima) continua só para obter `mask` quando a vigência do form não resolve `estrutura_codigo`; **não** expande o intervalo usado nos filtros `data_vigencia_*` da query.
-
-### 2. `classificacao_pk` na busca = **PK do formulário**
-
-**Problema observado:** em base de teste, o mãe (ex.: PK de classificação `5`) e um item intermediário desejado para o exemplo (ex.: `item_ref` 3966 com `classificacao_id` `6`) não coincidem; filtrar pela classificação do mãe zerava a lista mesmo com radical, nível e vigência corretos para o exemplo.
-
-**Decisão:** `ItemClassificacaoAdmin` define `busca_intermediarios_class_pk = class_id_int` (GET) e passa esse valor para `analyze_intermediate_items_for_level_jump`.
-
-**Risco consciente:** se o usuário escolher no form uma classificação **diferente** da do pai, a lista reflete o form (pode ser vazia ou incoerente com o vínculo real). Em produção, mãe e filho devem pertencer à **mesma** classificação (`spec_itemClassificacao_regras_hierarquia.md`); o caso acima foi guiado por **seed / teste** com PKs distintos.
-
-### 3. Modal ≠ mesma regra que a listagem
-
-O usuário pode ver `level_jump: true` e `intermediate_count: 0`: o primeiro depende só de **níveis**; o segundo da **query** acima. A especificação deixa isso explícito para evitar confusão em suporte e QA.
-
-### 4. Texto e UX do modal (`change_form.html`)
-
-- Título: **“Atenção!”**
-- Primeiro parágrafo: `O item mãe, (` + link com código mascarado do mãe + ` - ` + rótulo semântico do nível do mãe + `)` + texto fixo até o código/nível do **filho** entre parêntesis (filho **sem** link no trecho principal).
-- Se `intermediate_count > 0` ou houver linhas: segundo parágrafo **“Além disso, existe … código(s) discriminado(s) no(s) …”** com `no` vs `nos` conforme o rótulo de níveis contém a substring ` e `; contagem com zero à esquerda para `< 100` (`intermediate_count_display`).
-- Lista: até 3 itens; cada linha com código mascarado + tab + nome, link para o change do admin (`white-space: pre-wrap`).
-- Pergunta final: **“Deseja continuar e gravar o registo?”** (sem “mesmo assim”).
-- Botões Cancelar / OK; overlay clicável cancela.
-
-#### Modal de confirmação **(G5)** — troca de mãe com código já preenchido
-
-Fluxo normativo detalhado em `_dev/spec_itemClassificacao_criar_filho.md`, seção **(G5)**. Resumo de UX (modo **add**, `change_form.html`):
-
-- **Pré-condição:** o modal **só** abre **após** resposta bem-sucedida de `suggest-child-code-by-parent/`. Se o endpoint falhar (**E1**, **E2**, **E3**, etc.), reverte a mãe anterior e exibe erro inline — **sem** modal.
-- Título: **«Atenção!»** (mesmo padrão visual: ícone ⚠️, classes `core-level-jump-modal-*`).
-- Corpo dinâmico:
-  ```
-  Deseja atualizar o código de natureza de receita atual?
-    - atual: <código mascarado do formulário>
-    - novo:  <receita_cod_display da sugestão>
-  ```
-- Botões: **Cancelar** | **Manter Atual** | **Atualizar**.
-- **Cancelar**, tecla **Escape** e clique no **overlay** são equivalentes: revertem `parent_item_id` à mãe anterior; `receita_cod`, `nivel_id` e `classificacao_id` permanecem inalterados. Se o snapshot tiver PK mas display/rótulo vazios, re-fetch via `semantic-lookup/item/{pk}/` (paridade com o widget).
-- O snapshot da mãe anterior **não** deve ser apagado por PK vazio transitório do popup da lupa (ver **(G5)** em `spec_itemClassificacao_criar_filho.md`).
-- **Manter Atual:** nova mãe permanece; `receita_cod`, `nivel_id` e `classificacao_id` permanecem inalterados.
-- **Atualizar:** nova mãe permanece; aplica sugestão completa (código e campos derivados).
-- Componente: variante tri-botão de `showCoreAttentionModal` ou função dedicada (ex.: `showCoreParentChangeConfirmModal`); distinto do modal de salto de nível ao gravar (`showCoreLevelJumpModal`).
-
-### 5. Debug temporário (removido na entrega deste spec)
-
-Foi implementado um bloco condicionado a `?debug=1` que acrescentava `intermediate_debug` ao JSON para sondar um PK fixo (ex. 3966). **Foi removido** do `admin.py` após o diagnóstico (classificação do form vs. do pai). Este item documenta o **histórico** para quem ler commits antigos.
+| Inclui                                                                        | Não inclui                                                  |
+| ----------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Add admin: salto de nível, zeros intermediários, listagem                     | Regras de domínio completas (**ITEMRH**)                    |
+| Submit pipeline e **R-nivel-submit**                                          | Change — navegação por código (**ITEMEC**)                  |
+| Estado raiz de `parent_item_id` (add + change)                                | Validação offline (`spec_validar_codigos.md`)               |
+| Endpoints `warn-parent-level-jump/`, `validate-intermediate-canonical-zeros/` | **(G5)** completo — `spec_itemClassificacao_criar_filho.md` |
 
 ---
 
-## Integração no submit (front)
+## 2. Glossário (implementação)
 
-**Arquivo:** `apps/core/templates/admin/core/change_form.html`.
-
-Fluxo no `submit` (modo **add**):
-
-1. `runCodeDigitValidation`
-2. `syncHierarchyFromCode` — lookup de nível/mãe canónica; **valida** coerência de `nivel_id` com o nível derivado do código (**R-nivel-submit**); **não** substitui o PK de `nivel_id` no submit
-3. `validateIntermediateCanonicalZerosOnSubmit` — fluxo B (bloqueio; sem modal se falhar)
-4. naming
-5. `requestParentLevelJumpConfirmation` — fluxo A (modal só se B passou)
-6. submit nativo → `clean()` / `validate_item_parent_item_rules` / `validate_item_nivel_id_receita_cod_derivation` (mesma regra de coerência código↔nível no servidor)
-
-**Item mãe no lookup por código:** em `syncHierarchyFromCode`, alteração do `receita_cod` (blur/change de classificação/init) **atualiza** `parent_item_id` quando o lookup devolve `parent.found`. Preservar mãe sem substituir aplica-se só no **Salvar** (`submit`): falha do lookup ou PK diferente não limpa nem bloqueia, para permitir mãe escolhida na lupa e validação de salto/zeros. Após erro do Django (`.errornote`), `syncHierarchyFromCode('init')` **não** corre.
-
-### Coerência `nivel_id` × código no submit (**R-nivel-submit**)
-
-| Gatilho                                                     | Comportamento de `nivel_id`                                                                                                                                                                                                                                                                                              |
-| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `code_blur`, `classificacao_change`, `init`                 | O cliente **pode** preencher/substituir `nivel_id` pelo PK de `derived_level` devolvido por `lookup-hierarchy-by-code` (autofill).                                                                                                                                                                                       |
-| `submit`                                                    | O cliente **não** altera o valor de `nivel_id` escolhido no formulário. Compara `metadata.nivel_numero` do PK selecionado com `derived_level.number` do lookup. Se divergirem, bloqueia o submit com `<ul class="errorlist hierarchy-autofill-error">` no campo **Nível Hierárquico** e mensagem normativa (ver abaixo). |
-| Servidor (`full_clean` / `validate_item_parent_item_rules`) | `validate_item_nivel_id_receita_cod_derivation` em `code_parent_item_validation.py` aplica a mesma regra; erro em `nivel_id` no POST.                                                                                                                                                                                         |
-
-**Mensagem normativa (exemplo):**
-
-> O nível hierárquico selecionado (nível **S**) não corresponde ao nível indicado pelo código canônico (nível **D**). Ajuste o nível ou o código para que coincidam.
-
-**Inferência de D:** `derive_nivel_numero_from_receita_cod_digits` (mesma lógica de último segmento discriminado que `lookup-hierarchy-by-code`).
-
-**Casos de teste recomendados:**
-
-- **T-nivel-submit.1.** Add: código que deriva nível 7, usuário escolhe NIVEL-3 na lupa → Salvar → erro vermelho em `nivel_id`, registro **não** gravado com nível 7.
-- **T-nivel-submit.2.** Mesmo código com NIVEL-7 selecionado → Salvar prossegue (sujeito aos demais fluxos A/B).
-- **T-nivel-submit.3.** Blur no código após escolha manual de nível incorreto → autofill ainda pode alinhar `nivel_id` ao derivado (fora do submit).
-
-Variáveis de contexto: `item_validate_intermediate_zeros_url`, `item_parent_level_jump_warn_url`.
+| Termo           | Significado                                                     |
+| --------------- | --------------------------------------------------------------- |
+| `LP`            | `nivel_numero` do item mãe                                      |
+| `L` / `L_filho` | `nivel_numero` do nível do item novo (`nivel_id`)               |
+| Salto de nível  | `LP < L_filho − 1`                                              |
+| Radical         | Primeiros `sum(mask[0:LP])` dígitos do `receita_cod` do **mãe** |
+| Zero canônico   | Segmento com todos os caracteres `'0'`                          |
+| Registo ativo   | `data_registro_fim = transaction_time_sentinel_for_query()`     |
 
 ---
 
-## Referências de código (mapa rápido)
+## 3. Três fluxos distintos
 
-| Peça                        | Arquivo / símbolo                                                                                                                                                                                                                                                                                                                                                                                          |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Rota customizada            | `ItemClassificacaoAdmin.get_urls` → `warn-parent-level-jump/`                                                                                                                                                                                                                                                                                                                                              |
-| View JSON                   | `warn_parent_level_jump_view` (`admin.py`) → `warn_parent_level_jump_json_dict` (`code_parent_item_validation.py`)                                                                                                                                                                                                                                                                                              |
-| Análise intermediários      | `analyze_intermediate_items_for_level_jump`                                                                                                                                                                                                                                                                                                                                                                |
-| Validação domínio pai/filho | `validate_item_parent_item_rules`, `validate_item_nivel_id_receita_cod_derivation`, `derive_nivel_numero_from_receita_cod_digits`                                                                                                                                                                                                                                                                          |
-| Modal                       | `showCoreAttentionModal` (base binária), variante tri-botão **(G5)** ou `showCoreParentChangeConfirmModal`, `showCoreLevelJumpModal` (salto ao gravar), `requestParentLevelJumpConfirmation` em `change_form.html`; troca de mãe com código preenchido — ver **(G5)** em `spec_itemClassificacao_criar_filho.md`; limpar formulário na add — ver `_dev/spec_itemClassificacao_formulario.md` (**R-clear**) |
-| Sentinela registo           | `transaction_time_sentinel_for_query` em `apps/core/admin_mixins.py`                                                                                                                                                                                                                                                                                                                                       |
+### 3.A Gatilho do aviso (`level_jump`) — **só níveis** **(ITEMVH-01**, **ITEMVH-02)**
 
-## Renderização preventiva de `parent_item_id` para itens raiz (`nivel_numero = 1`)
+**Onde:** `warn_parent_level_jump_view` → `warn_parent_level_jump_json_dict`.
 
-### Regra subjacente
+**Condição `level_jump: true` (ITEMVH-01):** parâmetros válidos; mãe e nível filho existem; `child_n > 1`; `parent_n < child_n`; `parent_n ≠ child_n − 1`.
 
-A regra normativa está em `_dev/spec_itemClassificacao_regras_hierarquia.md`:
-itens com `nivel_numero = 1` devem ter `parent_item_id = NULL`. Esta seção
-descreve **como** essa regra é refletida na renderização do form do Django
-Admin de `ItemClassificacao`, com paridade entre as visões de **alteração**
-(change) e **adição** (add).
+**(ITEMVH-02):** `receita_cod` **não** entra na condição booleana.
 
-### Estado visual canônico do campo `parent_item_id` em itens raiz
+### 3.B Zeros canônicos intermediários — **bloqueio** **(ITEMVH-03**–**ITEMVH-05)**
 
-Quando o item em edição/criação for de `nivel_numero = 1`, o campo
-`parent_item_id` deve apresentar-se em modo **somente leitura "raiz"**, com:
+**Onde:** `validate_intermediate_canonical_zeros_json_dict`, `validate_item_parent_item_rules`; endpoint `validate-intermediate-canonical-zeros/`.
 
-- valor real (hidden) **vazio**;
-- display congelado com o texto "Sem item mãe" e fundo hachurado/cinza;
-- lupa de busca **oculta** (sem caminho clicável para seleção de mãe);
-- rótulo dinâmico do item mãe **oculto** (não há mãe a exibir);
-- mensagem auxiliar visível: "Item raiz, de nível 1, não possui item mãe.".
+Segmentos `LP..L−2` do filho devem ser zeros canônicos **(ITEMVH-03)**. Mensagem **(ITEMVH-04)**. No submit, validar **antes** do modal **(ITEMVH-05)**.
 
-Esse é o estado que já aparece hoje na **change view** quando a instância
-persistida tem `instance.nivel_id.nivel_numero == 1` (ver
-`ItemClassificacaoForm.__init__` em `apps/core/forms.py`, atributos
-`data_readonly_root`, `data_empty_display`, `data_root_message` do widget
-`ForeignKeySemanticDisplayRawIdWidget`).
+### 3.C Listagem de intermediários **(ITEMVH-06**, **ITEMVH-07)**
 
-### Comportamento na change view (server-side, inalterado)
+**Onde:** `analyze_intermediate_items_for_level_jump` via `warn_parent_level_jump_json_dict`.
 
-O estado é decidido no servidor durante a renderização do form, a partir de
-`self.instance.nivel_id.nivel_numero`. O template
-`apps/core/templates/admin/widgets/foreign_key_semantic_raw_id.html` consome
-os `widget.attrs.data_readonly_root`, `data_empty_display` e
-`data_root_message` e desliga inclusive o `<script>` de resolução semântica
-do hidden. Esse fluxo permanece como está.
+Independente de **ITEMVH-01** para contagem — **ITEMVH-07**.
 
-### Comportamento na add view (objetivo desta seção)
+---
 
-Na add view o `self.instance` é vazio (sem `nivel_id`), então o estado
-"raiz somente leitura" precisa ser aplicado **dinamicamente no client**,
-reagindo ao preenchimento do campo `Nível Hierárquico`. As fontes possíveis
-desse preenchimento são:
+## 4. Endpoint `warn-parent-level-jump` **(ITEMVH-08**–**ITEMVH-10)**
 
-- **manual**: usuário escolhe um `NivelHierarquico` pela lupa (`raw_id`);
-- **automática**: `syncHierarchyFromCode` (em `change_form.html`) deriva o
-  nível a partir do `receita_cod` + classificação + vigência e atribui
-  `nivelIdInput.value`;
-- **postback após erro de validação**: o POST volta com `nivel_id`
-  preenchido, e o navegador renderiza o widget com esse valor inicial.
+Ver tabela de parâmetros GET **(ITEMVH-09)**. Faltando obrigatórios → **ITEMVH-10**.
 
-Em todos os três casos, ao saber o **PK do nível selecionado**, o cliente
-deve resolver o `nivel_numero` correspondente e:
+---
 
-- se `nivel_numero === 1`: aplicar o estado "raiz somente leitura" no
-  widget de `parent_item_id` em paridade com a change view (texto,
-  hachurado, lupa oculta, label oculto, mensagem auxiliar visível,
-  `hidden.value = ""`, `hidden.dataset.readonlyRoot = "1"`);
-- caso contrário: **restaurar** o estado editável (display vazio, fundo
-  normal, lupa visível, sem mensagem auxiliar, `dataset.readonlyRoot`
-  removido). A reversibilidade é normativa: trocar o nível para outro com
-  `nivel_numero > 1` deve devolver o campo ao modo normal.
+## 5. Algoritmo `analyze_intermediate_items_for_level_jump` **(ITEMVH-11**–**ITEMVH-15)**
 
-### Resolução de `nivel_numero` no client
+1. **(ITEMVH-11):** retorno vazio se `parent_n >= child_n − 1` ou sem máscara.
+2. Máscara: `digit_mask_for_classificacao_vigencia(class_pk, vig_ini, vig_fim)`; fallback vigência do mãe **só para mask** **(ITEMVH-17)**.
+3. **(ITEMVH-12):** radical do código do **pai**.
+4. `nivel_min = parent_n + 1`; `nivel_max = child_n − 1`.
+5. **(ITEMVH-13):** query ORM com filtros listados; vigência **do form** **(ITEMVH-16)**; `classificacao_id` do form **(ITEMVH-18)**.
+6. **(ITEMVH-14):** pós-processamento Python por linha.
+7. **(ITEMVH-15):** até 3 amostras no JSON.
 
-Para resolver `nivel_numero` a partir do PK selecionado no `nivel_id`, o
-projeto **estende o endpoint `semantic-lookup/<kind>/<pk>/`** (definido em
-`apps/core/admin_mixins.py`, mixin `BitemporalForeignKeyLookupActiveOnlyMixin`)
-com um campo opcional `metadata` no payload JSON, configurável por FK via
-`semantic_fk_config[campo]["metadata_resolver"]`. Para `nivel_id` em
-`ItemClassificacaoAdmin`, o resolver devolve `{"nivel_numero": obj.nivel_numero}`.
+**Retorno:** `count`, `nivel_numeros`, `nivel_semantic_by_numero`, `samples` (`pk`, `receita_cod`, `display_label`, `admin_url`, `nivel_numero`).
 
-Contrato do payload (compatível com clientes existentes):
+---
 
-```json
-{
-  "semantic_value": "NIVEL-1",
-  "display_label": "NIVEL-1 - Categoria Econômica",
-  "link_url": "/admin/core/nivelhierarquico/<pk>/change/",
-  "metadata": {"nivel_numero": 1}
-}
-```
+## 6. Decisões técnicas e modal
 
-Quando o resolver não está declarado para a FK, o campo `metadata` é
-omitido — preservando o payload anterior e a compatibilidade.
+### 6.1 Vigência **(ITEMVH-16**, **ITEMVH-17)**
 
-### Gatilho da sincronização no client
+Query usa apenas `vig_ini`/`vig_fim` do GET do formulário.
 
-O JS em `change_form.html` adiciona uma função
-`syncParentRootStateFromNivel(triggerName)` que:
+### 6.2 Classificação **(ITEMVH-18)**
 
-1. lê `nivelIdInput.value`;
-2. se vazio, garante o estado **editável** no `parent_item_id`;
-3. se preenchido, faz fetch para o `semantic-lookup` do `nivel_id` e
-   inspeciona `metadata.nivel_numero` no payload;
-4. aplica `setParentRootReadonly(true|false)` no widget de `parent_item_id`
-   conforme o resultado.
+`busca_intermediarios_class_pk` = PK do form. Risco consciente se form ≠ classificação do mãe (seed/teste); produção: mesma classificação (**ITEMRH-09**).
 
-A função é chamada:
+### 6.3 Modal de salto ao gravar **(ITEMVH-19)**
 
-- no `init` (após `runCodeDigitValidation('init')`), cobrindo postback com
-  erro e estados pré-preenchidos;
-- no evento `change` do hidden de `nivel_id`;
-- no evento `semantic-fk-changed` do hidden de `nivel_id` (disparado pelo
-  próprio widget após resolver o display semântico).
+- Título «Atenção!»
+- Parágrafo 1: mãe (link código mascarado + rótulo nível) + filho (sem link no trecho principal)
+- Se intermediários: «Além disso, existe …» com `no`/`nos`, contagem zero-padded `< 100`
+- Lista até 3 links change
+- «Deseja continuar e gravar o registo?» — Cancelar / OK
 
-### Interação com `syncHierarchyFromCode`
+### 6.4 Modal **(G5)** **(ITEMVH-20)**
 
-`syncHierarchyFromCode` já tem `early-return` quando
-`parentItemIdInput.dataset.readonlyRoot === '1'`. Essa guarda continua sendo
-o ponto único de verdade para "não bater no mãe quando o item é raiz".
-A nova função apenas **alimenta** esse atributo (set/unset), sem mudar a
-guarda existente.
+Detalhe normativo em `spec_itemClassificacao_criar_filho.md`. Resumo: só após sugestão bem-sucedida; tri-botão Cancelar | Manter Atual | Atualizar; snapshot de mãe anterior preservado.
 
-### Regras normativas desta seção
+---
 
-- **R-root.1.** O estado "raiz somente leitura" deve ser sempre
-  consequência do `nivel_numero` do nível selecionado (server-side na
-  change view, client-side na add view). Nunca decidido por outro campo.
-- **R-root.2.** A transição é **reversível**: trocar para um nível com
-  `nivel_numero > 1` deve restaurar o campo editável e remover a mensagem
-  auxiliar.
-- **R-root.3.** O hidden de `parent_item_id` deve ser **limpo** sempre
-  que o estado raiz for ativado (`hidden.value = ""`), garantindo que o
-  POST não carregue um PK residual incompatível com a regra normativa
-  (`parent_item_id = NULL` para nível 1).
-- **R-root.4.** O endpoint `semantic-lookup` é o único contrato usado para
-  resolver `nivel_numero` no client a partir de um **PK** isolado. A
-  derivação a partir do **código** continua a cargo de
-  `lookup-hierarchy-by-code`, cujo payload já expõe `derived_level.number`
-  e deve ser usado como fonte síncrona quando o gatilho da mudança vem
-  do `receita_cod` (ver R-root.5).
-- **R-root.5.** O estado raiz **não** pode ser usado como guarda de
-  early-return em `syncHierarchyFromCode`. A função deve sempre poder
-  consultar `derived_level` a partir do novo `receita_cod`; o estado raiz é
-  decisão derivada, não condição de entrada. Especificamente:
-    - Fora do **submit** (`code_blur`, `classificacao_change`, `init`): o cliente
-      **pode** recalcular o PK de `nivel_id` a partir de `derived_level.pk` e
-      aplica `setParentRootReadonlyState(true|false)` conforme
-      `data.derived_level.number`, **sem** consultar `data.parent` para essa
-      renderização.
-    - No **submit** (**R-nivel-submit**): o PK de `nivel_id` **não** é
-      substituído; valida-se coerência com `derived_level.number` e só então
-      aplica-se `setParentRootReadonlyState` com o nível já validado (igual ao
-      derivado).
-    - `syncParentRootStateFromNivel` continua existindo para cobrir mudanças de
-      `nivel_id` que **não** passam pela derivação por código (ex.: seleção
-      manual pela lupa, postback após erro com `nivel_id` pré-preenchido).
+## 7. Integração no submit (add) **(ITEMVH-21**–**ITEMVH-23)**
 
-### Casos de teste recomendados
+| Ordem | Etapa                                                        |
+| ----- | ------------------------------------------------------------ |
+| 1     | `runCodeDigitValidation`                                     |
+| 2     | `syncHierarchyFromCode` + **ITEMVH-26**–**29** no submit     |
+| 3     | `validateIntermediateCanonicalZerosOnSubmit` **(ITEMVH-05)** |
+| 4     | naming                                                       |
+| 5     | `requestParentLevelJumpConfirmation` **(ITEMVH-01)**         |
+| 6     | POST → `clean()` / `validate_item_parent_item_rules`         |
 
-- **T-root.1.** Add view, usuário escolhe NIVEL-1 pela lupa → estado raiz
-  é aplicado (display "Sem item mãe", lupa oculta, mensagem visível).
-- **T-root.2.** Add view, `syncHierarchyFromCode` deriva NIVEL-1 → estado
-  raiz é aplicado automaticamente após a sincronização.
-- **T-root.3.** Add view, usuário troca de NIVEL-1 para NIVEL-2 → estado
-  raiz é desfeito; lupa volta a aparecer; campo aceita seleção de mãe.
-- **T-root.4.** Add view, postback com erro de validação e `nivel_id` já
-  apontando para NIVEL-1 → `syncParentRootStateFromNivel('init')` aplica o
-  estado raiz no primeiro render JS, sem "piscar".
-- **T-root.5.** Change view, instância com `nivel_id.nivel_numero = 1` →
-  estado raiz já aplicado pelo servidor (sem dependência do JS).
-- **T-root.6.** `semantic-lookup/<kind=nivel>/<pk>/` retorna `metadata`
-  contendo `nivel_numero`; demais kinds (`item`, `classificacao`, etc.) não
-  retornam `metadata` (compatibilidade com clientes anteriores).
-- **T-root.7.** Add view, usuário preenche `receita_cod` para um código de
-  nível 1 (ex.: `1000000000000`), TAB → estado raiz ativado. Em seguida,
-  altera o código para um de nível 2 (ex.: `1100000000000`), TAB →
-  `syncHierarchyFromCode` recalcula, `nivel_id` muda para NIVEL-2 e o
-  estado raiz é desativado, voltando a permitir a seleção de mãe e
-  permitindo que a derivação automática do `parent_item_id` ocorra.
-  Verifica explicitamente que **R-root.5** está em vigor.
+**(ITEMVH-22):** blur atualiza mãe quando lookup encontra; submit preserva mãe manual.
 
-## Relação com outras especificações
+**(ITEMVH-23):** pós-erro Django, sem `syncHierarchyFromCode('init')`.
 
-- **`_dev/spec_itemClassificacao_regras_hierarquia.md`:** regras normativas de `parent_item_id`, prefixo, cauda do pai, salto e zeros no filho, mesma classificação, vigência do mãe contendo a do filho, etc.
-- **`_dev/spec_validar_codigos.md`:** validação offline de códigos; não substitui o fluxo admin acima.
+Variáveis: `item_validate_intermediate_zeros_url`, `item_parent_level_jump_warn_url`.
 
-## Exemplo que guiou decisões (seed)
+---
 
-Linha de referência em `docs/assets/seed_item_classificacao.csv` (ex.: item com `receita_cod` `1112529000000`, nível 6, classificação MG): usado para validar que a listagem precisava do **mesmo** `classificacao_id` que o formulário quando o mãe do teste apontava para outro PK de classificação.
+## 8. Coerência `nivel_id` × código — **R-nivel-submit** **(ITEMVH-26**–**ITEMVH-29)**
+
+| Gatilho                              | `nivel_id`                                                           |
+| ------------------------------------ | -------------------------------------------------------------------- |
+| blur / change / init **(ITEMVH-26)** | Pode autofill por `derived_level.pk`                                 |
+| submit **(ITEMVH-27)**               | **Não** substituir; validar `nivel_numero` vs `derived_level.number` |
+| servidor **(ITEMVH-28)**             | `validate_item_nivel_id_receita_cod_derivation`                      |
+
+Mensagem **(ITEMVH-29)**. Inferência de **D:** `derive_nivel_numero_from_receita_cod_digits`.
+
+**Testes:** T-nivel-submit.1–3 (§ **10**).
+
+---
+
+## 9. Item raiz — `parent_item_id` quando `nivel_numero = 1` **(ITEMVH-30**–**ITEMVH-36)**
+
+Regra de domínio: **ITEMRH-05**. Esta seção cobre **renderização** Admin.
+
+### 9.1 Change (servidor) **(ITEMVH-30**, **ITEMVH-36)**
+
+`ItemClassificacaoForm.__init__` + widget `data_readonly_root` quando `instance.nivel_id.nivel_numero == 1`.
+
+### 9.2 Add (cliente) **(ITEMVH-30**–**ITEMVH-35)**
+
+`syncParentRootStateFromNivel(trigger)`:
+
+1. `nivel_id` vazio → editável
+2. fetch `semantic-lookup` → `metadata.nivel_numero`
+3. `nivel_numero === 1` → estado raiz **(ITEMVH-36)**; senão restaurar editável **(ITEMVH-31)**
+
+Gatilhos **(ITEMVH-35):** `init`, `change`, `semantic-fk-changed` em `nivel_id`.
+
+### 9.3 Regras **(ITEMVH-32**–**ITEMVH-34)**
+
+- **(ITEMVH-32):** hidden `parent_item_id` = `""` em raiz
+- **(ITEMVH-33):** `metadata_resolver` em `semantic_fk_config["nivel_id"]`
+- **(ITEMVH-34):** `syncHierarchyFromCode` fora do submit recalcula `nivel_id` e estado raiz; no submit valida **ITEMVH-27** primeiro
+
+Payload `semantic-lookup` com `metadata: {"nivel_numero": N}` quando resolver declarado.
+
+**Testes:** T-root.1–7 (§ **10**).
+
+---
+
+## 10. Casos de teste recomendados **(ITEMVH-37)**
+
+### Nível no submit
+
+- **T-nivel-submit.1:** código nível 7, `nivel_id` NIVEL-3 → erro em `nivel_id`, sem gravação
+- **T-nivel-submit.2:** NIVEL-7 selecionado → prossegue (demais fluxos)
+- **T-nivel-submit.3:** blur pode autofill após nível manual incorreto
+
+### Raiz
+
+- **T-root.1–7:** lupa NIVEL-1, derivação por código, reversão, postback, change server-side, `metadata` no lookup, transição nível 1→2 (**R-root.5**)
+
+### Intermediários / salto
+
+- Regressão tier máscara changelist (**ITEMMASK-32**)
+- `level_jump: true` + `intermediate_count: 0` aceitável **(ITEMVH-07)**
+- Cenário seed `1112529000000` (classificação do form vs mãe)
+
+---
+
+## Implementação de referência
+
+| Peça           | Símbolo                                                                                            |
+| -------------- | -------------------------------------------------------------------------------------------------- |
+| Rota salto     | `warn-parent-level-jump/`                                                                          |
+| JSON salto     | `warn_parent_level_jump_json_dict`                                                                 |
+| Intermediários | `analyze_intermediate_items_for_level_jump`                                                        |
+| Domínio        | `validate_item_parent_item_rules`, `validate_item_nivel_id_receita_cod_derivation`                 |
+| Modais         | `showCoreLevelJumpModal`, `showCoreParentChangeConfirmModal`, `requestParentLevelJumpConfirmation` |
+| Sentinela      | `transaction_time_sentinel_for_query`                                                              |
+
+---
+
+## Specs relacionadas
+
+| Spec                                                                                           | Relação                  |
+| ---------------------------------------------------------------------------------------------- | ------------------------ |
+| [`spec_itemClassificacao_regras_hierarquia.md`](spec_itemClassificacao_regras_hierarquia.md)   | Domínio **ITEMRH**       |
+| [`spec_itemClassificacao_foreignKeys_lookup.md`](spec_itemClassificacao_foreignKeys_lookup.md) | Lookups JSON             |
+| [`spec_itemClassificacao_criar_filho.md`](spec_itemClassificacao_criar_filho.md)               | **(G5)**, sugestão filho |
+| [`spec_validar_codigos.md`](spec_validar_codigos.md)                                           | Validação offline        |

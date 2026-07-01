@@ -130,6 +130,7 @@ Consultar **nesta ordem** ao sugerir escopo:
 | `spec_itemClassificacao_foreignKeys_lookup.md`     | `itemClassificacao` |
 | `spec_itemClassificacao_mascara_apresentacao.md`   | `itemClassificacao` |
 | `spec_itemClassificacao_criar_codigo_existente.md` | `itemClassificacao` |
+| `spec_itemClassificacao_validar_hierarquia.md`     | `itemClassificacao` |
 | `spec_foreignKeys_vigencia.md`                     | `foreignKeys`       |
 | `spec_lista_abreviacoes.md`                        | `lista`             |
 | `spec_django.md`                                   | `django`            |
@@ -151,6 +152,7 @@ Consultar **nesta ordem** ao sugerir escopo:
 | `spec_itemClassificacao_editar_codigo.md`          | `ITEMEC`   | Edição de `receita_cod` na change (blur, save, revert)   |
 | `spec_itemClassificacao_mascara_apresentacao.md`   | `ITEMMASK` | Máscara visual admin (tier 1/2) e protocolo B1           |
 | `spec_itemClassificacao_criar_codigo_existente.md` | `ITEMCEX`  | Alerta/erro CE e próximo código na add                   |
+| `spec_itemClassificacao_validar_hierarquia.md`     | `ITEMVH`   | Salto de nível, zeros intermediários e submit na add     |
 
 ### Tipo vs arquivos (Django)
 
