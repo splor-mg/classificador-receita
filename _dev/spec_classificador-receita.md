@@ -126,6 +126,7 @@ Consultar **nesta ordem** ao sugerir escopo:
 | `spec_itemClassificacao_criar_nome.md`        | `itemClassificacao` |
 | `spec_itemClassificacao_editar_codigo.md`     | `itemClassificacao` |
 | `spec_itemClassificacao_regras_hierarquia.md` | `itemClassificacao` |
+| `spec_itemClassificacao_formulario.md`        | `itemClassificacao` |
 | `spec_foreignKeys_vigencia.md`                | `foreignKeys`       |
 | `spec_lista_abreviacoes.md`                   | `lista`             |
 | `spec_django.md`                              | `django`            |
@@ -135,13 +136,14 @@ Consultar **nesta ordem** ao sugerir escopo:
 
 ### Prefixos de ID normativos (domínio local)
 
-| Arquivo                                       | Prefixo   | Escopo                                                 |
-| --------------------------------------------- | --------- | ------------------------------------------------------ |
-| `spec_validar_codigos.md`                     | `VALCOD`  | Script `validate_code.py` e validação de `receita_cod` |
-| `spec_validar_qualidade.md`                   | `VALQUAL` | Script `validate_quality.py` e quality dimensions      |
-| `spec_itemClassificacao_regras_hierarquia.md` | `ITEMRH`  | Regras de `parent_item_id` e hierarquia semântica      |
-| `spec_foreignKeys_vigencia.md`                | `FKVIG`   | Contenção temporal de FK e união contígua bitemporal   |
-| `spec_importar.md`                            | `IMPORT`  | Protocolo de importação (MINUTA; pipeline ADR-005)     |
+| Arquivo                                       | Prefixo    | Escopo                                                 |
+| --------------------------------------------- | ---------- | ------------------------------------------------------ |
+| `spec_validar_codigos.md`                     | `VALCOD`   | Script `validate_code.py` e validação de `receita_cod` |
+| `spec_validar_qualidade.md`                   | `VALQUAL`  | Script `validate_quality.py` e quality dimensions      |
+| `spec_itemClassificacao_regras_hierarquia.md` | `ITEMRH`   | Regras de `parent_item_id` e hierarquia semântica      |
+| `spec_foreignKeys_vigencia.md`                | `FKVIG`    | Contenção temporal de FK e união contígua bitemporal   |
+| `spec_importar.md`                            | `IMPORT`   | Protocolo de importação (MINUTA; pipeline ADR-005)     |
+| `spec_itemClassificacao_formulario.md`        | `ITEMFORM` | Formulário admin: largura `receita_cod` e limpar add   |
 
 ### Tipo vs arquivos (Django)
 
