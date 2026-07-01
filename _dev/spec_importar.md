@@ -1,86 +1,189 @@
+# Protocolo de importação (`importer`) — MINUTA
 
-# Import (MINUTA)
+Rascunho da especificação transversal dos protocolos de **importação** (família `importer*.py`), alinhada ao **ADR-005**. **Não substitui** a carga operacional via `docs/assets/seed_*.csv` nem specs de domínio como `spec_itemClassificacao_*.md`.
 
-A ideia central desse arquivo, destinado a especificar os comportamentos e atributos de protocolos de import (importer.py), já descritos especialmente na ADR-005. A ideia é que essa especificação fique em `_dev/spec_importar.md` e não atrelado a `itemClassificacao`, pois a intenção é que protocolo de importação seja vista como uma ferramenta de um pouco mais alto escopo. 
+> **Status:** MINUTA — etapas e módulos abaixo são **planejados**; IDs normativos cobrem apenas distinções já estabelecidas no repositório. Detalhes operacionais pendentes ficam em § **Decisões em aberto**.
 
-Para orientação, enquanto os protocolos de carregamento de dados é destinado a carregar o BD com os dados dos arquivos `docs/assets/seed_*.csv`, o import é um protocolo destinado a ler uma tabela/arquivo de dados brutos, ainda não estruturados, tratados e normalizados conforme parâmetros vigentes para o banco de dados, deve tratar esse arquvo,  prepará-lo para então, cumprirem os protocolos de levar para o banco de dados. 
+## Objetivo
 
-Qualquer divergência aqui em relação ao ADR-05 
+Registrar o **contrato alvo** do protocolo de importação: ler fontes brutas externas, normalizá-las conforme o datapackage do projeto e produzir artefatos em `data-raw/` e `data/` antes da gravação no banco — com escopo **transversal** (não exclusivo de `itemClassificacao`).
 
+Premissa desta MINUTA: descreve intenção de desenho e reutilização de módulos existentes; implementação completa ainda **não** está consolidada.
 
-As etapas a serem conduzidas pelo protocolo de im
+## Referências
 
+- **ADR-005** — `docs/adr/adr-005_layout-dados.md` (layout `docs/assets/referencias/`, `data-raw/`, `data/`).
+- [`spec_classificador-receita.md`](spec_classificador-receita.md) § **Convenções** — distinção carga × importação; prefixo `IMPORT`.
+- `apps/core/code_null_normalization.py` — tratamento de campos vazios (candidato a reutilização).
+- `apps/core/code_name_connectives.py` — padrão de mapeamento em módulo dedicado.
+- [`spec_lista_abreviacoes.md`](spec_lista_abreviacoes.md) — conectivos e normalização lexical relacionada.
+- Futuro: `spec_normalizacao_nomes.md` *(a criar)* — normalização de nomes transversal.
 
-## 1. ferramentas para leitura de arquivos de excel, ou csv, ou outros formatos de arquivo
+Termos *deve* / *não deve* / *pode* conforme RFC 2119 (ver `_dev/spec_conventions.md` **Referências**).
 
-  Aqui devemos especificar que o script deve estar pronto para ler arquivos com extensões em excel (xls, xlsx...), e outros formatos usuais para tabela de dados como CSV dentre outros
-  Deve-se tentar utilizar bibliotecas já consolidadas para leitura de arquivos com essas extensões
-  Verificar implementação desses scripts em arquivo separado, a exemplo de `importer_read.py`; implementar de forma separada apenas se houver ganho 
+## Como citar este documento
 
-## 1.2. identificação do modelo de dados
-  
-  Deve-se criar mecanismo para identificar o código, se estamos falando ou não de codigo hierárquico, por exemplo, ou mesmo saber identificar a máscara, para códigos hierárquicos, para permitir o gerenciamento de estruturas planas
-  Saber de qual entidade/changelist estamos importando dará a informação de quais são as colunas essenciais (PK)
-  Eventualmente, o importer pode ser pensado para ser definido em alto escopo o suficiente para que ele consiga ser utilizado, eventualmente, para demais classes/entidades do projeto, por mais que o foco maior/fallback é a leitura da itemClassificacao
+| Mecanismo          | Uso                                                                 |
+| ------------------ | ------------------------------------------------------------------- |
+| **Seção numerada** | `§ N` / `§ N.M` — navegação neste arquivo.                          |
+| **ID normativo**   | `IMPORT-NN` — citação estável (índice **mínimo** enquanto MINUTA).  |
+| **Prefixo**        | `IMPORT` — ver § **Convenções** em `spec_classificador-receita.md`. |
 
-## 2. normalização de nomes das colunas/atributos
+**Índice de IDs normativos deste arquivo:**
 
-  A intenção é que as colunas existentes nos arquivos brutos sendo importados sejam convertidas para os nomes conforme especificado para o datapackage
-  Imagino que talvez o mais simples seja utilizar algum arquivo em separado, para poluir pouco, para mapear as correlações entre os nomes existentes nos dados brutos e como eles devem ser entendidos em relação aos nomes de atributos/colunas já parametrizados para o projeto. A exemplo da listagem de conectivos feita `code_name_connectives.py.` 
-  Sugestão de nome
-  
+| ID        | Tema      | Seção | Resumo                                                                                                                                        |
+| --------- | --------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| IMPORT-01 | Escopo    | 1.1   | **Importação** e **carga** (seeds → BD) **devem** ser tratadas como protocolos **distintos**.                                                 |
+| IMPORT-02 | Pipeline  | 1.2   | O import **deve** seguir o encadeamento fonte bruta → `data-raw/` → `data/` → BD, conforme ADR-005.                                           |
+| IMPORT-03 | Escopo    | 1.3   | Esta spec **deve** permanecer **transversal** — **não** acoplada exclusivamente a `itemClassificacao` (fallback operacional pode focar nela). |
+| IMPORT-04 | Validação | 2.7   | Antes da persistência tratada, o pipeline **deve** executar validação **Frictionless** dos dados normalizados.                                |
+| IMPORT-05 | Artefatos | 2.8   | Saída tabular tratada **deve** ser gravada em `data-raw/`; entrada típica em `docs/assets/referencias/` quando aplicável.                     |
 
-## 3. fazer transformações de dados
-  - tratamento de campos vazios
-    Entendo que precisamos relacionar como serão tratados os campos vazios, tais como NULL, e "-".
-    Verificar se não podemos/devemos aproveitar tratamento de campos vazios já feito em `apps/core/code_null_normalization.py`
+**Índice por tema:**
 
-  - compilação de atributos: 
-    Esse protocolo visa gerar atributos necessários a partir de eventuais atributos dos dados brutos
-    Um exemplo dessa hipótese ocorre quando um código hierárquico, ao invés de ser registrado como um número único, agregando todos os nívieis, é registrado em cada nível individualizado como uma coluna/atributo individualizado. Nesse caso, todas os atritubos de nível devem ser ordenados e concatenados para gerar um código hierárquico único, individualizado como uma única coluna/atributo
-    imagino que o protoclo de compilação de atributos tabém seja interessante estar discriminado em um script separado, sugestão de nome `importer_
+| Tema      | IDs                  |
+| --------- | -------------------- |
+| Escopo    | IMPORT-01, IMPORT-03 |
+| Pipeline  | IMPORT-02            |
+| Validação | IMPORT-04            |
+| Artefatos | IMPORT-05            |
 
-  - protocolos de autocomplete
+---
 
-    Devemos produzir informações essenciais, como: 
-      - *classificacao_id*: em qual classificacao_id cada um dos registros dos dados brutos de enquadram. Verificar protocolos já implementados para autocomplete e ou definição de classification_id
-      - *nivel_id*: em qual `nivel_id`cada um dos registros se enquadram
-      - *item mãe*: deve tentar ser identificado o item mãe. Verificar reaproveitamento das especificações já implementadas para definição do item mãe. Aqui provavelmente precisaremos avaliar melhor como tratar o fallback, se deixamos vazio ou forçamos o registro de um item mãe como sendo o primeiro registro superior encontrado, mesmo que não antedam as especificações normais
-      - *data_vigência*: definição de comportamento para atribuição de data, pensando no fallback comum de "primeiro de janeiro do ano"
-    Caso esses campos já estejam disponíveis nos dados brutos, não precisam ser rodado o autocomplete
-    Em ambos os casos, existindo dados anteriores ou sendo aplicado o protoclo de "autocomplete", os protocolos de validação/check de autocomplete devem ser rodados
-   
+## Escopo
 
-   - protocolo de normalização do campo de ID
-     até o momento, temos escrito os campos de id garantindo caixa alta manualmente, mas não existe um protocolo de normalização dos campos de id
-     esse protocolo talvez também mereça uma especificação em separado e um arquivo .py separado, talvez não atrelado ao importer. Talvez um script `code_id_normalization.py`, bem como avaliarmos se necessidade de especificação própria para a normalização de id's
-     um id não pode ter separação por traço
+| Inclui (planejado)                                            | Não inclui                                                                       |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Leitura de fontes brutas (Excel, CSV, …)                      | Carga direta de `docs/assets/seed_*.csv` → BD **(IMPORT-01)**                    |
+| Normalização tabular e mapeamento de colunas                  | Regras Admin de `itemClassificacao`                                              |
+| Autocomplete de `classificacao_id`, `nivel_id`, mãe, vigência | Spec final de normalização de nomes *(prevista em `spec_normalizacao_nomes.md`)* |
+| Validação Frictionless **(IMPORT-04)**                        | Versionamento de `data/` no repositório                                          |
 
-## 4. fazer normalização da string no campo de nome
+---
 
-  Nesse caso, entendo que precisamos implementar uma especificação, própria, `spec_normalizacao_nomes.md`. Não quero colocar esse protocolo de normalização de nomes como algo apenas de itemClassificação, pois é um protocolo que quero deixar disponível para ser utilizado pelas demais tableas/classes que gerenciamos
-  Imagino que vamos criar script `code_name_normalization.py`, o qual deve conter essas regras de normalização
-  Regras de normalização dos nomes:
-    - Devem ser removidos os espaços múltiplos
-    - Somente as siglas e as primeiras letras das palavras devem estar com letra maiúscula
-    - Os conectivos já listados aqui no projeto devem permanecer todo em caixa baixa
+## 1. Distinção carga × importação
 
+### 1.1 Protocolos distintos **(IMPORT-01)**
 
-## 4. verificar existência de campos mínimos (PK)
+- **Carga:** `docs/assets/seed_*.csv` → banco via `carregar_classificador` (datapackage).
+- **Importação:** fonte externa ainda não estruturada → tratamento → `data-raw/` → `data/` → BD.
 
- 
+### 1.2 Pipeline de artefatos **(IMPORT-02)**
 
-## 5. frictionless validate
-  rodar o frictionless validate
+Conforme ADR-005 e `spec_classificador-receita.md`:
 
-## 6. salar o a tabela/arquivo já tratado, transformado, normalizado em `data-raw`
-  avaliar se, caso não "salvamos uma cópia" do arquivo/tabela do dado bruto informado como input, caso já não seja `docs/assets/referencias/`"
+| Etapa                | Local típico               |
+| -------------------- | -------------------------- |
+| Entrada bruta        | `docs/assets/referencias/` |
+| Primeiro tratamento  | `data-raw/`                |
+| Lançamentos apurados | `data/`                    |
+| Runtime operacional  | PostgreSQL (Admin)         |
 
-## evolução de diferenças
-  acredito que aqui também estejamos falando de um protocolo implementado em arquivo .py em separado, a princípio `importer_*`. o nome inglês ainda não sei, mas se fosse em português seria algo como `importer_incorporar_db`, ou `importer_evoluir_db`, ou 
-  esse protocolo deve verificar se há alguma diferença de vigência em relação ao que já está vigente para o período de vigência em cada uma das instâncias da tabela agora no `data-raw`, já tratada
-  salvar arquivo contendo o lançamento das diferenças em `data`
-  não versionaremos `data`- verificar se está no ignore e se converge com as melhores práticas
-  definição da etapa final para parametrizar quais os registros, levando em consideração: 
-    - quando formos fazer eventual sobreposição de registro
-    - quando precisaremos encerrar vigência de registro anterior e lançar uma nova vigência
+### 1.3 Escopo transversal **(IMPORT-03)**
+
+O importador **deve** ser desenhado para reutilização entre entidades do projeto; o foco inicial pode ser `itemClassificacao`, sem restringir a spec a esse domínio.
+
+---
+
+## 2. Etapas planejadas do protocolo
+
+As subseções abaixo descrevem **intenção de desenho** — sem IDs próprios até consolidação implementada.
+
+### 2.1 Leitura de arquivos
+
+- Suporte a Excel (`xls`, `xlsx`, …), CSV e outros formatos tabulares usuais.
+- Preferir bibliotecas consolidadas para leitura.
+- Avaliar módulo dedicado `importer_read.py` **somente** se houver ganho de separação.
+
+### 2.2 Identificação do modelo de dados
+
+- Detectar código hierárquico vs plano; inferir máscara quando hierárquico.
+- A entidade/changelist de destino define colunas essenciais (PK).
+- Mecanismo genérico o suficiente para outras classes, com fallback em `itemClassificacao`.
+
+### 2.3 Normalização de nomes de colunas
+
+- Converter cabeçalhos brutos para nomes do datapackage.
+- Mapeamento em arquivo/módulo separado (análogo a `code_name_connectives.py`) para não poluir o orquestrador.
+
+### 2.4 Transformações de dados
+
+**Campos vazios**
+
+- Tratar `NULL`, `"-"` e equivalentes; reutilizar `code_null_normalization.py` quando possível.
+
+**Compilação de atributos**
+
+- Gerar atributos derivados dos brutos — ex.: colunas por nível hierárquico → concatenar em ordem → `receita_cod` único.
+- Avaliar módulo dedicado (ex.: `importer_compile.py`).
+
+**Autocomplete**
+
+Campos-alvo quando ausentes nos brutos:
+
+| Campo              | Comportamento planejado                                                     |
+| ------------------ | --------------------------------------------------------------------------- |
+| `classificacao_id` | Enquadramento por protocolos existentes de classificação                    |
+| `nivel_id`         | Inferência de nível                                                         |
+| Item mãe           | Identificação com avaliação de fallback (vazio vs primeiro superior válido) |
+| `data_vigencia`    | Fallback comum: 1º de janeiro do ano                                        |
+
+- Se o bruto já trouxer o campo, **pular** autocomplete para esse campo.
+- Em qualquer caso, rodar validação/check pós-autocomplete.
+
+**Normalização de IDs**
+
+- Protocolo de caixa alta e proibição de separador por traço em IDs semânticos.
+- Avaliar `code_id_normalization.py` e spec dedicada (transversal ao import).
+
+### 2.5 Normalização de strings de nome
+
+Prevista spec própria `spec_normalizacao_nomes.md` e módulo `code_name_normalization.py` (transversal):
+
+- Remover espaços múltiplos.
+- Maiúsculas apenas em siglas e iniciais de palavras.
+- Conectivos do projeto em caixa baixa (ver `code_name_connectives.py` / `spec_lista_abreviacoes.md`).
+
+### 2.6 Verificação de campos mínimos (PK)
+
+- Confirmar presença de colunas obrigatórias antes das etapas seguintes. *(Detalhe operacional pendente.)*
+
+### 2.7 Validação Frictionless **(IMPORT-04)**
+
+Executar `frictionless validate` (ou equivalente do projeto) sobre o dataset normalizado.
+
+### 2.8 Persistência em `data-raw` **(IMPORT-05)**
+
+Gravar tabela/arquivo tratado em `data-raw/`. Avaliar cópia do input bruto quando a fonte **não** estiver já em `docs/assets/referencias/`.
+
+### 2.9 Evolução de diferenças e `data/`
+
+Módulo separado (nome em aberto — ex. `importer_apply_db`, `importer_evolve_db`):
+
+- Comparar vigências do `data-raw/` tratado com o que já está vigente no período por instância.
+- Gravar lançamentos de diferença em `data/` (diretório **não** versionado — confirmar `.gitignore` e boas práticas).
+- Parametrizar decisões de sobreposição vs encerramento de vigência anterior e nova vigência.
+
+---
+
+## Decisões em aberto
+
+| Tópico                            | Pendência                                                      |
+| --------------------------------- | -------------------------------------------------------------- |
+| Nome dos módulos `importer_*`     | Orquestrador, leitura, compilação, evolução BD                 |
+| Arquivo de mapeamento colunas     | Formato (YAML/CSV/Python) e localização                        |
+| Fallback item mãe no autocomplete | Vazio vs primeiro superior encontrado                          |
+| `spec_normalizacao_nomes.md`      | Spec e módulo `code_id_normalization.py` transversais          |
+| § 2.6 PK mínimas                  | Lista por entidade/changelist                                  |
+| Divergência com ADR-005           | Revisar texto original da MINUTA linha a linha na consolidação |
+| Etapa final BD                    | Regras de sobreposição e encerramento de vigência              |
+
+---
+
+## Specs relacionadas (futuras)
+
+| Artefato                                                         | Papel                                                     |
+| ---------------------------------------------------------------- | --------------------------------------------------------- |
+| `spec_import_*.md` *(família)*                                   | Detalhe operacional por protocolo/CLI quando implementado |
+| `spec_normalizacao_nomes.md` *(a criar)*                         | Normalização lexical transversal                          |
+| [`spec_classificador-receita.md`](spec_classificador-receita.md) | Inventário SDD e layout ADR-005                           |

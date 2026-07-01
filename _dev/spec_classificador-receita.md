@@ -131,6 +131,7 @@ Consultar **nesta ordem** ao sugerir escopo:
 | `spec_django.md`                              | `django`            |
 | `spec_validar_codigos.md`                     | `validar`           |
 | `spec_validar_qualidade.md`                   | `validar`           |
+| `spec_importar.md`                            | `importar`          |
 
 ### Prefixos de ID normativos (domínio local)
 
@@ -140,6 +141,7 @@ Consultar **nesta ordem** ao sugerir escopo:
 | `spec_validar_qualidade.md`                   | `VALQUAL` | Script `validate_quality.py` e quality dimensions      |
 | `spec_itemClassificacao_regras_hierarquia.md` | `ITEMRH`  | Regras de `parent_item_id` e hierarquia semântica      |
 | `spec_foreignKeys_vigencia.md`                | `FKVIG`   | Contenção temporal de FK e união contígua bitemporal   |
+| `spec_importar.md`                            | `IMPORT`  | Protocolo de importação (MINUTA; pipeline ADR-005)     |
 
 ### Tipo vs arquivos (Django)
 
