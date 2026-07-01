@@ -1,6 +1,6 @@
 # Convenção de mensagens de commit (Semantic Commits)
 
-Normas de staging e mensagens para repositórios que adotam specs compartilhados. **Baseline do catálogo:** mensagens em **inglês** (§ **3**). Overrides locais (ex. PT-BR) em `_dev/spec_<nome-repo>.md` § **Commits** — **AGENTS-22**, **AGENTS-25**.
+Normas de staging e mensagens para repositórios que adotam specs compartilhados. **Baseline do catálogo:** mensagens em **inglês** (§ **3**). Overrides locais (ex. PT-BR) em `_dev/spec_<nome-repo>.md` § **Commits** — **AGENTS-10**.
 
 ## Objetivo
 
@@ -20,10 +20,10 @@ adaptado a este repositório (setup de ambiente, aplicações, etc.).
 | Situação                                            | Arquivo                                                                                         |
 | --------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | Sync do catálogo (`sdd … -pl`)                      | `_dev/spec_commits.md` — cópia **read-only** deste documento; **não editar** para regras locais |
-| Overrides deste repositório                         | `_dev/spec_<nome-repo>.md` § **Commits** — prevalece sobre o catálogo (**AGENTS-25**)           |
+| Overrides deste repositório                         | `_dev/spec_<nome-repo>.md` § **Commits** — prevalece sobre o catálogo (**AGENTS-10**)           |
 | Contrato maduro em `docs/specs/` ou `specs/` (raiz) | Regras de commit do projeto nessa pasta **prevalecem** sobre `_dev/`. **(COMMITS-10)**          |
 
-Precedência: [`spec_agents.md`](spec_agents.md) § **1.2** (**AGENTS-02**–**05**, **AGENTS-25**).
+Precedência: [`spec_agents.md`](spec_agents.md) § **1.2** (**AGENTS-06**, **AGENTS-10**).
 
 ## Referências
 
@@ -61,7 +61,7 @@ Os principais **conceitos**, **autores**, **metodologias** e **referências exte
 
     O assistente **sugere** mensagens e comandos; o desenvolvedor **autoriza** `git commit` e `push`. Pedidos genéricos («ajuda com commit») não autorizam execução silenciosa — ver § **1** (**COMMITS-01**–**03**) e [`spec_agents.md`](spec_agents.md) § **3** (**AGENTS-10**–**12**).
 
-    Se existirem specs em **`docs/specs/`**, **`specs/`** (raiz) e **`_dev/`**, aplicar a precedência em [`spec_agents.md`](spec_agents.md) § **1.2** antes de fixar escopo ou tipo.
+    Se existirem specs em **`docs/specs/`**, **`specs/`** (raiz) e **`_dev/`**, aplicar precedência § **1.2** — contrato maduro prevalece (**COMMITS-10**).
 
     **Referências externas**
 
@@ -83,8 +83,6 @@ Os principais **conceitos**, **autores**, **metodologias** e **referências exte
 
     *Deve*/*não deve* conforme [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) — [`spec_conventions.md`](spec_conventions.md) **Referências**. IDs: prefixo **`COMMITS`**; índice completo em `spec_conventions.md` § **2**.
 
----
-
 ## Como citar este documento
 
 | Mecanismo           | Uso                                                   |
@@ -93,33 +91,47 @@ Os principais **conceitos**, **autores**, **metodologias** e **referências exte
 | **ID normativo**    | `COMMITS-05` — citação estável.                       |
 | **Índice completo** | [`spec_conventions.md`](spec_conventions.md) § **2**. |
 
-**Índice de IDs deste arquivo:**
+**Índice de IDs normativos deste arquivo:**
 
-| ID         | Seção   | Resumo                                                                              |
-| ---------- | ------- | ----------------------------------------------------------------------------------- |
-| COMMITS-01 | 1       | Modo sugestão padrão; IA não executa Git sem autorização                            |
-| COMMITS-02 | 1.1     | Pedidos genéricos → só protocolo de sugestão                                        |
-| COMMITS-03 | 1.2     | Execução só com pedido explícito e confirmação clicável                             |
-| COMMITS-04 | 1.3     | Encerramento da sugestão com opções clicáveis                                       |
-| COMMITS-05 | 3       | Título e corpo do commit em **inglês**                                              |
-| COMMITS-06 | 3.2     | Não inventar linhas `See`                                                           |
-| COMMITS-07 | 3.8     | Diff só de spec → tipo `docs`, não `feat`                                           |
-| COMMITS-08 | 7       | Não sugerir `git add` de credenciais                                                |
-| COMMITS-09 | 7       | Não executar `dev-td-up` sem pedido explícito                                       |
-| COMMITS-10 | (obj.)  | Contrato maduro de commits prevalece sobre `_dev/`                                  |
-| COMMITS-11 | 3.3     | Evitar IDs transitórios de `_dev/spec_*` em commits                                 |
-| COMMITS-12 | 3.4     | Sincronizar `CHANGELOG.md`: Perfil B lockstep; `[Unreleased]` ou nova seção no bump |
-| COMMITS-13 | 3.5     | Causa vs `Impact:` — trailer de impacto user-facing (inglês)                        |
-| COMMITS-14 | 3.6–3.7 | Trailers `Changelog-*` só quando heurísticas não bastam                             |
+| ID         | Tema        | Seção    | Resumo                                                                                                                                                                                                                         |
+| ---------- | ----------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| COMMITS-01 | Modo IA     | 1        | Modo **sugestão** é o padrão: o assistente **não deve** executar `git add`, `git commit` nem `git push` sem autorização explícita do desenvolvedor.                                                                            |
+| COMMITS-02 | Modo IA     | 1.1      | Pedidos genéricos sobre commit («ajuda com commit», «o que commitar») **devem** ativar só o protocolo de sugestão § **8** — **não** autorizam execução real.                                                                   |
+| COMMITS-03 | Modo IA     | 1.2      | Execução real de Git só após pedido **explícito** do operador, com confirmação clicável de proposta e inclusão opcional de `git push`.                                                                                         |
+| COMMITS-04 | Modo IA     | 1.3      | Após entregar sugestões de staging/mensagem, o assistente **deve** encerrar com opções clicáveis A/B/C — manual, commit sem push, ou commit com push.                                                                          |
+| COMMITS-05 | Idioma      | 3        | Título e corpo do commit **devem** estar em **inglês** nesta baseline; overrides de idioma só em `_dev/spec_<nome-repo>.md` § **Commits** (**AGENTS-10**).                                                                     |
+| COMMITS-06 | Mensagem    | 3.2      | Linhas `See …` **devem** ser copiadas só de `_dev/_dev.md` quando existirem — o assistente **não deve** inventar URLs ou placeholders.                                                                                         |
+| COMMITS-07 | Tipo        | 3.8      | Diff **apenas** de documentação normativa (`spec_*.md`, README descritivo) **deve** usar tipo `docs` — **não** `feat` por ser «feature conceptual».                                                                            |
+| COMMITS-08 | Staging     | 7        | O assistente **não deve** sugerir `git add` de credenciais (`.env`, chaves privadas, tokens) nem arquivos sensíveis equivalentes.                                                                                              |
+| COMMITS-09 | Staging     | 7        | O assistente **não deve** executar `dev-td-up` (commit+push automáticos) sem pedido **explícito** do operador.                                                                                                                 |
+| COMMITS-10 | Precedência | (obj.)   | Contrato maduro de commits em `docs/specs/` ou `specs/` (raiz) **deve** prevalecer sobre cópia sync `_dev/spec_commits.md` — **AGENTS-06**, § **1.2**.                                                                         |
+| COMMITS-11 | Mensagem    | 3.3      | No corpo do commit, **deve** preferir descrever comportamento aplicado — **não** citar IDs transitórios de `_dev/spec_*` salvo quando o commit altera a própria regra.                                                         |
+| COMMITS-12 | Changelog   | 3.4      | Com `CHANGELOG.md`, o commit de implementação **deve** atualizar `[Unreleased]` no mesmo commit; Perfil B lockstep fecha `## [versão]` no bump de `version:` (**VERSION-15**, **VERSION-16**).                                 |
+| COMMITS-13 | Mensagem    | 3.5      | Commits user-facing com `CHANGELOG.md` **devem** separar **causa** (título/corpo) de **impacto** via trailer `Impact:` em inglês — candidato a bullet KAC.                                                                     |
+| COMMITS-14 | Changelog   | 3.6, 3.7 | Trailers `Changelog-*` só quando tipo CC + `Impact:` + heurísticas de diff **não** bastam; preferir inferir seção KAC antes de trailers explícitos.                                                                            |
+| COMMITS-15 | Staging     | 7, 8     | Sugestões de commit **devem** usar HEREDOC integral; incluir `Impact:` quando aplicável (**COMMITS-13**) e bloco `See` só conforme **COMMITS-06**.                                                                             |
+| COMMITS-16 | Modo IA     | 8.0      | Ao concluir implementação com alterações rastreáveis, o assistente **deve** seguir § **8.0** (versionamento + changelog + **sugerir** `git add` + HEREDOC no chat) — **não** **executar** Git (**AGENTS-20**, **COMMITS-01**). |
+
+**Índice por tema:**
+
+| Tema        | IDs                                                        |
+| ----------- | ---------------------------------------------------------- |
+| Modo IA     | COMMITS-01, COMMITS-02, COMMITS-03, COMMITS-04, COMMITS-16 |
+| Precedência | COMMITS-10                                                 |
+| Idioma      | COMMITS-05                                                 |
+| Mensagem    | COMMITS-06, COMMITS-11, COMMITS-13                         |
+| Changelog   | COMMITS-12, COMMITS-14                                     |
+| Tipo        | COMMITS-07                                                 |
+| Staging     | COMMITS-08, COMMITS-09, COMMITS-15                         |
 
 ---
 
-## 1. Modo sugestão (padrão) vs modo execução
+## 1. Modo sugestão (padrão) vs modo execução **(COMMITS-01**–**04)**
 
-| Modo         | Quando                                                                                | Assistente de IA na IDE                                      | O que **não** faz (IA)                                                 |
-| ------------ | ------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------- |
-| **Sugestão** | Pedido genérico ou “ajuda com commit” (§ **1.1**)                                     | Protocolo § **8**; mensagens; `git add` para copiar          | `git add` / `git commit` / `git push` sem autorização **(COMMITS-01)** |
-| **Execução** | Desenvolvedor **explícito**: “pode fazer o commit”, “executa o commit completo”, etc. | § **1.2** — confirmações com clique antes de correr comandos | Commitar sem confirmar qual proposta e se inclui push                  |
+| Modo         | Quando                                                                                                                  | Assistente de IA na IDE                                               | O que **não** faz (IA)                                                 |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| **Sugestão** | Pedido genérico, «ajuda com commit», ou **fim de implementação** com arquivos alterados (**AGENTS-20**, **COMMITS-16**) | Protocolo § **8** / § **8.0**; mensagens; `git add` + HEREDOC no chat | `git add` / `git commit` / `git push` sem autorização **(COMMITS-01)** |
+| **Execução** | Desenvolvedor **explícito**: “pode fazer o commit”, “executa o commit completo”, etc.                                   | § **1.2** — confirmações com clique antes de correr comandos          | Commitar sem confirmar qual proposta e se inclui push                  |
 
 ### 1.1 Pedidos genéricos → só protocolo de sugestão
 
@@ -136,9 +148,7 @@ a assistente de IA **execute o commit completo** (ver § **1.3**).
 
 ### 1.2 Modo execução (commit real)
 
-Só após o desenvolvedor ser **explícito** no sentido de executar (ex.: «pode fazer o commit»,
-**COMMITS-03**):
-«faz o commit completo», «pode commitar»):
+Só após o desenvolvedor ser **explícito** no sentido de executar (ex.: «pode fazer o commit», «faz o commit completo», «pode commitar») **(COMMITS-03)**:
 
 1. Se houve **várias propostas numeradas** (Commit A, B, …), **perguntar com clique** qual(is)
    executar — não assumir a primeira.
@@ -177,7 +187,7 @@ Se houver bloco `See`: linha em branco entre o título e as linhas `See`; linha 
 bloco `See` e o corpo. Sem bloco `See`: título seguido do corpo (linha em branco entre título e
 corpo, se houver corpo).
 
-## 3. Idioma das mensagens de commit
+## 3. Idioma das mensagens de commit **(COMMITS-05)**
 
 | Parte da mensagem                  | Idioma                                                                             |
 | ---------------------------------- | ---------------------------------------------------------------------------------- |
@@ -188,7 +198,7 @@ corpo, se houver corpo).
 
 Título e corpo do commit **devem** estar em **inglês** nesta baseline do catálogo, seja redação manual ou sugerida pelo assistente de IA (mesmo quando a conversa na IDE for em português). **(COMMITS-05)**
 
-Para **outro idioma** ou regras locais (ex. PT-BR), documentar em `_dev/spec_<nome-repo>.md` § **Commits** — essa secção **prevalece** sobre este arquivo no consumidor (**AGENTS-25**).
+Para **outro idioma** ou regras locais (ex. PT-BR), documentar em `_dev/spec_<nome-repo>.md` § **Commits** — essa seção **prevalece** sobre este arquivo no consumidor (**AGENTS-10**).
 
 ### 3.1 Composição do título (Conventional Commits)
 
@@ -281,10 +291,10 @@ O **texto** do bullet deve refletir **impacto** user-facing (operador, CLI, prof
 
 A mensagem de commit separa duas narrativas:
 
-| Camada      | Onde                        | Conteúdo                                                                                                    |
-| ----------- | --------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| **Causa**   | Título + corpo (após `See`) | O que mudou no repo e porquê — técnico, para `git log`                                                      |
-| **Impacto** | Trailer **`Impact:`**       | O que o operador/consumidor **passa a ver ou a poder fazer** — candidato directo a bullet em `CHANGELOG.md` |
+| Camada      | Onde                        | Conteúdo                                                                                                   |
+| ----------- | --------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **Causa**   | Título + corpo (após `See`) | O que mudou no repo e porquê — técnico, para `git log`                                                     |
+| **Impacto** | Trailer **`Impact:`**       | O que o operador/consumidor **passa a ver ou a poder fazer** — candidato direto a bullet em `CHANGELOG.md` |
 
 **Quando incluir `Impact:`** (inglês; uma linha ou frase completa):
 
@@ -303,11 +313,11 @@ Impact: gtt tag list shows full version inventory with --inventory or -in.
 
 **Regra para assistentes de IA:** ao propor commit, redigir **sempre** título/corpo orientados à **causa** e trailer **`Impact:`** orientado ao **efeito perceptível** — não repetir o título no `Impact:`.
 
-### 3.6 Trailers `Changelog-*` — excepção à heurística **(COMMITS-14)**
+### 3.6 Trailers `Changelog-*` — exceção à heurística **(COMMITS-14)**
 
-Trailers explícitos **só** quando a secção Keep a Changelog **não** puder ser inferida com confiança a partir do tipo Conventional Commit + diff + `Impact:` (§ **3.7**).
+Trailers explícitos **só** quando a seção Keep a Changelog **não** puder ser inferida com confiança a partir do tipo Conventional Commit + diff + `Impact:` (§ **3.7**).
 
-| Trailer (inglês)      | Secção KAC     |
+| Trailer (inglês)      | Seção KAC      |
 | --------------------- | -------------- |
 | `Changelog-Added:`    | `### Added`    |
 | `Changelog-Changed:`  | `### Changed`  |
@@ -318,10 +328,10 @@ Trailers explícitos **só** quando a secção Keep a Changelog **não** puder s
 **Usar quando**, por exemplo:
 
 - um commit agrupa **causas distintas** (`fix` + `feat`) que deviam ser commits separados mas o operador manteve um só;
-- o tipo CC **não** reflecte a secção (ex.: `feat` que só remove API pública);
-- heurísticas de diff (§ **3.7**) produziriam **secções contradictórias** sem confirmação explícita.
+- o tipo CC **não** reflete a seção (ex.: `feat` que só remove API pública);
+- heurísticas de diff (§ **3.7**) produziriam **seções contraditórias** sem confirmação explícita.
 
-**Não** exigir `Changelog-Added:` / `Changelog-Removed:` quando add+delete de ficheiros servem **uma mesma finalidade** (ex.: substituir spec A por spec B num `feat`) — nesse caso basta **`Impact:`** + heurística de diff (§ **3.7**); o assistente **avalia** se a heurística cobre o commit antes de acrescentar trailers.
+**Não** exigir `Changelog-Added:` / `Changelog-Removed:` quando add+delete de arquivos servem **uma mesma finalidade** (ex.: substituir spec A por spec B num `feat`) — nesse caso basta **`Impact:`** + heurística de diff (§ **3.7**); o assistente **avalia** se a heurística cobre o commit antes de acrescentar trailers.
 
 Formato (omitir linhas vazias):
 
@@ -332,18 +342,18 @@ Changelog-Added: spec_tags_list.md — TAB-1/TAB-2 listing contract.
 Changelog-Removed: Inline list section from spec_tags.md.
 ```
 
-**Preferência:** actualizar `CHANGELOG.md` (§ **3.4**) no mesmo commit; trailers alimentam auditoria futura e geradores automáticos — não substituem o ficheiro enquanto o operador mantiver COMMITS-12.
+**Preferência:** atualizar `CHANGELOG.md` (§ **3.4**) no mesmo commit; trailers alimentam auditoria futura e geradores automáticos — não substituem o arquivo enquanto o operador mantiver COMMITS-12.
 
-### 3.7 Heurísticas de secção KAC (IA e geradores) **(COMMITS-14)**
+### 3.7 Heurísticas de seção KAC (IA e geradores) **(COMMITS-14)**
 
 Checklist para o assistente **antes** de propor trailers `Changelog-*`:
 
-1. Tipo CC + `Impact:` bastam para **uma** secção? → só `Impact:`; secção inferida pela tabela abaixo.
-2. Diff: adds e deletes no **mesmo** prefixo/path stem (substituição, rename, split doc)? → **uma** secção `Changed` **ou** par `Added`+`Removed` derivado do diff; texto do bullet vem de **`Impact:`** (não redigir de novo em `Changelog-*`).
+1. Tipo CC + `Impact:` bastam para **uma** seção? → só `Impact:`; seção inferida pela tabela abaixo.
+2. Diff: adds e deletes no **mesmo** prefixo/path stem (substituição, rename, split doc)? → **uma** seção `Changed` **ou** par `Added`+`Removed` derivado do diff; texto do bullet vem de **`Impact:`** (não redigir de novo em `Changelog-*`).
 3. Diff: adds **e** deletes com **finalidades distintas**? → preferir **split de commits**; se impossível, `Changelog-*` explícitos.
 4. Tipo `docs`/`chore`/`test`/`ci` sem efeito user-facing? → **sem** entrada em changelog.
 
-| Tipo commit (causa)                                 | Secção default (impacto)  |
+| Tipo commit (causa)                                 | Seção default (impacto)   |
 | --------------------------------------------------- | ------------------------- |
 | `feat`                                              | `Added`                   |
 | `fix`                                               | `Fixed`                   |
@@ -351,7 +361,7 @@ Checklist para o assistente **antes** de propor trailers `Changelog-*`:
 | remoção de feature/CLI/API                          | `Removed`                 |
 | `BREAKING CHANGE`                                   | `Changed` + nota breaking |
 
-**Heurística de diff (substituição):** ficheiro **adicionado** e **removido** no mesmo commit, paths sob o mesmo prefixo funcional (`toolkit/gtt/specs/`, `setup/`, …), tipo `feat` ou `refactor` com `Impact:` único → gerador/IA pode emitir `Added`+`Removed` **ou** um bullet `Changed` agregado — **sem** trailers extra se `Impact:` descreve o efeito global.
+**Heurística de diff (substituição):** arquivo **adicionado** e **removido** no mesmo commit, paths sob o mesmo prefixo funcional (`toolkit/gtt/specs/`, `setup/`, …), tipo `feat` ou `refactor` com `Impact:` único → gerador/IA pode emitir `Added`+`Removed` **ou** um bullet `Changed` agregado — **sem** trailers extra se `Impact:` descreve o efeito global.
 
 ### 3.8 Tipo vs arquivos alterados
 
@@ -390,7 +400,7 @@ Ao sugerir escopo, seguir **nesta ordem**:
 
 ### 5.1 Aderência temática (normas compartilhadas + convenções locais)
 
-Consultar a tabela abaixo. Em repositórios com convenções **locais**, mesclar temas do projeto (setup, profile, escopos próprios) com esta tabela — registar em **`_dev/spec_<nome-repo>.md`** § **Convenções** (**AGENTS-22**, **AGENTS-25**); se existir contrato maduro, também em `docs/specs/` ou `specs/` (`spec_conventions.md` ou ficheiro equivalente). **Não** usar `_dev/spec_conventions.md` (sync read-only) para regras locais.
+Consultar a tabela abaixo. Em repositórios com convenções **locais**, mesclar temas do projeto (setup, profile, escopos próprios) com esta tabela — registrar em **`_dev/spec_<nome-repo>.md`** § **Convenções** (**AGENTS-10**); se existir contrato maduro, também em `docs/specs/` ou `specs/` (`spec_conventions.md` ou arquivo equivalente). **Não** usar `_dev/spec_conventions.md` (sync read-only) para regras locais.
 
 | Tema do commit                                                                             | Escopo sugerido              | Tipo usual                                            |
 | ------------------------------------------------------------------------------------------ | ---------------------------- | ----------------------------------------------------- |
@@ -409,7 +419,7 @@ Consultar a tabela abaixo. Em repositórios com convenções **locais**, mesclar
 **Regra:** prefixo `spec_` + **primeiro segmento** até ao **segundo** `_` (ver [`spec_conventions.md`](spec_conventions.md) § **1.2**).
 
 Specs com **apenas um** segmento após `spec_`: usar esse segmento inteiro
-— ex. `spec_conventions.md` (catálogo ou maduro) → `conventions`; `spec_<nome-repo>.md` § **Convenções** → escopo local documentado nessa secção; `spec_agents.md` → `agents`.
+— ex. `spec_conventions.md` (catálogo ou maduro) → `conventions`; `spec_<nome-repo>.md` § **Convenções** → escopo local documentado nessa seção; `spec_agents.md` → `agents`.
 
 **Rename de spec:** escopo derivado do **nome antigo** do arquivo que motivou a mudança.
 
@@ -452,20 +462,44 @@ dev(toDo): update task notes
 
 ---
 
-## 7. Boas práticas
+## 7. Boas práticas **(COMMITS-08**, **COMMITS-09**, **COMMITS-15)**
 
 - **Não** executar `git add`, `git commit` nem `git push` no modo sugestão; execução só § **1.2** (**COMMITS-01**, **COMMITS-03**).
 - **Não** executar `dev-td-up` sem pedido explícito (commit+push automáticos). **(COMMITS-09)**
 - **Não** sugerir `git add` de credenciais (`.env`, chaves privadas, tokens). **(COMMITS-08)**
-- Para sugerir `git commit`: usar HEREDOC, ex. `git commit -m "$(cat <<'EOF' … EOF)"`.
+- Para sugerir `git commit`: usar HEREDOC (**COMMITS-15**), ex. `git commit -m "$(cat <<'EOF' … EOF)"`.
 - Mudanças em `install.sh` ou `profile`: mencionar no corpo se o desenvolvedor precisa rerodar install ou só `source`.
 
 ---
 
-## 8. Sugestão de staging (`git add`) e commits
+## 8. Sugestão de staging (`git add`) e commits **(COMMITS-15**, **COMMITS-16**)
 
-Quando o desenvolvedor pedir **sugestão de commit**, **o que commitar**, **git add** ou equivalente,
-entregar um **pacote revisável**: staging proposto + mensagem(ns).
+Dois gatilhos ativam este capítulo:
+
+| Gatilho                  | Quando                                                                                      | Seção                                     |
+| ------------------------ | ------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| **Pedido explícito**     | Operador pede sugestão de commit, staging, «o que commitar», etc.                           | § **8.1**–§ **8.2**                       |
+| **Fim de implementação** | Tarefa de implementação concluída com arquivos alterados — **sem** esperar pedido de commit | § **8.0** (**COMMITS-16**, **AGENTS-20**) |
+
+Em ambos os casos: entregar **pacote revisável** (staging + mensagem(ns)); **não** executar Git no modo sugestão (**COMMITS-01**). Observada precedência § **1.2** e contrato maduro quando aplicável (**COMMITS-10**).
+
+### 8.0 Encerramento de implementação — wrapup proativo **(COMMITS-16**, **AGENTS-20**)
+
+**Quando:** o assistente concluiu uma tarefa de **implementação** (código, config, specs normativas, documentação de contrato) e há alterações em arquivos rastreáveis no repositório. **Não** esperar o operador pedir «commit», «git add» ou equivalente.
+
+**Ordem obrigatória:**
+
+1. **Inventariar** — `git status --short` e diff dos arquivos alterados nesta tarefa (§ **8.1**).
+2. **Versionamento** — ler `spec_version.md`; decidir MAJOR / MINOR / PATCH ou «sem bump»; **editar** os arquivos de versionamento do projeto quando existirem (`manifest.yaml`, `pyproject.toml`, `package.json`, …) e registrar a decisão no resumo (**AGENTS-24**, **VERSION-01**, **VERSION-13**).
+3. **CHANGELOG** — quando o repositório mantém `CHANGELOG.md`, acrescentar bullet(s) user-facing em `[Unreleased]` ou abrir seção versionada (Perfil B — **VERSION-15**) **no mesmo commit** que a implementação (**COMMITS-12**). Ao abrir `## [X.Y.Z] - AAAA-MM-DD`, aplicar sufixo `(N)` se a data já existir em outra seção — checklist § **8.6** (**VERSION-17**). **Não** adiar para «depois do operador commitar».
+4. **Proibir execução Git** — **não** correr `git add`, `git commit`, `git push` (**AGENTS-18**, **COMMITS-01**). **Sugerir** staging e mensagem no chat é **obrigatório** (passo 5) — distinto de executar.
+5. **Colar no chat** — bloco HEREDOC integral (§ **8.2**) com `git add` dos paths desta tarefa (incluindo `CHANGELOG` e `manifest` quando editados) + mensagem Conventional Commit + `Impact:` quando aplicável (**COMMITS-13**, **COMMITS-15**). **Não** esperar o operador pedir «commit» ou «sugira commit» (**COMMITS-16**, **AGENTS-20**).
+
+Com `_dev/.sdd-context.yaml`, alinhar a `tasks.wrapup` e citar IDs normativos aplicados.
+
+**Distinção:** **AGENTS-13** impede **criar** `CHANGELOG.md` ou `README.md` do zero sem pedido — **não** impede **atualizar** `CHANGELOG`/`manifest` já existentes nos passos 2–3.
+
+Opcional: após o passo 5, oferecer opções clicáveis § **1.3** (**COMMITS-04**) se a IDE suportar execução — o passo 5 **não** depende de confirmação prévia.
 
 ### 8.1 Passo 1 — Inventariar alterações
 
@@ -475,7 +509,26 @@ entregar um **pacote revisável**: staging proposto + mensagem(ns).
 
 ### 8.2 Passo 2 — Propor um ou mais commits
 
-Um commit por **causa** coerente. Cada proposta com: arquivos → resumo → `git add` → mensagem.
+Um commit por **causa** coerente. Cada proposta com: arquivos → resumo → `git add` → mensagem (**COMMITS-15**).
+
+**Formato copy-paste (HEREDOC — COMMITS-15):**
+
+```bash
+git add <paths>
+
+git commit -m "$(cat <<'EOF'
+<type>(<scope>): <imperative title — cause>
+
+<See lines copied from _dev/_dev.md when present — one per line; omit entire block if none — COMMITS-06>
+
+<optional body — cause, decisions>
+
+Impact: <user-visible effect — CHANGELOG bullet when applicable>
+EOF
+)"
+```
+
+Título e corpo em **inglês** (**COMMITS-05**); trailer **`Impact:`** quando o commit for user-facing e existir `CHANGELOG.md` (**COMMITS-13**). Bloco `See` de `_dev/_dev.md` quando aplicável (**COMMITS-06**). **Não** partir `git commit` em linhas soltas — HEREDOC integral.
 
 **Exemplo — SDD inicial** *(nomenclatura histórica `spec_convencoes`; hoje sync `spec_conventions.md`; regras locais do consumidor → `spec_<nome-repo>.md`)*:
 

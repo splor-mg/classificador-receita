@@ -1,6 +1,6 @@
 # Convenção de issues (GitHub)
 
-Normas básicas de título e redação para issues em repositórios que adotam specs compartilhados. **Baseline do catálogo:** título e corpo em **inglês** (§ **3**). Overrides locais em `_dev/spec_<nome-repo>.md` § **Issues** — **AGENTS-22**, **AGENTS-25**.
+Normas básicas de título e redação para issues em repositórios que adotam specs compartilhados. **Baseline do catálogo:** título e corpo em **inglês** (§ **3**). Overrides locais em `_dev/spec_<nome-repo>.md` § **Issues** — **AGENTS-10**.
 
 ## Objetivo
 
@@ -15,10 +15,10 @@ Esta spec complementa [`spec_commits.md`](spec_commits.md) (execução) e [`spec
 | Situação                                            | Arquivo                                                                              |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | Sync do catálogo (`sdd … -pl`)                      | `_dev/spec_issues.md` — cópia **read-only** deste documento                          |
-| Overrides deste repositório                         | `_dev/spec_<nome-repo>.md` § **Issues** — prevalece sobre o catálogo (**AGENTS-25**) |
+| Overrides deste repositório                         | `_dev/spec_<nome-repo>.md` § **Issues** — prevalece sobre o catálogo (**AGENTS-10**) |
 | Contrato maduro em `docs/specs/` ou `specs/` (raiz) | Regras de issue do projeto **prevalecem** sobre `_dev/`. **(ISSUES-06)**             |
 
-Precedência: [`spec_agents.md`](spec_agents.md) § **1.2** (**AGENTS-02**–**05**, **AGENTS-25**).
+Precedência: [`spec_agents.md`](spec_agents.md) § **1.2** (**AGENTS-06**, **AGENTS-10**).
 
 ## Referências
 
@@ -52,8 +52,6 @@ Os principais **conceitos** e **referências externas** que orientam **como redi
 
     *Deve*/*não deve* conforme [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) — [`spec_conventions.md`](spec_conventions.md) **Referências**. IDs: prefixo **`ISSUES`**; índice completo em `spec_conventions.md` § **2**.
 
----
-
 ## Como citar este documento
 
 | Mecanismo           | Uso                                                   |
@@ -62,22 +60,32 @@ Os principais **conceitos** e **referências externas** que orientam **como redi
 | **ID normativo**    | `ISSUES-02` — citação estável.                        |
 | **Índice completo** | [`spec_conventions.md`](spec_conventions.md) § **2**. |
 
-**Índice de IDs deste arquivo:**
+**Índice de IDs normativos deste arquivo:**
 
-| ID        | Seção  | Resumo                                                              |
-| --------- | ------ | ------------------------------------------------------------------- |
-| ISSUES-01 | 1      | Antes de criar issue: ler padrão em `.github/issues/`               |
-| ISSUES-02 | 2.1    | Título em sentence case (só primeira palavra com maiúscula inicial) |
-| ISSUES-03 | 2.2    | Seguir prefixo temático do repo quando existir (ex. `(scope) - …`)  |
-| ISSUES-04 | 2.1    | Não usar título inteiro em CAIXA ALTA                               |
-| ISSUES-05 | 3      | Título e corpo do issue em **inglês**                               |
-| ISSUES-06 | (obj.) | Contrato maduro de issues prevalece sobre cópia em `_dev/`          |
-| ISSUES-07 | 1.2    | Nome de arquivo local alinhado ao padrão de `.github/issues/`       |
-| ISSUES-08 | 4      | Referenciar issue no commit conforme `spec_commits.md`              |
+| ID | Tema | Seção | Resumo |
+| ---- | ---- | ----- | ------ |
+| ISSUES-01 | Repositório | 1 | Antes de criar ou sugerir issue, o autor **deve** consultar padrão existente em `.github/issues/` (ou path equivalente no contrato maduro) — título, corpo, nome de arquivo e labels. |
+| ISSUES-02 | Título | 2.1 | O título do issue **deve** usar **sentence case** — só a primeira palavra com maiúscula inicial, salvo nomes próprios, siglas e identificadores técnicos já capitalizados. |
+| ISSUES-03 | Título | 2.2 | Quando o repositório já usa escopo explícito, novos issues **devem** seguir o mesmo esquema — em geral `(<escopo>) - <descrição em sentence case>` — **não** inventar separador divergente. |
+| ISSUES-04 | Título | 2.1 | O autor **não deve** escrever o título inteiro em CAIXA ALTA; prefixos curtos acordados (`Epic:`) **podem** ter maiúscula no rótulo. |
+| ISSUES-05 | Idioma | 3 | Título e corpo do issue **devem** estar em **inglês** nesta baseline do catálogo — inclusive sugestões do assistente de IA; outro idioma só via `_dev/spec_<nome-repo>.md` § **Issues**. |
+| ISSUES-06 | Precedência | (obj.) | Contrato maduro de issues em `docs/specs/` ou `specs/` (raiz) **deve** prevalecer sobre cópia sync em `_dev/spec_issues.md` — ver **AGENTS-06** e § **1.2** em `spec_agents.md`. |
+| ISSUES-07 | Repositório | 1.2 | Nome de arquivo de issue local **deve** manter coerência com padrão numérico e slug já usado em `.github/issues/` — **não** proliferar formatos divergentes. |
+| ISSUES-08 | Commits | 4 | Ao implementar trabalho rastreado por issue, o commit **deve** referenciar o issue conforme [`spec_commits.md`](spec_commits.md) (`See`, `Closes #N`, `Refs #N`) e alinhar escopo quando aplicável. |
+
+**Índice por tema:**
+
+| Tema | IDs |
+| ---- | --- |
+| Repositório | ISSUES-01, ISSUES-07 |
+| Título | ISSUES-02, ISSUES-03, ISSUES-04 |
+| Idioma | ISSUES-05 |
+| Precedência | ISSUES-06 |
+| Commits | ISSUES-08 |
 
 ---
 
-## 1. Padrão do repositório (`.github/issues/`)
+## 1. Padrão do repositório (`.github/issues/`) **(ISSUES-01**, **ISSUES-07**)
 
 Antes de **criar** ou **sugerir** um issue, o autor **deve** consultar issues já registrados em **`.github/issues/`** (ou path equivalente definido no contrato maduro do projeto). **(ISSUES-01)**
 
@@ -116,7 +124,7 @@ O título do issue **deve** usar **sentence case**: apenas a **primeira letra da
 - siglas e acrónimos (`API`, `SDD`, `YAML`, …);
 - identificadores técnicos que já vêm capitalizados no código.
 
-**Não deve** escrever o título inteiro em CAIXA ALTA. Prefixos curtos acordados (`Epic:`) **podem** ter maiúscula inicial no rótulo; o resto do título permanece em sentence case.
+**Não deve** escrever o título inteiro em CAIXA ALTA. Prefixos curtos acordados (`Epic:`) **podem** ter maiúscula inicial no rótulo; o resto do título permanece em sentence case. **(ISSUES-04)**
 
 | Evitar                      | Preferir                                            |
 | --------------------------- | --------------------------------------------------- |
@@ -138,7 +146,7 @@ Quando `.github/issues/` já usa **escopo explícito**, novos issues **devem** s
 
 ---
 
-## 3. Idioma do título e do corpo
+## 3. Idioma do título e do corpo **(ISSUES-05)**
 
 | Parte                         | Idioma     |
 | ----------------------------- | ---------- |
@@ -148,7 +156,7 @@ Quando `.github/issues/` já usa **escopo explícito**, novos issues **devem** s
 
 Título e corpo **devem** estar em **inglês** nesta baseline do catálogo, seja redação manual ou sugerida pelo assistente de IA (mesmo quando a conversa na IDE for em português). **(ISSUES-05)**
 
-Para **outro idioma** ou convenções locais, documentar em `_dev/spec_<nome-repo>.md` § **Issues** — essa secção **prevalece** sobre este arquivo (**AGENTS-25**).
+Para **outro idioma** ou convenções locais, documentar em `_dev/spec_<nome-repo>.md` § **Issues** — essa seção **prevalece** sobre este arquivo (**AGENTS-10**).
 
 ---
 
@@ -164,7 +172,7 @@ Ao implementar trabalho rastreado por issue:
 ## 5. Assistente de IA
 
 - **Sugerir** título e corpo alinhados a § **1**–**3**; **não** abrir issue no GitHub nem alterar `.github/issues/` sem pedido explícito do desenvolvedor (paralelo a **COMMITS-01** / **AGENTS-11**).
-- Se existirem specs em **`docs/specs/`**, **`specs/`** (raiz) e **`_dev/`**, aplicar precedência em [`spec_agents.md`](spec_agents.md) § **1.2** antes de fixar formato.
+- Se existirem specs em **`docs/specs/`**, **`specs/`** (raiz) e **`_dev/`**, aplicar precedência em [`spec_agents.md`](spec_agents.md) § **1.2** antes de fixar formato — contrato maduro prevalece sobre cópia sync (**ISSUES-06**).
 
 ---
 
@@ -172,4 +180,4 @@ Ao implementar trabalho rastreado por issue:
 
 Ao acrescentar norma citável neste arquivo: próximo `ISSUES-NN` livre; atualizar § **Como citar** e § **2** em [`spec_conventions.md`](spec_conventions.md) (**CONV-04**). Overrides locais: `spec_<nome-repo>.md` § **Issues**.
 
-Alterações ao **modelo compartilhado** do catálogo: elevar ao repositório canônico (`docs/spec_issues.md` upstream) — **AGENTS-14**.
+Alterações ao **modelo compartilhado** do catálogo: elevar ao repositório canônico (`docs/spec_issues.md` upstream) — **AGENTS-26**.
