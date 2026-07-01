@@ -139,6 +139,7 @@ Consultar **nesta ordem** ao sugerir escopo:
 | `spec_validar_codigos.md`                     | `VALCOD`  | Script `validate_code.py` e validação de `receita_cod` |
 | `spec_validar_qualidade.md`                   | `VALQUAL` | Script `validate_quality.py` e quality dimensions      |
 | `spec_itemClassificacao_regras_hierarquia.md` | `ITEMRH`  | Regras de `parent_item_id` e hierarquia semântica      |
+| `spec_foreignKeys_vigencia.md`                | `FKVIG`   | Contenção temporal de FK e união contígua bitemporal   |
 
 ### Tipo vs arquivos (Django)
 

@@ -1,145 +1,218 @@
-# Especificação: Regras de Foreign Keys (FKs) entre entidades do classificador
+# Foreign Keys e contenção temporal de vigência
 
-Este documento centraliza as regras transversais de Foreign Key (FK) que se
-aplicam entre tabelas do projeto, especialmente entre modelos bitemporais.
+Regras transversais de validação de **cobertura temporal de FK** entre modelos bitemporais do classificador. **Não substitui** `spec_itemClassificacao_mascara_apresentacao.md` nem políticas de resolução de máscara visual em formulários, lookups e sugestão de código (`format_receita_cod_by_vigencia`).
 
-**Escopo.** Esta spec trata exclusivamente de **validação de cobertura
-temporal de FK** (filho cuja vigência precisa estar contida na vigência da
-mãe). A política aqui — união contígua de vigências de mesma entidade — é
-**complementar e distinta** das políticas de **resolução de máscara visual**
-em apresentação, formulários, lookups e sugestão de código filho. Para esses
-contextos, ver `_dev/spec_itemClassificacao_mascara_apresentacao.md`
-(apresentação na changelist, com tier estrito + tier secundário) e os pontos
-no código que usam diretamente `format_receita_cod_by_vigencia` (regra
-estrita pura, sem fallback).
+## Objetivo
 
-Tópicos:
+Definir como o projeto **deve** validar que a vigência de um registro filho esteja **integralmente contida** na vigência da entidade referenciada por FK, quando o alvo é bitemporal — usando **união contígua** das janelas ativas da mesma entidade semântica.
 
-- [Definição de Vigência por União Contígua de Mesma Entidade Semântica](#definição-de-vigência-por-união-contígua-de-mesma-entidade-semântica)
+Premissa: o comportamento descrito reflete a implementação vigente em `apps/core/code_valid_time_fk_validation.py` e `apps/core/code_valid_time_fk_resolution.py`.
+
+## Referências
+
+- ADR-001 — bitemporalidade (`docs/adr/adr-001_bitemporalidade.md`).
+- ADR-003 — chave semântica e `*_ref` (`docs/adr/adr-003_chave-semantica.md`).
+- `apps/core/models.py` — `BitemporalModel` e modelos afetados.
+- [`spec_itemClassificacao_mascara_apresentacao.md`](spec_itemClassificacao_mascara_apresentacao.md) — política de máscara visual (distinta desta spec).
+- [`spec_itemClassificacao_regras_hierarquia.md`](spec_itemClassificacao_regras_hierarquia.md) — regras de `parent_item_id` no domínio.
+- [`spec_classificador-receita.md`](spec_classificador-receita.md) § **Convenções** — prefixo `FKVIG`.
+
+Termos *deve* / *não deve* / *pode* conforme RFC 2119 (ver `_dev/spec_conventions.md` **Referências**).
+
+## Como citar este documento
+
+| Mecanismo          | Uso                                                                |
+| ------------------ | ------------------------------------------------------------------ |
+| **Seção numerada** | `§ N` / `§ N.M` — navegação neste arquivo.                         |
+| **ID normativo**   | `FKVIG-NN` — citação estável.                                      |
+| **Prefixo**        | `FKVIG` — ver § **Convenções** em `spec_classificador-receita.md`. |
+
+**Índice de IDs normativos deste arquivo:**
+
+| ID       | Tema            | Seção | Resumo                                                                                                                                                                                                                               |
+| -------- | --------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| FKVIG-01 | Escopo          | 1.1   | Esta spec trata **somente** de validação de **cobertura temporal de FK** (vigência do filho contida na da entidade mãe).                                                                                                             |
+| FKVIG-02 | Escopo          | 1.2   | Políticas de **máscara visual** e resolução estrita em UI **não** fazem parte desta spec — ver `spec_itemClassificacao_mascara_apresentacao.md`.                                                                                     |
+| FKVIG-03 | Contexto        | 2     | FK Django armazena PK de **uma linha física**; a mesma entidade semântica pode ter **várias** linhas ativas com vigências parciais.                                                                                                  |
+| FKVIG-04 | Decisão         | 3.1   | A validação **deve** comparar na **entidade de negócio** (`*_ref`), não só na linha apontada.                                                                                                                                        |
+| FKVIG-05 | Decisão         | 3.2   | Vigência da entidade = **união contígua** das vigências de linhas com `data_registro_fim = sentinela` e mesmo `*_ref`.                                                                                                               |
+| FKVIG-06 | Reaponte        | 3.3   | A FK física **continua** armazenando ponteiro para uma linha (limitação do ORM).                                                                                                                                                     |
+| FKVIG-07 | Reaponte        | 3.4   | `apply_temporal_fk_resolution`: uma linha ativa cobre o filho → FK nessa linha; senão → linha ativa **mais recente** (desempate por `data_vigencia_inicio`, `data_registro_inicio`, `pk`).                                           |
+| FKVIG-08 | Identidade      | 4.1   | Varredura de linhas da mesma entidade **deve** usar `*_ref` do alvo quando existir.                                                                                                                                                  |
+| FKVIG-09 | Identidade      | 4.2   | Fallback: primeiro `*_id` semântico não-relacional; se ausente, PK da linha apontada.                                                                                                                                                |
+| FKVIG-10 | Identidade      | 4.3   | A UI do Admin **deve** continuar exibindo `*_id` semântico; a chave de varredura é interna à validação.                                                                                                                              |
+| FKVIG-11 | Aplicabilidade  | 5.1   | União contígua **somente** quando o alvo da FK herda de `BitemporalModel`.                                                                                                                                                           |
+| FKVIG-12 | Aplicabilidade  | 5.2   | Alvo não bitemporal (ex.: `BaseLegalTecnica`): regra clássica de **linha única** apontada.                                                                                                                                           |
+| FKVIG-13 | Aplicabilidade  | 5.3   | **Não** há exclusão por modelo; toda FK many-to-one para alvo bitemporal é coberta. Override futuro: `temporal_fk_union_validation_exclude_fields` — **não** reutilizar `temporal_fk_include_fields` / `temporal_fk_exclude_fields`. |
+| FKVIG-14 | Algoritmo       | 6.1   | Por cada FK em `fk_fields` no `clean()`: alvo `None` (opcional) → ignorar silenciosamente.                                                                                                                                           |
+| FKVIG-15 | Algoritmo       | 6.2   | **Etapa 1:** vigência da linha apontada contém `[ini_filho, fim_filho]` → passa imediatamente.                                                                                                                                       |
+| FKVIG-16 | Algoritmo       | 6.3   | **Etapa 2:** se alvo bitemporal e Etapa 1 falhou — montar filtro de identidade (`*_ref`), coletar linhas ativas, calcular união contígua, verificar cobertura integral.                                                              |
+| FKVIG-17 | Algoritmo       | 6.4   | Contiguidade **estrita:** `[a,b]` e `[c,d]` fundem em `[a,d]` **somente** quando `c == b + 1 dia`; sobreposições (`c <= b`) **não** fundem.                                                                                          |
+| FKVIG-18 | Algoritmo       | 6.5   | **Etapa 3:** se Etapas 1 e 2 falharem → `ValidationError` com vigência do filho, `*_id` semântico do alvo, união consolidada e lista de **gaps**.                                                                                    |
+| FKVIG-19 | Erro            | 7.1   | Sem gaps explícitos: mensagem com vigência do filho e união consolidada; com gaps: secção **Faltas:** em lista.                                                                                                                      |
+| FKVIG-20 | Erro            | 7.2   | União cobre integralmente o filho → **nenhum** erro.                                                                                                                                                                                 |
+| FKVIG-21 | Sentinela       | 8     | `VALID_TIME_SENTINEL` (`9999-12-31`): sem “próximo dia” em fusão; intervalo com fim sentinela é aberto à direita; gaps consideram cobertura até o fim do filho.                                                                      |
+| FKVIG-22 | Aceite          | 9     | Os casos mínimos de § **9** **devem** ser respeitados pela validação (regressão e aceite).                                                                                                                                           |
+| FKVIG-23 | Implementação   | 10.1  | Regra central em `apps/core/code_valid_time_fk_validation.py`; `clean()` dos cinco modelos bitemporais herdam sem alteração.                                                                                                         |
+| FKVIG-24 | Implementação   | 10.2  | `_build_identity_filter` em `code_valid_time_fk_resolution.py` usa **apenas** `*_ref`, com fallback para `*_id` se `*_ref` vazio.                                                                                                    |
+| FKVIG-25 | Implementação   | 10.3  | Varredura de linhas ativas usa sentinela de `data_registro_fim` adequado ao tipo do campo (aware/naive conforme `USE_TZ`).                                                                                                           |
+| FKVIG-26 | Trade-off       | 11    | FK física pode apontar linha cuja vigência **sozinha** não cobre o filho — desencontro **intencional**; auditoria temporal consulta a união, não só a linha apontada.                                                                |
+| FKVIG-27 | Compatibilidade | 11    | **Sem** migração de banco; mudança apenas em regra de `clean()`; dados existentes inalterados.                                                                                                                                       |
+
+**Índice por tema:**
+
+| Tema            | IDs                                              |
+| --------------- | ------------------------------------------------ |
+| Escopo          | FKVIG-01, FKVIG-02                               |
+| Contexto        | FKVIG-03                                         |
+| Decisão         | FKVIG-04, FKVIG-05                               |
+| Reaponte        | FKVIG-06, FKVIG-07                               |
+| Identidade      | FKVIG-08, FKVIG-09, FKVIG-10                     |
+| Aplicabilidade  | FKVIG-11, FKVIG-12, FKVIG-13                     |
+| Algoritmo       | FKVIG-14, FKVIG-15, FKVIG-16, FKVIG-17, FKVIG-18 |
+| Erro            | FKVIG-19, FKVIG-20                               |
+| Sentinela       | FKVIG-21                                         |
+| Aceite          | FKVIG-22                                         |
+| Implementação   | FKVIG-23, FKVIG-24, FKVIG-25                     |
+| Trade-off       | FKVIG-26                                         |
+| Compatibilidade | FKVIG-27                                         |
 
 ---
 
-## Definição de Vigência por União Contígua de Mesma Entidade Semântica
+## Escopo
 
-### Contexto
+| Inclui                                                                        | Não inclui                                                                                 |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Validação de contenção de vigência filho ⊆ entidade mãe via FK **(FKVIG-01)** | Resolução de máscara visual em changelist, formulários e lookups **(FKVIG-02)**            |
+| União contígua de vigências ativas da mesma entidade `*_ref` **(FKVIG-05)**   | Reaponte automático além do comportamento de `apply_temporal_fk_resolution` **(FKVIG-07)** |
+| Diagnóstico de gaps na mensagem de erro **(FKVIG-18**, **FKVIG-19)**          | Política de `temporal_fk_include_fields` / `temporal_fk_exclude_fields` **(FKVIG-13)**     |
 
-No projeto, os modelos `SerieClassificacao`, `Classificacao`, `NivelHierarquico`,
-`ItemClassificacao`, `VersaoClassificacao` e `VarianteClassificacao` herdam de
-`BitemporalModel` (`apps/core/models.py`). Em conformidade com o ADR-001
-(bitemporalidade) e com o ADR-003 (chave semântica + `*_ref`), uma mesma
-**entidade de negócio** (mesmo `*_id` semântico, mesmo `*_ref` surrogado) pode
-ter **múltiplas linhas físicas** na tabela: uma por janela de
-`[data_vigencia_inicio, data_vigencia_fim]`, somadas a um eixo de
-`transaction_time` (`data_registro_inicio`, `data_registro_fim`).
+---
 
-O Django, porém, ao representar uma FK, armazena na coluna apenas a PK de **uma
-linha física** do alvo. Esse desencontro entre "FK para linha" e "FK para
-entidade" gera o seguinte cenário ao salvar um registro filho:
+## 1. Escopo normativo
 
-- O filho tem vigência `[ini_filho, fim_filho]`.
-- A entidade mãe (mesmo `*_id`) tem várias linhas ativas em transaction-time
-  (cada uma com `data_registro_fim = sentinela`), cada uma com vigência menor
-  que `[ini_filho, fim_filho]`.
-- Nenhuma linha sozinha cobre `[ini_filho, fim_filho]`, mas a **união** das
-  vigências das linhas ativas, na prática, cobre.
+### 1.1 Cobertura temporal de FK **(FKVIG-01)**
 
-A validação anterior comparava `[ini_filho, fim_filho]` apenas com a vigência
-da **linha apontada** pela FK e reprovava o salvamento mesmo quando a entidade
-mãe, vista como um todo, cobria integralmente o filho.
+Validar que `[data_vigencia_inicio, data_vigencia_fim]` do filho esteja contido na vigência efetiva da entidade referenciada.
 
-### Decisão
+### 1.2 Distinção da máscara visual **(FKVIG-02)**
 
-Promover, na validação de contenção temporal entre modelos bitemporais, a
-unidade de comparação de "linha física" para **entidade de negócio**,
-identificada pelo `*_ref` (chave surrogada). A vigência da entidade passa a ser
-a **união contígua** das vigências de todas as linhas com
-`data_registro_fim = sentinela` que compartilham o mesmo `*_ref`.
+Apresentação, tier estrito/secundário na changelist e `format_receita_cod_by_vigencia` seguem `spec_itemClassificacao_mascara_apresentacao.md`.
 
-A FK física continua armazenando o ponteiro para uma linha (limitação do ORM).
-O reaponte automático (`apply_temporal_fk_resolution`) mantém o comportamento
-atual:
+---
 
-- Se houver **uma única linha ativa** cuja vigência sozinha contenha
-  `[ini_filho, fim_filho]`, a FK pousa nessa linha.
-- Caso contrário, a FK pousa na **linha ativa mais recente** da mesma entidade
-  (maior `data_vigencia_inicio`, com desempate por `data_registro_inicio` e
-  depois `pk`). É essa linha que aparece no link à direita da lupa no Admin.
+## 2. Contexto: FK para linha vs entidade **(FKVIG-03)**
 
-### Identidade da entidade
+Modelos `SerieClassificacao`, `Classificacao`, `NivelHierarquico`, `ItemClassificacao`, `VersaoClassificacao` e `VarianteClassificacao` herdam de `BitemporalModel`. Uma entidade de negócio (mesmo `*_id` / `*_ref`) pode ter múltiplas linhas físicas por janela de vigência e eixo de registro.
 
-A varredura das "linhas ativas da mesma entidade" usa exclusivamente o `*_ref`
-do modelo-alvo, quando existir. Justificativas:
+O Django persiste na coluna FK apenas a PK de **uma** linha do alvo. Cenário típico de falha falsa na validação antiga:
 
-- Estabilidade frente a renomeações da chave semântica (`*_id`), conforme
-  ADR-003.
-- Garante que a união consolidada represente uma única entidade conceitual
-  mesmo após eventuais ajustes de nomenclatura.
+- Filho com vigência `[ini_filho, fim_filho]`.
+- Mãe (mesmo `*_id`) com várias linhas ativas em transaction-time, cada uma com vigência menor que o filho.
+- Nenhuma linha isolada cobre o filho, mas a **união** das vigências ativas cobre.
 
-Quando o modelo-alvo não tiver coluna `*_ref` (caso raro entre modelos
-bitemporais), o fallback é o primeiro `*_id` semântico não-relacional; e, se
-ainda assim não houver identidade, a PK da linha apontada.
+Comparar só a linha apontada reprovava o salvamento indevidamente.
 
-A UI do Django Admin continua exibindo o `*_id` semântico para legibilidade —
-a substituição da chave de varredura é interna à validação.
+---
 
-### Aplicabilidade
+## 3. Decisão e reaponte automático
 
-A nova regra aplica-se exclusivamente quando o modelo-alvo da FK **herda de
-`BitemporalModel`**. FKs para modelos não bitemporais (ex.: `BaseLegalTecnica`)
-permanecem validadas pela regra clássica de "linha única": a vigência do filho
-deve estar contida na vigência da linha apontada.
+### 3.1 Unidade de comparação: entidade **(FKVIG-04)**
 
-Sem mecanismo de exclusão por modelo: a validação por união cobre toda FK
-many-to-one cujo destino seja bitemporal. Se no futuro houver necessidade de
-excluir uma FK específica, criaremos override próprio
-(ex.: `temporal_fk_union_validation_exclude_fields`); **não reutilizar** os
-existentes `temporal_fk_include_fields` / `temporal_fk_exclude_fields`, que
-controlam o reaponte automático e são conceito ortogonal a esta validação.
+Promover a comparação de linha física para **entidade de negócio**, identificada por `*_ref`.
 
-### Algoritmo de validação (duas etapas)
+### 3.2 União contígua **(FKVIG-05)**
+
+Vigência da entidade = união contígua das vigências de todas as linhas com `data_registro_fim = sentinela` e mesmo `*_ref`.
+
+### 3.3 FK física **(FKVIG-06)**
+
+A coluna FK continua armazenando ponteiro para uma linha.
+
+### 3.4 `apply_temporal_fk_resolution` **(FKVIG-07)**
+
+| Situação                                               | Comportamento                                                                                                                                                                |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Uma linha ativa cobre `[ini_filho, fim_filho]` sozinha | FK aponta para essa linha                                                                                                                                                    |
+| Caso contrário                                         | FK aponta para linha ativa **mais recente** (maior `data_vigencia_inicio`; desempate `data_registro_inicio`, depois `pk`) — linha exibida no link à direita da lupa no Admin |
+
+---
+
+## 4. Identidade da entidade
+
+### 4.1 Chave `*_ref` **(FKVIG-08)**
+
+Varredura de “linhas ativas da mesma entidade” usa exclusivamente `*_ref` do modelo-alvo quando existir — estabilidade frente a renomeações de `*_id` (ADR-003).
+
+### 4.2 Fallback **(FKVIG-09)**
+
+Sem coluna `*_ref`: primeiro `*_id` semântico não-relacional; se ainda ausente, PK da linha apontada.
+
+### 4.3 Exibição no Admin **(FKVIG-10)**
+
+Substituição da chave de varredura é **interna**; o Admin continua mostrando `*_id` semântico.
+
+---
+
+## 5. Aplicabilidade
+
+### 5.1 Alvo bitemporal **(FKVIG-11)**
+
+Regra de união contígua aplica-se quando o alvo herda de `BitemporalModel`.
+
+### 5.2 Alvo não bitemporal **(FKVIG-12)**
+
+Vigência do filho deve estar contida na vigência da **linha apontada** (regra clássica).
+
+### 5.3 Cobertura e exclusões **(FKVIG-13)**
+
+Toda FK many-to-one para destino bitemporal é validada por união. Exclusão futura por campo: `temporal_fk_union_validation_exclude_fields` — **ortogonal** a `temporal_fk_include_fields` / `temporal_fk_exclude_fields` (reaponte).
+
+---
+
+## 6. Algoritmo de validação
 
 Para cada FK declarada em `fk_fields` no `clean()` do modelo:
 
-1. **Resolução do alvo.** Carrega a linha do alvo a partir do valor da FK.
-   Se for `None` (FK opcional), ignora silenciosamente.
+### 6.1 FK opcional vazia **(FKVIG-14)**
 
-2. **Etapa 1 — linha única apontada.** Se a vigência da linha apontada sozinha
-   já contém `[ini_filho, fim_filho]`, a validação passa imediatamente. Esse
-   é o caminho mais comum e o mais barato.
+Valor `None` → ignorar silenciosamente.
 
-3. **Etapa 2 — união contígua das linhas ativas da entidade.** Aplicada
-   apenas se o alvo herda de `BitemporalModel` e a Etapa 1 não passou.
+### 6.2 Etapa 1 — linha apontada **(FKVIG-15)**
 
-   3.1. Monta o filtro de identidade priorizando `*_ref` do alvo.
+Vigência da linha carregada pela FK contém `[ini_filho, fim_filho]` → validação passa (caminho comum).
 
-   3.2. Consulta todas as linhas com esse `*_ref` e
-   `data_registro_fim = sentinela`. Coleta `(data_vigencia_inicio,
-   data_vigencia_fim)` de cada uma.
+### 6.3 Etapa 2 — união contígua **(FKVIG-16)**
 
-   3.3. Calcula a **união contígua** das janelas. Definição estrita de
-   contiguidade: dois intervalos vizinhos `[a, b]` e `[c, d]`, ordenados por
-   início ascendente, fundem-se em um único `[a, d]` **somente quando**
-   `c == b + 1 dia`. Sobreposições (`c <= b`) não fundem — viram entradas
-   separadas na união consolidada (sobreposições entre linhas ativas da mesma
-   entidade são inconsistência de dados detectada por outras camadas).
+Somente se alvo bitemporal e Etapa 1 falhou:
 
-   3.4. Verifica se `[ini_filho, fim_filho]` está **integralmente coberto**
-   pela união. Se sim, a validação passa.
+1. Filtro de identidade priorizando `*_ref` **(FKVIG-08)**.
+2. Consultar linhas com esse identificador e `data_registro_fim = sentinela`; coletar pares `(data_vigencia_inicio, data_vigencia_fim)`.
+3. Calcular união contígua **(FKVIG-17)**.
+4. Se `[ini_filho, fim_filho]` está integralmente coberto → passa **(FKVIG-16)**.
 
-4. **Etapa 3 — falha com diagnóstico.** Se a Etapa 1 e a Etapa 2 falharam,
-   levanta `ValidationError` mostrando:
+### 6.4 Contiguidade estrita **(FKVIG-17)**
 
-   - A vigência do filho.
-   - O `*_id` semântico do alvo (para o usuário, que vê semântica).
-   - A união consolidada das vigências ativas.
-   - A lista de **gaps** (faixas de `[ini_filho, fim_filho]` que ficaram
-     descobertas), quando houver.
+Intervalos `[a, b]` e `[c, d]` (ordenados por início) fundem em `[a, d]` **somente** quando `c == b + 1 dia`. Sobreposições (`c <= b`) permanecem entradas separadas (inconsistência detectada por outras camadas).
 
-### Formato da mensagem de erro
+### 6.5 Etapa 3 — falha com diagnóstico **(FKVIG-18)**
 
-Sem gaps explícitos (ex.: união completamente vazia ou completamente fora da
-janela do filho), a mensagem traz apenas as duas primeiras linhas. Com gaps,
-inclui-se a seção "Faltas:" em lista. Exemplo com dois gaps:
+`ValidationError` com:
+
+- Vigência do filho;
+- `*_id` semântico do alvo;
+- União consolidada das vigências ativas;
+- Lista de **gaps** (faixas de `[ini_filho, fim_filho]` descobertas), quando houver.
+
+---
+
+## 7. Formato da mensagem de erro
+
+### 7.1 Estrutura **(FKVIG-19)**
+
+Sem gaps explícitos: vigência do filho + união consolidada. Com gaps: secção **Faltas:** em lista.
+
+Exemplo com dois gaps:
 
 ```text
 O período de vigência deste registro (2018-01-01 a 9999-12-31) não está
@@ -150,75 +223,56 @@ selecionada (CLASS-RECEITA-UNIAO-2018). União consolidada: 2018-01-01 a
   - 2025-01-01 a 2025-12-31
 ```
 
-Quando a união cobre integralmente o filho, **nenhum erro é levantado** — a
-mensagem nunca aparece nesse caso.
+### 7.2 Sucesso silencioso **(FKVIG-20)**
 
-### Tratamento do valor sentinela `9999-12-31`
+União cobre integralmente o filho → nenhuma mensagem, nenhum erro.
 
-A operação de "próximo dia" não é aplicada quando `data_vigencia_fim` é igual
-ao sentinela `VALID_TIME_SENTINEL` (9999-12-31). Por convenção do projeto,
-nenhum intervalo pode começar depois do sentinela; portanto:
+---
 
-- Em fusão contígua: se `b == 9999-12-31`, o intervalo `[a, b]` é "aberto à
-  direita" e não há `c == b + 1 dia` válido para fundir.
-- Em cálculo de gaps: se algum intervalo da união tem `fim == sentinela` e
-  cobre o cursor, todo o restante de `[ini_filho, fim_filho]` é considerado
-  coberto.
+## 8. Sentinela `9999-12-31` **(FKVIG-21)**
 
-### Casos de uso (regressão e aceite)
+`VALID_TIME_SENTINEL` (`9999-12-31`):
 
-- **Caso 0 (regressão real).** `CLASS-RECEITA-UNIAO-2018` reversionada em
-  duas linhas ativas: `[2018-01-01, 2025-12-31]` e `[2026-01-01, 9999-12-31]`.
-  Filho `NivelHierarquico` com vigência `[2018-01-01, 9999-12-31]`. Etapa 1
-  falha (linha apontada cobre apenas 2026 em diante). Etapa 2 funde as duas
-  janelas em `[2018-01-01, 9999-12-31]`. Validação passa. **Salvamento
-  permitido.**
+- Fusão contígua: se `b == sentinela`, intervalo aberto à direita — não há `c == b + 1 dia` válido.
+- Gaps: intervalo da união com `fim == sentinela` que cobre o cursor considera o restante de `[ini_filho, fim_filho]` coberto.
+- Nenhum intervalo pode começar depois do sentinela.
 
-- **Caso 1.** Uma única linha ativa cuja vigência contém o filho. Etapa 1
-  passa; Etapa 2 nem é executada.
+---
 
-- **Caso 2.** Duas linhas ativas com gap real: `[2018-01-01, 2020-12-31]` e
-  `[2024-01-01, 9999-12-31]`. Filho com vigência `[2018-01-01, 9999-12-31]`.
-  Etapa 2 não funde (não há contiguidade estrita). Gap reportado:
-  `2021-01-01 a 2023-12-31`. **Salvamento rejeitado.**
+## 9. Casos de aceite mínimos **(FKVIG-22)**
 
-- **Caso 3.** FK para `BaseLegalTecnica` (modelo não bitemporal). Apenas
-  regra clássica de "linha única" se aplica. Comportamento idêntico ao
-  anterior à mudança.
+| Caso | Cenário                                                                                                                                                       | Resultado                                                               |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| 0    | `CLASS-RECEITA-UNIAO-2018` em duas linhas ativas `[2018-01-01, 2025-12-31]` e `[2026-01-01, 9999-12-31]`; filho `NivelHierarquico` `[2018-01-01, 9999-12-31]` | Etapa 1 falha; Etapa 2 funde em `[2018-01-01, 9999-12-31]` → **aceita** |
+| 1    | Uma linha ativa cobre o filho                                                                                                                                 | Etapa 1 passa; Etapa 2 não executa                                      |
+| 2    | Duas linhas com gap real `[2018-01-01, 2020-12-31]` e `[2024-01-01, 9999-12-31]`; filho `[2018-01-01, 9999-12-31]`                                            | Gap `2021-01-01 a 2023-12-31` → **rejeita**                             |
+| 3    | FK para `BaseLegalTecnica` (não bitemporal)                                                                                                                   | Apenas linha única **(FKVIG-12)**                                       |
+| 4    | FK opcional `None`                                                                                                                                            | Ignorada **(FKVIG-14)**                                                 |
+| 5    | Auto-FK `parent_item_id` em `ItemClassificacao`                                                                                                               | Entidade = `item_ref` da linha apontada; Etapa 2 normal                 |
+| 6    | Linhas com `data_registro_fim != sentinela`                                                                                                                   | **Não** entram na união                                                 |
 
-- **Caso 4.** FK opcional não preenchida (`None`). Ignorada silenciosamente.
+---
 
-- **Caso 5.** Auto-FK (`parent_item_id` em `ItemClassificacao`). A entidade
-  varrida é o `item_ref` da linha apontada; aplica-se a Etapa 2 normalmente.
+## 10. Implementação de referência
 
-- **Caso 6.** Linhas inativas em transaction-time
-  (`data_registro_fim != sentinela`) **não entram** na união. Mesmo que
-  cobrissem a vigência do filho, são desconsideradas porque representam
-  estados passados do conhecimento do sistema.
+### 10.1 Validação **(FKVIG-23)**
 
-### Pontos de implementação
+`apps/core/code_valid_time_fk_validation.py` — `validate_vigencia_contained_in_fk_targets` nos `clean()` dos cinco modelos bitemporais.
 
-- A reescrita concentra-se em `apps/core/code_valid_time_fk_validation.py`. Os
-  cinco `clean()` de modelos bitemporais que já chamam
-  `validate_vigencia_contained_in_fk_targets` herdam a nova semântica sem
-  modificação.
-- Refinamento auxiliar em `apps/core/code_valid_time_fk_resolution.py`: a função
-  `_build_identity_filter` passa a usar **apenas** o(s) campo(s) `*_ref` do
-  alvo, com fallback para `*_id` somente quando nenhum `*_ref` estiver
-  preenchido.
-- A varredura das linhas ativas usa o sentinela de `data_registro_fim`
-  adequado ao tipo do campo (aware/naive conforme `USE_TZ`), reaproveitando a
-  convenção já utilizada em `apply_temporal_fk_resolution`.
+### 10.2 Identidade no reaponte **(FKVIG-24)**
 
-### Consequências e trade-offs
+`apps/core/code_valid_time_fk_resolution.py` — `_build_identity_filter` usa somente `*_ref`, fallback `*_id` se `*_ref` vazio.
 
-- **Vantagens.** Coerência da semântica de FK com o conceito de entidade
-  bitemporal; reduz reprovações falsas após reversionamentos do mãe; mensagem
-  de erro mais útil (mostra exatamente o que falta cobrir).
-- **Trade-offs.** A FK física pode apontar para uma linha cuja vigência
-  sozinha não cobre o filho (caso típico do fallback "mais recente"). Esse
-  desencontro entre "linha apontada" e "entidade coberta" é intencional e
-  decorre da limitação do ORM; a auditoria temporal verdadeira é feita
-  consultando a união das linhas ativas, não a linha apontada.
-- **Compatibilidade.** Não há migração de banco; é mudança apenas de regra
-  de validação em `clean()`. Dados existentes não são afetados.
+### 10.3 Sentinela de registro **(FKVIG-25)**
+
+Varredura reutiliza convenção de `apply_temporal_fk_resolution` para sentinela de `data_registro_fim` (aware/naive conforme `USE_TZ`).
+
+---
+
+## 11. Consequências e trade-offs **(FKVIG-26**, **FKVIG-27)**
+
+**Vantagens:** coerência FK ↔ entidade bitemporal; menos reprovações falsas após reversionamento do mãe; erro com gaps explícitos.
+
+**Trade-off intencional (FKVIG-26):** a linha apontada pode não cobrir sozinha o filho; a auditoria temporal consulta a união das linhas ativas.
+
+**Compatibilidade (FKVIG-27):** sem migração de banco; apenas regra em `clean()`; dados existentes inalterados.
