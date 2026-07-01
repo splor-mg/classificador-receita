@@ -120,30 +120,32 @@ Consultar **nesta ordem** ao sugerir escopo:
 | SDD, sync catálogo, `spec_agents`                        | `sdd`                                         | `docs(sdd)`                 |
 | Commits, staging, agents (norma de processo)             | `commits`                                     | `docs(commits)`             |
 
-| Arquivo da spec                               | Escopo              |
-| --------------------------------------------- | ------------------- |
-| `spec_itemClassificacao_criar_filho.md`       | `itemClassificacao` |
-| `spec_itemClassificacao_criar_nome.md`        | `itemClassificacao` |
-| `spec_itemClassificacao_editar_codigo.md`     | `itemClassificacao` |
-| `spec_itemClassificacao_regras_hierarquia.md` | `itemClassificacao` |
-| `spec_itemClassificacao_formulario.md`        | `itemClassificacao` |
-| `spec_foreignKeys_vigencia.md`                | `foreignKeys`       |
-| `spec_lista_abreviacoes.md`                   | `lista`             |
-| `spec_django.md`                              | `django`            |
-| `spec_validar_codigos.md`                     | `validar`           |
-| `spec_validar_qualidade.md`                   | `validar`           |
-| `spec_importar.md`                            | `importar`          |
+| Arquivo da spec                                | Escopo              |
+| ---------------------------------------------- | ------------------- |
+| `spec_itemClassificacao_criar_filho.md`        | `itemClassificacao` |
+| `spec_itemClassificacao_criar_nome.md`         | `itemClassificacao` |
+| `spec_itemClassificacao_editar_codigo.md`      | `itemClassificacao` |
+| `spec_itemClassificacao_regras_hierarquia.md`  | `itemClassificacao` |
+| `spec_itemClassificacao_formulario.md`         | `itemClassificacao` |
+| `spec_itemClassificacao_foreignKeys_lookup.md` | `itemClassificacao` |
+| `spec_foreignKeys_vigencia.md`                 | `foreignKeys`       |
+| `spec_lista_abreviacoes.md`                    | `lista`             |
+| `spec_django.md`                               | `django`            |
+| `spec_validar_codigos.md`                      | `validar`           |
+| `spec_validar_qualidade.md`                    | `validar`           |
+| `spec_importar.md`                             | `importar`          |
 
 ### Prefixos de ID normativos (domínio local)
 
-| Arquivo                                       | Prefixo    | Escopo                                                 |
-| --------------------------------------------- | ---------- | ------------------------------------------------------ |
-| `spec_validar_codigos.md`                     | `VALCOD`   | Script `validate_code.py` e validação de `receita_cod` |
-| `spec_validar_qualidade.md`                   | `VALQUAL`  | Script `validate_quality.py` e quality dimensions      |
-| `spec_itemClassificacao_regras_hierarquia.md` | `ITEMRH`   | Regras de `parent_item_id` e hierarquia semântica      |
-| `spec_foreignKeys_vigencia.md`                | `FKVIG`    | Contenção temporal de FK e união contígua bitemporal   |
-| `spec_importar.md`                            | `IMPORT`   | Protocolo de importação (MINUTA; pipeline ADR-005)     |
-| `spec_itemClassificacao_formulario.md`        | `ITEMFORM` | Formulário admin: largura `receita_cod` e limpar add   |
+| Arquivo                                        | Prefixo    | Escopo                                                   |
+| ---------------------------------------------- | ---------- | -------------------------------------------------------- |
+| `spec_validar_codigos.md`                      | `VALCOD`   | Script `validate_code.py` e validação de `receita_cod`   |
+| `spec_validar_qualidade.md`                    | `VALQUAL`  | Script `validate_quality.py` e quality dimensions        |
+| `spec_itemClassificacao_regras_hierarquia.md`  | `ITEMRH`   | Regras de `parent_item_id` e hierarquia semântica        |
+| `spec_foreignKeys_vigencia.md`                 | `FKVIG`    | Contenção temporal de FK e união contígua bitemporal     |
+| `spec_importar.md`                             | `IMPORT`   | Protocolo de importação (MINUTA; pipeline ADR-005)       |
+| `spec_itemClassificacao_formulario.md`         | `ITEMFORM` | Formulário admin: largura `receita_cod` e limpar add     |
+| `spec_itemClassificacao_foreignKeys_lookup.md` | `ITEMLKP`  | Endpoints JSON lookup-parent / lookup-hierarchy no Admin |
 
 ### Tipo vs arquivos (Django)
 
