@@ -156,6 +156,7 @@ Consultar **nesta ordem** ao sugerir escopo:
 | `spec_django.md`                                   | `DJANGO`   | Layout Django, Admin changelist e pipeline bitemporal    |
 | `spec_itemClassificacao_criar_nome.md`             | `ITEMNOM`  | Criação add: `receita_nome`, modos de radical, P-mãe     |
 | `spec_itemClassificacao_criar_filho.md`            | `ITEMCF`   | Sugestão de código filho na add e atalho change → add    |
+| `spec_itemClassificacao_navegacao.md`              | `ITEMNAV`  | Navegação estrutural na change (`<< < > >>`)             |
 
 ### Tipo vs arquivos (Django)
 
