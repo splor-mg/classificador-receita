@@ -2,6 +2,20 @@
 # Projeto Classificador de Receita
 # ============================================================================
 
+
+# Development files
+# ============================================================================
+
+# Dev
+_dev/*
+!_dev/.specs/
+!_dev/toDo.md
+!_dev/.arqv
+_dev/.specs/.spec*.md
+_dev/.specs/.specs-sync.yaml
+_dev/.specs/.README.md
+.sdd-context*.yaml
+
 # ERD generated files
 # docs/erd/*.dot
 # docs/erd/*.png
@@ -10,6 +24,7 @@
 ~$*.xlsx
 ~$*.xls
 ~$*.csv
+
 
 # ============================================================================
 # Python
