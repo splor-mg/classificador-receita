@@ -1,0 +1,45 @@
+---
+title: '[mid-07] Entregar o link do Django a um mantenedor da AID'
+state: O
+author: carloshob
+created: '2026-09-30T13:45:00Z'
+updated: '2026-09-30T13:45:00Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: null
+relationships:
+  parent: '#77'
+  blocked_by:
+  - '#83'
+  blocking: []
+---
+# description
+
+body: |-
+  Pai: #77. Plano: `_dev/.epic/.epic-01_0-easypanel-deploy.md` (mid-07).
+
+  O produto do EPIC-01 é o acesso da equipe, não só um painel funcionando para quem fez o deploy.
+
+  Fora de escopo: treinar regras de negócio do classificador; dar admin do EasyPanel a todo mantenedor.
+
+  - [ ] Escrever um roteiro em `docs/instalacao/` com a URL do app, o caminho de login do Django e os nomes dos itens do Bitwarden (painel e Django)
+  - [ ] Dizer a quem pedir uma conta
+  - [ ] Deixar toda senha fora do roteiro
+  - [ ] Abrir a URL do roteiro no navegador, sem credencial do EasyPanel, e ver a página de login do Django
+  - [ ] Um colega da AID que não é o operador do deploy entra com o próprio usuário Django e chega a uma tela de manutenção
+---
+# regs
+
+- date: '2026-09-30T13:45:00Z'
+  reg: opened
+  author: carloshob
+
+- date: '2026-09-30T13:45:00Z'
+  reg: 'relationship:parent_added:#77'
+  author: carloshob
+
+- date: '2026-09-30T13:45:00Z'
+  reg: 'relationship:blocked_by_added:#83'
+  author: carloshob

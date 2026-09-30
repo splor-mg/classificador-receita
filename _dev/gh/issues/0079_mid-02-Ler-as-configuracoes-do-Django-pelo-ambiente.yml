@@ -1,0 +1,49 @@
+---
+title: '[mid-02] Ler as configurações do Django pelo ambiente'
+state: O
+author: carloshob
+created: '2026-09-30T13:45:00Z'
+updated: '2026-09-30T13:45:00Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: null
+relationships:
+  parent: '#77'
+  blocked_by:
+  - '#78'
+  blocking:
+  - '#80'
+  - '#81'
+---
+# description
+
+body: |-
+  Pai: #77. Plano: `_dev/.epic/.epic-01_0-easypanel-deploy.md` (mid-02).
+
+  Um container no EasyPanel não pode usar `DEBUG=True`, `ALLOWED_HOSTS` vazio ou host de banco fixo em `localhost`.
+
+  Fora de escopo: funcionalidades novas do classificador; alterar o conteúdo dos seeds; colocar senhas reais do laboratório no `.env.example` ou no settings.
+
+  - [ ] Ler `SECRET_KEY` do ambiente e não usar, no laboratório, a chave insegura gravada em `classificador/settings.py`
+  - [ ] Ler `DEBUG` do ambiente
+  - [ ] Ler `ALLOWED_HOSTS` e `CSRF_TRUSTED_ORIGINS` do ambiente
+  - [ ] Ler nome, usuário, senha, host e porta do PostgreSQL do ambiente quando `USE_SQLITE` não estiver definido
+  - [ ] Manter `USE_SQLITE=1`: `poetry run task migrate` e `poetry run task dev-server` continuam como no README
+  - [ ] Com as variáveis do laboratório, o Django aceita o hostname do mid-01 e fala com um PostgreSQL que não é local
+  - [ ] Listar cada variável do laboratório em `.env.example` como placeholder, e dizer que os valores reais ficam no EasyPanel e no Bitwarden
+---
+# regs
+
+- date: '2026-09-30T13:45:00Z'
+  reg: opened
+  author: carloshob
+
+- date: '2026-09-30T13:45:00Z'
+  reg: 'relationship:parent_added:#77'
+  author: carloshob
+
+- date: '2026-09-30T13:45:00Z'
+  reg: 'relationship:blocked_by_added:#78'
+  author: carloshob

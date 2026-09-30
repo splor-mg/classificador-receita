@@ -1,0 +1,53 @@
+---
+title: '[mid-05] Publicar o serviço e o hostname no EasyPanel'
+state: O
+author: carloshob
+created: '2026-09-30T13:45:00Z'
+updated: '2026-09-30T13:45:00Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: null
+relationships:
+  parent: '#77'
+  blocked_by:
+  - '#80'
+  - '#81'
+  blocking:
+  - '#83'
+---
+# description
+
+body: |-
+  Pai: #77. Plano: `_dev/.epic/.epic-01_0-easypanel-deploy.md` (mid-05).
+
+  Os mantenedores precisam de um link HTTPS estável. `https://191.234.171.158/` é o painel, não esse link.
+
+  Fora de escopo: um domínio próprio fora do que este host oferece; limite de taxa, SSO ou WAF.
+
+  - [ ] Criar o serviço do app a partir da conexão Git ou da imagem escolhida no mid-01
+  - [ ] Definir o ambiente do mid-02 no serviço, com `DEBUG` desligado
+  - [ ] Anexar o hostname do mid-01 e o TLS que o EasyPanel oferece neste host
+  - [ ] Proxiar para a porta do container do mid-03
+  - [ ] Adicionar um health check em uma URL do Django
+  - [ ] Abrir a URL do app em HTTPS, sem credencial do EasyPanel, e receber uma resposta do Django, não o login do painel
+  - [ ] Fazer redeploy pelo branch ou pela imagem escolhida e atualizar o app em execução sem shell manual no host
+---
+# regs
+
+- date: '2026-09-30T13:45:00Z'
+  reg: opened
+  author: carloshob
+
+- date: '2026-09-30T13:45:00Z'
+  reg: 'relationship:parent_added:#77'
+  author: carloshob
+
+- date: '2026-09-30T13:45:00Z'
+  reg: 'relationship:blocked_by_added:#80'
+  author: carloshob
+
+- date: '2026-09-30T13:45:00Z'
+  reg: 'relationship:blocked_by_added:#81'
+  author: carloshob

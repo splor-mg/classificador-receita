@@ -1,0 +1,54 @@
+---
+title: '[mid-04] Provisionar o PostgreSQL no EasyPanel'
+state: O
+author: carloshob
+created: '2026-09-30T13:45:00Z'
+updated: '2026-09-30T13:45:00Z'
+labels:
+- new-feature
+assignees:
+- carloshob
+milestone: null
+relationships:
+  parent: '#77'
+  blocked_by:
+  - '#78'
+  - '#79'
+  blocking:
+  - '#82'
+---
+# description
+
+body: |-
+  Pai: #77. Plano: `_dev/.epic/.epic-01_0-easypanel-deploy.md` (mid-04).
+
+  O classificador é especificado em PostgreSQL. O SQLite permanece só no uso local.
+
+  Fora de escopo: reutilizar os padrões do README `postgres` / `postgres` como senha do laboratório; abrir o PostgreSQL na internet pública; importar o SISOR.
+
+  - [ ] Criar ou adotar um serviço PostgreSQL no projeto Aid-Lab nomeado no mid-01
+  - [ ] Criar um banco e um usuário dedicados a este app
+  - [ ] Não reutilizar os padrões do README `postgres` / `postgres` como senha do laboratório
+  - [ ] Guardar a senha do banco nos segredos do EasyPanel ou no Bitwarden, não no Git
+  - [ ] Apontar as variáveis do mid-02 para esse serviço pela rede interna do painel
+  - [ ] Confirmar que o banco continua no ar depois de um redeploy do container do app
+  - [ ] Confirmar que o Django migra contra esse banco
+  - [ ] Confirmar que a porta do banco não está publicada no host público
+---
+# regs
+
+- date: '2026-09-30T13:45:00Z'
+  reg: opened
+  author: carloshob
+
+- date: '2026-09-30T13:45:00Z'
+  reg: 'relationship:parent_added:#77'
+  author: carloshob
+
+- date: '2026-09-30T13:45:00Z'
+  reg: 'relationship:blocked_by_added:#78'
+  author: carloshob
+
+- date: '2026-09-30T13:45:00Z'
+  reg: 'relationship:blocked_by_added:#79'
+  author: carloshob
