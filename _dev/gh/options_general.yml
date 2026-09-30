@@ -1,0 +1,30 @@
+state:
+- O: aberto
+- C: fechado
+labels:
+- bug
+- chore
+- documentation
+- meeting
+- new-feature
+- question
+- wontfix
+type:
+- 1 - Alta
+- 2 - Média
+- 3 - Baixa
+milestone:
+- Contrução do Projeto
+- Arquitetura de Dados
+- Modelagem de Dados
+- Implementação do Banco de Dados
+- Migração de Dados
+- SGDB - App Web de Gestão
+- Dashboard Público
+- Integração Bidirecional com SISOR
+- Reuniões
+relationships:
+  parent: 'um #N, ou null'
+  blocked_by: 'lista de #N'
+  blocking: 'lista de #N'
+  relates_to: 'lista de #N'
