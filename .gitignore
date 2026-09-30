@@ -9,6 +9,8 @@
 # Dev
 _dev/*
 !_dev/.specs/
+!_dev/.epic/
+!_dev/gh/
 !_dev/toDo.md
 !_dev/.arqv
 _dev/.specs/.spec*.md
