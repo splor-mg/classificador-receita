@@ -1,0 +1,95 @@
+---
+title: '[08/06/2026] Reunião 10 - Operacionalização do MLP - 3'
+state: C
+author: carloshob
+created: '2026-06-08T13:32:04Z'
+updated: '2026-06-08T19:34:03Z'
+labels:
+- meeting
+assignees:
+- carloshob
+milestone: Migração de Dados
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-06-08'
+  Data de vencimento: '2026-06-08'
+  Created: null
+  Updated: null
+  Closed: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+---
+# description
+
+body: |-
+  _[ [Gravação do encontro](https://youtu.be/LBJR5TchcbI) | [Reunião anterior](https://github.com/splor-mg/classificador-receita/issues/72) | [Próxima reunião](https://github.com/splor-mg/classificador-receita/issues/74) ]_
+  
+  ### Descrição
+  
+  Encontro da série **Operacionalização do MLP** dedicado ao início do **uso assistido** das ferramentas e protocolos já implementados no gerenciador (Django Admin). 
+  
+  Cada encontro combina (i) **revisão dos conceitos centrais** que sustentam o modelo de dados e as regras de negócio do classificador, (ii) **repasse das implementações** disponíveis para operação, (iii) **testes práticos** sobre o gerenciador e (iv) coleta de **observações de uso** que possam indicar ajustes no modelo, na interface ou nos protocolos.
+  
+  ## Pauta
+  - terceiro encontro de operacionalização do MLP
+  - encaminhamentos da [reunião de 21/05](https://github.com/splor-mg/classificador-receita/issues/64)
+  
+  ## Participantes
+  - @carloshob
+  - @GuilhermeReisSeplag 
+  - @Laura-Dilly
+  - @marcelatsm
+  
+  ## Assuntos tratados
+  - [Navegação estrutural por setas na change de ItemClassificacao](https://github.com/splor-mg/classificador-receita/issues/64#:~:text=7.%20Navega%C3%A7%C3%A3o%20estrutural%20por%20setas%20na%20change%20de%20ItemClassificacao)
+  
+  - [Implementação da Documentação Orienta a Especificação de Domínio (SDD)](https://github.com/splor-mg/classificador-receita/issues/64#:~:text=8.%20Implementa%C3%A7%C3%A3o%20da%20Documenta%C3%A7%C3%A3o%20Orienta%20a%20Especifica%C3%A7%C3%A3o%20de%20Dom%C3%ADnio%20(SDD))
+  
+  ## Encaminhamentos
+  - Encontro final destinado à apresentação do projeto no servidor, marcado para 15/06, às 10:30
+---
+# regs
+
+- date: 2026-06-08T13:32:04Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-06-08T13:32:05Z
+  reg: label:added:meeting
+  author: carloshob
+
+- date: 2026-06-08T13:32:05Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-06-08T18:57:26Z
+  reg: title:changed:"[01/06/2026] Reunião 10 - Operacionalização do MLP - 3":"[08/06/2026] Reunião 10 - Operacionalização do MLP - 3"
+  author: carloshob
+
+- date: 2026-06-08T19:15:51Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-06-08T19:16:17Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-06-08T19:16:20Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-06-08T19:34:03Z
+  reg: milestone:added:Migração de Dados
+  author: carloshob
+
+- date: 2026-06-08T19:34:29Z
+  reg: relationship:parent_added
+  author: carloshob
+---
