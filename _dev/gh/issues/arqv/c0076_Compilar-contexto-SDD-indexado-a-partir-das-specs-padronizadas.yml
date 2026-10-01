@@ -4,11 +4,12 @@ state: C
 author: carloshob
 created: '2026-07-01T03:03:59Z'
 updated: '2026-07-01T03:41:27Z'
-labels:
-- documentation
+closed: '2026-07-01T03:41:27Z'
 assignees:
 - carloshob
-milestone: Migração de Dados
+labels:
+- documentation
+type: 2 - Média
 projects:
 - name: Gestão à Vista AID
   number: 13
@@ -17,13 +18,17 @@ projects:
   Projeto: Datamart
   Data início: '2026-06-01'
   Data de vencimento: '2026-06-30'
-  Created: null
-  Updated: null
-  Closed: null
+  Planejado: null
+  tags: null
+milestone: Migração de Dados
 relationships:
-  parent: null
+  parent: '#1'
   blocked_by: []
   blocking: []
+  relates_to: []
+development:
+  pull_requests: []
+  branches: []
 ---
 # description
 

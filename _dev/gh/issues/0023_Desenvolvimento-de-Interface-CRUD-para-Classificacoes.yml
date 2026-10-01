@@ -1,0 +1,115 @@
+---
+title: Desenvolvimento de Interface CRUD para Classificações
+state: O
+author: carloshob
+created: '2025-11-28T20:04:16Z'
+updated: '2026-09-30T17:13:33Z'
+closed: null
+assignees:
+- carloshob
+labels:
+- new-feature
+type: null
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: In Progress
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-05-04'
+  Data de vencimento: '2026-05-15'
+  tags: null
+milestone: SGDB - App Web de Gestão
+relationships:
+  parent: '#1'
+  blocked_by: []
+  blocking: []
+  relates_to: []
+development:
+  pull_requests: []
+  branches: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Desenvolver interface completa de CRUD (Create, Read, Update, Delete) para classificações usando Django views, forms e templates. Interface deve permitir criação, visualização, edição e inativação de classificações.
+  
+  ### Entregas:
+  
+  - Views Django (class-based ou function-based)
+  - Forms Django com validação
+  - Templates HTML para CRUD
+  - Navegação e UX implementada
+  - Testes unitários das views
+  
+  ### Observações:
+  
+  - Usar class-based views quando apropriado
+  - Implementar validação tanto no form quanto no model
+  - Considerar UX/UI moderna e responsiva
+---
+# regs
+
+- date: 2025-11-28T20:04:16Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T20:04:17Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T20:04:24Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T20:04:27Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:04:30Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:05:02Z
+  reg: milestone:added:Arquitetura de Dados
+  author: carloshob
+
+- date: 2025-11-28T20:05:08Z
+  reg: milestone:removed:Arquitetura de Dados
+  author: carloshob
+
+- date: 2025-11-28T20:05:08Z
+  reg: milestone:added:SGDB - App Web de Gestão
+  author: carloshob
+
+- date: 2025-12-05T17:00:06Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-06-08T15:23:05Z
+  reg: comment
+  author: carloshob
+  body: |-
+    @gabrielbdornas, @Laura-Dilly  e @marcelatsm, o issue foi fechado pois o CRUD operacional do classificador está implementado no Django Admin (apps/core/admin.py, admin_handlers.py, admin_mixins.py), com criação, leitura, edição, bloqueio, exclusão lógica e reativação de registros bitemporais. O fluxo de edição inclui tela de confirmação com diff de atributos e estratégias de atualização (templates/admin/core/bitemporal_confirm.html). Para ItemClassificacao, há navegação por código, criação de filho a partir do item mãe, validações de hierarquia e endpoints JSON de apoio ao formulário.
+    
+    O Admin foi definido como interface principal de gestão do classificador, conforme _dev/spec_django.md e o escopo do MVP (#53).
+    
+    Desenvolvimento futuro: views/forms/templates dedicados fora do Admin, tendo em vista necessidade de interface pública ou de perfis de usuário distintos do operador administrativo.
+    
+    
+
+- date: 2026-06-08T15:23:05Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-06-08T15:23:07Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-09-30T17:13:33Z
+  reg: state:reopened
+  author: carloshob
+---

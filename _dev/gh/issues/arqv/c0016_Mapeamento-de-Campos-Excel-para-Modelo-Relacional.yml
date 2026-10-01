@@ -4,11 +4,12 @@ state: C
 author: carloshob
 created: '2025-11-28T19:51:34Z'
 updated: '2026-03-04T19:55:23Z'
-labels:
-- new-feature
+closed: '2026-03-04T19:55:23Z'
 assignees:
 - carloshob
-milestone: Migração de Dados
+labels:
+- new-feature
+type: null
 projects:
 - name: Gestão à Vista AID
   number: 13
@@ -18,14 +19,16 @@ projects:
   Planejado: Sim
   Data início: '2026-02-02'
   Data de vencimento: '2026-02-27'
-  Data Fim: '2026-02-27'
-  Created: null
-  Updated: null
-  Closed: null
+  tags: null
+milestone: Migração de Dados
 relationships:
-  parent: null
+  parent: '#1'
   blocked_by: []
   blocking: []
+  relates_to: []
+development:
+  pull_requests: []
+  branches: []
 ---
 # description
 

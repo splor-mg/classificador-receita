@@ -3,7 +3,7 @@ title: '[mid-07] Entregar o link do Django a um mantenedor da AID'
 state: O
 author: carloshob
 created: '2026-09-30T18:12:04Z'
-updated: '2026-09-30T21:55:26Z'
+updated: '2026-10-01T10:46:10Z'
 closed: null
 assignees:
 - carloshob
@@ -103,4 +103,10 @@ body: |-
 - date: 2026-09-30T21:55:26Z
   reg: label:removed:bug
   author: carloshob
+
+- date: 2026-10-01T10:46:09Z
+  reg: comment
+  author: mariaefod
+  body: |-
+    @carloshob o issue tá com a flag da loa-2027
 ---

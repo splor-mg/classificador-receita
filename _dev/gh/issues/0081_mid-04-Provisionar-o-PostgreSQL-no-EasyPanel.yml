@@ -2,30 +2,34 @@
 title: '[mid-04] Provisionar o PostgreSQL no EasyPanel'
 state: O
 author: carloshob
-created: '2026-09-30T13:45:00Z'
-updated: '2026-09-30T13:45:00Z'
-labels:
-- new-feature
+created: '2026-09-30T17:13:38Z'
+updated: '2026-09-30T18:11:19Z'
+closed: null
 assignees:
 - carloshob
+labels:
+- new-feature
+type: null
+projects: []
 milestone: null
 relationships:
-  parent: '#77'
-  blocked_by:
-  - '#78'
-  - '#79'
-  blocking:
-  - '#82'
+  parent: null
+  blocked_by: []
+  blocking: []
+  relates_to: []
+development:
+  pull_requests: []
+  branches: []
 ---
 # description
 
 body: |-
   Pai: #77. Plano: `_dev/.epic/.epic-01_0-easypanel-deploy.md` (mid-04).
-
+  
   O classificador é especificado em PostgreSQL. O SQLite permanece só no uso local.
-
+  
   Fora de escopo: reutilizar os padrões do README `postgres` / `postgres` como senha do laboratório; abrir o PostgreSQL na internet pública; importar o SISOR.
-
+  
   - [ ] Criar ou adotar um serviço PostgreSQL no projeto Aid-Lab nomeado no mid-01
   - [ ] Criar um banco e um usuário dedicados a este app
   - [ ] Não reutilizar os padrões do README `postgres` / `postgres` como senha do laboratório
@@ -37,18 +41,15 @@ body: |-
 ---
 # regs
 
-- date: '2026-09-30T13:45:00Z'
-  reg: opened
+- date: 2026-09-30T17:13:39Z
+  reg: assignee:added:carloshob
   author: carloshob
 
-- date: '2026-09-30T13:45:00Z'
-  reg: 'relationship:parent_added:#77'
+- date: 2026-09-30T17:13:40Z
+  reg: label:added:new-feature
   author: carloshob
 
-- date: '2026-09-30T13:45:00Z'
-  reg: 'relationship:blocked_by_added:#78'
+- date: 2026-09-30T18:11:19Z
+  reg: title:changed:"[mid-07] Entregar o link do Django a um mantenedor da AID":"[mid-04] Provisionar o PostgreSQL no EasyPanel"
   author: carloshob
-
-- date: '2026-09-30T13:45:00Z'
-  reg: 'relationship:blocked_by_added:#79'
-  author: carloshob
+---

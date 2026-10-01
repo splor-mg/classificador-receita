@@ -1,0 +1,103 @@
+---
+title: Implementação de Consultas Históricas (Point-in-Time)
+state: O
+author: carloshob
+created: '2025-11-28T20:23:37Z'
+updated: '2026-09-30T17:13:39Z'
+closed: null
+assignees:
+- carloshob
+labels:
+- new-feature
+type: null
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: In Progress
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-05-01'
+  Data de vencimento: '2026-05-29'
+  tags: null
+milestone: Dashboard Público
+relationships:
+  parent: '#1'
+  blocked_by: []
+  blocking: []
+  relates_to: []
+development:
+  pull_requests: []
+  branches: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Implementar funcionalidade de consultas históricas (point-in-time queries) no dashboard, permitindo que usuários consultem estado do classificador em datas específicas. Utilizar SQL raw para consultas temporais complexas.
+  
+  ### Entregas:
+  
+  - Views Django para consultas históricas
+  - Interface para seleção de data
+  - Consultas point-in-time implementadas
+  - Visualização de histórico
+  - Testes de consultas históricas
+  
+  ### Observações:
+  
+  - Consultas devem usar SQL raw para bitemporalidade
+  - Validar performance de consultas históricas
+  - Interface deve ser intuitiva para seleção de data
+---
+# regs
+
+- date: 2025-11-28T20:23:38Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T20:23:40Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T20:23:46Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T20:23:49Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:23:52Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:24:09Z
+  reg: milestone:added:Dashboard Público
+  author: carloshob
+
+- date: 2025-12-05T17:01:58Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-06-08T15:29:46Z
+  reg: comment
+  author: carloshob
+  body: |-
+    @gabrielbdornas, @Laura-Dilly e @marcelatsm, o issue foi fechado, pois as consultas históricas estão disponíveis por parâmetros temporais no gerenciador. O filtro RegistroAtivoFilter permite visualizar registros ativos no ano corrente, futuros, históricos (todas as linhas com data_registro_fim sentinela) e inativos; date_hierarchy permite navegação por data de vigência nas changelists. O comando atualizar_lista_abreviacoes aceita --as-of para operações com data de referência. A carga de seeds respeita data_registro_inicio/data_registro_fim e data_vigencia_inicio/data_vigencia_fim por linha (carregar_classificador).
+    
+    Desenvolvimento futuro: interface de seleção de data no dashboard público, managers as-of reutilizáveis e camada SQL otimizada para consultas point-in-time em grande volume.
+
+- date: 2026-06-08T15:29:46Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-06-08T15:29:49Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-09-30T17:13:39Z
+  reg: state:reopened
+  author: carloshob
+---

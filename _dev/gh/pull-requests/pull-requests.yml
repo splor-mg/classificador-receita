@@ -1,5 +1,54 @@
+name: pull-requests
+account: splor-mg
 pull_requests:
-- 46: 'feat(docs): adicionar documento de projeto'
-- 48: Arquitetura dados
-- 49: Modelagem dados
-- 63: Implementação MVP Banco ORM Django
+- number: 46
+  title: 'feat(docs): adicionar documento de projeto'
+  state: MERGED
+  draft: false
+  author: carloshob
+  created: '2025-11-28T23:59:37Z'
+  updated: '2026-01-14T13:07:23Z'
+  closed: '2025-12-10T13:44:56Z'
+  merged: '2025-12-10T13:44:56Z'
+  base: main
+  head: projeto
+  url: https://github.com/splor-mg/classificador-receita/pull/46
+
+- number: 48
+  title: Arquitetura dados
+  state: CLOSED
+  draft: false
+  author: carloshob
+  created: '2025-12-17T00:44:04Z'
+  updated: '2026-01-12T14:10:52Z'
+  closed: '2026-01-12T14:10:33Z'
+  merged: null
+  base: main
+  head: arquitetura-dados
+  url: https://github.com/splor-mg/classificador-receita/pull/48
+
+- number: 49
+  title: Modelagem dados
+  state: MERGED
+  draft: false
+  author: carloshob
+  created: '2025-12-17T04:28:14Z'
+  updated: '2026-01-30T21:27:58Z'
+  closed: '2026-01-19T19:21:16Z'
+  merged: '2026-01-19T19:21:16Z'
+  base: main
+  head: modelagem-dados
+  url: https://github.com/splor-mg/classificador-receita/pull/49
+
+- number: 63
+  title: Implementação MVP Banco ORM Django
+  state: MERGED
+  draft: false
+  author: carloshob
+  created: '2026-03-31T19:23:35Z'
+  updated: '2026-04-28T18:20:27Z'
+  closed: '2026-04-06T13:25:49Z'
+  merged: '2026-04-06T13:25:48Z'
+  base: main
+  head: banco
+  url: https://github.com/splor-mg/classificador-receita/pull/63

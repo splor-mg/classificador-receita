@@ -1,0 +1,107 @@
+---
+title: '[15/06/2026] Reunião 11 - Operacionalização do MLP - 4'
+state: C
+author: carloshob
+created: '2026-06-08T19:15:30Z'
+updated: '2026-07-01T02:20:28Z'
+closed: '2026-07-01T02:20:28Z'
+assignees:
+- carloshob
+labels:
+- meeting
+type: 1 - Alta
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-06-15'
+  Data de vencimento: '2026-06-15'
+  tags: null
+milestone: Migração de Dados
+relationships:
+  parent: '#64'
+  blocked_by: []
+  blocking: []
+  relates_to: []
+development:
+  pull_requests: []
+  branches: []
+---
+# description
+
+body: |-
+  _[ [Gravação do encontro]() | [Reunião anterior](https://github.com/splor-mg/classificador-receita/issues/73) | [Próxima reunião](https://github.com/splor-mg/classificador-receita/issues/) ]_
+  
+  ### Descrição
+  
+  Encontro da série **Operacionalização do MLP** dedicado ao início do **uso assistido** das ferramentas e protocolos já implementados no gerenciador (Django Admin). 
+  
+  Cada encontro combina (i) **revisão dos conceitos centrais** que sustentam o modelo de dados e as regras de negócio do classificador, (ii) **repasse das implementações** disponíveis para operação, (iii) **testes práticos** sobre o gerenciador e (iv) coleta de **observações de uso** que possam indicar ajustes no modelo, na interface ou nos protocolos.
+  
+  ## Pauta
+  - quarto encontro de operacionalização do MLP
+  - apresentação do servidor a ser utilizado para armazenar app
+  
+  ## Participantes
+  - @carloshob
+  - @GuilhermeReisSeplag 
+  - @Laura-Dilly
+  - @marcelatsm
+  
+  ## Assuntos tratados
+  - Tópico 1
+  - ...
+  
+  ## Encaminhamentos
+  - Encaminhamento 1
+  - ...
+---
+# regs
+
+- date: 2026-06-08T19:15:31Z
+  reg: label:added:meeting
+  author: carloshob
+
+- date: 2026-06-08T19:15:31Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-06-08T19:15:32Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-06-08T19:15:34Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-06-08T19:22:09Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-06-08T19:26:07Z
+  reg: title:changed:"[15/06/2026] Reunião 10 - Operacionalização do MLP - 3":"[15/06/2026] Reunião 10 - Operacionalização do MLP - 4"
+  author: carloshob
+
+- date: 2026-06-08T19:26:39Z
+  reg: title:changed:"[15/06/2026] Reunião 10 - Operacionalização do MLP - 4":"[15/06/2026] Reunião 11 - Operacionalização do MLP - 4"
+  author: carloshob
+
+- date: 2026-06-08T19:34:39Z
+  reg: milestone:added:Migração de Dados
+  author: carloshob
+
+- date: 2026-06-08T19:34:45Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-07-01T02:20:28Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-07-01T02:20:29Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

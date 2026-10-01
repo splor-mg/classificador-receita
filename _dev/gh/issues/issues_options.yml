@@ -1,6 +1,9 @@
+name: issues_options
+account: splor-mg
 state:
 - O: aberto
 - C: fechado
+
 labels:
 - bug
 - chore
@@ -9,10 +12,12 @@ labels:
 - new-feature
 - question
 - wontfix
+
 type:
 - 1 - Alta
 - 2 - Média
 - 3 - Baixa
+
 milestone:
 - Contrução do Projeto
 - Arquitetura de Dados
@@ -23,6 +28,7 @@ milestone:
 - Dashboard Público
 - Integração Bidirecional com SISOR
 - Reuniões
+
 relationships:
   parent: 'um #N, ou null'
   blocked_by: 'lista de #N'

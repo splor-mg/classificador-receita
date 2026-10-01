@@ -16,7 +16,8 @@ relationships:
   parent: null
   blocked_by: []
   blocking: []
-  relates_to: []
+  relates_to:
+  - '#84'
 development:
   pull_requests: []
   branches: []
