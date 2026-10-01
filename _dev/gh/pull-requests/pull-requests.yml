@@ -1,0 +1,5 @@
+pull_requests:
+- 46: 'feat(docs): adicionar documento de projeto'
+- 48: Arquitetura dados
+- 49: Modelagem dados
+- 63: Implementação MVP Banco ORM Django

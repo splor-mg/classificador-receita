@@ -1,0 +1,9 @@
+branches_active:
+- main
+- migracao
+
+branches_deleted:
+- arquitetura-dados
+- banco
+- modelagem-dados
+- projeto
