@@ -3,19 +3,16 @@ account: splor-mg
 default: main
 
 branches_active:
-- name: main
-  id: REF_kwDOQe67sK9yZWZzL2hlYWRzL21haW4
-  sha: d747c6e3c8d0b42daf304ba702e9273fc49d2ff2
-  committed: '2026-04-06T13:25:48Z'
-  author: gabrielbdornas
-- name: migracao
-  id: REF_kwDOQe67sLNyZWZzL2hlYWRzL21pZ3JhY2Fv
-  sha: 03268641e46b4a1495bd5dae3424e7bed8c41255
-  committed: '2026-10-01T20:06:40Z'
-  author: carloshob
+  - name: main
+    id: REF_kwDOQe67sK9yZWZzL2hlYWRzL21haW4
+    last_author: gabrielbdornas
+
+  - name: migracao
+    id: REF_kwDOQe67sLNyZWZzL2hlYWRzL21pZ3JhY2Fv
+    last_author: carloshob
 
 branches_deleted:
-- arquitetura-dados
-- banco
-- modelagem-dados
-- projeto
+  - arquitetura-dados
+  - banco
+  - modelagem-dados
+  - projeto

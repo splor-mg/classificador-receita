@@ -1,12 +1,13 @@
 name: discussions
 account: splor-mg
+
 discussions:
-- number: 70
-  title: Teste de Discussão
-  author: carloshob
-  category: Announcements
-  created: '2026-05-21T17:27:29Z'
-  updated: '2026-05-21T17:27:29Z'
-  closed: null
-  answered: false
-  url: https://github.com/splor-mg/classificador-receita/discussions/70
+  - number: 70
+    title: Teste de Discussão
+    author: carloshob
+    category: Announcements
+    created: '2026-05-21T17:27:29Z'
+    updated: '2026-05-21T17:27:29Z'
+    closed: null
+    answered: false
+    url: https://github.com/splor-mg/classificador-receita/discussions/70
