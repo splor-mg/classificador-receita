@@ -22,16 +22,12 @@ projects:
   tags: null
 milestone: Migração de Dados
 relationships:
-  parent: '#1'
+  parent: null
   blocked_by: []
   blocking: []
   relates_to: []
 development:
-  pull_requests:
-  - number: 63
-    title: Implementação MVP Banco ORM Django
-    state: MERGED
-    url: https://github.com/splor-mg/classificador-receita/pull/63
+  pull_requests: []
   branches: []
 ---
 # description
