@@ -3,18 +3,18 @@ account: splor-mg
 
 data:
   issues_amount: 78
-  issues_open: 37
-  issues_closed: 41
-  issues_closed_%: 53
+  issues_open: 36
+  issues_closed: 42
+  issues_closed_%: 54
   issues_todo: 17
   issues_in_progress: 10
   issues_review: 0
   issues_waiting: 0
   last_issue_id_created: 84
-  last_issue_id_closed: 76
+  last_issue_id_closed: 77
   last_issue_created: '2026-09-30T18:12:04Z'
-  last_issue_closed: '2026-07-01T03:41:27Z'
-  last_issue_updated: '2026-10-01T10:46:10Z'
+  last_issue_closed: '2026-10-02T16:06:23Z'
+  last_issue_updated: '2026-10-02T16:06:23Z'
   last_user_auth: carloshob
 
 issues:
@@ -580,10 +580,10 @@ issues:
 
 - number: 77
   title: '[EPIC-01] Publicar o classificador no servidor da secretaria'
-  status: OPEN
+  status: CLOSED
   author: carloshob
   created: '2026-09-30T17:13:18Z'
-  closed: null
+  closed: '2026-10-02T16:06:23Z'
   url: https://github.com/splor-mg/classificador-receita/issues/77
 
 - number: 78

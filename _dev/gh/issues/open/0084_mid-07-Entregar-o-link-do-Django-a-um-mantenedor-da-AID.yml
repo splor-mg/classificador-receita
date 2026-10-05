@@ -20,9 +20,20 @@ projects:
   Data início: '2026-09-01'
   Data de vencimento: '2026-09-30'
   tags: loa-2027
+- name: Gestão Gabinete SPLOR
+  number: 16
+  id: PVT_kwDOByfrJc4A_Psy
+  Status: null
+  Priority: null
+  Size: null
+  Estimate: null
+  Iteration: null
+  Start date: null
+  End date: null
+  Tema: null
 milestone: Migração de Dados
 relationships:
-  parent: '#72'
+  parent: '#96'
   blocked_by:
   - '#59'
   - '#72'
@@ -63,6 +74,14 @@ body: |-
 - date: 2026-09-30T18:12:05Z
   reg: label:added:new-feature
   author: carloshob
+
+- date: 2026-09-30T19:12:34Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-09-30T19:12:34Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
 
 - date: 2026-09-30T19:13:17Z
   reg: milestone:added:Migração de Dados
@@ -109,4 +128,16 @@ body: |-
   author: mariaefod
   body: |-
     @carloshob o issue tá com a flag da loa-2027
+
+- date: 2026-10-02T14:45:51Z
+  reg: relationship:parent_removed
+  author: carloshob
+
+- date: 2026-10-02T14:45:53Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-10-02T15:26:57Z
+  reg: project:added:project
+  author: carloshob
 ---
