@@ -1,0 +1,53 @@
+---
+title: '[mid-06] Carregar os dados e criar as contas de manutenção'
+state: O
+author: carloshob
+created: '2026-09-30T18:11:30Z'
+updated: '2026-09-30T18:12:01Z'
+closed: null
+assignees:
+- carloshob
+labels:
+- new-feature
+type: null
+projects: []
+milestone: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+  relates_to: []
+development:
+  pull_requests: []
+  branches: []
+---
+# description
+
+body: |-
+  Pai: #77. Plano: `_dev/.epic/.epic-01_0-easypanel-deploy.md` (mid-06).
+  
+  Um banco só migrado, vazio, não permite manter o classificador. Os seeds entram com `poetry run task carregar`. Os usuários staff entram com `createsuperuser`.
+  
+  Fora de escopo: recarregar seeds a cada deploy; compartilhar senha no chat ou no repositório; editar regras de negócio do classificador.
+  
+  - [ ] Depois da primeira migrate bem-sucedida, rodar `poetry run task carregar` uma vez
+  - [ ] Criar um ou mais usuários staff do Django para os mantenedores da AID
+  - [ ] Guardar essas senhas em um item do Bitwarden separado de **Easypanel Aid - Lab**
+  - [ ] Entrar em `<app-url>/admin/` e abrir uma tela de manutenção do classificador
+  - [ ] Fazer redeploy e confirmar que os dados carregados continuam presentes
+  - [ ] Confirmar que nenhuma senha de staff foi commitada
+---
+# regs
+
+- date: 2026-09-30T18:11:30Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-09-30T18:11:32Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2026-09-30T18:12:01Z
+  reg: title:changed:"[mid-05] Publicar o serviço e o hostname no EasyPanel":"[mid-06] Carregar os dados e criar as contas de manutenção"
+  author: carloshob
+---

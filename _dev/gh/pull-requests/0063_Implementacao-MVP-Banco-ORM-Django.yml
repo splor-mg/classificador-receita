@@ -1,0 +1,37 @@
+---
+title: Implementação MVP Banco ORM Django
+state: MERGED
+draft: false
+author: carloshob
+created: '2026-03-31T19:23:35Z'
+updated: '2026-04-28T18:20:27Z'
+closed: '2026-04-06T13:25:49Z'
+merged: '2026-04-06T13:25:48Z'
+base: main
+head: banco
+labels:
+- new-feature
+milestone: Implementação do Banco de Dados
+assignees: []
+reviewers:
+- Laura-Dilly
+- marcelatsm
+---
+# description
+
+body: |-
+  Closes #13
+  Closes #17
+  Closes #52
+  Closes #53
+  
+  Essa branch implementa as funcionalidades básicas para gestão do banco de forma bitemporal e obedecendo aos preceitos de governança SCD-2. 
+  Além disso, foi populado banco inicial com a classificação de receita vigente em 2026, sendo que a ferramenta já está apta a fazer a gestão básica do classificador da receita.
+---
+# regs
+
+- date: '2026-04-06T13:25:40Z'
+  reg: review
+  author: gabrielbdornas
+  state: APPROVED
+---

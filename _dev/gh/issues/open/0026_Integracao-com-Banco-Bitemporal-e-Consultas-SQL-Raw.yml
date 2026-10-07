@@ -1,0 +1,107 @@
+---
+title: Integração com Banco Bitemporal e Consultas SQL Raw
+state: O
+author: carloshob
+created: '2025-11-28T20:10:30Z'
+updated: '2026-09-30T17:13:28Z'
+closed: null
+assignees:
+- carloshob
+labels:
+- new-feature
+type: null
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: In Progress
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-05-04'
+  Data de vencimento: '2026-05-29'
+  tags: null
+milestone: SGDB - App Web de Gestão
+relationships:
+  parent: '#1'
+  blocked_by: []
+  blocking: []
+  relates_to: []
+development:
+  pull_requests: []
+  branches: []
+---
+# description
+
+body: |-
+  ### Descrição:
+  
+  Implementar integração completa com banco bitemporal, utilizando SQL raw para consultas temporais complexas (as-of, point-in-time). Criar abstrações que facilitem uso de consultas temporais na aplicação.
+  
+  ### Entregas:
+  
+  - Funções/utilitários para consultas SQL raw
+  - Integração de consultas temporais em views
+  - Abstrações para consultas as-of
+  - Documentação de padrões de consulta
+  - Testes de integração com banco bitemporal
+  
+  ### Observações:
+  
+  - SQL raw deve ser usado apenas quando necessário
+  - Documentar todas as queries SQL raw
+  - Considerar uso de prepared statements para segurança
+---
+# regs
+
+- date: 2025-11-28T20:10:31Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2025-11-28T20:10:32Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2025-11-28T20:10:40Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2025-11-28T20:10:43Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2025-11-28T20:10:47Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2025-11-28T20:11:07Z
+  reg: milestone:added:SGDB - App Web de Gestão
+  author: carloshob
+
+- date: 2025-12-05T17:00:43Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-06-08T15:27:18Z
+  reg: comment
+  author: carloshob
+  body: |-
+    @gabrielbdornas, @Laura-Dilly e @marcelatsm, o issue foi fechado, pois a aplicação Django está integrada ao banco bitemporal de ponta a ponta. Os models (apps/core/models.py), a migration inicial, o registry de recursos (bitemporal_registry.py) e o serviço de escrita (bitemporal_update.py / apply_bitemporal_update) garantem leitura e gravação conforme as regras de vigência e de registro (ADR-001 e ADR-004). No Admin, BitemporalChangeHandler e os mixins bitemporais conectam formulários, confirmações e persistência temporal.
+    
+    Para consultas, a camada ORM concentra o uso diário: transaction_time_sentinel_for_query(), RegistroAtivoFilter e filtros de domínio aplicam critérios temporais (ativo corrente, histórico, futuro, inativo) diretamente nas changelists e lookups de FK. O SQL raw entra onde o ORM não atende bem — exportação em massa com COPY e JOIN de FKs semânticas (exporter.py), carga e manutenção de tabelas (carregar_classificador, drop_core_tables) — sempre documentado no código e alinhado ao registry.
+    
+    Os padrões de consulta temporal estão descritos em _dev/spec_django.md, nos ADRs e nos comentários dos módulos bitemporal_* e admin_mixins.py.
+    
+    Desenvolvimento futuro: managers/QuerySets as-of reutilizáveis, camada SQL dedicada para consultas point-in-time de alto volume no dashboard público e suíte tests/integration/ com execução em CI/CD.
+
+- date: 2026-06-08T15:27:18Z
+  reg: state:closed
+  author: carloshob
+
+- date: 2026-06-08T15:27:20Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-09-30T17:13:28Z
+  reg: state:reopened
+  author: carloshob
+---

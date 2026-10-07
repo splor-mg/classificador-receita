@@ -1,0 +1,54 @@
+---
+title: '[mid-05] Publicar o serviço e o hostname no EasyPanel'
+state: O
+author: carloshob
+created: '2026-09-30T18:11:28Z'
+updated: '2026-09-30T18:11:59Z'
+closed: null
+assignees:
+- carloshob
+labels:
+- new-feature
+type: null
+projects: []
+milestone: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+  relates_to: []
+development:
+  pull_requests: []
+  branches: []
+---
+# description
+
+body: |-
+  Pai: #77. Plano: `_dev/.epic/.epic-01_0-easypanel-deploy.md` (mid-05).
+  
+  Os mantenedores precisam de um link HTTPS estável. `https://191.234.171.158/` é o painel, não esse link.
+  
+  Fora de escopo: um domínio próprio fora do que este host oferece; limite de taxa, SSO ou WAF.
+  
+  - [ ] Criar o serviço do app a partir da conexão Git ou da imagem escolhida no mid-01
+  - [ ] Definir o ambiente do mid-02 no serviço, com `DEBUG` desligado
+  - [ ] Anexar o hostname do mid-01 e o TLS que o EasyPanel oferece neste host
+  - [ ] Proxiar para a porta do container do mid-03
+  - [ ] Adicionar um health check em uma URL do Django
+  - [ ] Abrir a URL do app em HTTPS, sem credencial do EasyPanel, e receber uma resposta do Django, não o login do painel
+  - [ ] Fazer redeploy pelo branch ou pela imagem escolhida e atualizar o app em execução sem shell manual no host
+---
+# regs
+
+- date: 2026-09-30T18:11:28Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-09-30T18:11:59Z
+  reg: title:changed:"[mid-06] Carregar os dados e criar as contas de manutenção":"[mid-05] Publicar o serviço e o hostname no EasyPanel"
+  author: carloshob
+
+- date: 2026-09-30T18:12:16Z
+  reg: label:added:new-feature
+  author: carloshob
+---

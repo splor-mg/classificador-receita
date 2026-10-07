@@ -1,0 +1,18 @@
+name: branches
+account: splor-mg
+default: main
+
+branches_active:
+  - name: main
+    id: REF_kwDOQe67sK9yZWZzL2hlYWRzL21haW4
+    last_author: gabrielbdornas
+
+  - name: migracao
+    id: REF_kwDOQe67sLNyZWZzL2hlYWRzL21pZ3JhY2Fv
+    last_author: carloshob
+
+branches_deleted:
+  - arquitetura-dados
+  - banco
+  - modelagem-dados
+  - projeto

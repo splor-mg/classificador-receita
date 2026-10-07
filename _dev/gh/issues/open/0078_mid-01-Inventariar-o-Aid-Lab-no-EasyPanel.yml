@@ -1,0 +1,59 @@
+---
+title: '[mid-01] Inventariar o Aid-Lab no EasyPanel'
+state: O
+author: carloshob
+created: '2026-09-30T17:13:21Z'
+updated: '2026-09-30T18:11:30Z'
+closed: null
+assignees:
+- carloshob
+labels:
+- new-feature
+type: null
+projects: []
+milestone: null
+relationships:
+  parent: null
+  blocked_by:
+  - '#84'
+  blocking: []
+  relates_to: []
+development:
+  pull_requests: []
+  branches: []
+---
+# description
+
+body: |-
+  Pai: #77. Plano: `_dev/.epic/.epic-01_0-easypanel-deploy.md` (mid-01).
+  
+  O painel existe. Este repositório não registra o que já está configurado nele. Os mids seguintes não devem assumir um projeto vazio.
+  
+  Fora de escopo: criar ou apagar serviços; copiar senhas, tokens ou capturas de segredos para o Git.
+  
+  - [ ] Entrar no EasyPanel Aid-Lab com o item do Bitwarden **Easypanel Aid - Lab**
+  - [ ] Listar projetos, serviços, domínios e bancos já existentes
+  - [ ] Nomear o projeto a usar (novo ou existente) e qualquer serviço já ligado a este app
+  - [ ] Registrar se o GitHub está conectado
+  - [ ] Escolher o caminho de deploy: repositório Git ligado ao painel, ou imagem construída em outro lugar (D13)
+  - [ ] Propor o hostname público do app e confirmar que ele é distinto de `https://191.234.171.158/`
+  - [ ] Escrever o inventário sem segredo do Bitwarden ou do painel
+---
+# regs
+
+- date: 2026-09-30T17:13:21Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-09-30T17:13:23Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2026-09-30T18:11:30Z
+  reg: title:changed:"[mid-02] Ler as configurações do Django pelo ambiente":"[mid-01] Inventariar o Aid-Lab no EasyPanel"
+  author: carloshob
+
+- date: 2026-09-30T21:45:58Z
+  reg: relationship:blocked_by_added
+  author: carloshob
+---

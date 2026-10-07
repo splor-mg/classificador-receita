@@ -1,0 +1,143 @@
+---
+title: '[mid-07] Entregar o link do Django a um mantenedor da AID'
+state: O
+author: carloshob
+created: '2026-09-30T18:12:04Z'
+updated: '2026-10-01T10:46:10Z'
+closed: null
+assignees:
+- carloshob
+labels:
+- new-feature
+type: 2 - Média
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Todo
+  Projeto: Datamart
+  Planejado: Sim
+  Data início: '2026-09-01'
+  Data de vencimento: '2026-09-30'
+  tags: loa-2027
+- name: Gestão Gabinete SPLOR
+  number: 16
+  id: PVT_kwDOByfrJc4A_Psy
+  Status: null
+  Priority: null
+  Size: null
+  Estimate: null
+  Iteration: null
+  Start date: null
+  End date: null
+  Tema: null
+milestone: Migração de Dados
+relationships:
+  parent: '#96'
+  blocked_by:
+  - '#59'
+  - '#72'
+  blocking:
+  - '#33'
+  - '#52'
+  - '#77'
+  - '#78'
+  relates_to:
+  - '#77'
+  - '#79'
+development:
+  pull_requests: []
+  branches:
+  - migracao
+---
+# description
+
+body: |-
+  Pai: #77. Plano: `_dev/.epic/.epic-01_0-easypanel-deploy.md` (mid-07).
+  
+  O produto do EPIC-01 é o acesso da equipe, não só um painel funcionando para quem fez o deploy.
+  
+  Fora de escopo: treinar regras de negócio do classificador; dar admin do EasyPanel a todo mantenedor.
+  
+  - [ ] Escrever um roteiro em `docs/instalacao/` com a URL do app, o caminho de login do Django e os nomes dos itens do Bitwarden (painel e Django)
+  - [ ] Dizer a quem pedir uma conta
+  - [ ] Deixar toda senha fora do roteiro
+  - [ ] Abrir a URL do roteiro no navegador, sem credencial do EasyPanel, e ver a página de login do Django
+  - [ ] Um colega da AID que não é o operador do deploy entra com o próprio usuário Django e chega a uma tela de manutenção
+---
+# regs
+
+- date: 2026-09-30T18:12:04Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-09-30T18:12:05Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2026-09-30T19:12:34Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-09-30T19:12:34Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-09-30T19:13:17Z
+  reg: milestone:added:Migração de Dados
+  author: carloshob
+
+- date: 2026-09-30T19:16:51Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-09-30T21:45:48Z
+  reg: relationship:blocked_by_added
+  author: carloshob
+
+- date: 2026-09-30T21:45:58Z
+  reg: relationship:blocking_added
+  author: carloshob
+
+- date: 2026-09-30T21:45:59Z
+  reg: relationship:blocking_added
+  author: carloshob
+
+- date: 2026-09-30T21:46:12Z
+  reg: relationship:blocking_added
+  author: carloshob
+
+- date: 2026-09-30T21:46:12Z
+  reg: relationship:blocking_added
+  author: carloshob
+
+- date: 2026-09-30T21:46:31Z
+  reg: relationship:blocked_by_added
+  author: carloshob
+
+- date: 2026-09-30T21:55:23Z
+  reg: label:added:bug
+  author: carloshob
+
+- date: 2026-09-30T21:55:26Z
+  reg: label:removed:bug
+  author: carloshob
+
+- date: 2026-10-01T10:46:09Z
+  reg: comment
+  author: mariaefod
+  body: |-
+    @carloshob o issue tá com a flag da loa-2027
+
+- date: 2026-10-02T14:45:51Z
+  reg: relationship:parent_removed
+  author: carloshob
+
+- date: 2026-10-02T14:45:53Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-10-02T15:26:57Z
+  reg: project:added:project
+  author: carloshob
+---

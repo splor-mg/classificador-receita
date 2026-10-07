@@ -1,0 +1,90 @@
+---
+title: Compilar contexto SDD indexado a partir das specs padronizadas
+state: C
+author: carloshob
+created: '2026-07-01T03:03:59Z'
+updated: '2026-07-01T03:41:27Z'
+closed: '2026-07-01T03:41:27Z'
+assignees:
+- carloshob
+labels:
+- documentation
+type: 2 - Média
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Done
+  Projeto: Datamart
+  Data início: '2026-06-01'
+  Data de vencimento: '2026-06-30'
+  Planejado: null
+  tags: null
+milestone: Migração de Dados
+relationships:
+  parent: '#1'
+  blocked_by: []
+  blocking: []
+  relates_to: []
+development:
+  pull_requests: []
+  branches: []
+---
+# description
+
+body: |-
+  ### Descrição
+  
+  Gerar um artefato de contexto compilado e indexado por IDs normativos para que assistentes de IA consultem regras sem carregar dezenas de specs inteiras a cada tarefa.
+  
+  ## Contexto
+  
+  O mesmo problema que motivou a refatoração das specs — **alto gasto de tokens** e **baixa manutenibilidade** — manifesta-se na forma como o desenvolvimento assistido por IA consome `_dev/spec_*.md` hoje: arquivos extensos, estruturas diversas e símbolos legados dificultam seleção de contexto; o repositório **ainda não possui** `_dev/.sdd-context.yaml` (ou equivalente) gerado de forma reproduzível.
+  
+  A definição de um **contrato de compilação** pode produzir chunks por `PREFIX-NN` com resumo, tema, seção e artefatos — reduzindo necessidade de `@` em specs completas no chat.
+  
+  Sem compilação, mesmo após refactor manual, o operador continua dependente de leitura integral de múltiplos arquivos; com compilação, o fluxo passa a: **índice → IDs relevantes → trechos**, com custo previsível de contexto.
+  
+  ## Objective
+  
+  Existir um **texto compilado** (YAML/índice SDD) no repositório, regenerável a partir de `_dev/spec_*.md` locais refatoradas, que suporte consulta por ID, tema e escopo de paths para assistentes e ferramentas. (**AGENTS-33**).
+  
+---
+# regs
+
+- date: 2026-07-01T03:04:00Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-07-01T03:04:02Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-07-01T03:04:02Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-07-01T03:04:17Z
+  reg: label:added:documentation
+  author: carloshob
+
+- date: 2026-07-01T03:04:28Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-07-01T03:05:05Z
+  reg: milestone:added:Migração de Dados
+  author: carloshob
+
+- date: 2026-07-01T03:05:20Z
+  reg: relationship:parent_added
+  author: carloshob
+
+- date: 2026-07-01T03:41:26Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-07-01T03:41:27Z
+  reg: state:closed
+  author: carloshob
+---

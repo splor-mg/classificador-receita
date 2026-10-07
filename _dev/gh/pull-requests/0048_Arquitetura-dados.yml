@@ -1,0 +1,49 @@
+---
+title: Arquitetura dados
+state: CLOSED
+draft: false
+author: carloshob
+created: '2025-12-17T00:44:04Z'
+updated: '2026-01-12T14:10:52Z'
+closed: '2026-01-12T14:10:33Z'
+merged: null
+base: main
+head: arquitetura-dados
+labels:
+- new-feature
+milestone: Arquitetura de Dados
+assignees:
+- carloshob
+reviewers:
+- Laura-Dilly
+---
+# description
+
+body: |-
+  Closes #4
+  Closes #5
+  Closes #6
+  
+  Este PR formaliza, por meio de ADRs padronizados, decisões essenciais para a arquitetura do projeto: adota-se um modelo bitemporal auditável no banco de dados PostgreSQL, garantindo rastreabilidade histórica robusta, e toma-se o GSIM v1.1 como referência conceitual para o classificador, promovendo alinhamento internacional e organização clara das versões. A documentação dessas escolhas segue um template unificado já incluído no repositório, permitindo governança e evolução transparente das soluções adotadas. A submissão encerra as demandas dos issues #4, #5 e #6 e está pronta para revisão.
+---
+# regs
+
+- date: '2025-12-23T18:25:56Z'
+  reg: review
+  author: gabrielbdornas
+  state: COMMENTED
+  body: |-
+    @carloshob, revisão finalizada [aqui](https://github.com/splor-mg/classificador-receita/pull/49#pullrequestreview-3608748871).
+    
+    Eu não mergiaria este PR, fecharia o mesmo e mergiaria somente o #49, pois entendo que ele foi completo lá.
+
+- date: '2026-01-12T14:10:33Z'
+  reg: comment
+  author: carloshob
+  body: |-
+    > @carloshob, revisão finalizada [aqui](https://github.com/splor-mg/classificador-receita/pull/49#pullrequestreview-3608748871).
+    > 
+    > Eu não mergiaria este PR, fecharia o mesmo e mergiaria somente o #49, pois entendo que ele foi completo lá.
+    
+    Uhnnn... o que eu acabei fazendo foi a branch da nova implementação a partir da anterior. Pensei que isso poderia facilitar o merge com as alterações. Talvez não tenha sito uma prática que faz sentido.
+---
