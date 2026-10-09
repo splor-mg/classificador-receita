@@ -7,14 +7,14 @@ data:
   issues_closed: 42
   issues_closed_%: 54
   issues_todo: 17
-  issues_in_progress: 10
+  issues_in_progress: 11
   issues_review: 0
   issues_waiting: 0
   last_issue_id_created: 84
   last_issue_id_closed: 77
   last_issue_created: '2026-09-30T18:12:04Z'
   last_issue_closed: '2026-10-02T16:06:23Z'
-  last_issue_updated: '2026-10-02T16:06:23Z'
+  last_issue_updated: '2026-10-09T14:20:22Z'
   last_user_auth: carloshob
 
 issues:

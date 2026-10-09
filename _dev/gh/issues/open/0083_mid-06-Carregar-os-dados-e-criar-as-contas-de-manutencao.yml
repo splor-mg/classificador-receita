@@ -3,14 +3,23 @@ title: '[mid-06] Carregar os dados e criar as contas de manutenção'
 state: O
 author: carloshob
 created: '2026-09-30T18:11:30Z'
-updated: '2026-09-30T18:12:01Z'
+updated: '2026-10-09T14:20:22Z'
 closed: null
 assignees:
 - carloshob
 labels:
 - new-feature
-type: null
-projects: []
+type: 1 - Alta
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: In Progress
+  Projeto: null
+  Planejado: null
+  Data início: null
+  Data de vencimento: null
+  tags: null
 milestone: null
 relationships:
   parent: null
