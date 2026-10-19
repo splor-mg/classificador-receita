@@ -1,0 +1,5 @@
+pull-number,state,draft,author,created,updated,closed,merged,base,head,title,url
+46,MERGED,false,carloshob,2025-11-28T23:59:37Z,2026-01-14T13:07:23Z,2025-12-10T13:44:56Z,2025-12-10T13:44:56Z,main,projeto,feat(docs): adicionar documento de projeto,https://github.com/splor-mg/classificador-receita/pull/46
+48,CLOSED,false,carloshob,2025-12-17T00:44:04Z,2026-01-12T14:10:52Z,2026-01-12T14:10:33Z,,main,arquitetura-dados,Arquitetura dados,https://github.com/splor-mg/classificador-receita/pull/48
+49,MERGED,false,carloshob,2025-12-17T04:28:14Z,2026-01-30T21:27:58Z,2026-01-19T19:21:16Z,2026-01-19T19:21:16Z,main,modelagem-dados,Modelagem dados,https://github.com/splor-mg/classificador-receita/pull/49
+63,MERGED,false,carloshob,2026-03-31T19:23:35Z,2026-04-28T18:20:27Z,2026-04-06T13:25:49Z,2026-04-06T13:25:48Z,main,banco,Implementação MVP Banco ORM Django,https://github.com/splor-mg/classificador-receita/pull/63
