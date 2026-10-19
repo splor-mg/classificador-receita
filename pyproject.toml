@@ -1,6 +1,6 @@
 [project]
 name = "classificador-receita"
-version = "0.1.0"
+version = "0.1.0"    # Modelagem dados (#49) - ci fed35ad
 description = "Sistema de Gestão do Classificador de Natureza de Receita do Estado de Minas Gerais"
 authors = [
     {name = "SPLOR-MG", email = "aid@planejamento.mg.gov.br"}
