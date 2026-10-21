@@ -1,0 +1,2 @@
+ID,Slug,Status,Mids,Date-Init,Date-Release,Prior.,Impact,Branch,PR,Release,Alpha
+EPIC-01,easypanel-deploy,in_progress,0 / 8,—,—,—,"MINOR` · deployment, django",feat/easypanel-deploy,—,—,a
