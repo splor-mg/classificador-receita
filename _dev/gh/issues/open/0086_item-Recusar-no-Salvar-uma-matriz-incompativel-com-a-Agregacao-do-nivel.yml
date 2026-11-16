@@ -5,21 +5,22 @@ author: carloshob
 created: '2026-11-16T16:40:13Z'
 updated: '2026-11-16T16:40:13Z'
 closed: null
-assignees: []
+assignees:
+- carloshob
 labels:
 - bug
-type: null
+type: 2 - Média
 projects:
 - name: Gestão à Vista AID
   number: 13
   id: PVT_kwDOByfrJc4AmH_f
-  Status: Backlog
-  Projeto: null
+  Status: Todo
+  Projeto: Datamart
+  Data início: '2026-11-01'
+  Data de vencimento: '2026-11-30'
   Planejado: null
-  Data início: null
-  Data de vencimento: null
   tags: null
-milestone: null
+milestone: Migração de Dados
 relationships:
   parent: null
   blocked_by:
