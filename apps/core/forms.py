@@ -35,6 +35,7 @@ from apps.core.code_name_validation import (
     validar_receita_nome_guardrail_g0,
     validar_receita_nome_guardrail_g1,
 )
+from apps.core.code_parent_item_validation import item_agregacao_matriz_error
 
 
 class PlaceholderNullNormalizationFormMixin:
@@ -287,6 +288,11 @@ class ItemClassificacaoForm(PlaceholderNullNormalizationFormMixin, forms.ModelFo
                 "matriz",
                 "Itens de nível 1 só podem ser salvos como Matriz.",
             )
+
+        if nivel is not None and is_matriz is not None:
+            agregacao_error = item_agregacao_matriz_error(nivel, bool(is_matriz))
+            if agregacao_error:
+                self.add_error("matriz", agregacao_error)
 
         receita_cod_raw = (cleaned.get("receita_cod") or "").strip()
         if receita_cod_raw and not receita_cod_raw.replace(".", "").isdigit():

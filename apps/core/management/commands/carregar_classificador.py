@@ -645,6 +645,7 @@ class Command(BaseCommand):
                 estrutura_codigo=prepared.get("estrutura_codigo") or "",
                 numero_digitos=prepared.get("numero_digitos"),
                 tipo_codigo=prepared["tipo_codigo"],
+                agregacao=prepared.get("agregacao") or NivelHierarquico.AGREGACAO_HIBRIDO,
                 data_vigencia_inicio=prepared["data_vigencia_inicio"],
                 data_vigencia_fim=prepared["data_vigencia_fim"],
                 data_registro_inicio=prepared["data_registro_inicio"],

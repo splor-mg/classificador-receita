@@ -77,6 +77,16 @@ fields:
     constraints:
       required: true
       enum: ["numérico", "alfabético", "alfanumérico"]
+  - name: agregacao
+    type: string
+    title: Agregação
+    description: |
+      O que o nível admite no identificador de matriz do item.
+      Híbrido aceita Matriz e Detalhe. Matriz aceita só código agregador.
+      Detalhe aceita só código de detalhe. O padrão é Híbrido.
+    constraints:
+      required: true
+      enum: ["híbrido", "matriz", "detalhe"]
   - name: data_vigencia_inicio
     type: date
     title: Data de Início da Vigência

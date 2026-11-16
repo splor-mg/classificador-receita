@@ -115,10 +115,11 @@ RESOURCES: Dict[str, Dict[str, Any]] = {
             {"name": "estrutura_codigo", "type": "string", "required": False, "default": ""},
             {"name": "numero_digitos", "type": "integer", "required": True},
             {"name": "tipo_codigo", "type": "string", "required": True, "default": "numérico", "choices_attr": "TIPO_CODIGO_CHOICES"},
+            {"name": "agregacao", "type": "string", "required": True, "default": "híbrido", "choices_attr": "AGREGACAO_CHOICES"},
         ],
         "export_columns": [
             "nivel_id", "nivel_ref", "classificacao_id", "nivel_numero", "nivel_nome",
-            "nivel_descricao", "estrutura_codigo", "numero_digitos", "tipo_codigo",
+            "nivel_descricao", "estrutura_codigo", "numero_digitos", "tipo_codigo", "agregacao",
             "data_vigencia_inicio", "data_vigencia_fim", "data_registro_inicio", "data_registro_fim",
         ],
         "list_display": ["nivel_id", "classificacao_id", "data_registro_inicio", "data_vigencia_inicio", "data_vigencia_fim", "nivel_nome"],

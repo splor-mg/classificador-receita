@@ -19,6 +19,25 @@ from apps.core.admin_formatters import format_receita_cod_by_vigencia
 from apps.core.code_mask import get_mask_for_classificacao_pk_vigencia
 
 
+def item_agregacao_matriz_error(nivel: Any, is_matriz: bool) -> Optional[str]:
+    """Mensagem do Salvar quando o identificador de matriz não cabe na Agregação do nível.
+
+    Híbrido, e a ausência do campo, não restringem. Agregação Matriz recusa Detalhe.
+    Agregação Detalhe recusa Matriz. O item não é gravado quando a mensagem existe:
+    ``ItemClassificacao.clean`` (chamado por ``save``) e o formulário do Admin levantam o erro.
+    """
+    from apps.core.models import NivelHierarquico
+
+    agregacao = getattr(nivel, "agregacao", None) or NivelHierarquico.AGREGACAO_HIBRIDO
+    if agregacao == NivelHierarquico.AGREGACAO_HIBRIDO:
+        return None
+    if agregacao == NivelHierarquico.AGREGACAO_MATRIZ and not is_matriz:
+        return "Este nível hierárquico só admite código Matriz."
+    if agregacao == NivelHierarquico.AGREGACAO_DETALHE and is_matriz:
+        return "Este nível hierárquico só admite código Detalhe."
+    return None
+
+
 def _canonical_zero_segment(segment: str) -> bool:
     return bool(segment) and set(segment) == {"0"}
 

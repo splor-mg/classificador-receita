@@ -314,6 +314,7 @@ class NivelHierarquicoAdmin(
         'estrutura_codigo',
         'numero_digitos',
         'tipo_codigo',
+        'agregacao',
         'data_vigencia_inicio',
         'data_vigencia_fim',
         'data_registro_inicio_fmt',

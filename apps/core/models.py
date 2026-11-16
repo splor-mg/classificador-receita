@@ -313,6 +313,14 @@ class NivelHierarquico(BitemporalModel):
         (TIPO_ALFABETICO, 'Alfabético'),
         (TIPO_ALFANUMERICO, 'Alfanumérico'),
     ]
+    AGREGACAO_HIBRIDO = 'híbrido'
+    AGREGACAO_MATRIZ = 'matriz'
+    AGREGACAO_DETALHE = 'detalhe'
+    AGREGACAO_CHOICES = [
+        (AGREGACAO_HIBRIDO, 'Híbrido'),
+        (AGREGACAO_MATRIZ, 'Matriz'),
+        (AGREGACAO_DETALHE, 'Detalhe'),
+    ]
 
     nivel_id = models.CharField(
         max_length=100,
@@ -376,6 +384,16 @@ class NivelHierarquico(BitemporalModel):
         default=TIPO_NUMERICO,
         verbose_name='Tipo de Código',
         help_text='Tipo do código no nível (numérico, alfabético, alfanumérico)'
+    )
+    agregacao = models.CharField(
+        max_length=20,
+        choices=AGREGACAO_CHOICES,
+        default=AGREGACAO_HIBRIDO,
+        verbose_name='Agregação',
+        help_text=(
+            'O que este nível admite no identificador de matriz do item: '
+            'só Matriz, só Detalhe, ou ambos (Híbrido).'
+        ),
     )
 
     class Meta:
@@ -644,10 +662,15 @@ class ItemClassificacao(BitemporalModel):
         nivel = self.nivel_id
 
         from apps.core.code_parent_item_validation import (
+            item_agregacao_matriz_error,
             validate_item_nivel_id_receita_cod_derivation,
             validate_item_parent_item_rules,
             validate_item_receita_cod_level_consistency,
         )
+
+        agregacao_error = item_agregacao_matriz_error(nivel, bool(self.matriz))
+        if agregacao_error:
+            raise ValidationError({"matriz": agregacao_error})
 
         validate_item_nivel_id_receita_cod_derivation(self)
 
