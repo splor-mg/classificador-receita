@@ -3,23 +3,24 @@ title: (nivel) - Registrar Agregação no nível hierárquico
 state: O
 author: carloshob
 created: '2026-11-16T15:31:05Z'
-updated: '2026-11-16T16:00:55Z'
+updated: '2026-11-16T17:12:22Z'
 closed: null
-assignees: []
+assignees:
+- carloshob
 labels:
 - new-feature
-type: null
+type: 2 - Média
 projects:
 - name: Gestão à Vista AID
   number: 13
   id: PVT_kwDOByfrJc4AmH_f
-  Status: Backlog
-  Projeto: null
+  Status: Todo
+  Projeto: Datamart
+  Data início: '2026-11-01'
+  Data de vencimento: '2026-11-30'
   Planejado: null
-  Data início: null
-  Data de vencimento: null
   tags: null
-milestone: null
+milestone: Migração de Dados
 relationships:
   parent: null
   blocked_by: []
@@ -104,5 +105,17 @@ body: |-
 
 - date: 2026-11-16T16:40:21Z
   reg: relationship:blocking_added
+  author: carloshob
+
+- date: 2026-11-16T17:11:20Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-11-16T17:11:41Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-11-16T17:12:09Z
+  reg: milestone:added:Migração de Dados
   author: carloshob
 ---
