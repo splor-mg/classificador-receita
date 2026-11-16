@@ -1,0 +1,108 @@
+---
+title: (nivel) - Registrar Agregação no nível hierárquico
+state: O
+author: carloshob
+created: '2026-11-16T15:31:05Z'
+updated: '2026-11-16T16:00:55Z'
+closed: null
+assignees: []
+labels:
+- new-feature
+type: null
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Backlog
+  Projeto: null
+  Planejado: null
+  Data início: null
+  Data de vencimento: null
+  tags: null
+milestone: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking:
+  - '#86'
+  relates_to: []
+development:
+  pull_requests: []
+  branches: []
+---
+# description
+
+body: |-
+  O nível hierárquico passa a declarar se admite só Matriz, só Detalhe ou ambos, para o Salvar do item ter uma fonte da verdade.
+  
+  ## Context
+  
+  `nivel_hierarquico` guarda a máscara em `estrutura_codigo` e não diz se aquele nível só pode ter código agregador, só detalhe, ou os dois. Sem esse dado, o formulário de item aceita Detalhe num nível que deveria ser só Matriz, e o inverso.
+  
+  ## Objective
+  
+  Cada nível hierárquico tem o campo Agregação (`agregacao`), com os valores Híbrido, Matriz e Detalhe. O padrão é Híbrido.
+  
+  ## Scope
+  
+  **In scope:**
+  
+  - Campo `agregacao` em `NivelHierarquico` / tabela `nivel_hierarquico`, exposto no admin como Agregação.
+  - Valores: Híbrido (padrão), Matriz, Detalhe.
+  - Registros já existentes nascem Híbrido.
+  - Schema e carga do nível acompanham o campo.
+  
+  **Out of scope:**
+  
+  - Recusar o Salvar do item quando o identificador de matriz não cabe na Agregação. Isso é #86.
+  - Preencher quais níveis deixam de ser Híbrido. Isso é dado, depois que o campo existir.
+  - Plano de epic e implementação do fluxo de filho.
+  
+  ## Acceptance criteria
+  
+  - [ ] O admin de Nível Hierárquico mostra Agregação com Híbrido, Matriz e Detalhe.
+  - [ ] Um nível novo sem escolha explícita fica Híbrido.
+  - [ ] Um nível já gravado continua Híbrido até alguém alterar.
+  - [ ] `estrutura_codigo` permanece a máscara de dígitos.
+  
+  ## Implementation notes
+  
+  - **Area / scope label:** `nivel`
+  - **Hints:** `apps/core/models.py` (`NivelHierarquico`), admin do nível, schema Frictionless de `nivel_hierarquico`, seed e comando de carga.
+  
+  ## Related work
+  
+  | Kind       | Reference                                      |
+  | ---------- | ---------------------------------------------- |
+  | Epic       | —                                              |
+  | Parent     | —                                              |
+  | Blocks     | #86                                            |
+  | Blocked by | —                                              |
+  | Spec       | `spec_itemClassificacao_regras_hierarquia.md`  |
+---
+# regs
+
+- date: 2026-11-16T15:31:06Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2026-11-16T15:34:47Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-11-16T16:00:55Z
+  reg: assignee:removed:carloshob
+  author: carloshob
+
+- date: 2026-11-16T16:26:26Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-11-16T16:26:27Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-11-16T16:40:21Z
+  reg: relationship:blocking_added
+  author: carloshob
+---
