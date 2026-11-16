@@ -1,0 +1,102 @@
+---
+title: (item) - Recusar no Salvar uma matriz incompatível com a Agregação do nível
+state: O
+author: carloshob
+created: '2026-11-16T16:40:13Z'
+updated: '2026-11-16T16:40:13Z'
+closed: null
+assignees: []
+labels:
+- bug
+type: null
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Backlog
+  Projeto: null
+  Planejado: null
+  Data início: null
+  Data de vencimento: null
+  tags: null
+milestone: null
+relationships:
+  parent: null
+  blocked_by:
+  - '#85'
+  blocking: []
+  relates_to: []
+development:
+  pull_requests: []
+  branches: []
+---
+# description
+
+body: |-
+  O Salvar do item de classificação recusa Detalhe num nível só Matriz, e Matriz num nível só Detalhe.
+  
+  ## Context
+  
+  Criar o filho `1.1.1.4.01.5.2.00.000` a partir de `1.1.1.4.01.5.0.00.000` gravou o item como Detalhe no NIVEL-7 sem conferir se aquele nível admite detalhe. O identificador de matriz do item (`matriz`: Matriz ou Detalhe) não é comparado com o que o nível permite. O inverso, Matriz num nível só Detalhe, também passa.
+  
+  ## Objective
+  
+  No Salvar do item, o identificador de matriz tem de caber na Agregação do nível hierárquico escolhido. Híbrido aceita os dois. Matriz e Detalhe aceitam só o valor correspondente. Fora disso a gravação não ocorre e o formulário mostra o erro.
+  
+  ## Scope
+  
+  **In scope:**
+  
+  - Checagem no Salvar de `ItemClassificacao`, inclusive no fluxo Criar código filho.
+  - Erro quando `matriz` é Detalhe e a Agregação do nível é Matriz.
+  - Erro quando `matriz` é Matriz e a Agregação do nível é Detalhe.
+  - Híbrido não gera esse erro.
+  - Teste automático desses três casos.
+  
+  **Out of scope:**
+  
+  - Criar o campo Agregação. Isso é #85.
+  - Escolher, nível a nível, quem deixa de ser Híbrido.
+  - As regras já existentes de mãe matriz, derivação do código e salto de nível.
+  
+  ## Acceptance criteria
+  
+  - [ ] Salvar Detalhe num nível de Agregação Matriz falha e não grava.
+  - [ ] Salvar Matriz num nível de Agregação Detalhe falha e não grava.
+  - [ ] Salvar Matriz ou Detalhe num nível Híbrido segue as demais regras e pode gravar.
+  - [ ] O teste cobre os três casos no caminho do Salvar.
+  
+  ## Implementation notes
+  
+  - **Area / scope label:** `item`
+  - **Dependencies:** blocked by #85.
+  - **Hints:** validação de hierarquia do item (`code_parent_item_validation` e o submit do admin). O campo do item continua `matriz`.
+  
+  ## Related work
+  
+  | Kind       | Reference                                      |
+  | ---------- | ---------------------------------------------- |
+  | Epic       | —                                              |
+  | Parent     | —                                              |
+  | Blocks     | —                                              |
+  | Blocked by | #85                                            |
+  | Spec       | `spec_itemClassificacao_validar_hierarquia.md` |
+---
+# regs
+
+- date: 2026-11-16T16:40:15Z
+  reg: label:added:bug
+  author: carloshob
+
+- date: 2026-11-16T16:40:17Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-11-16T16:40:19Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-11-16T16:40:21Z
+  reg: relationship:blocked_by_added
+  author: carloshob
+---
