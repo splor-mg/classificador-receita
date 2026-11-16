@@ -39,6 +39,11 @@ package-mode = false
 makemigrations = { cmd = "python manage.py makemigrations", help = "Gera migrações para banco de dados." }
 migrate = { cmd = "python manage.py migrate", help = "Migra mudanças para banco de dados." }
 carregar = { cmd = "python manage.py carregar_classificador", help = "Carrega dados iniciais a partir do datapackage.yaml (docs/assets/seed_*.csv). Opções: --datapackage=<caminho>, --resource=<nome>, --dry-run, --clear (limpa tabelas por ORM), --clear-hard (limpeza destrutiva; no prompt use 'db' ou passe --clear-hard --db para só tabelas do app core). Exemplo: `poetry run task carregar --clear-hard --db`." }
+# 'carregar -- --clear'  => apaga os recursos pelo ORM e reinsere os seeds; schema, migrações e usuários ficam
+# 'carregar -- --clear-hard'  => TRUNCATE CASCADE interativo (escolhe banco e tabelas, confirma y/N) e reinsere os seeds
+# 'carregar -- --db=<alias>'  => recusa a execução: --db é flag e só vale junto de --clear-hard
+# 'carregar -- --db=<alias> --clear'  => recusa a execução: --db não acompanha --clear e não aceita alias
+# 'carregar -- --db=<alias> --clear-hard'  => --clear-hard --db (sem valor) faz TRUNCATE só das tabelas do app core e recarrega os seeds; com mais de um banco, o alias sai no prompt
 
 # Django Development
 dev-server = { cmd = "python manage.py runserver", help = "Liga servidor de desenvolvimento." }
