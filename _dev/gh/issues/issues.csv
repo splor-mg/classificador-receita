@@ -77,3 +77,5 @@ issue_number,status,author,created,closed,title
 82,OPEN,carloshob,2026-09-30T18:11:28Z,,[mid-05] Publicar o serviço e o hostname no EasyPanel
 83,OPEN,carloshob,2026-09-30T18:11:30Z,,[mid-06] Carregar os dados e criar as contas de manutenção
 84,OPEN,carloshob,2026-09-30T18:12:04Z,,[mid-07] Entregar o link do Django a um mantenedor da AID
+85,OPEN,carloshob,2026-11-16T15:31:05Z,,(nivel) - Registrar Agregação no nível hierárquico
+86,OPEN,carloshob,2026-11-16T16:40:13Z,,(item) - Recusar no Salvar uma matriz incompatível com a Agregação do nível

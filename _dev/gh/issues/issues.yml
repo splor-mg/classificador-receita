@@ -2,19 +2,19 @@ name: issues
 account: splor-mg
 
 data:
-  issues_amount: 78
-  issues_open: 36
+  issues_amount: 80
+  issues_open: 38
   issues_closed: 42
-  issues_closed_%: 54
+  issues_closed_%: 52
   issues_todo: 17
   issues_in_progress: 11
   issues_review: 0
   issues_waiting: 0
-  last_issue_id_created: 84
+  last_issue_id_created: 86
   last_issue_id_closed: 77
-  last_issue_created: '2026-09-30T18:12:04Z'
+  last_issue_created: '2026-11-16T16:40:13Z'
   last_issue_closed: '2026-10-02T16:06:23Z'
-  last_issue_updated: '2026-10-09T14:20:22Z'
+  last_issue_updated: '2026-11-16T16:40:13Z'
   last_user_auth: carloshob
 
 issues:
@@ -641,3 +641,19 @@ issues:
   created: '2026-09-30T18:12:04Z'
   closed: null
   url: https://github.com/splor-mg/classificador-receita/issues/84
+
+- number: 85
+  title: (nivel) - Registrar Agregação no nível hierárquico
+  status: OPEN
+  author: carloshob
+  created: '2026-11-16T15:31:05Z'
+  closed: null
+  url: https://github.com/splor-mg/classificador-receita/issues/85
+
+- number: 86
+  title: (item) - Recusar no Salvar uma matriz incompatível com a Agregação do nível
+  status: OPEN
+  author: carloshob
+  created: '2026-11-16T16:40:13Z'
+  closed: null
+  url: https://github.com/splor-mg/classificador-receita/issues/86
