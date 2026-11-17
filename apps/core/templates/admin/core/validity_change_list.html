@@ -11,12 +11,12 @@
     <input type="hidden" name="vigencia" value="1">
     <strong>Vigência</strong>
     <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; margin-top: 0.5rem;">
-      <fieldset style="border: 0; margin: 0; padding: 0;">
-        <legend>Data Vigência</legend>
-        {% include "admin/core/validity_date_side.html" with prefix="vigencia_" %}
-        <span aria-hidden="true"> .. </span>
-        {% include "admin/core/validity_date_side.html" with prefix="vigencia_" suffix="2" %}
-      </fieldset>
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <span>Data Vigência</span>
+        <div style="display: flex; gap: 0.5rem;">
+          {% include "admin/core/validity_date_side.html" with prefix="vigencia_" %}
+        </div>
+      </div>
       <label>Versão
         <select name="vigencia_versao">
           <option value=""></option>

@@ -8,5 +8,5 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- Validity search: the series, classification, level, and item lists can ask which codes cover a date or a period, including LDO on 15 May, and the inquiry `inquire_validity` answers with the same window.
+- Validity search: the series, classification, level, and item lists can ask which codes cover a date, including LDO on 15 May. The inquiry `inquire_validity` answers the same window and can also take a period.
 - An impossible day, or a validity date combined with a registered version, does not run the search. An inverted period is reordered and the operator is told.
