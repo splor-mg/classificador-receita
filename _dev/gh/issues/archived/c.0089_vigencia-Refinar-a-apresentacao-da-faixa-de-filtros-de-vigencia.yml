@@ -1,10 +1,10 @@
 ---
 title: (vigencia) - Refinar a apresentação da faixa de filtros de vigência
-state: O
+state: C
 author: carloshob
 created: '2026-11-17T19:51:25Z'
-updated: '2026-11-17T19:51:27Z'
-closed: null
+updated: '2026-11-17T20:08:06Z'
+closed: '2026-11-17T20:08:06Z'
 assignees: []
 labels:
 - chore
@@ -13,7 +13,7 @@ projects:
 - name: Gestão à Vista AID
   number: 13
   id: PVT_kwDOByfrJc4AmH_f
-  Status: Backlog
+  Status: Done
   Projeto: null
   Planejado: null
   Data início: null
@@ -84,5 +84,13 @@ body: |-
 
 - date: 2026-11-17T19:51:32Z
   reg: project:added:project
+  author: carloshob
+
+- date: 2026-11-17T19:51:34Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-11-17T20:08:06Z
+  reg: state:closed
   author: carloshob
 ---
