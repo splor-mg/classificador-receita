@@ -1,9 +1,9 @@
 ---
 title: (vigencia) - Implementar o assistente de vigência
 state: O
-author: []
-created: null
-updated: null
+author: carloshob
+created: '2026-11-17T14:24:22Z'
+updated: '2026-11-17T14:24:22Z'
 closed: null
 assignees:
 - carloshob
@@ -79,3 +79,12 @@ body: |-
   | Spec       | `_dev/.concep/2026-11-17_vigencia_codigos-validos.md` |
 ---
 # regs
+
+- date: 2026-11-17T14:24:23Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-11-17T14:24:24Z
+  reg: label:added:new-feature
+  author: carloshob
+---
