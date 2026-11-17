@@ -1,4 +1,4 @@
-<label>Ano
+<label class="vigencia-bar__field vigencia-bar__field--year">Ano
   <select name="{{ prefix }}ano{{ suffix }}">
     <option value=""></option>
     {% for year in vigencia_years %}
@@ -12,7 +12,7 @@
     {% endfor %}
   </select>
 </label>
-<label>Mês
+<label class="vigencia-bar__field vigencia-bar__field--month">Mês
   <select name="{{ prefix }}mes{{ suffix }}">
     <option value=""></option>
     {% for month in vigencia_months %}
@@ -26,7 +26,7 @@
     {% endfor %}
   </select>
 </label>
-<label>Dia
+<label class="vigencia-bar__field vigencia-bar__field--day">Dia
   <select name="{{ prefix }}dia{{ suffix }}">
     <option value=""></option>
     {% for day in vigencia_days %}

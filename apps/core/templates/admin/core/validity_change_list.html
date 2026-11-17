@@ -1,7 +1,13 @@
 {% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'core/validity_bar.css' %}">
+{% endblock %}
 
 {% block search %}
-<div class="vigencia-bar" style="margin-bottom: 1rem; padding: 0.75rem 1rem; background: var(--darkened-bg, #f8f8f8); border: 1px solid var(--hairline-color, #ddd);">
+<section class="vigencia-bar" aria-labelledby="vigencia-bar-title">
   <form method="get" action="">
     {% for key, value in request.GET.items %}
       {% if key != "vigencia" and key|slice:":9" != "vigencia_" %}
@@ -9,15 +15,10 @@
       {% endif %}
     {% endfor %}
     <input type="hidden" name="vigencia" value="1">
-    <strong>Vigência</strong>
-    <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; margin-top: 0.5rem;">
-      <div style="display: flex; flex-direction: column; align-items: center;">
-        <span>Data Vigência</span>
-        <div style="display: flex; gap: 0.5rem;">
-          {% include "admin/core/validity_date_side.html" with prefix="vigencia_" %}
-        </div>
-      </div>
-      <label>Versão
+    <p class="vigencia-bar__title" id="vigencia-bar-title">Vigência</p>
+    <div class="vigencia-bar__fields">
+      {% include "admin/core/validity_date_side.html" with prefix="vigencia_" %}
+      <label class="vigencia-bar__field vigencia-bar__field--version">Versão
         <select name="vigencia_versao">
           <option value=""></option>
           {% for prefix in vigencia_prefixes %}
@@ -28,15 +29,15 @@
           {% endfor %}
         </select>
       </label>
-      <label>Data Registro
+      <label class="vigencia-bar__field vigencia-bar__field--record">Data Registro
         <input type="date" name="vigencia_registro" value="{{ request.GET.vigencia_registro }}">
       </label>
-      <button type="submit">Pesquisar</button>
+      <button type="submit" class="button vigencia-bar__submit">Pesquisar</button>
     </div>
   </form>
   {% if vigencia_summary %}
-    <p style="margin: 0.75rem 0 0;">{{ vigencia_summary }}</p>
+    <p class="vigencia-bar__summary">{{ vigencia_summary }}</p>
   {% endif %}
-</div>
+</section>
 {{ block.super }}
 {% endblock %}
