@@ -2,19 +2,19 @@ name: issues
 account: splor-mg
 
 data:
-  issues_amount: 80
-  issues_open: 36
+  issues_amount: 81
+  issues_open: 37
   issues_closed: 44
-  issues_closed_%: 55
-  issues_todo: 17
+  issues_closed_%: 54
+  issues_todo: 18
   issues_in_progress: 11
   issues_review: 0
   issues_waiting: 0
-  last_issue_id_created: 86
+  last_issue_id_created: 87
   last_issue_id_closed: 86
-  last_issue_created: '2026-11-16T16:40:13Z'
+  last_issue_created: '2026-11-17T14:24:22Z'
   last_issue_closed: '2026-11-16T19:26:18Z'
-  last_issue_updated: '2026-11-16T19:26:25Z'
+  last_issue_updated: '2026-11-17T14:26:20Z'
   last_user_auth: carloshob
 
 issues:
@@ -657,3 +657,11 @@ issues:
   created: '2026-11-16T16:40:13Z'
   closed: '2026-11-16T19:26:18Z'
   url: https://github.com/splor-mg/classificador-receita/issues/86
+
+- number: 87
+  title: (vigencia) - Implementar o assistente de vigência
+  status: OPEN
+  author: carloshob
+  created: '2026-11-17T14:24:22Z'
+  closed: null
+  url: https://github.com/splor-mg/classificador-receita/issues/87

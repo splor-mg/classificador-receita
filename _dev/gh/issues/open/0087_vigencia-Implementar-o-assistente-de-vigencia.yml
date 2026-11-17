@@ -3,15 +3,24 @@ title: (vigencia) - Implementar o assistente de vigência
 state: O
 author: carloshob
 created: '2026-11-17T14:24:22Z'
-updated: '2026-11-17T14:24:22Z'
+updated: '2026-11-17T14:26:20Z'
 closed: null
 assignees:
 - carloshob
 labels:
 - new-feature
-type: null
-projects: []
-milestone: null
+type: 2 - Média
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Todo
+  Projeto: Datamart
+  Data início: '2026-11-01'
+  Data de vencimento: '2026-11-30'
+  Planejado: null
+  tags: null
+milestone: Migração de Dados
 relationships:
   parent: null
   blocked_by: []
@@ -86,5 +95,29 @@ body: |-
 
 - date: 2026-11-17T14:24:24Z
   reg: label:added:new-feature
+  author: carloshob
+
+- date: 2026-11-17T14:25:56Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-11-17T14:25:57Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-11-17T14:25:59Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-11-17T14:26:17Z
+  reg: milestone:added:Modelagem de Dados
+  author: carloshob
+
+- date: 2026-11-17T14:26:20Z
+  reg: milestone:removed:Modelagem de Dados
+  author: carloshob
+
+- date: 2026-11-17T14:26:20Z
+  reg: milestone:added:Migração de Dados
   author: carloshob
 ---
