@@ -1,0 +1,42 @@
+<label>Ano
+  <select name="{{ prefix }}ano{{ suffix }}">
+    <option value=""></option>
+    {% for year in vigencia_years %}
+      <option value="{{ year }}"
+        {% if suffix == "2" %}
+          {% if request.GET.vigencia_ano2 == year|stringformat:'s' %}selected{% endif %}
+        {% else %}
+          {% if request.GET.vigencia_ano == year|stringformat:'s' %}selected{% endif %}
+        {% endif %}
+      >{{ year }}</option>
+    {% endfor %}
+  </select>
+</label>
+<label>Mês
+  <select name="{{ prefix }}mes{{ suffix }}">
+    <option value=""></option>
+    {% for month in vigencia_months %}
+      <option value="{{ month|stringformat:'02d' }}"
+        {% if suffix == "2" %}
+          {% if request.GET.vigencia_mes2 == month|stringformat:'02d' %}selected{% endif %}
+        {% else %}
+          {% if request.GET.vigencia_mes == month|stringformat:'02d' %}selected{% endif %}
+        {% endif %}
+      >{{ month|stringformat:'02d' }}</option>
+    {% endfor %}
+  </select>
+</label>
+<label>Dia
+  <select name="{{ prefix }}dia{{ suffix }}">
+    <option value=""></option>
+    {% for day in vigencia_days %}
+      <option value="{{ day|stringformat:'02d' }}"
+        {% if suffix == "2" %}
+          {% if request.GET.vigencia_dia2 == day|stringformat:'02d' %}selected{% endif %}
+        {% else %}
+          {% if request.GET.vigencia_dia == day|stringformat:'02d' %}selected{% endif %}
+        {% endif %}
+      >{{ day|stringformat:'02d' }}</option>
+    {% endfor %}
+  </select>
+</label>

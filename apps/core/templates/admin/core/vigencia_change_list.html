@@ -1,0 +1,42 @@
+{% extends "admin/change_list.html" %}
+
+{% block search %}
+<div class="vigencia-bar" style="margin-bottom: 1rem; padding: 0.75rem 1rem; background: var(--darkened-bg, #f8f8f8); border: 1px solid var(--hairline-color, #ddd);">
+  <form method="get" action="">
+    {% for key, value in request.GET.items %}
+      {% if key != "vigencia" and key|slice:":9" != "vigencia_" %}
+        <input type="hidden" name="{{ key }}" value="{{ value }}">
+      {% endif %}
+    {% endfor %}
+    <input type="hidden" name="vigencia" value="1">
+    <strong>Vigência</strong>
+    <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; margin-top: 0.5rem;">
+      <fieldset style="border: 0; margin: 0; padding: 0;">
+        <legend>Data Vigência</legend>
+        {% include "admin/core/vigencia_date_side.html" with prefix="vigencia_" %}
+        <span aria-hidden="true"> .. </span>
+        {% include "admin/core/vigencia_date_side.html" with prefix="vigencia_" suffix="2" %}
+      </fieldset>
+      <label>Versão
+        <select name="vigencia_versao">
+          <option value=""></option>
+          {% for prefix in vigencia_prefixes %}
+            <option value="{{ prefix }}" {% if request.GET.vigencia_versao == prefix %}selected{% endif %}>{{ prefix }}</option>
+          {% endfor %}
+          {% for versao in vigencia_versions %}
+            <option value="{{ versao }}" {% if request.GET.vigencia_versao == versao %}selected{% endif %}>{{ versao }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Data Registro
+        <input type="date" name="vigencia_registro" value="{{ request.GET.vigencia_registro }}">
+      </label>
+      <button type="submit">Pesquisar</button>
+    </div>
+  </form>
+  {% if vigencia_summary %}
+    <p style="margin: 0.75rem 0 0;">{{ vigencia_summary }}</p>
+  {% endif %}
+</div>
+{{ block.super }}
+{% endblock %}
