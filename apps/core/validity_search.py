@@ -100,7 +100,7 @@ class VigenciaSearchMixin:
         extra["vigencia_versions"] = active_version_ids()
         extra["vigencia_prefixes"] = (PREFIX_LDO, PREFIX_LOA)
         today = date.today()
-        extra["vigencia_years"] = list(range(1990, today.year + 11))
+        extra["vigencia_years"] = list(range(2002, today.year + 11))
         extra["vigencia_months"] = list(range(1, 13))
         extra["vigencia_days"] = list(range(1, 32))
         return super().changelist_view(request, extra_context=extra)
