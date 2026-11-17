@@ -1,12 +1,7 @@
 ----------------------------------------------------------------------------------------------------
 # lista 
 
-- **assistênte de vigência**
-  
-  
-
 - **itemClassificacao** - formulário de criação
-
   
   - **mensagem de confirmação de criação** - uma janela pop-up de confirmação de criação, com dados resumidos do que está sendo criado
 
@@ -274,33 +269,33 @@ Abaixo estão as recomendações mais relevantes do DMBOK para este repositório
    - Mapear um data lineage mínimo (datapackage → loader → modelo → registro).
    - Ajuda em auditoria e debugging dos carregamentos.
 
-4. Regras de qualidade de dados e automação (alto)
+1. Regras de qualidade de dados e automação (alto)
    - Consolidar as validações Frictionless (`ptt validar-datapackage`) como checks em CI.
    - Implementar validações de negócio como testes automatizados e validações no Django (uniqueness, patterns).
    - Publicar um scorecard simples no Admin com contagem de falhas e histórico de execuções.
 
-5. Processo de carregamento resiliente (médio)
+1. Processo de carregamento resiliente (médio)
    - Tornar o loader idempotente e transacional por recurso; manter `--dry-run + report`.
    - Garantir que `--clear` seja seguro em dev e documentar o procedimento.
    - Melhorar logs diagnósticos (incluindo tracebacks detalhados quando Frictionless falha).
 
-6. Controle de versão e bitemporalidade (médio/alto)
+1. Controle de versão e bitemporalidade (médio/alto)
    - Documentar políticas bitemporais: chave semântica, política de conflito, retenção de versões.
    - Registrar essas decisões em README/ADR para desenvolvedores e operações.
 
-7. Auditoria / histórico de mudanças (médio)
+2. Auditoria / histórico de mudanças (médio)
    - Adicionar audit trail (models/triggers) para alterações manuais no Admin e cargas automáticas.
    - Útil para compliance e investigação de incidentes.
 
-8. Catálogo de dados / descoberta (opcional)
+3. Catálogo de dados / descoberta (opcional)
    - Criar uma página/endpoint que liste datasets, esquemas, última carga e métricas de qualidade.
    - Facilita descoberta por usuários internos e integrações.
 
-9. Segurança e controle de acesso (essencial)
+4. Segurança e controle de acesso (essencial)
    - Definir quem pode executar cargas (`ptt carregar`), editar seeds e criar superusers.
    - Aplicar permissões no Admin e proteger endpoints sensíveis.
 
-10. Operacionalização / observabilidade (médio)
+1.  Operacionalização / observabilidade (médio)
    - Registrar runs de carregamento (tempo, sucesso/erros) e integrar com logs/alertas (ex.: Sentry).
 
 ### Relação com o estado atual do projeto
@@ -312,7 +307,11 @@ Abaixo estão as recomendações mais relevantes do DMBOK para este repositório
 - Posso gerar um backlog priorizado com tarefas concretas e estimativas, por exemplo:
   1. Modelo `BusinessGlossary` + admin (alto impacto, baixo esforço)
   2. Grupos/permissions iniciais (médio)
-  3. CI que executa `ptt validar-datapackage` (médio)
-  4. Audit trail básico para cargas (médio)
+  1. CI que executa `ptt validar-datapackage` (médio)
+  2. Audit trail básico para cargas (médio)
 
 Quer que eu gere esse backlog detalhado (tarefas, estimativas e checklist de implementação)?
+
+
+
+- [x] **assistênte de vigência**

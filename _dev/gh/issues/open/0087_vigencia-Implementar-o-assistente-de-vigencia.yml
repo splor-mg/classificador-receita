@@ -39,7 +39,7 @@ body: |-
   
   As listas de séries, classificações, níveis hierárquicos e itens já restringem pelo estado do registro, inclusive quando o fim do registro é o sentinela. Não há uma pergunta única para a vigência: uma data, um período, uma versão cadastrada ou o intervalo entre duas versões, como se sabe agora ou como se sabia num dia.
   
-  Quem mantém ou lê o classificador reconstitui essa janela à mão. A consulta fora da lista e as quatro listas precisam da mesma resposta. O comportamento já combinado está em `_dev/.concep/2026-11-17_vigencia_codigos-validos.md`.
+  Quem mantém ou lê o classificador reconstitui essa janela à mão. A consulta fora da lista e as quatro listas precisam da mesma resposta. O comportamento já combinado está em `_dev/.concep/archived/2026-11-17_vigencia_codigos-validos.md`.
   
   ## Objective
   
@@ -74,18 +74,18 @@ body: |-
   ## Implementation notes
   
   - **Area / scope label:** `vigencia`
-  - **Epic:** —
+  - **Epic:** `_dev/.epic/.epic-02_0-vigencia-assistente.md`
   - **Hints:** a concepção é a referência do comportamento. A ponte entre uma versão cadastrada e um intervalo de datas, o controle de uma ou duas versões, o dia de calendário do LOA-PPAG e o ano do caso 16 continuam em aberto.
   
   ## Related work
   
-  | Kind       | Reference                                             |
-  | ---------- | ----------------------------------------------------- |
-  | Epic       | —                                                     |
-  | Parent     | —                                                     |
-  | Blocks     | —                                                     |
-  | Blocked by | —                                                     |
-  | Spec       | `_dev/.concep/2026-11-17_vigencia_codigos-validos.md` |
+  | Kind       | Reference                                                      |
+  | ---------- | -------------------------------------------------------------- |
+  | Epic       | `_dev/.epic/.epic-02_0-vigencia-assistente.md`                 |
+  | Parent     | —                                                              |
+  | Blocks     | —                                                              |
+  | Blocked by | —                                                              |
+  | Spec       | `_dev/.concep/archived/2026-11-17_vigencia_codigos-validos.md` |
 ---
 # regs
 
