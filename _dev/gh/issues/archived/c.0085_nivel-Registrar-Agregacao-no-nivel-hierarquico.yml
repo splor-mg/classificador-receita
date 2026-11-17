@@ -1,10 +1,10 @@
 ---
 title: (nivel) - Registrar Agregação no nível hierárquico
-state: O
+state: C
 author: carloshob
 created: '2026-11-16T15:31:05Z'
-updated: '2026-11-16T17:12:22Z'
-closed: null
+updated: '2026-11-16T19:26:05Z'
+closed: '2026-11-16T19:26:05Z'
 assignees:
 - carloshob
 labels:
@@ -14,7 +14,7 @@ projects:
 - name: Gestão à Vista AID
   number: 13
   id: PVT_kwDOByfrJc4AmH_f
-  Status: Todo
+  Status: Done
   Projeto: Datamart
   Data início: '2026-11-01'
   Data de vencimento: '2026-11-30'
@@ -61,10 +61,10 @@ body: |-
   
   ## Acceptance criteria
   
-  - [ ] O admin de Nível Hierárquico mostra Agregação com Híbrido, Matriz e Detalhe.
-  - [ ] Um nível novo sem escolha explícita fica Híbrido.
-  - [ ] Um nível já gravado continua Híbrido até alguém alterar.
-  - [ ] `estrutura_codigo` permanece a máscara de dígitos.
+  - [x] O admin de Nível Hierárquico mostra Agregação com Híbrido, Matriz e Detalhe.
+  - [x] Um nível novo sem escolha explícita fica Híbrido.
+  - [x] Um nível já gravado continua Híbrido até alguém alterar.
+  - [x] `estrutura_codigo` permanece a máscara de dígitos.
   
   ## Implementation notes
   
@@ -117,5 +117,13 @@ body: |-
 
 - date: 2026-11-16T17:12:09Z
   reg: milestone:added:Migração de Dados
+  author: carloshob
+
+- date: 2026-11-16T19:26:04Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-11-16T19:26:05Z
+  reg: state:closed
   author: carloshob
 ---

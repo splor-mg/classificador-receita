@@ -1,10 +1,10 @@
 ---
 title: (item) - Recusar no Salvar uma matriz incompatível com a Agregação do nível
-state: O
+state: C
 author: carloshob
 created: '2026-11-16T16:40:13Z'
-updated: '2026-11-16T16:40:13Z'
-closed: null
+updated: '2026-11-16T19:26:25Z'
+closed: '2026-11-16T19:26:18Z'
 assignees:
 - carloshob
 labels:
@@ -14,7 +14,7 @@ projects:
 - name: Gestão à Vista AID
   number: 13
   id: PVT_kwDOByfrJc4AmH_f
-  Status: Todo
+  Status: Done
   Projeto: Datamart
   Data início: '2026-11-01'
   Data de vencimento: '2026-11-30'
@@ -62,10 +62,10 @@ body: |-
   
   ## Acceptance criteria
   
-  - [ ] Salvar Detalhe num nível de Agregação Matriz falha e não grava.
-  - [ ] Salvar Matriz num nível de Agregação Detalhe falha e não grava.
-  - [ ] Salvar Matriz ou Detalhe num nível Híbrido segue as demais regras e pode gravar.
-  - [ ] O teste cobre os três casos no caminho do Salvar.
+  - [x] Salvar Detalhe num nível de Agregação Matriz falha e não grava.
+  - [x] Salvar Matriz num nível de Agregação Detalhe falha e não grava.
+  - [x] Salvar Matriz ou Detalhe num nível Híbrido segue as demais regras e pode gravar.
+  - [x] O teste cobre os três casos no caminho do Salvar.
   
   ## Implementation notes
   
@@ -99,5 +99,33 @@ body: |-
 
 - date: 2026-11-16T16:40:21Z
   reg: relationship:blocked_by_added
+  author: carloshob
+
+- date: 2026-11-16T17:13:56Z
+  reg: milestone:added:Migração de Dados
+  author: carloshob
+
+- date: 2026-11-16T17:13:59Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-11-16T17:15:17Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-11-16T17:25:03Z
+  reg: assignee:removed:carloshob
+  author: carloshob
+
+- date: 2026-11-16T17:27:53Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-11-16T19:26:17Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-11-16T19:26:19Z
+  reg: state:closed
   author: carloshob
 ---
