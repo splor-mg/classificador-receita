@@ -1,8 +1,7 @@
-- Related-epic: `_dev/.epic/.epic-02_0-vigencia-assistente.md`
 **Created:** `2026-11-17`
 **Linked:** `2026-11-17`
 **Status:** `used`
-**Related-epic:** `_dev/.epic/.epic-02_0-vigencia-assistente.md`
+**Related-epic:** `_dev/.epic/archived/c.epic-02_0-vigencia-assistente.md`
 **Related-branch:** `migracao`
 
 # Validity window for classification codes
