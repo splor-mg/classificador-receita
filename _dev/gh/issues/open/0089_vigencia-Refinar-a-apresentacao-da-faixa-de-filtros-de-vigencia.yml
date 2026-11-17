@@ -1,0 +1,88 @@
+---
+title: (vigencia) - Refinar a apresentação da faixa de filtros de vigência
+state: O
+author: carloshob
+created: '2026-11-17T19:51:25Z'
+updated: '2026-11-17T19:51:27Z'
+closed: null
+assignees: []
+labels:
+- chore
+type: null
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Backlog
+  Projeto: null
+  Planejado: null
+  Data início: null
+  Data de vencimento: null
+  tags: null
+milestone: Migração de Dados
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+  relates_to: []
+development:
+  pull_requests: []
+  branches: []
+---
+# description
+
+body: |-
+  A faixa Vigência das changelists passa a ser um único componente visual, mais claro e equilibrado, sem mudar o que os filtros fazem.
+  ## Contexto
+  A changelist já mostra a seção Vigência, com Ano, Mês, Dia, Versão, Data Registro e o botão Pesquisar. Esses controles filtram a lista em conjunto. O arranjo atual, registrado no print, é a referência do que a faixa já é. O que falta é uma apresentação mais clara, uma organização mais clara e um uso mais fácil dessa mesma faixa.
+  O comportamento combinado está em `_dev/.concep/2026-11-17_vigencia_layout-filtros.md`.
+  ## Objetivo
+  A faixa passar a ser lida como um só componente de filtro, com o título Vigência, rótulos junto dos próprios controles e um uso equilibrado do espaço, inclusive quando a tela é menor. O significado dos filtros permanece o de hoje.
+  ## Escopo
+  **Inclui:**
+  - O refinamento visual e estrutural da faixa Vigência na changelist.
+  - Os controles que já estão nela: Ano, Mês, Dia, Versão, Data Registro e Pesquisar.
+  **Não inclui:**
+  - Mudar o que os filtros fazem.
+  - Nomes e identificadores dos campos.
+  - Os parâmetros GET usados na filtragem.
+  - Os valores escolhidos depois de uma pesquisa.
+  - O comportamento de Ano, Mês, Dia, Versão e Data Registro.
+  - O que o botão Pesquisar faz.
+  - A integração com o filtro da changelist.
+  - A compatibilidade com os templates e componentes que já existem.
+  - Modelos, consultas, views, formulários e regras de negócio, salvo uma necessidade indispensável à apresentação, justificada antes da mudança.
+  ## Critérios de aceite
+  - [ ] Os controles estão alinhados e organizados, e cada rótulo fica claramente ligado ao próprio controle.
+  - [ ] Larguras e espaçamentos estão equilibrados, e Pesquisar é proporcional aos demais controles.
+  - [ ] A seção tem uma identidade visual uniforme e profissional, distinta do restante da página.
+  - [ ] Em resolução menor, os controles podem passar a mais de uma linha, sem sobreposição, corte ou barra de rolagem horizontal desnecessária.
+  - [ ] Os filtros continuam funcionando como antes, inclusive nomes, identificadores, parâmetros GET e os valores escolhidos depois da pesquisa.
+  - [ ] O estilo e os templates permanecem simples de manter, reutilizando padrões do projeto, sem dependência ou framework novo.
+  - [ ] Os controles são lidos como um único componente de filtro.
+  ## Notas de implementação
+  - **Area / scope label:** `vigencia`
+  - **Hints:** a concepção é a referência da apresentação. Rótulos de preferência acima dos campos. Estilo inline só se isso já for padrão do projeto. Estilos herdados do Django Admin, e de qualquer framework visual que o projeto já use, não ficam em conflito com o estilo próprio.
+  ## Trabalho relacionado
+  | Kind       | Reference                                              |
+  | ---------- | ------------------------------------------------------ |
+  | Epic       | —                                                      |
+  | Parent     | —                                                      |
+  | Blocks     | —                                                      |
+  | Blocked by | —                                                      |
+  | Spec       | `_dev/.concep/2026-11-17_vigencia_layout-filtros.md`   |
+---
+# regs
+
+- date: 2026-11-17T19:51:26Z
+  reg: label:added:chore
+  author: carloshob
+
+- date: 2026-11-17T19:51:27Z
+  reg: milestone:added:Migração de Dados
+  author: carloshob
+
+- date: 2026-11-17T19:51:32Z
+  reg: project:added:project
+  author: carloshob
+---
