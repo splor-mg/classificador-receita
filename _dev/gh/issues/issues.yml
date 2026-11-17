@@ -2,19 +2,19 @@ name: issues
 account: splor-mg
 
 data:
-  issues_amount: 81
-  issues_open: 37
-  issues_closed: 44
-  issues_closed_%: 54
-  issues_todo: 18
+  issues_amount: 82
+  issues_open: 36
+  issues_closed: 46
+  issues_closed_%: 56
+  issues_todo: 17
   issues_in_progress: 11
   issues_review: 0
   issues_waiting: 0
-  last_issue_id_created: 87
-  last_issue_id_closed: 86
-  last_issue_created: '2026-11-17T14:24:22Z'
-  last_issue_closed: '2026-11-16T19:26:18Z'
-  last_issue_updated: '2026-11-17T14:26:20Z'
+  last_issue_id_created: 88
+  last_issue_id_closed: 87
+  last_issue_created: '2026-11-17T15:09:01Z'
+  last_issue_closed: '2026-11-17T15:19:49Z'
+  last_issue_updated: '2026-11-17T15:19:49Z'
   last_user_auth: carloshob
 
 issues:
@@ -660,8 +660,16 @@ issues:
 
 - number: 87
   title: (vigencia) - Implementar o assistente de vigência
-  status: OPEN
+  status: CLOSED
   author: carloshob
   created: '2026-11-17T14:24:22Z'
-  closed: null
+  closed: '2026-11-17T15:19:49Z'
   url: https://github.com/splor-mg/classificador-receita/issues/87
+
+- number: 88
+  title: (changelog) - Introduzir o CHANGELOG do classificador
+  status: CLOSED
+  author: carloshob
+  created: '2026-11-17T15:09:01Z'
+  closed: '2026-11-17T15:19:35Z'
+  url: https://github.com/splor-mg/classificador-receita/issues/88
