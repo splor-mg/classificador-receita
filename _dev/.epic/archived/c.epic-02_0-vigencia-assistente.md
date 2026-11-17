@@ -4,7 +4,7 @@ This document is the **project planning record** which defines the scope, roadma
 
 ---
 
-**Status:** `in_progress` — mid-01 and mid-03 are in the tree; LOA-PPAG still has no calendar day (**EPICS-26**)
+**Status:** `done`
 **Main-issue:** `#87`
 **Concep:** `_dev/.concep/archived/2026-11-17_vigencia_codigos-validos.md`
 **Related-issues:** `#34`, `#67`
