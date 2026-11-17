@@ -67,7 +67,7 @@ from apps.core.code_name_messages import (
     format_lexico_termo_duplicado,
 )
 
-from apps.core.vigencia_search import VigenciaSearchMixin
+from apps.core.validity_search import VigenciaSearchMixin
 from apps.core.admin_filters import (
     AliasLexicoRegistroAtivoFilter,
     BaseLegalTecnicaIdFilter,

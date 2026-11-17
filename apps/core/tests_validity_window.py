@@ -10,8 +10,8 @@ from apps.core.admin import (
     NivelHierarquicoAdmin,
     SerieClassificacaoAdmin,
 )
-from apps.core.vigencia_search import VigenciaSearchMixin
-from apps.core.vigencia_window import (
+from apps.core.validity_search import VigenciaSearchMixin
+from apps.core.validity_window import (
     PREFIX_LDO,
     RECORD_ASOF,
     RECORD_SENTINEL,

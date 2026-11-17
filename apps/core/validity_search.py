@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.db.models import QuerySet
 
 from apps.core.models import TRANSACTION_TIME_SENTINEL, VersaoClassificacao
-from apps.core.vigencia_window import (
+from apps.core.validity_window import (
     PREFIX_LDO,
     PREFIX_LOA,
     RECORD_ASOF,
@@ -82,7 +82,7 @@ def active_version_ids() -> list[str]:
 class VigenciaSearchMixin:
     """Changelist search for the four classification lists. First paint is unchanged."""
 
-    change_list_template = "admin/core/vigencia_change_list.html"
+    change_list_template = "admin/core/validity_change_list.html"
 
     def changelist_view(self, request, extra_context=None):
         extra = dict(extra_context or {})

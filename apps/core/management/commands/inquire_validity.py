@@ -10,8 +10,8 @@ from apps.core.models import (
     NivelHierarquico,
     SerieClassificacao,
 )
-from apps.core.vigencia_search import apply_vigencia_window, describe_window
-from apps.core.vigencia_window import resolve_vigencia_window
+from apps.core.validity_search import apply_vigencia_window, describe_window
+from apps.core.validity_window import resolve_vigencia_window
 
 MODELS = {
     "serie": SerieClassificacao,

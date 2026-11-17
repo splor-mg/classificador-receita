@@ -22,74 +22,74 @@ Termos *deve* / *não deve* / *pode* conforme RFC 2119 (ver `_dev/spec_conventio
 
 **Migração de símbolos legados:**
 
-| Legado | ID atual |
-| ------ | -------- |
+| Legado                                                             | ID atual                                                            |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------- |
 | Secções `## Agents` / `## Commits` / `## Issues` / `## Convenções` | § **2** / **3** / **4** / **5** (títulos preservam o nome temático) |
-| Citações `§ **Agents**` no corpo | § **2** (equivalente semântico) |
+| Citações `§ **Agents**` no corpo                                   | § **2** (equivalente semântico)                                     |
 
 ## Como citar este documento
 
-| Mecanismo          | Uso                                                                 |
-| ------------------ | ------------------------------------------------------------------- |
-| **Seção numerada** | `§ N` / `§ N.M` — navegação neste arquivo.                          |
-| **ID normativo**   | `CLREC-NN` — citação estável de processo local.                     |
-| **Prefixo domínio**| Ver § **5.8** — hub de prefixos (`ITEMNOM`, `DJANGO`, …); não usar `CLREC` para domínio. |
+| Mecanismo           | Uso                                                                                      |
+| ------------------- | ---------------------------------------------------------------------------------------- |
+| **Seção numerada**  | `§ N` / `§ N.M` — navegação neste arquivo.                                               |
+| **ID normativo**    | `CLREC-NN` — citação estável de processo local.                                          |
+| **Prefixo domínio** | Ver § **5.8** — hub de prefixos (`ITEMNOM`, `DJANGO`, …); não usar `CLREC` para domínio. |
 
 **Índice de IDs normativos deste arquivo:**
 
-| ID        | Tema        | Seção | Resumo                                                                                                                                 |
-| --------- | ----------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| CLREC-01  | Precedência | 1.1   | Processo: contrato maduro → **este arquivo** → cópia sync → `toolkit/<tool>/specs/` (**AGENTS-22**, **AGENTS-25**).                    |
-| CLREC-02  | Escopo      | 1.2   | Overrides de **processo** aqui; regras de **negócio** em `spec_<domínio>.md` ou contrato maduro (**AGENTS-26**).                        |
-| CLREC-03  | Escopo      | 1.3   | Seções vazias **podem** ser omitidas; criar seção ao documentar o primeiro tema; alinhar títulos às chaves do manifest quando aplicável. |
-| CLREC-10  | Identidade  | 2.1   | Repositório implementa Classificador de Natureza de Receita (Django Admin, bitemporal, classificação orçamentária).                      |
-| CLREC-11  | Processo    | 2.2   | Modelo SDD: convenções transversais neste arquivo + specs locais + implementação assistida por IA rastreável.                          |
-| CLREC-12  | Override    | 2.3   | Commits e issues em **pt-BR** — § **3** e § **4** prevalecem sobre sync (**AGENTS-25**); **não** reeditar entradas sync para PT-BR.     |
-| CLREC-13  | Leitura     | 2.4   | Ordem local pós-`spec_agents.md` § **1.2**: § **5** → spec temática → `spec_django.md` → ADRs → import → `*_new.md` se manifest.       |
-| CLREC-14  | Lacuna      | 2.5   | **Não** inventar regra de domínio sem spec ou código; sinalizar lacunas (**AGENTS-09**).                                               |
-| CLREC-15  | Registro    | 2.6   | Tabela «Onde registrar mudanças» — Admin/spec temática, `code_*`, ADR, layout, overrides, `toDo.md`.                                   |
-| CLREC-16  | Code        | 2.7   | Negócio reutilizável → `code_*.py`; orquestração Admin/JSON/templates → fluxo sem prefixo `code_`; specs citam caminhos, não duplicam.   |
-| CLREC-17  | Sync        | 2.8   | `*_new.md`: genérico no sync; regras deste projeto aqui ou specs domínio; merge § **10** `spec_agents.md`; remover sidecar quando OK.  |
-| CLREC-18  | Idioma      | 2.9   | `_dev/`, ADRs, `docs/`, README em **pt-BR**; tabela preferir/evitar pt-PT § **2.9**; UI Admin pt-BR salvo spec em contrário.          |
-| CLREC-19  | Idioma      | 2.10  | Respostas IDE em **inglês** (**AGENTS-07**); código e comentários Python em **inglês** (**AGENTS-08**).                                |
-| CLREC-30  | Commit      | 3.1   | Título e corpo de commit em **pt-BR** — override **COMMITS-05** / § **3.1** sync (**AGENTS-25**).                                      |
-| CLREC-31  | Commit      | 3.2   | Linhas `See …` iguais à baseline — copiar de `_dev/_dev.md` (**COMMITS-06**).                                                          |
-| CLREC-32  | Commit      | 3.3   | Após `(<escopo>): `: verbo no **infinitivo**; corpo claro, foco no *porquê*.                                                           |
-| CLREC-33  | Commit      | 3.4   | `_dev/toDo.md`: título fixo `dev(toDo): atualizar anotações`.                                                                           |
-| CLREC-34  | Commit      | 3.5   | Escopo: tabela local → derivar do basename `spec_*` (regras § **3.3**) → rename usa nome antigo.                                       |
-| CLREC-35  | Commit      | 3.6   | `feat` reservado a mudança **implementada** em código/Admin/JS visível; só docs → `docs`.                                              |
-| CLREC-36  | Commit      | 3.7   | Vários arquivos no mesmo commit só com **uma causa**; temas independentes → commits separados (**COMMITS** § **5.4**).                  |
-| CLREC-40  | Issue       | 4.1   | Título e corpo de issue em **pt-BR** — override **ISSUES-05** (**AGENTS-25**).                                                         |
-| CLREC-41  | Issue       | 4.2   | Prefixo temático raiz `(classificador)`; módulos `(django)`, `(itemClassificacao)`, …; separador ` - `; sentence case.                  |
-| CLREC-42  | Issue       | 4.3   | Coerência issue ↔ commit: `See`/`Closes`/`Refs`; escopo issue alinhado ao escopo do commit quando aplicável.                            |
-| CLREC-50  | Convenção   | 5.1   | Ao introduzir/renomear `code_*`, domínio YAML ou tema transversal, **deve** atualizar § **5**; specs funcionais só paths, sem duplicar. |
-| CLREC-51  | Convenção   | 5.2   | Normas toolkit shell / manifest multinível (**CONV** § **6**–**8**) **não** se aplicam a este repo Django.                             |
-| CLREC-52  | Layout      | 5.3   | Política de paths `docs/assets/referencias/`, `data-raw/`, `data/`, seeds — **ADR-005**; detalhe import em `spec_importar.md`.          |
-| CLREC-53  | Layout      | 5.4   | **Carga** (seeds → BD) ≠ **importação** (externo → `data-raw/` → `data/` → BD); Django **não** lê `data/` nos fluxos de carga atuais.  |
-| CLREC-54  | Idioma      | 5.5   | Camadas: produto pt-BR, schema PT permitido, implementação EN, persistência como schema, UI pt-BR — tabela § **5.5**.                  |
-| CLREC-55  | Domínio     | 5.6   | Cada `schemas/dominios/*.yaml` espelha `code_<inglês>.py`; nova linha na tabela § **5.6** e inventário § **5.10**.                    |
-| CLREC-56  | Code        | 5.7   | Arquivos `.py`/testes: nomes EN; docstrings de regra pt-BR; mensagens usuário pt-BR; JS Admin nomes EN, textos por spec domínio.       |
-| CLREC-57  | Temporal    | 5.8   | `valid_time` ↔ `data_vigencia_*`; `transaction_time` ↔ `data_registro_*`; módulos EN, rótulos UI podem ser pt.                        |
-| CLREC-58  | Code        | 5.9   | Prefixo `code_*`: regras testáveis sem HTTP/templates; consumido por models/admin/handlers; documentado nas specs correspondentes.       |
-| CLREC-59  | Code        | 5.10  | Fora de `code_*`: models, migrações, admin, templates, static, `scripts/`, schemas, orquestração `classification_item_*`, handlers.    |
-| CLREC-60  | Code        | 5.11  | Par `code_valid_time_fk_validation` + `code_valid_time_fk_resolution` — spec `spec_foreignKeys_vigencia.md` (**FKVIG**).             |
-| CLREC-70  | Versão      | 6.1   | Repo **não** mantém `manifest.yaml` nem `CHANGELOG.md` no momento; avaliar `_dev/spec_version.md` quando adotado (**AGENTS-13**).      |
-| CLREC-71  | Versão      | 6.2   | Inventário de tags Git **nesta** § **6** — não em `spec_conventions.md` sync (**CONV-07**, **AGENTS-20**).                               |
-| CLREC-72  | Versão      | 6.3   | Tags `v` + SemVer (**CONV-06**); tag anotada preferida; **não** executar `git tag`/`push` tag sem pedido explícito (**VERSION-08**).    |
-| CLREC-80  | Domínio     | 7.2   | Índice leve de specs locais e ADRs — comportamento detalhado permanece em cada arquivo.                                                  |
-| CLREC-81  | Lacuna      | 7.3   | `spec_import_*.md` operacional pendente; contrato maduro `docs/specs/` ainda inexistente (**AGENTS-01**).                                |
+| ID       | Tema        | Seção | Resumo                                                                                                                                   |
+| -------- | ----------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| CLREC-01 | Precedência | 1.1   | Processo: contrato maduro → **este arquivo** → cópia sync → `toolkit/<tool>/specs/` (**AGENTS-22**, **AGENTS-25**).                      |
+| CLREC-02 | Escopo      | 1.2   | Overrides de **processo** aqui; regras de **negócio** em `spec_<domínio>.md` ou contrato maduro (**AGENTS-26**).                         |
+| CLREC-03 | Escopo      | 1.3   | Seções vazias **podem** ser omitidas; criar seção ao documentar o primeiro tema; alinhar títulos às chaves do manifest quando aplicável. |
+| CLREC-10 | Identidade  | 2.1   | Repositório implementa Classificador de Natureza de Receita (Django Admin, bitemporal, classificação orçamentária).                      |
+| CLREC-11 | Processo    | 2.2   | Modelo SDD: convenções transversais neste arquivo + specs locais + implementação assistida por IA rastreável.                            |
+| CLREC-12 | Override    | 2.3   | Commits e issues em **pt-BR** — § **3** e § **4** prevalecem sobre sync (**AGENTS-25**); **não** reeditar entradas sync para PT-BR.      |
+| CLREC-13 | Leitura     | 2.4   | Ordem local pós-`spec_agents.md` § **1.2**: § **5** → spec temática → `spec_django.md` → ADRs → import → `*_new.md` se manifest.         |
+| CLREC-14 | Lacuna      | 2.5   | **Não** inventar regra de domínio sem spec ou código; sinalizar lacunas (**AGENTS-09**).                                                 |
+| CLREC-15 | Registro    | 2.6   | Tabela «Onde registrar mudanças» — Admin/spec temática, `code_*`, ADR, layout, overrides, `toDo.md`.                                     |
+| CLREC-16 | Code        | 2.7   | Negócio reutilizável → `code_*.py`; orquestração Admin/JSON/templates → fluxo sem prefixo `code_`; specs citam caminhos, não duplicam.   |
+| CLREC-17 | Sync        | 2.8   | `*_new.md`: genérico no sync; regras deste projeto aqui ou specs domínio; merge § **10** `spec_agents.md`; remover sidecar quando OK.    |
+| CLREC-18 | Idioma      | 2.9   | `_dev/`, ADRs, `docs/`, README em **pt-BR**; tabela preferir/evitar pt-PT § **2.9**; UI Admin pt-BR salvo spec em contrário.             |
+| CLREC-19 | Idioma      | 2.10  | Respostas IDE em **inglês** (**AGENTS-07**); código e comentários Python em **inglês** (**AGENTS-08**).                                  |
+| CLREC-30 | Commit      | 3.1   | Título e corpo de commit em **pt-BR** — override **COMMITS-05** / § **3.1** sync (**AGENTS-25**).                                        |
+| CLREC-31 | Commit      | 3.2   | Linhas `See …` iguais à baseline — copiar de `_dev/_dev.md` (**COMMITS-06**).                                                            |
+| CLREC-32 | Commit      | 3.3   | Após `(<escopo>): `: verbo no **infinitivo**; corpo claro, foco no *porquê*.                                                             |
+| CLREC-33 | Commit      | 3.4   | `_dev/toDo.md`: título fixo `dev(toDo): atualizar anotações`.                                                                            |
+| CLREC-34 | Commit      | 3.5   | Escopo: tabela local → derivar do basename `spec_*` (regras § **3.3**) → rename usa nome antigo.                                         |
+| CLREC-35 | Commit      | 3.6   | `feat` reservado a mudança **implementada** em código/Admin/JS visível; só docs → `docs`.                                                |
+| CLREC-36 | Commit      | 3.7   | Vários arquivos no mesmo commit só com **uma causa**; temas independentes → commits separados (**COMMITS** § **5.4**).                   |
+| CLREC-40 | Issue       | 4.1   | Título e corpo de issue em **pt-BR** — override **ISSUES-05** (**AGENTS-25**).                                                           |
+| CLREC-41 | Issue       | 4.2   | Prefixo temático raiz `(classificador)`; módulos `(django)`, `(itemClassificacao)`, …; separador ` - `; sentence case.                   |
+| CLREC-42 | Issue       | 4.3   | Coerência issue ↔ commit: `See`/`Closes`/`Refs`; escopo issue alinhado ao escopo do commit quando aplicável.                             |
+| CLREC-50 | Convenção   | 5.1   | Ao introduzir/renomear `code_*`, domínio YAML ou tema transversal, **deve** atualizar § **5**; specs funcionais só paths, sem duplicar.  |
+| CLREC-51 | Convenção   | 5.2   | Normas toolkit shell / manifest multinível (**CONV** § **6**–**8**) **não** se aplicam a este repo Django.                               |
+| CLREC-52 | Layout      | 5.3   | Política de paths `docs/assets/referencias/`, `data-raw/`, `data/`, seeds — **ADR-005**; detalhe import em `spec_importar.md`.           |
+| CLREC-53 | Layout      | 5.4   | **Carga** (seeds → BD) ≠ **importação** (externo → `data-raw/` → `data/` → BD); Django **não** lê `data/` nos fluxos de carga atuais.    |
+| CLREC-54 | Idioma      | 5.5   | Camadas: produto pt-BR, schema PT permitido, implementação EN, persistência como schema, UI pt-BR — tabela § **5.5**.                    |
+| CLREC-55 | Domínio     | 5.6   | Cada `schemas/dominios/*.yaml` espelha `code_<inglês>.py`; nova linha na tabela § **5.6** e inventário § **5.10**.                       |
+| CLREC-56 | Code        | 5.7   | Arquivos `.py`/testes: nomes EN; docstrings de regra pt-BR; mensagens usuário pt-BR; JS Admin nomes EN, textos por spec domínio.         |
+| CLREC-57 | Temporal    | 5.8   | `valid_time` ↔ `data_vigencia_*`; `transaction_time` ↔ `data_registro_*`; módulos EN, rótulos UI podem ser pt.                           |
+| CLREC-58 | Code        | 5.9   | Prefixo `code_*`: regras testáveis sem HTTP/templates; consumido por models/admin/handlers; documentado nas specs correspondentes.       |
+| CLREC-59 | Code        | 5.10  | Fora de `code_*`: models, migrações, admin, templates, static, `scripts/`, schemas, orquestração `classification_item_*`, handlers.      |
+| CLREC-60 | Code        | 5.11  | Par `code_valid_time_fk_validation` + `code_valid_time_fk_resolution` — spec `spec_foreignKeys_vigencia.md` (**FKVIG**).                 |
+| CLREC-70 | Versão      | 6.1   | Repo **não** mantém `manifest.yaml`. `CHANGELOG.md` na raiz registra o impacto perceptível; o bump continua no fechamento do plano.      |
+| CLREC-71 | Versão      | 6.2   | Inventário de tags Git **nesta** § **6** — não em `spec_conventions.md` sync (**CONV-07**, **AGENTS-20**).                               |
+| CLREC-72 | Versão      | 6.3   | Tags `v` + SemVer (**CONV-06**); tag anotada preferida; **não** executar `git tag`/`push` tag sem pedido explícito (**VERSION-08**).     |
+| CLREC-80 | Domínio     | 7.2   | Índice leve de specs locais e ADRs — comportamento detalhado permanece em cada arquivo.                                                  |
+| CLREC-81 | Lacuna      | 7.3   | `spec_import_*.md` operacional pendente; contrato maduro `docs/specs/` ainda inexistente (**AGENTS-01**).                                |
 
 **Índice por tema:**
 
-| Tema        | IDs                                      |
-| ----------- | ---------------------------------------- |
-| Precedência | CLREC-01 … CLREC-03                      |
-| Agents      | CLREC-10 … CLREC-19                      |
-| Commits     | CLREC-30 … CLREC-36                      |
-| Issues      | CLREC-40 … CLREC-42                      |
-| Convenções  | CLREC-50 … CLREC-60                      |
-| Versão      | CLREC-70 … CLREC-72                      |
-| Domínio     | CLREC-80, CLREC-81                       |
+| Tema        | IDs                 |
+| ----------- | ------------------- |
+| Precedência | CLREC-01 … CLREC-03 |
+| Agents      | CLREC-10 … CLREC-19 |
+| Commits     | CLREC-30 … CLREC-36 |
+| Issues      | CLREC-40 … CLREC-42 |
+| Convenções  | CLREC-50 … CLREC-60 |
+| Versão      | CLREC-70 … CLREC-72 |
+| Domínio     | CLREC-80, CLREC-81  |
 
 ---
 
@@ -140,14 +140,14 @@ Não inventar regra de domínio sem base em spec ou código; sinalizar lacunas a
 
 ### 2.6 Onde registrar mudanças **(CLREC-15)**
 
-| Tipo de mudança                                      | Onde documentar                                              |
-| ---------------------------------------------------- | ------------------------------------------------------------ |
-| Comportamento, fluxo Admin, mensagens ao usuário     | Spec temática `_dev/spec_<domínio>.md` (trechos afetados)    |
-| Novo módulo `code_*` ou rename                       | Inventário em § **5. Convenções** (neste arquivo)            |
-| Decisão arquitetural duradoura                       | ADR em `docs/adr/`                                           |
-| Layout `docs/assets/`, `data-raw/`, `data/`          | **ADR-005** + § **5**; import em `spec_importar.md`          |
-| Overrides SDD (commits, escopos, idioma de processo) | **Este arquivo**                                             |
-| Anotações pessoais                                   | `_dev/toDo.md` (`dev(toDo)` — § **3. Commits**)              |
+| Tipo de mudança                                      | Onde documentar                                           |
+| ---------------------------------------------------- | --------------------------------------------------------- |
+| Comportamento, fluxo Admin, mensagens ao usuário     | Spec temática `_dev/spec_<domínio>.md` (trechos afetados) |
+| Novo módulo `code_*` ou rename                       | Inventário em § **5. Convenções** (neste arquivo)         |
+| Decisão arquitetural duradoura                       | ADR em `docs/adr/`                                        |
+| Layout `docs/assets/`, `data-raw/`, `data/`          | **ADR-005** + § **5**; import em `spec_importar.md`       |
+| Overrides SDD (commits, escopos, idioma de processo) | **Este arquivo**                                          |
+| Anotações pessoais                                   | `_dev/toDo.md` (`dev(toDo)` — § **3. Commits**)           |
 
 ### 2.7 Implementação: `code_*` vs Admin **(CLREC-16)**
 
@@ -182,14 +182,14 @@ Termos técnicos em inglês (`foreignKey`, `valid_time`, identificadores de cód
 
 ### 2.10 Idioma IDE e código **(CLREC-19)**
 
-| Tema                           | Onde no repositório                                                    |
-| ------------------------------ | ---------------------------------------------------------------------- |
+| Tema                           | Onde no repositório                                                              |
+| ------------------------------ | -------------------------------------------------------------------------------- |
 | Commits e staging              | `spec_classificador-receita.md` § **Commits** (§ **3**) + `_dev/spec_commits.md` |
-| Nomenclatura, `code_*`, idioma | **Este arquivo** § **Convenções** (§ **5**)                            |
-| Admin, models, migrações       | `spec_django.md`, ADRs                                                 |
-| Python (estilo)                | `apps/core/` — PEP 8; seguir o arquivo tocado                          |
-| Contratos JSON no Admin        | ex. `spec_itemClassificacao_foreignKeys_lookup.md`                     |
-| RFC 2119 em specs              | `deve` / `não deve` / `pode` nas specs normativas                      |
+| Nomenclatura, `code_*`, idioma | **Este arquivo** § **Convenções** (§ **5**)                                      |
+| Admin, models, migrações       | `spec_django.md`, ADRs                                                           |
+| Python (estilo)                | `apps/core/` — PEP 8; seguir o arquivo tocado                                    |
+| Contratos JSON no Admin        | ex. `spec_itemClassificacao_foreignKeys_lookup.md`                               |
+| RFC 2119 em specs              | `deve` / `não deve` / `pode` nas specs normativas                                |
 
 Respostas do assistente na IDE: **inglês** (**AGENTS-07**). Código e comentários em arquivos Python: **inglês** (**AGENTS-08**).
 
@@ -199,10 +199,10 @@ Respostas do assistente na IDE: **inglês** (**AGENTS-07**). Código e comentár
 
 Override de **COMMITS-05** e § **3.1** (redação): título e corpo das mensagens em **português do Brasil** — prevalece sobre `_dev/spec_commits.md` § **3** (**AGENTS-25**) **(CLREC-30)**.
 
-| Parte                               | Idioma                                                  |
-| ----------------------------------- | ------------------------------------------------------- |
-| Título `(<tipo>)(<escopo>): …`      | **Português do Brasil**                                 |
-| Corpo (após bloco `See`, se houver) | **Português do Brasil**                                 |
+| Parte                               | Idioma                                                                 |
+| ----------------------------------- | ---------------------------------------------------------------------- |
+| Título `(<tipo>)(<escopo>): …`      | **Português do Brasil**                                                |
+| Corpo (após bloco `See`, se houver) | **Português do Brasil**                                                |
 | Linhas `See …`                      | Igual à baseline — copiar de `_dev/_dev.md` (§ **3.2**) **(CLREC-31)** |
 
 - Após `(<escopo>): `: verbo no **infinitivo** (*adicionar*, *corrigir*, *documentar*, *renomear*, *atualizar*, …); corpo em português claro, foco no *porquê* **(CLREC-32)**.
@@ -353,13 +353,13 @@ Política completa: **`docs/adr/adr-005_layout-dados.md`**. Importação operaci
 
 ### 5.2 Camadas de idioma **(CLREC-54)**
 
-| Camada                    | Onde                                               | Idioma                                                    | Notas                               |
-| ------------------------- | -------------------------------------------------- | --------------------------------------------------------- | ----------------------------------- |
-| **Semântica de produto**  | `_dev/spec_*.md`, ADRs, `docs/`                    | **Português do Brasil**                                   | Tabela pt-BR vs pt-PT: § **2.9**    |
-| **Contrato de dados**     | `schemas/`, `schemas/dominios/*.yaml`              | Identificador de domínio pode ser PT (`orgaos_entidades`) | `custom.domainRef`                  |
-| **Implementação**         | `apps/core/code_*.py`, funções, testes             | **Inglês**                                                | PEP 8                               |
-| **Persistência / modelo** | campos (`orgao_responsavel`, …)                    | **Como no schema**                                        | Não renomear por i18n sem migração  |
-| **Mensagens Admin / UI**  | templates, `ValidationError`, `code_name_messages` | **Português do Brasil**                                   | Ver specs de domínio                |
+| Camada                    | Onde                                               | Idioma                                                    | Notas                              |
+| ------------------------- | -------------------------------------------------- | --------------------------------------------------------- | ---------------------------------- |
+| **Semântica de produto**  | `_dev/spec_*.md`, ADRs, `docs/`                    | **Português do Brasil**                                   | Tabela pt-BR vs pt-PT: § **2.9**   |
+| **Contrato de dados**     | `schemas/`, `schemas/dominios/*.yaml`              | Identificador de domínio pode ser PT (`orgaos_entidades`) | `custom.domainRef`                 |
+| **Implementação**         | `apps/core/code_*.py`, funções, testes             | **Inglês**                                                | PEP 8                              |
+| **Persistência / modelo** | campos (`orgao_responsavel`, …)                    | **Como no schema**                                        | Não renomear por i18n sem migração |
+| **Mensagens Admin / UI**  | templates, `ValidationError`, `code_name_messages` | **Português do Brasil**                                   | Ver specs de domínio               |
 
 Códigos de valor no catálogo (`SEF-MG`, `STN-BRA`) são dados/contrato, não nomenclatura de módulo.
 
@@ -415,7 +415,7 @@ O prefixo inclui nome, hierarquia, máscara, FK temporal, normalização de entr
 | ---------------------- | ----------------------------- | -------------------------------------------------------- |
 | Nome / radical         | `code_name_*`                 | Protocolo de `receita_nome`, abreviação, validação G0–G1 |
 | Máscara e apresentação | `code_mask`                   | Máscara e formatação de código por vigência              |
-| Hierarquia do item     | `code_parent_item_validation` | Mãe, nível, saltos, zeros canônicos, endpoints JSON    |
+| Hierarquia do item     | `code_parent_item_validation` | Mãe, nível, saltos, zeros canônicos, endpoints JSON      |
 | FK + valid_time        | `code_valid_time_fk_*`        | Contenção de vigência em FK; reaponte da linha apontada  |
 | Entrada / placeholders | `code_null_normalization`     | `NULL` e `-` → ausência canônica em campos texto         |
 | Catálogo de domínio    | `code_organizations_entities` | Choices de `orgaos_entidades` → `orgao_responsavel`      |
@@ -490,7 +490,7 @@ APIs públicas (`validate_vigencia_contained_in_fk_targets`, códigos `Validatio
 
 ## 6. Versionamento **(CLREC-70**–**CLREC-72)**
 
-Este repositório **não** mantém `manifest.yaml` nem `CHANGELOG.md` no momento. Avaliar impacto conforme `_dev/spec_version.md` quando normas ou releases forem adotadas (**AGENTS-13**) **(CLREC-70)**.
+Este repositório **não** mantém `manifest.yaml`. `CHANGELOG.md` na raiz registra o impacto perceptível. O bump de versão continua no fechamento do plano (**AGENTS-13**) **(CLREC-70)**.
 
 ### 6.1 Inventário de tags Git **(CLREC-71**, **CLREC-72**)
 

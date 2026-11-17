@@ -13,9 +13,9 @@
     <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; margin-top: 0.5rem;">
       <fieldset style="border: 0; margin: 0; padding: 0;">
         <legend>Data Vigência</legend>
-        {% include "admin/core/vigencia_date_side.html" with prefix="vigencia_" %}
+        {% include "admin/core/validity_date_side.html" with prefix="vigencia_" %}
         <span aria-hidden="true"> .. </span>
-        {% include "admin/core/vigencia_date_side.html" with prefix="vigencia_" suffix="2" %}
+        {% include "admin/core/validity_date_side.html" with prefix="vigencia_" suffix="2" %}
       </fieldset>
       <label>Versão
         <select name="vigencia_versao">
