@@ -1,0 +1,81 @@
+---
+title: (vigencia) - Implementar o assistente de vigência
+state: O
+author: []
+created: null
+updated: null
+closed: null
+assignees:
+- carloshob
+labels:
+- new-feature
+type: null
+projects: []
+milestone: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+  relates_to: []
+development:
+  pull_requests: []
+  branches: []
+---
+# description
+
+body: |-
+  A consulta e as quatro changelists passam a responder, com a mesma janela, quais códigos estão válidos numa data, num período, numa versão ou entre duas versões.
+  
+  ## Context
+  
+  As listas de séries, classificações, níveis hierárquicos e itens já restringem pelo estado do registro, inclusive quando o fim do registro é o sentinela. Não há uma pergunta única para a vigência: uma data, um período, uma versão cadastrada ou o intervalo entre duas versões, como se sabe agora ou como se sabia num dia.
+  
+  Quem mantém ou lê o classificador reconstitui essa janela à mão. A consulta fora da lista e as quatro listas precisam da mesma resposta. O comportamento já combinado está em `_dev/.concep/2026-11-17_vigencia_codigos-validos.md`.
+  
+  ## Objective
+  
+  Existir essa pergunta, aplicada pela consulta e pela pesquisa Vigência das quatro listas, com a janela assumida visível antes do filtro. Recusa e reordenação seguem os casos dessa concepção.
+  
+  ## Scope
+  
+  **In scope:**
+  
+  - Séries de classificações, classificações de receita, níveis hierárquicos e itens de classificação.
+  - Data pontual, período, versão cadastrada, intervalo entre duas versões cadastradas, LDO e LOA-PPAG.
+  - Registro no sentinela, ou no dia informado quando a data de registro vem preenchida.
+  - Recusa quando o dia não existe no mês, e quando data de vigência e versão cadastrada vêm juntas.
+  - Aviso quando um período invertido é reordenado da data mais antiga para a mais recente.
+  
+  **Out of scope:**
+  
+  - Listas de abreviações, bases legais, variantes e a própria lista de versões como alvo da pesquisa.
+  - Criar, editar ou encerrar um código.
+  - Substituir o filtro de estado do registro já existente.
+  - Responder as perguntas ainda abertas na seção 10 da concepção.
+  
+  ## Acceptance criteria
+  
+  - [ ] A pesquisa Vigência nas quatro listas e a consulta fora da lista devolvem a mesma janela para os mesmos dados.
+  - [ ] Os casos 1 a 15, 17 a 21, 23 e 24 da concepção produzem a vigência assumida, a versão assumida, a data de registro assumida e o filtro ali escritos.
+  - [ ] O caso 11 não pesquisa e a mensagem nomeia o campo Dia.
+  - [ ] O caso 15 pesquisa o intervalo já reordenado e informa o ajuste.
+  - [ ] O caso 24 não pesquisa e informa que data de vigência e versão cadastrada vieram juntas.
+  - [ ] As quatro perguntas da seção 10 da concepção permanecem sem resposta inventada na implementação.
+  
+  ## Implementation notes
+  
+  - **Area / scope label:** `vigencia`
+  - **Epic:** —
+  - **Hints:** a concepção é a referência do comportamento. A ponte entre uma versão cadastrada e um intervalo de datas, o controle de uma ou duas versões, o dia de calendário do LOA-PPAG e o ano do caso 16 continuam em aberto.
+  
+  ## Related work
+  
+  | Kind       | Reference                                             |
+  | ---------- | ----------------------------------------------------- |
+  | Epic       | —                                                     |
+  | Parent     | —                                                     |
+  | Blocks     | —                                                     |
+  | Blocked by | —                                                     |
+  | Spec       | `_dev/.concep/2026-11-17_vigencia_codigos-validos.md` |
+---
+# regs

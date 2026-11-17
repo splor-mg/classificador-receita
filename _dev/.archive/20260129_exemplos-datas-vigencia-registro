@@ -1,0 +1,48 @@
+TABELA INICIAL
+
+```
+classificacao_ref	classificacao_id	classificacao_nome	data_vigencia_inicio	data_vigencia_fim	data_registro_inicio	data_registro_fim
+1	CLASSIFICACAO-BASICA	Classificação Bronze	01/01/2020	31/12/9999	01/01/2020	31/12/9999
+2	CLASSIFICACAO-INTERM	Classificação Prata	01/01/2020	31/12/9999	01/01/2020	31/12/9999
+3	CLASSIFICACAO-AMPLA	Classificação Ouro Básico	01/01/2020	31/12/9999	01/01/2020	30/06/2021
+3	CLASSIFICACAO-AMPLA	Classificação Ouro Plus	01/07/2021	31/12/9999	01/07/2021	31/12/2022
+3	CLASSIFICACAO-AMPLA	Classificação Ouro Premium	01/01/2023	31/12/9999	01/01/2023	31/12/9999
+4	CLASSIFICACAO-ULTRA	Classificação Diamante	15/03/2022	31/12/9999	15/03/2022	31/12/9999
+```
+
+
+FIM DA VIGÊNCIA DA `classificacao_id` 1 em 25/06/2023
+
+```
+classificacao_ref	classificacao_id	classificacao_nome	data_vigencia_inicio	data_vigencia_fim	data_registro_inicio	data_registro_fim
+1	CLASSIFICACAO-BASICA	Classificação Bronze	01/01/2020	25/06/2023	01/01/2020	31/12/9999
+2	CLASSIFICACAO-INTERM	Classificação Prata	01/01/2020	31/12/9999	01/01/2020	31/12/9999
+3	CLASSIFICACAO-AMPLA	Classificação Ouro Básico	01/01/2020	31/12/9999	01/01/2020	30/06/2021
+3	CLASSIFICACAO-AMPLA	Classificação Ouro Plus	01/07/2021	31/12/9999	01/07/2021	31/12/2022
+3	CLASSIFICACAO-AMPLA	Classificação Ouro Premium	01/01/2023	31/12/9999	01/01/2023	31/12/9999
+4	CLASSIFICACAO-ULTRA	Classificação Diamante	15/03/2022	31/12/9999	15/03/2022	31/12/9999
+```
+
+
+FIM DA VIGÊNCIA DA `classificacao_id` 3 em 03/03/2023
+
+
+```
+classificacao_ref	classificacao_id	classificacao_nome	data_vigencia_inicio	data_vigencia_fim	data_registro_inicio	data_registro_fim
+1	CLASSIFICACAO-BASICA	Classificação Bronze	01/01/2020	25/06/2023	01/01/2020	31/12/9999
+2	CLASSIFICACAO-INTERM	Classificação Prata	01/01/2020	31/12/9999	01/01/2020	31/12/9999
+3	CLASSIFICACAO-AMPLA	Classificação Ouro Básico	01/01/2020	03/03/2023	01/01/2020	30/06/2021
+3	CLASSIFICACAO-AMPLA	Classificação Ouro Plus	01/07/2021	03/03/2023	01/07/2021	31/12/2022
+3	CLASSIFICACAO-AMPLA	Classificação Ouro Premium	01/01/2023	03/03/2023	01/01/2023	31/12/9999
+4	CLASSIFICACAO-ULTRA	Classificação Diamante	15/03/2022	31/12/9999	15/03/2022	31/12/9999
+```
+
+
+
+classificacao_ref	classificacao_id	classificacao_nome	data_vigencia_inicio	data_vigencia_fim	data_registro_inicio	data_registro_fim
+1	CLASSIFICACAO-BASICA	Classificação Bronze	01/01/2020	25/06/2023	01/01/2020	31/12/9999
+2	CLASSIFICACAO-INTERM	Classificação Prata	01/01/2020	31/12/9999	01/01/2020	31/12/9999
+3	CLASSIFICACAO-AMPLA	Classificação Ouro Básico	01/01/2020	31/12/9999	01/01/2020	30/06/2021
+3	CLASSIFICACAO-AMPLA	Classificação Ouro Plus	01/01/2020	31/12/9999	01/07/2021	31/12/2022
+3	CLASSIFICACAO-AMPLA	Classificação Ouro Premium	01/01/2020	31/12/9999	01/01/2023	31/12/9999
+4	CLASSIFICACAO-ULTRA	Classificação Diamante	15/03/2022	31/12/9999	15/03/2022	31/12/9999

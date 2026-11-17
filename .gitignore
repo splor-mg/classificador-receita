@@ -8,8 +8,10 @@
 
 # Dev
 _dev/*
-!_dev/.specs/
+!_dev/.archive
+!_dev/.concep/
 !_dev/.epic/
+!_dev/.specs/
 !_dev/gh/
 !_dev/toDo.md
 !_dev/.arqv

@@ -3,21 +3,7 @@
 
 - **assistênte de vigência**
   
-  Ideia de criação de protocolo auxiliar para identificar vigência, por período, ou por versão. 
-  O que eu pensei foi em criar um script python, chamado `get_valid_code.py`. Deveria ser possível passar como argumento para essa função, ano, data, ou 2 anos ou duas data, ou a versão. 
-
-  Esse protocolo poderia ser utilizado parar criar filtro nas changelists para indentificar vigências  vigência por ano, pegando todos os registros ativos, com vigência. 
-
-  Pensei que poderia ser um "get vigência", cujo comportamento padrão poderia ser o de obter o registro vigênte para cada ano, conforme ativo em dias atuais. No entanto, para além disso, deveria ser possível esse "get vigência" poder ser instruído com argumento de data de registro. Isto é, ele somente consideria o stado do banco conforme atualizado até data x. Para tanto, o script deveria conseguir converter datas de fim de registro em dia futuro em relação à data x, deve ser assumido como se estivesse com "valor sentinela". Assim, resconstituira o estado do banco.
-
-  Poderia haver o registro de um campo na parte superior da changelist, chamado Vigência. Um dropdown seria apenas para ano e haveria um campo de data ao lado direito, para "conforme data:...". Caso apenas o campo ano estiver selecionado, ele vai considerar que é o léxico vigente par ao ano informado conforme hoje. Caso o campo conforme data... esteja preenchido, ele deve recuperar o que estava vigente conforme a data informada. Deveria haver pelo menos 3 padrões, fechamento; LDO, LOA, e uma oportunidade de informar. Ao rodar o protocolo de "filtragem" no banco de dados, por exemplo, sem o preenchimento do campo de "conforme data", deve informar que foram selecionados os códigos vigentes em conformidade com seu registro/versão mais recente.
-
-  data início de vigência <= 31/12/<ANO-SELECIONADO>
-  data de fim de vigêcia >= 01/01/<ANO-SELECIONADO>
-  data de fim de registro = SENTINELA ou instância com maior data de fim de registro, desde que > 31/12/<ANO-SELECIONADO>
-
-  ao lado desse campo de vigência, ele poderia ser 3 na verdade: Ano, Data e Versão. O usuário poderia selecionar cada um dos campo. O campo data, para as opções padrão, deve adatar conforme ano esperado, ou assumir ano corrente. O campo de versão deve ser um campo de dropdown com a lista de versões já publicadas, e eventualmente restritas àquelas compatíveis ao ANO-SELECIONADO. Pensar se no versionamento coloca-se ano ou não
-
+  
 
 - **itemClassificacao** - formulário de criação
 
