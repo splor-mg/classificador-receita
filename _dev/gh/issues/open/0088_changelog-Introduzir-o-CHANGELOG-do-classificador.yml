@@ -1,0 +1,96 @@
+---
+title: (changelog) - Introduzir o CHANGELOG do classificador
+state: O
+author: carloshob
+created: '2026-11-17T15:09:01Z'
+updated: '2026-11-17T15:09:01Z'
+closed: null
+assignees:
+- carloshob
+labels:
+- documentation
+type: null
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Backlog
+  Projeto: null
+  Planejado: null
+  Data início: null
+  Data de vencimento: null
+  tags: null
+milestone: null
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+  relates_to: []
+development:
+  pull_requests: []
+  branches: []
+---
+# description
+
+body: |-
+  O repositório passa a registrar, em `CHANGELOG.md` na raiz, o impacto perceptível de cada entrega, no formato Keep a Changelog, sem `manifest.yaml`.
+  
+  ## Contexto
+  
+  `CLREC-70` já define que este repositório não mantém `manifest.yaml` e que `CHANGELOG.md` na raiz registra o impacto perceptível. O bump de versão continua no fechamento do plano. Não havia issue para a introdução desse arquivo.
+  
+  Quem lê o histórico hoje depende dos commits e da spec. O arquivo na raiz precisa ser o registro legível por versão, com a seção `[Unreleased]` para o que ainda não fechou numa tag.
+  
+  ## Objetivo
+  
+  Existir `CHANGELOG.md` na raiz como histórico de impacto perceptível, com cabeçalho Keep a Changelog e seção `[Unreleased]`. Entregas seguintes atualizam `[Unreleased]` no mesmo commit quando não houver bump de versão.
+  
+  ## Escopo
+  
+  **Inclui:**
+  
+  - Arquivo `CHANGELOG.md` na raiz.
+  - Cabeçalho Keep a Changelog 1.1.0 e Semantic Versioning.
+  - Seção `[Unreleased]`, com um subsection de cada tipo só quando houver bullet (Added, Changed, Fixed, Removed, Security).
+  - Bullets de impacto perceptível, em inglês. A spec do repositório não troca o idioma do changelog.
+  
+  **Não inclui:**
+  
+  - Criar `manifest.yaml`.
+  - Publicar tag `v*`.
+  - Fechar uma versão numerada antes do fechamento do plano.
+  - Reescrever o histórico de commits já feitos.
+  
+  ## Critérios de aceite
+  
+  - [ ] `CHANGELOG.md` está na raiz e segue Keep a Changelog.
+  - [ ] A seção `[Unreleased]` existe e não repete o mesmo tipo de subsection.
+  - [ ] Cada bullet descreve um impacto perceptível, em inglês.
+  - [ ] O arquivo não introduz `manifest.yaml`.
+  
+  ## Notas
+  
+  - **Escopo:** `changelog`
+  - **Spec:** `_dev/.specs/spec_classificador-receita.md` § 6 (`CLREC-70`); `_dev/.specs/.spec_changelog.md`
+  
+  ## Trabalho relacionado
+  
+  | Tipo | Referência                                      |
+  | ---- | ----------------------------------------------- |
+  | Spec | `_dev/.specs/spec_classificador-receita.md`     |
+  | Spec | `_dev/.specs/.spec_changelog.md`                |
+---
+# regs
+
+- date: 2026-11-17T15:09:01Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-11-17T15:09:04Z
+  reg: label:added:documentation
+  author: carloshob
+
+- date: 2026-11-17T15:09:07Z
+  reg: project:added:project
+  author: carloshob
+---
