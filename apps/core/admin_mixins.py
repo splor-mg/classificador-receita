@@ -36,6 +36,10 @@ from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
 
 from apps.core.admin_widgets import ForeignKeySemanticDisplayRawIdWidget
 from apps.core.exporter import export_resource
+from apps.core.validity_search import (
+    is_vigencia_query_param,
+    querystring_without_vigencia,
+)
 from apps.core.bitemporal_registry import get_resource_for_model
 from apps.core.models import (
     BitemporalModel,
@@ -322,13 +326,27 @@ class ChangelistWithClearAllSkipDefault(ChangeList):
             in_active = _spec_has_active_filter(spec, params)
             spec.core_collapse_open = bool(in_declared or in_active)
 
+    def get_filters_params(self, params=None):
+        """
+        A busca de Vigência viaja na query string (``vigencia``, ``vigencia_ano``,
+        …) e não é campo do model. Se esses nomes chegam ao ``ChangeList``, o
+        Django trata-os como lookup, levanta ``IncorrectLookupParameters`` e
+        redirecciona para ``?e=1``, apagando o ano escolhido, a janela e o
+        filtro de registo.
+        """
+        lookup_params = super().get_filters_params(params)
+        for key in list(lookup_params):
+            if is_vigencia_query_param(key):
+                del lookup_params[key]
+        return lookup_params
+
     def get_queryset(self, request, exclude_parameters=None):
         qs = super().get_queryset(request, exclude_parameters=exclude_parameters)
         if self.clear_all_filters_qs:
             extra = urlencode(
                 {CHANGELIST_SKIP_DEFAULT_PARAM: CHANGELIST_SKIP_DEFAULT_VALUE}
             )
-            base = self.clear_all_filters_qs
+            base = querystring_without_vigencia(self.clear_all_filters_qs)
             self.clear_all_filters_qs = (
                 f"{base}&{extra}" if "?" in base else f"{base}?{extra}"
             )

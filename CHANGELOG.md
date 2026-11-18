@@ -6,6 +6,10 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- The Vigência search on the series, classification, level, and item lists keeps the chosen year and applies that window, so codes outside it and inactive records stay out of the result
+
 ## [0.2.0-rc.1] - 2026-11-17
 
 ### Added

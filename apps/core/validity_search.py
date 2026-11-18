@@ -1,6 +1,7 @@
 """Apply a resolved validity window to a bitemporal queryset and to the admin."""
 
 from datetime import date
+from urllib.parse import parse_qsl, urlencode
 
 from django.contrib import messages
 from django.db.models import QuerySet
@@ -17,6 +18,24 @@ from apps.core.validity_window import (
 )
 
 VIGENCIA_PARAM = "vigencia"
+
+
+def is_vigencia_query_param(name: str) -> bool:
+    """True for the search flag and the ``vigencia_*`` fields, not for model fields."""
+    return name == VIGENCIA_PARAM or name.startswith(f"{VIGENCIA_PARAM}_")
+
+
+def querystring_without_vigencia(query: str) -> str:
+    """Drop the vigência search keys. Other changelist parameters stay, in order."""
+    leading = "?" if query.startswith("?") else ""
+    raw = query[1:] if leading else query
+    kept = [
+        (key, value)
+        for key, value in parse_qsl(raw, keep_blank_values=True)
+        if not is_vigencia_query_param(key)
+    ]
+    body = urlencode(kept, doseq=True)
+    return f"?{body}" if leading else body
 
 
 def resolve_from_get(params, today: date | None = None) -> VigenciaWindow:
@@ -79,6 +98,22 @@ def active_version_ids() -> list[str]:
     )
 
 
+class _OnDemand:
+    """Walks ``load()`` on iteration, so a redirect never queries."""
+
+    def __init__(self, load):
+        self._load = load
+        self._items = None
+
+    def _items_or_load(self):
+        if self._items is None:
+            self._items = self._load()
+        return self._items
+
+    def __iter__(self):
+        return iter(self._items_or_load())
+
+
 class VigenciaSearchMixin:
     """Changelist search for the four classification lists. First paint is unchanged."""
 
@@ -97,7 +132,7 @@ class VigenciaSearchMixin:
                     messages.error(request, message)
         extra["vigencia_window"] = window
         extra["vigencia_summary"] = describe_window(window) if window else ""
-        extra["vigencia_versions"] = active_version_ids()
+        extra["vigencia_versions"] = _OnDemand(active_version_ids)
         extra["vigencia_prefixes"] = (PREFIX_LDO, PREFIX_LOA)
         today = date.today()
         extra["vigencia_years"] = list(range(2002, today.year + 11))
