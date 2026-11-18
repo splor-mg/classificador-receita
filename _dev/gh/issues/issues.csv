@@ -81,3 +81,4 @@ issue_number,status,author,created,closed,title
 86,CLOSED,carloshob,2026-11-16T16:40:13Z,2026-11-16T19:26:18Z,(item) - Recusar no Salvar uma matriz incompatível com a Agregação do nível
 87,CLOSED,carloshob,2026-11-17T14:24:22Z,2026-11-17T15:19:49Z,(vigencia) - Implementar o assistente de vigência
 88,CLOSED,carloshob,2026-11-17T15:09:01Z,2026-11-17T15:19:35Z,(changelog) - Introduzir o CHANGELOG do classificador
+89,CLOSED,carloshob,2026-11-17T19:51:25Z,2026-11-17T20:08:06Z,(vigencia) - Refinar a apresentação da faixa de filtros de vigência
