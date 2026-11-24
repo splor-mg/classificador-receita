@@ -1,0 +1,103 @@
+---
+title: (normalize) - Acrescentar normalização em caixa de título a partir de CSV
+state: O
+author: carloshob
+created: '2026-11-24T15:29:48Z'
+updated: '2026-11-24T15:29:51Z'
+closed: null
+assignees: []
+labels:
+- new-feature
+type: null
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Backlog
+  Projeto: null
+  Planejado: null
+  Data início: null
+  Data de vencimento: null
+  tags: null
+milestone: Migração de Dados
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+  relates_to: []
+development:
+  pull_requests: []
+  branches: []
+---
+# description
+
+body: |-
+  Uma pessoa que prepara um CSV do classificador passa a obter, no mesmo arquivo, a leitura em caixa de título de uma coluna de texto, para comparar com o texto de origem antes de qualquer outro uso.
+  
+  ## Contexto
+  
+  Nomes e outros rótulos nos CSV chegam com caixa irregular. Uma sigla dentro da célula pode não coincidir com a caixa registrada na coluna `abreviacao` de `docs/assets/seed_lista_abreviacoes.csv`. A concepção `_dev/.concep/2026-11-24_normalize_column-case.md` fixa essa leitura: inicial maiúscula e restante minúsculo nas palavras comuns, conectivos de título em minúscula, e o trecho que já é uma abreviação na caixa da lista. A coluna de origem permanece.
+  
+  
+  ## Objetivo
+  
+  Existir um pedido com o caminho de um CSV e o nome de uma coluna que grave, imediatamente à direita, a coluna `<coluna>_normalized` devidamente normalizada.
+  
+  ## Escopo
+  
+  **Inclui:**
+  
+  - Um CSV e uma coluna por pedido.
+  - Coluna `<coluna>_normalized` imediatamente à direita da coluna de origem, no mesmo arquivo.
+  - Caixa de título, conectivos de título em minúscula e caixa da abreviação conforme a concepção, inclusive `RECEITA TRIBUTÁRIA` como `Receita Tributária` e `Rgps` como `RGPS`.
+  - Recusa, com mensagem que nomeia a coluna ausente ou a célula que não é texto, sem gravar o arquivo.
+  
+  **Não inclui:**
+  
+  - Mais de uma coluna de origem no mesmo pedido.
+  - Arquivo que não seja CSV.
+  - Substituir a coluna de origem, expandir a abreviação para o termo, ou alterar a lista de abreviações.
+  - Carregar o resultado no banco ou mudar o que a changelist mostra.
+  - Responder às perguntas ainda abertas na concepção.
+  
+  ## Critérios de aceite
+  
+  - [ ] `receita tributária` e `RECEITA TRIBUTÁRIA` leem `Receita Tributária`.
+  - [ ] `imposto de renda` lê `Imposto de Renda`, e `receita do regime próprio Rgps` lê `Receita do Regime Próprio RGPS`.
+  - [ ] `assist. farmacêutica` lê `Assist. Farmacêutica`, e o trecho mais longo prevalece quando dois se sobrepõem.
+  - [ ] Depois de um pedido aceito, a coluna de origem está intacta e a coluna irmã está imediatamente à direita.
+  - [ ] Depois de um pedido recusado, o arquivo permanece o mesmo e a mensagem identifica a coluna ou a célula.
+  
+  ## Notas
+  
+  - **Escopo:** `normalize`
+  - **Concepção:** `_dev/.concep/2026-11-24_normalize_column-case.md`
+  - **Perguntas em aberto:** a primeira palavra quando é conectivo; o que fazer se `<coluna>_normalized` já existe; abreviação cujo fim de registro não é o sentinela; composto com hífen.
+  
+  ## Trabalho relacionado
+  
+  | Tipo       | Referência                                         |
+  | ---------- | -------------------------------------------------- |
+  | Concepção  | `_dev/.concep/2026-11-24_normalize_column-case.md` |
+  | Parent     | —                                                  |
+  | Blocks     | —                                                  |
+  | Blocked by | —                                                  |
+---
+# regs
+
+- date: 2026-11-24T15:29:50Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2026-11-24T15:29:51Z
+  reg: milestone:added:Migração de Dados
+  author: carloshob
+
+- date: 2026-11-24T15:29:56Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-11-24T15:29:57Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---
