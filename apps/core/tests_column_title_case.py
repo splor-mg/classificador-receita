@@ -48,8 +48,14 @@ class TitleCaseReadingTests(SimpleTestCase):
     def test_longer_span_wins_when_casing_would_differ(self):
         self.assertEqual(title_case_reading("adm. mac", ABBREVIATIONS), "Adm. MAC")
 
-    def test_abbreviation_casing_overrides_a_function_word(self):
-        self.assertEqual(title_case_reading("taxa de selo", ("DE",)), "Taxa DE Selo")
+    def test_connective_abbreviation_stays_a_function_word(self):
+        self.assertEqual(title_case_reading("taxa de selo", ("DE",)), "Taxa de Selo")
+        self.assertEqual(
+            title_case_reading("receita da dívida ativa", ("DA", "IR", "DA-MJM")),
+            "Receita da Dívida Ativa",
+        )
+        self.assertEqual(title_case_reading("ir", ("DA", "IR")), "IR")
+        self.assertEqual(title_case_reading("da-mjm", ("DA", "DA-MJM")), "DA-MJM")
 
     def test_empty_cell_stays_empty(self):
         self.assertEqual(title_case_reading("", ABBREVIATIONS), "")
@@ -202,6 +208,14 @@ class AbbreviationListTests(SimpleTestCase):
             title_case_reading("assist. farmacêutica", abbreviations),
             "Assist. Farmacêutica",
         )
+        self.assertNotIn("DA", abbreviations)
+        self.assertIn("IR", abbreviations)
+        self.assertIn("DA-MJM", abbreviations)
+        self.assertEqual(
+            title_case_reading("receita da dívida ativa", abbreviations),
+            "Receita da Dívida Ativa",
+        )
+        self.assertEqual(title_case_reading("ir", abbreviations), "IR")
         self.assertEqual(path.read_bytes(), before)
 
     def test_first_row_wins_and_record_end_is_not_a_filter(self):

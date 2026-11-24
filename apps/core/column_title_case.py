@@ -46,7 +46,10 @@ def default_abbreviation_list_path() -> Path:
 
 
 def load_abbreviations(path: Path) -> list[str]:
-    """Casing de ``abreviacao``, na ordem do arquivo. A primeira grafia de cada texto fica."""
+    """Casing de ``abreviacao``, na ordem do arquivo. A primeira grafia de cada texto fica.
+
+    Abreviação cujo texto inteiro é um conectivo fica de fora, para ``da`` não virar ``DA``.
+    """
     path = Path(path)
     if not path.is_file():
         raise ColumnNormalizeError(f"A lista de abreviações '{path}' não foi encontrada.")
@@ -68,7 +71,7 @@ def load_abbreviations(path: Path) -> list[str]:
         if index >= len(row) or "\x00" in row[index]:
             raise ColumnNormalizeError(f"A linha {line}, coluna 'abreviacao', não é texto.")
         value = row[index]
-        if value == "":
+        if value == "" or _abbreviation_is_connective(value):
             continue
         key = value.casefold()
         if key in seen:
@@ -155,6 +158,11 @@ def _header_delimiter(header_line: str) -> str:
     return ","
 
 
+def _abbreviation_is_connective(value: str) -> bool:
+    """True quando a abreviação inteira é um conectivo, como ``DA`` para ``da``."""
+    return value.casefold() in LEXICO_CONNECTIVOS_FIXOS
+
+
 def _title_case_gap(gap: str) -> str:
     """Uma palavra é uma sequência de letras. Conectivo fica inteiro em minúscula."""
     parts: list[str] = []
@@ -182,7 +190,7 @@ def _compiled(abbreviations: tuple[str, ...]) -> tuple[tuple[re.Pattern[str], st
     seen: set[str] = set()
     compiled: list[tuple[re.Pattern[str], str]] = []
     for raw in abbreviations:
-        if not isinstance(raw, str) or raw == "":
+        if not isinstance(raw, str) or raw == "" or _abbreviation_is_connective(raw):
             continue
         key = raw.casefold()
         if key in seen:
