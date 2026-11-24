@@ -3,7 +3,8 @@ Lista canónica de conectivos omitíveis e regras de pontuação na compactaçã
 
 Usada por:
 - modo **Abreviado** na criação de item (``code_name_abbrev``);
-- inferência da lista de abreviações (só ``LEXICO_CONNECTIVOS_FIXOS`` em ``alias_lexico_infer``).
+- inferência da lista de abreviações (só ``LEXICO_CONNECTIVOS_FIXOS`` em ``alias_lexico_infer``);
+- caixa de título de uma coluna CSV (``column_title_case``).
 
 Comparar tokens lexicais com ``casefold()`` (acentos preservados como nos dados).
 """

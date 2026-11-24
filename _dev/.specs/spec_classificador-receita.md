@@ -433,18 +433,18 @@ Segmento **`valid_time_fk`** no nome do arquivo, alinhado ao eixo **valid_time**
 
 ### 5.7 Inventário atual de módulos `code_*`
 
-| Módulo                             | Responsabilidade resumida                                      |
-| ---------------------------------- | -------------------------------------------------------------- |
-| `code_mask.py`                     | Máscara de `receita_cod` por classificação/vigência            |
-| `code_name_abbrev.py`              | Radical abreviado, modo base, compactação A6                   |
-| `code_name_connectives.py`         | Conectivos e pontuação (SSOT para abreviação e léxico)         |
-| `code_name_messages.py`            | Textos do fluxo de nome no Admin (`code_name_messages_dict`)   |
-| `code_name_validation.py`          | Guardrails G0/G1 e predicados de `receita_nome`                |
-| `code_null_normalization.py`       | Placeholders `NULL` / `-` → `None` em CharField/TextField      |
-| `code_parent_item_validation.py`   | Regras de `parent_item_id`, hierarquia, saltos, intermediários |
-| `code_valid_time_fk_resolution.py` | Reaponte automático de FK por vigência                         |
-| `code_valid_time_fk_validation.py` | Contenção temporal filho ⊆ alvo(s) da FK                       |
-| `code_organizations_entities.py`   | Catálogo `orgaos_entidades` (choices / optgroup no Admin)      |
+| Módulo                             | Responsabilidade resumida                                               |
+| ---------------------------------- | ----------------------------------------------------------------------- |
+| `code_mask.py`                     | Máscara de `receita_cod` por classificação/vigência                     |
+| `code_name_abbrev.py`              | Radical abreviado, modo base, compactação A6                            |
+| `code_name_connectives.py`         | Conectivos e pontuação (SSOT para abreviação, léxico e caixa de título) |
+| `code_name_messages.py`            | Textos do fluxo de nome no Admin (`code_name_messages_dict`)            |
+| `code_name_validation.py`          | Guardrails G0/G1 e predicados de `receita_nome`                         |
+| `code_null_normalization.py`       | Placeholders `NULL` / `-` → `None` em CharField/TextField               |
+| `code_parent_item_validation.py`   | Regras de `parent_item_id`, hierarquia, saltos, intermediários          |
+| `code_valid_time_fk_resolution.py` | Reaponte automático de FK por vigência                                  |
+| `code_valid_time_fk_validation.py` | Contenção temporal filho ⊆ alvo(s) da FK                                |
+| `code_organizations_entities.py`   | Catálogo `orgaos_entidades` (choices / optgroup no Admin)               |
 
 **Testes espelhados:** `tests_code_name.py`, `tests_code_parent_item_validation.py`, `tests_classification_item_*.py` (fluxos `classification_item_*`).
 
