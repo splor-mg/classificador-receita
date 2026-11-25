@@ -6,7 +6,7 @@ data:
   issues_open: 37
   issues_closed: 47
   issues_closed_%: 56
-  issues_todo: 17
+  issues_todo: 18
   issues_in_progress: 11
   issues_review: 0
   issues_waiting: 0
@@ -14,7 +14,7 @@ data:
   last_issue_id_closed: 89
   last_issue_created: '2026-11-24T15:29:48Z'
   last_issue_closed: '2026-11-17T20:08:06Z'
-  last_issue_updated: '2026-11-24T15:29:51Z'
+  last_issue_updated: '2026-11-24T16:53:57Z'
   last_user_auth: carloshob
 
 issues:
@@ -683,7 +683,7 @@ issues:
   url: https://github.com/splor-mg/classificador-receita/issues/89
 
 - number: 90
-  title: (normalize) - Acrescentar normalização em caixa de título a partir de CSV
+  title: (normalize) Acrescentar normalização em caixa de título a partir de CSV
   status: OPEN
   author: carloshob
   created: '2026-11-24T15:29:48Z'

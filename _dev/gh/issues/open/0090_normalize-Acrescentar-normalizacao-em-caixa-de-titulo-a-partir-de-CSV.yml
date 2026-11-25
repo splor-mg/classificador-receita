@@ -1,23 +1,24 @@
 ---
-title: (normalize) - Acrescentar normalização em caixa de título a partir de CSV
+title: (normalize) Acrescentar normalização em caixa de título a partir de CSV
 state: O
 author: carloshob
 created: '2026-11-24T15:29:48Z'
-updated: '2026-11-24T15:29:51Z'
+updated: '2026-11-24T16:53:57Z'
 closed: null
-assignees: []
+assignees:
+- carloshob
 labels:
 - new-feature
-type: null
+type: 2 - Média
 projects:
 - name: Gestão à Vista AID
   number: 13
   id: PVT_kwDOByfrJc4AmH_f
-  Status: Backlog
-  Projeto: null
+  Status: Todo
+  Projeto: Datamart
+  Data início: '2026-11-01'
+  Data de vencimento: '2026-11-30'
   Planejado: null
-  Data início: null
-  Data de vencimento: null
   tags: null
 milestone: Migração de Dados
 relationships:
@@ -98,6 +99,18 @@ body: |-
   author: carloshob
 
 - date: 2026-11-24T15:29:57Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-11-24T16:53:46Z
+  reg: title:changed:"(normalize) - Acrescentar normalização em caixa de título a partir de CSV":"(normalize) Acrescentar normalização em caixa de título a partir de CSV"
+  author: carloshob
+
+- date: 2026-11-24T16:53:54Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-11-24T16:53:57Z
   reg: project:status_changed:unknown-project:unknown
   author: github-project-automation[bot]
 ---
