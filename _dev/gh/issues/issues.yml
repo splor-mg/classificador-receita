@@ -2,19 +2,19 @@ name: issues
 account: splor-mg
 
 data:
-  issues_amount: 84
-  issues_open: 37
+  issues_amount: 85
+  issues_open: 38
   issues_closed: 47
-  issues_closed_%: 56
+  issues_closed_%: 55
   issues_todo: 18
   issues_in_progress: 11
   issues_review: 0
   issues_waiting: 0
-  last_issue_id_created: 90
+  last_issue_id_created: 91
   last_issue_id_closed: 89
-  last_issue_created: '2026-11-24T15:29:48Z'
+  last_issue_created: '2026-11-26T13:25:16Z'
   last_issue_closed: '2026-11-17T20:08:06Z'
-  last_issue_updated: '2026-11-24T16:53:57Z'
+  last_issue_updated: '2026-11-26T13:25:19Z'
   last_user_auth: carloshob
 
 issues:
@@ -689,3 +689,11 @@ issues:
   created: '2026-11-24T15:29:48Z'
   closed: null
   url: https://github.com/splor-mg/classificador-receita/issues/90
+
+- number: 91
+  title: (transform) Formar o arquivo do item pela máscara da classificação
+  status: OPEN
+  author: carloshob
+  created: '2026-11-26T13:25:16Z'
+  closed: null
+  url: https://github.com/splor-mg/classificador-receita/issues/91

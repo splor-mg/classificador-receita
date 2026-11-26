@@ -1,0 +1,105 @@
+---
+title: (transform) Formar o arquivo do item pela máscara da classificação
+state: O
+author: carloshob
+created: '2026-11-26T13:25:16Z'
+updated: '2026-11-26T13:25:19Z'
+closed: null
+assignees: []
+labels:
+- new-feature
+type: null
+projects:
+- name: Gestão à Vista AID
+  number: 13
+  id: PVT_kwDOByfrJc4AmH_f
+  Status: Backlog
+  Projeto: null
+  Planejado: null
+  Data início: null
+  Data de vencimento: null
+  tags: null
+milestone: Migração de Dados
+relationships:
+  parent: null
+  blocked_by: []
+  blocking: []
+  relates_to:
+  - '#90'
+development:
+  pull_requests: []
+  branches: []
+---
+# description
+
+body: |-
+  Uma pessoa que prepara um arquivo de item passa a recebê-lo no formato do schema, com identificador, nível e pai derivados da máscara de classificacao_id, antes da importação.
+  
+  ## Contexto
+  
+  A safra chega com códigos e nomes. O schema de item espera colunas fixas, nesta ordem, e três valores que decorrem do código: item_id, nivel_id e parent_item_id. O nível não é um corte fixo de dez dígitos. É o último segmento não nulo da máscara aberta da classificacao_id, lida em seed_nivel_hierarquico.csv. Um código de 8 dígitos numa máscara de 10 é erro. item_ref depende de identificadores já gravados no banco e fica para a importação. A concepção _dev/.concep/2026-11-25_transform_item-classificacao.md fixa esse contorno.
+  
+  ## Objetivo
+  
+  Existir um pedido com o caminho de um arquivo de item que o reescreva nas colunas do schema, sem as duas colunas de registro, preenchendo item_id, nivel_id e parent_item_id, ou que recuse o arquivo inteiro sem gravar.
+  
+  ## Escopo
+  
+  **Inclui:**
+  
+  - Um arquivo por pedido, reescrito no mesmo caminho.
+  - Colunas do schema item_classificacao, na ordem do schema, exceto data_registro_inicio e data_registro_fim.
+  - item_id igual a IT- seguido de receita_cod.
+  - nivel_id e parent_item_id pela máscara aberta de classificacao_id, inclusive a família de 10 dígitos e a de 13.
+  - Pai do nível 1 como -.
+  - Recusa, com o arquivo intacto, quando o cabeçalho, o tamanho, a máscara, o pai ou o código duplicado não fecham.
+  
+  **Não inclui:**
+  
+  - Preencher item_ref, matriz, item_gerado ou as datas de vigência.
+  - Importar a safra para o seed ou carregar o banco.
+  - Aceitar cabeçalho que não seja nome do schema.
+  - Responder quem preenche matriz, item_gerado e as datas de vigência vazias.
+  
+  ## Critérios de aceite
+  
+  - [ ] 1110000000 na máscara de 10 dígitos fica IT-1110000000, NIVEL-3 e pai IT-1100000000.
+  - [ ] 1000000000 fica NIVEL-1 com parent_item_id -.
+  - [ ] 11100000 na máscara de 10 dígitos deixa o arquivo intacto.
+  - [ ] 1112000000000 na máscara de 13 dígitos fica NIVEL-4 com pai IT-1110000000000.
+  - [ ] Cabeçalho rec_cod deixa o arquivo intacto.
+  - [ ] item_ref permanece vazio quando o arquivo de origem não o traz.
+  
+  ## Notas
+  
+  - **Escopo:** transform
+  - **Concepção:** _dev/.concep/2026-11-25_transform_item-classificacao.md
+  - **Fora deste issue:** quem preenche matriz, item_gerado e as datas de vigência.
+  
+  ## Trabalho relacionado
+  
+  | Tipo       | Referência                                              |
+  | ---------- | ------------------------------------------------------- |
+  | Concepção  | _dev/.concep/2026-11-25_transform_item-classificacao.md |
+  | Parent     | —                                                       |
+  | Blocks     | —                                                       |
+  | Blocked by | —                                                       |
+---
+# regs
+
+- date: 2026-11-26T13:25:18Z
+  reg: label:added:new-feature
+  author: carloshob
+
+- date: 2026-11-26T13:25:19Z
+  reg: milestone:added:Migração de Dados
+  author: carloshob
+
+- date: 2026-11-26T13:25:23Z
+  reg: project:added:project
+  author: carloshob
+
+- date: 2026-11-26T13:25:25Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+---

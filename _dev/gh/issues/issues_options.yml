@@ -144,9 +144,9 @@ milestone:
     state: OPEN
     closed: ''
     author: carloshob
-    open_issues: 4
+    open_issues: 5
     closed_issues: 15
-    progress: 78.94736842105263
+    progress: 75.0
 
   - title: SGDB - App Web de Gestão
     id: MI_kwDOQe67sM4A2VEX
