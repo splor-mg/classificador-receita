@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 """Normaliza colunas de um CSV, no mesmo arquivo.
 
-Sem flag, ou com ``--title``, a coluna recebe a leitura em caixa de título na
-coluna irmã ``<coluna>_normalized``. Com ``--text``, aspas duplas da coluna,
-retas ou curvas, viram aspas simples na própria célula. As duas podem vir juntas.
-O separador do arquivo, vírgula ou ponto e vírgula, é o do cabeçalho.
+Sem flag, ou com ``--title``, a coluna é sobrescrita pela leitura em caixa de
+título. Com ``--compare``, a origem permanece e a leitura entra em
+``<coluna>_normalized``. Com ``--text``, aspas duplas da coluna, retas ou curvas,
+viram aspas simples na própria célula. As opções podem vir juntas.
+O separador de entrada é o do cabeçalho. Ponto e vírgula na entrada vira vírgula na gravação.
 
 Uso:
-    python scripts/normalize.py <arquivo.csv> [<coluna>]
-    python scripts/normalize.py <arquivo.csv> [--title <coluna>] [--text <coluna>]
-    poetry run task normalize -- <arquivo.csv> [<coluna>]
-    poetry run task normalize -- <arquivo.csv> [--title <coluna>] [--text <coluna>]
+    python scripts/normalize.py <arquivo.csv> [<coluna>] [--compare]
+    python scripts/normalize.py <arquivo.csv> [--title <coluna>] [--text <coluna>] [--compare]
+    poetry run task normalize -- <arquivo.csv> [<coluna>] [--compare]
+    poetry run task normalize -- <arquivo.csv> [--title <coluna>] [--text <coluna>] [--compare]
 """
 
 from __future__ import annotations
@@ -19,8 +20,8 @@ import sys
 from pathlib import Path
 
 _USAGE = (
-    "Uso: python scripts/normalize.py <arquivo.csv> [<coluna>]\n"
-    "     python scripts/normalize.py <arquivo.csv> [--title <coluna>] [--text <coluna>]"
+    "Uso: python scripts/normalize.py <arquivo.csv> [<coluna>] [--compare]\n"
+    "     python scripts/normalize.py <arquivo.csv> [--title <coluna>] [--text <coluna>] [--compare]"
 )
 
 
@@ -28,14 +29,21 @@ class _UsageError(Exception):
     """O pedido não nomeia arquivo e coluna na forma esperada."""
 
 
-def _parse_args(args: list[str]) -> tuple[Path, str | None, str | None]:
-    """Devolve caminho, coluna de título e coluna de texto."""
+def _parse_args(args: list[str]) -> tuple[Path, str | None, str | None, bool]:
+    """Devolve caminho, coluna de título, coluna de texto e se a origem do título fica."""
     positionals: list[str] = []
     title: str | None = None
     text: str | None = None
+    compare = False
     index = 1
     while index < len(args):
         token = args[index]
+        if token == "--compare":
+            if compare:
+                raise _UsageError("A opção '--compare' foi informada duas vezes.")
+            compare = True
+            index += 1
+            continue
         if token in ("--title", "--text"):
             if index + 1 >= len(args) or args[index + 1].startswith("--"):
                 raise _UsageError(f"A opção '{token}' precisa do nome da coluna.")
@@ -63,13 +71,13 @@ def _parse_args(args: list[str]) -> tuple[Path, str | None, str | None]:
     title = title if title is not None else positional_title
     if title is None and text is None:
         raise _UsageError("Informe a coluna de título ou a coluna de texto.")
-    return Path(positionals[0]), title, text
+    return Path(positionals[0]), title, text, compare
 
 
 def main(argv: list[str] | None = None, *, abbreviations_path: Path | None = None) -> int:
     args = list(sys.argv if argv is None else argv)
     try:
-        path, title_column, text_column = _parse_args(args)
+        path, title_column, text_column, compare = _parse_args(args)
     except _UsageError as exc:
         message = str(exc)
         if message == _USAGE:
@@ -108,13 +116,16 @@ def main(argv: list[str] | None = None, *, abbreviations_path: Path | None = Non
             abbreviations,
             title_column=title_column,
             text_column=text_column,
+            compare=compare,
         )
     except ColumnNormalizeError as exc:
         print(exc, file=sys.stderr)
         return 1
     if sibling is not None:
         print(f"Coluna '{sibling}' gravada em {path}.")
-    if text_column is not None:
+    elif title_column is not None:
+        print(f"Coluna '{title_column}' atualizada em {path}.")
+    if text_column is not None and text_column != title_column:
         print(f"Coluna '{text_column}' atualizada em {path}.")
     return 0
 

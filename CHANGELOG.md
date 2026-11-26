@@ -8,7 +8,7 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- A running-text column can be normalized in place, with double quotes replaced by single quotes, while title-case normalization still writes the sibling column
+- Title normalization overwrites the named column, and `--compare` keeps that column while writing the reading beside it. A running-text column can be normalized in place, with double quotes replaced by single quotes. A semicolon-separated file is written with commas, and a field that contains a comma is quoted
 
 ### Fixed
 

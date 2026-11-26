@@ -1,15 +1,17 @@
 """Normalização de colunas de um CSV.
 
-A normalização de título deixa a coluna de origem e grava a leitura em
-``<coluna>_normalized``, imediatamente à direita. Conectivos saem de
-``LEXICO_CONNECTIVOS_FIXOS``. A caixa de uma abreviação sai da primeira ocorrência
-de ``abreviacao`` em ``docs/assets/seed_lista_abreviacoes.csv``. Aspas duplas da
-leitura, retas ou curvas, viram aspas simples.
+A normalização de título sobrescreve a coluna. Com comparação, a origem permanece
+e a leitura entra em ``<coluna>_normalized``, imediatamente à direita. Conectivos
+saem de ``LEXICO_CONNECTIVOS_FIXOS``. A caixa de uma abreviação sai da primeira
+ocorrência de ``abreviacao`` em ``docs/assets/seed_lista_abreviacoes.csv``. Aspas
+duplas da leitura, retas ou curvas, viram aspas simples.
 
 A normalização de texto troca essas mesmas aspas por aspas simples e sobrescreve
 a coluna. Não cria coluna irmã e não aplica caixa de título. O trecho da coluna
 começa depois do separador indicado pelo cabeçalho. Se a coluna é a última, o
 trecho vai até o fim da linha, e um ponto e vírgula nesse trecho permanece.
+Um arquivo lido com ponto e vírgula é gravado com vírgula. O campo que contém
+vírgula sai entre aspas.
 """
 
 from __future__ import annotations
@@ -97,12 +99,15 @@ def plain_text_reading(text: str) -> str:
     return text.translate(_DOUBLE_QUOTES)
 
 
-def normalize_csv(path: Path, column: str, abbreviations: Sequence[str]) -> str:
-    """Insere ``<column>_normalized`` à direita de ``column``. Devolve o nome da coluna nova."""
-    sibling = normalize_file(path, abbreviations, title_column=column)
-    if sibling is None:
-        raise ColumnNormalizeError(f"A coluna '{column}' não está no arquivo.")
-    return sibling
+def normalize_csv(
+    path: Path,
+    column: str,
+    abbreviations: Sequence[str],
+    *,
+    compare: bool = False,
+) -> str | None:
+    """Normaliza ``column`` em caixa de título. Com ``compare``, devolve a coluna irmã."""
+    return normalize_file(path, abbreviations, title_column=column, compare=compare)
 
 
 def normalize_file(
@@ -111,10 +116,11 @@ def normalize_file(
     *,
     title_column: str | None = None,
     text_column: str | None = None,
+    compare: bool = False,
 ) -> str | None:
     """Aplica título, texto, ou os dois, numa só gravação.
 
-    Devolve o nome da coluna irmã quando há título. Sem título, devolve None.
+    Devolve o nome da coluna irmã quando o título é comparado. Sem comparação, devolve None.
     """
     if title_column is None and text_column is None:
         raise ColumnNormalizeError("Informe a coluna de título ou a coluna de texto.")
@@ -143,9 +149,13 @@ def normalize_file(
     header = rows[0]
     title_index = None if title_column is None else _column_index(header, title_column)
     text_index = None if text_column is None else _column_index(header, text_column)
-    sibling = None if title_column is None else f"{title_column}_normalized"
-    if sibling is not None and sibling in header:
-        raise ColumnNormalizeError(f"A coluna '{sibling}' já existe. O arquivo não foi alterado.")
+    sibling = None
+    if title_column is not None and compare:
+        sibling = f"{title_column}_normalized"
+        if sibling in header:
+            raise ColumnNormalizeError(
+                f"A coluna '{sibling}' já existe. O arquivo não foi alterado."
+            )
 
     checked: list[tuple[int, str]] = []
     if title_index is not None and title_column is not None:
@@ -159,19 +169,36 @@ def normalize_file(
     header_out = list(header)
     if title_index is not None and sibling is not None:
         header_out.insert(title_index + 1, sibling)
+    keep_title_source = compare and title_index is not None and text_index == title_index
     rewritten = [header_out]
     for row in rows[1:]:
         cells = list(row)
-        if text_index is not None:
-            cells[text_index] = plain_text_reading(cells[text_index])
-        if title_index is not None:
+        if text_index is not None and not keep_title_source:
+            if title_index == text_index:
+                cells[text_index] = title_case_reading(row[text_index], abbreviations)
+            else:
+                cells[text_index] = plain_text_reading(cells[text_index])
+        if title_index is not None and title_index != text_index:
+            reading = title_case_reading(row[title_index], abbreviations)
+            if compare:
+                cells.insert(title_index + 1, reading)
+            else:
+                cells[title_index] = reading
+        elif title_index is not None and compare:
             reading = title_case_reading(row[title_index], abbreviations)
             cells.insert(title_index + 1, reading)
         rewritten.append(cells)
 
     lineterminator = "\r\n" if b"\r\n" in raw else "\n"
-    quote_index = _output_text_index(title_index, text_index)
-    _write_csv(path, rewritten, lineterminator, delimiter, quote_index=quote_index)
+    quote_text = text_index is not None and not keep_title_source
+    quote_index = _output_text_index(title_index, text_index, compare) if quote_text else None
+    _write_csv(
+        path,
+        rewritten,
+        lineterminator,
+        _output_delimiter(delimiter),
+        quote_index=quote_index,
+    )
     return sibling
 
 
@@ -308,11 +335,20 @@ def _abbreviation_spans(text: str, abbreviations: Sequence[str]) -> list[tuple[i
     return chosen
 
 
-def _output_text_index(title_index: int | None, text_index: int | None) -> int | None:
+def _output_delimiter(delimiter: str) -> str:
+    """A grade parte na vírgula. O ponto e vírgula de entrada vira vírgula na gravação."""
+    if delimiter == ";":
+        return ","
+    return delimiter
+
+
+def _output_text_index(
+    title_index: int | None, text_index: int | None, compare: bool
+) -> int | None:
     """Índice da coluna de texto depois que a irmã de título entra à direita."""
     if text_index is None:
         return None
-    if title_index is not None and title_index < text_index:
+    if compare and title_index is not None and title_index < text_index:
         return text_index + 1
     return text_index
 
