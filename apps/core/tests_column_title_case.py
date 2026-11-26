@@ -13,6 +13,8 @@ from apps.core.column_title_case import (
     default_abbreviation_list_path,
     load_abbreviations,
     normalize_csv,
+    normalize_file,
+    plain_text_reading,
     title_case_reading,
 )
 from scripts.normalize import main
@@ -285,4 +287,146 @@ class NormalizeCommandTests(SimpleTestCase):
                 code = main(["normalize.py", str(path), "nome"])
             self.assertEqual(code, 1)
             self.assertIn("A coluna 'nome' não está no arquivo.", stderr.getvalue())
+            self.assertEqual(path.read_bytes(), original)
+
+    def test_title_flag_matches_the_positional_column(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "nomes.csv"
+            path.write_bytes(_csv_bytes([["nome"], ["receita tributária"]]))
+            stdout = io.StringIO()
+            with redirect_stdout(stdout):
+                code = main(["normalize.py", str(path), "--title", "nome"])
+            rows = list(csv.reader(path.open(encoding="utf-8", newline="")))
+
+        self.assertEqual(code, 0)
+        self.assertIn("nome_normalized", stdout.getvalue())
+        self.assertEqual(rows[1], ["receita tributária", "Receita Tributária"])
+
+    def test_text_flag_overwrites_double_quotes_and_skips_title_case(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "nomes.csv"
+            path.write_bytes(_csv_bytes([["nome", "texto"], ["1", 'receita "tributária"']]))
+            stdout = io.StringIO()
+            with redirect_stdout(stdout):
+                code = main(["normalize.py", str(path), "--text", "texto"])
+            rows = list(csv.reader(path.open(encoding="utf-8", newline="")))
+
+        self.assertEqual(code, 0)
+        self.assertIn("Coluna 'texto' atualizada", stdout.getvalue())
+        self.assertNotIn("_normalized", stdout.getvalue())
+        self.assertEqual(rows[0], ["nome", "texto"])
+        self.assertEqual(rows[1], ["1", "receita 'tributária'"])
+
+    def test_title_and_text_flags_name_different_columns(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "nomes.csv"
+            path.write_bytes(_csv_bytes([["nome", "texto"], ["receita tributária", 'disse "oi"']]))
+            with redirect_stdout(io.StringIO()):
+                code = main(["normalize.py", str(path), "--title", "nome", "--text", "texto"])
+            rows = list(csv.reader(path.open(encoding="utf-8", newline="")))
+
+        self.assertEqual(code, 0)
+        self.assertEqual(rows[0], ["nome", "nome_normalized", "texto"])
+        self.assertEqual(rows[1], ["receita tributária", "Receita Tributária", "disse 'oi'"])
+
+    def test_positional_title_and_text_flag_can_share_the_command(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "nomes.csv"
+            path.write_bytes(_csv_bytes([["nome", "texto"], ["imposto de renda", 'cota "parte"']]))
+            with redirect_stdout(io.StringIO()):
+                code = main(["normalize.py", str(path), "nome", "--text", "texto"])
+            rows = list(csv.reader(path.open(encoding="utf-8", newline="")))
+
+        self.assertEqual(code, 0)
+        self.assertEqual(
+            rows[1],
+            ["imposto de renda", "Imposto de Renda", "cota 'parte'"],
+        )
+
+    def test_command_without_a_column_prints_usage(self):
+        stderr = io.StringIO()
+        with redirect_stderr(stderr):
+            code = main(["normalize.py", "arquivo.csv"])
+        self.assertEqual(code, 2)
+        self.assertIn("Informe a coluna de título ou a coluna de texto.", stderr.getvalue())
+
+    def test_two_different_title_names_are_refused(self):
+        stderr = io.StringIO()
+        with redirect_stderr(stderr):
+            code = main(["normalize.py", "arquivo.csv", "nome", "--title", "outra"])
+        self.assertEqual(code, 2)
+        self.assertIn("A coluna de título foi informada duas vezes.", stderr.getvalue())
+
+
+class PlainTextNormalizeTests(SimpleTestCase):
+    def test_straight_and_curly_quotes_become_single_quotes(self):
+        self.assertEqual(plain_text_reading('disse "oi"'), "disse 'oi'")
+        self.assertEqual(plain_text_reading("“Causa Mortis”"), "'Causa Mortis'")
+        self.assertEqual(plain_text_reading("receita tributária"), "receita tributária")
+
+    def test_text_column_is_overwritten_and_no_sibling_is_created(self):
+        original = _csv_bytes(
+            [["id", "texto"], ["7", 'Registra a renda "tributária", de contribuições.']]
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "receitas.csv"
+            path.write_bytes(original)
+            sibling = normalize_file(path, (), text_column="texto")
+            rows = list(csv.reader(path.open(encoding="utf-8", newline="")))
+
+        self.assertIsNone(sibling)
+        self.assertEqual(rows[0], ["id", "texto"])
+        self.assertEqual(
+            rows[1],
+            ["7", "Registra a renda 'tributária', de contribuições."],
+        )
+
+    def test_same_column_keeps_quotes_replaced_in_place_and_title_in_the_sibling(self):
+        original = _csv_bytes([["nome"], ['receita "tributária"']])
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "nomes.csv"
+            path.write_bytes(original)
+            sibling = normalize_file(path, (), title_column="nome", text_column="nome")
+            rows = list(csv.reader(path.open(encoding="utf-8", newline="")))
+
+        self.assertEqual(sibling, "nome_normalized")
+        self.assertEqual(rows[1], ["receita 'tributária'", "Receita 'Tributária'"])
+
+    def test_semicolon_text_column_keeps_the_separator(self):
+        buffer = io.StringIO()
+        csv.writer(buffer, delimiter=";", lineterminator="\n").writerows(
+            [
+                ["receita_cod", "receita_descricao"],
+                ["11120400", 'Registra a renda "tributária"; b) de proventos.'],
+            ]
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "receitas.csv"
+            path.write_bytes(buffer.getvalue().encode())
+            normalize_file(path, (), text_column="receita_descricao")
+            text = path.read_text(encoding="utf-8")
+            rows = list(csv.reader(io.StringIO(text), delimiter=";"))
+
+        self.assertTrue(text.startswith("receita_cod;receita_descricao\n"))
+        self.assertNotIn(",", text.splitlines()[0])
+        self.assertEqual(rows[1][1], "Registra a renda 'tributária'; b) de proventos.")
+
+    def test_missing_text_column_leaves_the_file_unchanged(self):
+        original = _csv_bytes([["outra"], ["a"]])
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "nomes.csv"
+            path.write_bytes(original)
+            with self.assertRaises(ColumnNormalizeError) as caught:
+                normalize_file(path, (), text_column="texto")
+            self.assertIn("A coluna 'texto' não está no arquivo.", str(caught.exception))
+            self.assertEqual(path.read_bytes(), original)
+
+    def test_existing_sibling_blocks_the_text_overwrite_too(self):
+        original = _csv_bytes([["nome", "nome_normalized", "texto"], ["a", "b", 'disse "oi"']])
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "nomes.csv"
+            path.write_bytes(original)
+            with self.assertRaises(ColumnNormalizeError) as caught:
+                normalize_file(path, (), title_column="nome", text_column="texto")
+            self.assertIn("já existe", str(caught.exception))
             self.assertEqual(path.read_bytes(), original)

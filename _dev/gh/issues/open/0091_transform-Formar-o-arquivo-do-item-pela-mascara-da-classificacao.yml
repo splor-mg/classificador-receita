@@ -102,4 +102,14 @@ body: |-
 - date: 2026-11-26T13:25:25Z
   reg: project:status_changed:unknown-project:unknown
   author: github-project-automation[bot]
+
+- date: 2026-11-26T16:11:06Z
+  reg: comment
+  author: carloshob
+  body: |-
+    Ao formar o arquivo de 2004, a grade do CSV mostrava uma única linha de dados, embora o texto do arquivo tivesse as 1002 linhas. A causa era a aspa dupla no texto corrido da descrição. A grade trata `"` como aspa de campo e, quando ela não fecha, engole as linhas seguintes. O arquivo segue separado por ponto e vírgula, e a grade parte na vírgula, então as colunas também não se alinham. Essa segunda parte fica de fora deste ajuste.
+
+    A normalização de título gravava a leitura numa coluna irmã e deixava a aspa na célula de origem, que é a célula que a grade lê. O pedido `normalize` passa a aceitar `--text <coluna>`: troca aspas duplas, retas ou curvas, por aspas simples, e sobrescreve essa coluna. `--title <coluna>` mantém a leitura em caixa de título na coluna irmã `<coluna>_normalized`. A coluna posicional continua equivalente a `--title`. As duas flags podem vir no mesmo pedido, cada uma com a sua coluna.
+
+    Com a aspa dupla fora do texto, o gravador só coloca aspas estruturais quando o campo contém o separador, e esse par abre e fecha na mesma linha. A grade deixa de engolir as linhas seguintes.
 ---

@@ -1,10 +1,13 @@
-"""Leitura em caixa de título de uma coluna de um CSV.
+"""Normalização de colunas de um CSV.
 
-A coluna de origem permanece. A leitura entra na coluna ``<coluna>_normalized``,
-imediatamente à direita. Conectivos saem de ``LEXICO_CONNECTIVOS_FIXOS``. A caixa
-de uma abreviação sai da primeira ocorrência de ``abreviacao`` em
-``docs/assets/seed_lista_abreviacoes.csv``. Aspas duplas da leitura, retas ou curvas,
-viram aspas simples.
+A normalização de título deixa a coluna de origem e grava a leitura em
+``<coluna>_normalized``, imediatamente à direita. Conectivos saem de
+``LEXICO_CONNECTIVOS_FIXOS``. A caixa de uma abreviação sai da primeira ocorrência
+de ``abreviacao`` em ``docs/assets/seed_lista_abreviacoes.csv``. Aspas duplas da
+leitura, retas ou curvas, viram aspas simples.
+
+A normalização de texto troca essas mesmas aspas por aspas simples e sobrescreve
+a coluna. Não cria coluna irmã e não aplica caixa de título.
 """
 
 from __future__ import annotations
@@ -37,12 +40,7 @@ class ColumnNormalizeError(Exception):
 
 
 def default_abbreviation_list_path() -> Path:
-    return (
-        Path(__file__).resolve().parents[2]
-        / "docs"
-        / "assets"
-        / "seed_lista_abreviacoes.csv"
-    )
+    return Path(__file__).resolve().parents[2] / "docs" / "assets" / "seed_lista_abreviacoes.csv"
 
 
 def load_abbreviations(path: Path) -> list[str]:
@@ -56,9 +54,7 @@ def load_abbreviations(path: Path) -> list[str]:
     try:
         text = path.read_text(encoding="utf-8-sig")
     except UnicodeDecodeError as exc:
-        raise ColumnNormalizeError(
-            f"A lista de abreviações '{path}' não é texto UTF-8."
-        ) from exc
+        raise ColumnNormalizeError(f"A lista de abreviações '{path}' não é texto UTF-8.") from exc
 
     rows = list(csv.reader(io.StringIO(text, newline="")))
     if not rows or "abreviacao" not in rows[0]:
@@ -94,10 +90,34 @@ def title_case_reading(text: str, abbreviations: Sequence[str]) -> str:
     return "".join(parts).translate(_DOUBLE_QUOTES)
 
 
+def plain_text_reading(text: str) -> str:
+    """Troca aspas duplas, retas ou curvas, por aspas simples."""
+    return text.translate(_DOUBLE_QUOTES)
+
+
 def normalize_csv(path: Path, column: str, abbreviations: Sequence[str]) -> str:
     """Insere ``<column>_normalized`` à direita de ``column``. Devolve o nome da coluna nova."""
+    sibling = normalize_file(path, abbreviations, title_column=column)
+    if sibling is None:
+        raise ColumnNormalizeError(f"A coluna '{column}' não está no arquivo.")
+    return sibling
+
+
+def normalize_file(
+    path: Path,
+    abbreviations: Sequence[str],
+    *,
+    title_column: str | None = None,
+    text_column: str | None = None,
+) -> str | None:
+    """Aplica título, texto, ou os dois, numa só gravação.
+
+    Devolve o nome da coluna irmã quando há título. Sem título, devolve None.
+    """
+    if title_column is None and text_column is None:
+        raise ColumnNormalizeError("Informe a coluna de título ou a coluna de texto.")
+
     path = Path(path)
-    sibling = f"{column}_normalized"
     if path.suffix.lower() != ".csv":
         raise ColumnNormalizeError(f"O arquivo '{path}' não é CSV.")
     if not path.is_file():
@@ -114,33 +134,56 @@ def normalize_csv(path: Path, column: str, abbreviations: Sequence[str]) -> str:
 
     delimiter = _header_delimiter(text.splitlines()[0] if text else "")
     rows = list(csv.reader(io.StringIO(text, newline=""), delimiter=delimiter))
+    named = title_column if title_column is not None else text_column
     if not rows:
-        raise ColumnNormalizeError(f"A coluna '{column}' não está no arquivo.")
+        raise ColumnNormalizeError(f"A coluna '{named}' não está no arquivo.")
 
     header = rows[0]
-    matches = [i for i, name in enumerate(header) if name == column]
-    if not matches:
-        raise ColumnNormalizeError(f"A coluna '{column}' não está no arquivo.")
-    if len(matches) > 1:
-        raise ColumnNormalizeError(
-            f"A coluna '{column}' aparece mais de uma vez no cabeçalho."
-        )
-    if sibling in header:
-        raise ColumnNormalizeError(
-            f"A coluna '{sibling}' já existe. O arquivo não foi alterado."
-        )
+    title_index = None if title_column is None else _column_index(header, title_column)
+    text_index = None if text_column is None else _column_index(header, text_column)
+    sibling = None if title_column is None else f"{title_column}_normalized"
+    if sibling is not None and sibling in header:
+        raise ColumnNormalizeError(f"A coluna '{sibling}' já existe. O arquivo não foi alterado.")
 
-    index = matches[0]
-    rewritten = [header[: index + 1] + [sibling] + header[index + 1 :]]
+    checked: list[tuple[int, str]] = []
+    if title_index is not None and title_column is not None:
+        checked.append((title_index, title_column))
+    if text_index is not None and text_column is not None and text_index != title_index:
+        checked.append((text_index, text_column))
     for line, row in enumerate(rows[1:], start=2):
-        if index >= len(row) or "\x00" in row[index]:
-            raise ColumnNormalizeError(f"A linha {line}, coluna '{column}', não é texto.")
-        reading = title_case_reading(row[index], abbreviations)
-        rewritten.append(row[: index + 1] + [reading] + row[index + 1 :])
+        for index, column in checked:
+            _require_text_cell(row, index, line, column)
+
+    header_out = list(header)
+    if title_index is not None and sibling is not None:
+        header_out.insert(title_index + 1, sibling)
+    rewritten = [header_out]
+    for row in rows[1:]:
+        cells = list(row)
+        if text_index is not None:
+            cells[text_index] = plain_text_reading(cells[text_index])
+        if title_index is not None:
+            reading = title_case_reading(row[title_index], abbreviations)
+            cells.insert(title_index + 1, reading)
+        rewritten.append(cells)
 
     lineterminator = "\r\n" if b"\r\n" in raw else "\n"
     _write_csv(path, rewritten, lineterminator, delimiter)
     return sibling
+
+
+def _column_index(header: list[str], column: str) -> int:
+    matches = [i for i, name in enumerate(header) if name == column]
+    if not matches:
+        raise ColumnNormalizeError(f"A coluna '{column}' não está no arquivo.")
+    if len(matches) > 1:
+        raise ColumnNormalizeError(f"A coluna '{column}' aparece mais de uma vez no cabeçalho.")
+    return matches[0]
+
+
+def _require_text_cell(row: list[str], index: int, line: int, column: str) -> None:
+    if index >= len(row) or "\x00" in row[index]:
+        raise ColumnNormalizeError(f"A linha {line}, coluna '{column}', não é texto.")
 
 
 def _header_delimiter(header_line: str) -> str:
@@ -201,9 +244,7 @@ def _compiled(abbreviations: tuple[str, ...]) -> tuple[tuple[re.Pattern[str], st
     return tuple(compiled)
 
 
-def _abbreviation_spans(
-    text: str, abbreviations: Sequence[str]
-) -> list[tuple[int, int, str]]:
+def _abbreviation_spans(text: str, abbreviations: Sequence[str]) -> list[tuple[int, int, str]]:
     """Trechos inteiros, sem sobreposição. O mais longo prevalece; empate fica com o da esquerda."""
     candidates: list[tuple[int, int, str]] = []
     for pattern, canonical in _compiled(tuple(abbreviations)):

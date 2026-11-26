@@ -6,6 +6,10 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- A running-text column can be normalized in place, with double quotes replaced by single quotes, while title-case normalization still writes the sibling column
+
 ## [0.2.0-rc.3] - 2026-11-26
 
 ### Added
