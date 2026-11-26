@@ -194,6 +194,40 @@ class ItemTransformTests(SimpleTestCase):
             self.assertNotIn("--", str(caught.exception))
             self.assertEqual(item.read_bytes(), original)
 
+    def test_prose_quotes_keep_every_physical_line(self):
+        original = (
+            "receita_cod;receita_nome;receita_descricao\n"
+            '10000000;Receitas Correntes;Registra tributária," de contribuições"," patrimonial"\n'
+            '"11120400;Imposto sobre a Renda;""Registra a renda; b) de proventos."""\n'
+        ).encode("utf-8")
+        with tempfile.TemporaryDirectory() as directory:
+            directory_path = Path(directory)
+            seed = directory_path / "niveis.csv"
+            item = directory_path / "itens.csv"
+            seed.write_bytes(_csv_bytes(_level_seed()))
+            item.write_bytes(original)
+            transform_csv(item, seed)
+            rows = list(csv.reader(item.open(encoding="utf-8", newline=""), delimiter=";"))
+        self.assertEqual(len(rows), 3)
+        self.assertEqual(self._cell(rows, 1, "receita_cod"), "10000000")
+        self.assertIn("de contribuições", self._cell(rows, 1, "receita_descricao"))
+        self.assertEqual(self._cell(rows, 2, "item_id"), "IT-11120400")
+        self.assertIn("b) de proventos", self._cell(rows, 2, "receita_descricao"))
+
+    def test_missing_classification_column_is_created_empty(self):
+        rows = self._transform(
+            [
+                ["receita_cod", "receita_nome"],
+                ["10000000", "Receitas Correntes"],
+            ]
+        )
+        self.assertEqual(rows[0], list(OUTPUT_COLUMNS))
+        self.assertEqual(self._cell(rows, 1, "item_id"), "IT-10000000")
+        self.assertEqual(self._cell(rows, 1, "classificacao_id"), "")
+        self.assertEqual(self._cell(rows, 1, "nivel_id"), "")
+        self.assertEqual(self._cell(rows, 1, "parent_item_id"), "")
+        self.assertEqual(self._cell(rows, 1, "receita_nome"), "Receitas Correntes")
+
     def test_headers_are_created_ordered_and_record_columns_drop(self):
         rows = self._transform(
             [

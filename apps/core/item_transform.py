@@ -35,7 +35,7 @@ OUTPUT_COLUMNS = (
 )
 RECORD_COLUMNS = ("data_registro_inicio", "data_registro_fim")
 DERIVED_COLUMNS = ("item_id", "nivel_id", "parent_item_id")
-REQUIRED_COLUMNS = ("receita_cod", "classificacao_id")
+REQUIRED_COLUMNS = ("receita_cod",)
 PARENT_MISSING = "-"
 RECORD_SENTINEL = "9999-12-31"
 
@@ -83,39 +83,40 @@ def transform_csv(path: Path, level_seed_path: Path | None = None) -> None:
     masks = load_masks(seed_path)
     rewritten = [list(OUTPUT_COLUMNS)]
     codes: dict[str, int] = {}
-    pending: list[tuple[int, str, str, Mask, int]] = []
+    pending: list[tuple[int, str, Mask, int]] = []
     for line, row in enumerate(rows[1:], start=2):
         if not any(cell.strip() for cell in row):
             continue
         values = _row_map(header, row)
         code = values.get("receita_cod", "").strip()
         classification = values.get("classificacao_id", "").strip()
-        mask = _mask_for(masks, classification, line)
-        if len(code) != mask.width or not code.isdigit():
-            raise ItemTransformError(
-                f"A linha {line}, código '{code}', tem {len(code)} dígitos e a máscara tem {mask.width}. "
-                "O arquivo não foi alterado."
-            )
-        level = _level_index(code, mask)
-        if level is None:
-            raise ItemTransformError(
-                f"A linha {line}, código '{code}', não tem nível. O arquivo não foi alterado."
-            )
         if code in codes:
             raise ItemTransformError(
                 f"O código '{code}' aparece mais de uma vez. O arquivo não foi alterado."
             )
         codes[code] = line
-        pending.append((line, code, classification, mask, level))
         item = {name: values.get(name, "").strip() for name in OUTPUT_COLUMNS}
         item["item_id"] = f"IT-{code}"
-        item["nivel_id"] = mask.segments[level].nivel_id
-        item["classificacao_id"] = classification
         item["receita_cod"] = code
+        item["classificacao_id"] = classification
+        if classification:
+            mask = _mask_for(masks, classification, line)
+            if len(code) != mask.width or not code.isdigit():
+                raise ItemTransformError(
+                    f"A linha {line}, código '{code}', tem {len(code)} dígitos e a máscara tem {mask.width}. "
+                    "O arquivo não foi alterado."
+                )
+            level = _level_index(code, mask)
+            if level is None:
+                raise ItemTransformError(
+                    f"A linha {line}, código '{code}', não tem nível. O arquivo não foi alterado."
+                )
+            item["nivel_id"] = mask.segments[level].nivel_id
+            pending.append((line, code, mask, level))
         rewritten.append(item)
 
     by_code = {item["receita_cod"]: item["item_id"] for item in rewritten[1:]}
-    for line, code, _classification, mask, level in pending:
+    for line, code, mask, level in pending:
         item = next(row for row in rewritten[1:] if row["receita_cod"] == code)
         if level == 0:
             item["parent_item_id"] = PARENT_MISSING
@@ -293,7 +294,37 @@ def _read_csv(path: Path) -> tuple[bytes, list[list[str]], str]:
     first = text.splitlines()[0] if text else ""
     delimiter = _header_delimiter(first)
     rows = list(csv.reader(io.StringIO(text, newline=""), delimiter=delimiter))
-    return raw, rows, delimiter
+    width = len(rows[0]) if rows else 0
+    if rows and all(len(row) >= width for row in rows):
+        return raw, rows, delimiter
+    return raw, _read_physical_lines(text, delimiter), delimiter
+
+
+def _read_physical_lines(text: str, delimiter: str) -> list[list[str]]:
+    """Uma linha física é um registro. O último campo pode conter o separador.
+
+    Algumas linhas vêm embrulhadas por aspas, com as aspas internas dobradas.
+    """
+    lines = text.splitlines()
+    if not lines:
+        return []
+    header = lines[0].split(delimiter)
+    width = len(header)
+    rows = [header]
+    for line in lines[1:]:
+        if not line.strip():
+            continue
+        inner = _unwrap_whole_line(line, delimiter, width)
+        rows.append(inner.split(delimiter, width - 1) if width else [inner])
+    return rows
+
+
+def _unwrap_whole_line(line: str, delimiter: str, width: int) -> str:
+    if len(line) >= 2 and line[0] == '"' and line[-1] == '"':
+        inner = line[1:-1].replace('""', '"')
+        if inner.count(delimiter) >= max(width - 1, 1):
+            return inner
+    return line
 
 
 def _header_delimiter(header_line: str) -> str:

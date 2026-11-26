@@ -1,4 +1,4 @@
-rec_cod;rec_nome;rec_especificacao
+receita_cod;receita_nome;receita_descricao
 10000000;Receitas Correntes;Registra o valor total da arrecadação das receitas tributária," de contribuições"," patrimonial"," agropecuária"," industrial"," de serviços"," as transferências correntes e outras receitas correntes."
 11000000;Receita Tributária;Registra o valor total da arrecadação da receita tributária (impostos," taxas e contribuições de melhoria)."
 11100000;Impostos;Registra o valor total da modalidade de tributo cuja obrigação tem por fato gerador situação independente de qualquer atividade estatal específica," relativa ao contribuinte."
