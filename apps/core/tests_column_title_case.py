@@ -411,6 +411,44 @@ class PlainTextNormalizeTests(SimpleTestCase):
         self.assertNotIn(",", text.splitlines()[0])
         self.assertEqual(rows[1][1], "Registra a renda 'tributária'; b) de proventos.")
 
+    def test_last_column_keeps_a_semicolon_and_replaces_quotes_to_the_end_of_the_line(self):
+        original = (
+            "receita_cod;receita_nome;receita_descricao\n"
+            '10000000;Receitas Correntes;Registra a renda tributária," de contribuições."\n'
+            '"11120400;Imposto sobre a Renda;""Registra a renda; b) de proventos."""\n'
+        ).encode()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "receitas.csv"
+            path.write_bytes(original)
+            sibling = normalize_file(path, (), text_column="receita_descricao")
+            text = path.read_text(encoding="utf-8")
+            rows = list(csv.reader(io.StringIO(text), delimiter=";"))
+
+        self.assertIsNone(sibling)
+        self.assertEqual(len(rows), 3)
+        self.assertEqual(rows[1][0], "10000000")
+        self.assertEqual(rows[1][1], "Receitas Correntes")
+        self.assertEqual(rows[1][2], "Registra a renda tributária,' de contribuições.'")
+        self.assertNotIn('"', text.splitlines()[1])
+        self.assertEqual(rows[2][0], "11120400")
+        self.assertEqual(rows[2][1], "Imposto sobre a Renda")
+        self.assertEqual(rows[2][2], "Registra a renda; b) de proventos.")
+        self.assertEqual(text.splitlines()[2].count('"'), 2)
+
+    def test_middle_text_column_ends_at_the_next_separator(self):
+        original = (
+            "id;texto;extra\n" '1;disse "oi";fim da "frase"\n' '"9;""dentro""; resto"\n'
+        ).encode()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "receitas.csv"
+            path.write_bytes(original)
+            normalize_file(path, (), text_column="texto")
+            rows = list(csv.reader(path.open(encoding="utf-8", newline=""), delimiter=";"))
+
+        self.assertEqual(rows[1], ["1", "disse 'oi'", 'fim da "frase"'])
+        self.assertEqual(rows[2][1], "dentro")
+        self.assertEqual(rows[2][2], " resto")
+
     def test_missing_text_column_leaves_the_file_unchanged(self):
         original = _csv_bytes([["outra"], ["a"]])
         with tempfile.TemporaryDirectory() as directory:

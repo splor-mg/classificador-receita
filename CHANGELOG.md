@@ -10,6 +10,10 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 - A running-text column can be normalized in place, with double quotes replaced by single quotes, while title-case normalization still writes the sibling column
 
+### Fixed
+
+- Text normalization keeps a semicolon inside the last column and still replaces the double quotes there, reading each physical line when a quoted row would otherwise lose the column
+
 ## [0.2.0-rc.3] - 2026-11-26
 
 ### Added

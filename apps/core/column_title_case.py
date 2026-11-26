@@ -7,7 +7,9 @@ de ``abreviacao`` em ``docs/assets/seed_lista_abreviacoes.csv``. Aspas duplas da
 leitura, retas ou curvas, viram aspas simples.
 
 A normalização de texto troca essas mesmas aspas por aspas simples e sobrescreve
-a coluna. Não cria coluna irmã e não aplica caixa de título.
+a coluna. Não cria coluna irmã e não aplica caixa de título. O trecho da coluna
+começa depois do separador indicado pelo cabeçalho. Se a coluna é a última, o
+trecho vai até o fim da linha, e um ponto e vírgula nesse trecho permanece.
 """
 
 from __future__ import annotations
@@ -133,7 +135,7 @@ def normalize_file(
         raise ColumnNormalizeError(f"O arquivo '{path}' não é texto UTF-8.") from exc
 
     delimiter = _header_delimiter(text.splitlines()[0] if text else "")
-    rows = list(csv.reader(io.StringIO(text, newline=""), delimiter=delimiter))
+    rows = _read_rows(text, delimiter)
     named = title_column if title_column is not None else text_column
     if not rows:
         raise ColumnNormalizeError(f"A coluna '{named}' não está no arquivo.")
@@ -184,6 +186,50 @@ def _column_index(header: list[str], column: str) -> int:
 def _require_text_cell(row: list[str], index: int, line: int, column: str) -> None:
     if index >= len(row) or "\x00" in row[index]:
         raise ColumnNormalizeError(f"A linha {line}, coluna '{column}', não é texto.")
+
+
+def _read_rows(text: str, delimiter: str) -> list[list[str]]:
+    """Lê o CSV. Se uma linha perde coluna, cada linha física vira um registro.
+
+    O último campo fica com os separadores que sobrarem. Uma linha embrulhada
+    por aspas, com aspas internas dobradas, perde esse embrulho antes do corte.
+    """
+    rows = list(csv.reader(io.StringIO(text, newline=""), delimiter=delimiter))
+    width = len(rows[0]) if rows else 0
+    if rows and all(len(row) >= width for row in rows):
+        return rows
+    return _read_physical_lines(text, delimiter)
+
+
+def _read_physical_lines(text: str, delimiter: str) -> list[list[str]]:
+    lines = text.splitlines()
+    if not lines:
+        return []
+    header = lines[0].split(delimiter)
+    width = len(header)
+    rows = [header]
+    for line in lines[1:]:
+        if not line.strip():
+            continue
+        inner = _unwrap_whole_line(line, delimiter, width)
+        parts = inner.split(delimiter, width - 1) if width else [inner]
+        rows.append([_unwrap_field(part) for part in parts])
+    return rows
+
+
+def _unwrap_field(field: str) -> str:
+    """Tira um par de aspas que embrulhava o campo inteiro."""
+    if len(field) >= 2 and field[0] == '"' and field[-1] == '"':
+        return field[1:-1]
+    return field
+
+
+def _unwrap_whole_line(line: str, delimiter: str, width: int) -> str:
+    if len(line) >= 2 and line[0] == '"' and line[-1] == '"':
+        inner = line[1:-1].replace('""', '"')
+        if inner.count(delimiter) >= max(width - 1, 1):
+            return inner
+    return line
 
 
 def _header_delimiter(header_line: str) -> str:
