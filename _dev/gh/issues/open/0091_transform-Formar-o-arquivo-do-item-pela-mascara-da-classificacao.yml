@@ -87,30 +87,31 @@ body: |-
 ---
 # regs
 
-- date: 2026-11-26T13:25:18Z
+- date: 2026-11-26 13:25:18+00:00
   reg: label:added:new-feature
   author: carloshob
 
-- date: 2026-11-26T13:25:19Z
+- date: 2026-11-26 13:25:19+00:00
   reg: milestone:added:Migração de Dados
   author: carloshob
 
-- date: 2026-11-26T13:25:23Z
+- date: 2026-11-26 13:25:23+00:00
   reg: project:added:project
   author: carloshob
 
-- date: 2026-11-26T13:25:25Z
+- date: 2026-11-26 13:25:25+00:00
   reg: project:status_changed:unknown-project:unknown
   author: github-project-automation[bot]
 
-- date: 2026-11-26T16:11:06Z
+- date: 2026-11-26 16:11:06+00:00
   reg: comment
+  id: 7197491320
   author: carloshob
   body: |-
     Ao formar o arquivo de 2004, a grade do CSV mostrava uma única linha de dados, embora o texto do arquivo tivesse as 1002 linhas. A causa era a aspa dupla no texto corrido da descrição. A grade trata " como aspa de campo e, quando ela não fecha, engole as linhas seguintes. O arquivo segue separado por ponto e vírgula, e a grade parte na vírgula, então as colunas também não se alinham. Essa segunda parte fica de fora deste ajuste.
-
+    
     A normalização de título gravava a leitura numa coluna irmã e deixava a aspa na célula de origem, que é a célula que a grade lê. O pedido normalize passa a distinguir duas normalizações por flag.
-
+    
     Sem flag, poetry run task normalize -- <arquivo.csv> <coluna> continua a normalização de título: a origem permanece e a leitura entra em <coluna>_normalized.
     --title <coluna> é essa mesma normalização de título. poetry run task normalize -- <arquivo.csv> --title <coluna> equivale ao pedido sem flag.
     --text <coluna> é a normalização de texto corrido. Troca aspas duplas, retas ou curvas, por aspas simples e sobrescreve a coluna. Não cria coluna irmã e não aplica caixa de título.
