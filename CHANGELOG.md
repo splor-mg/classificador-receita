@@ -13,6 +13,7 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - Text normalization keeps a semicolon inside the last column and still replaces the double quotes there, reading each physical line when a quoted row would otherwise lose the column
+- The text column is written between one pair of quotes around that column, while spaces beside a replaced quote stay where they were
 
 ## [0.2.0-rc.3] - 2026-11-26
 

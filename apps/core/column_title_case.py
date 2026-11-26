@@ -170,7 +170,8 @@ def normalize_file(
         rewritten.append(cells)
 
     lineterminator = "\r\n" if b"\r\n" in raw else "\n"
-    _write_csv(path, rewritten, lineterminator, delimiter)
+    quote_index = _output_text_index(title_index, text_index)
+    _write_csv(path, rewritten, lineterminator, delimiter, quote_index=quote_index)
     return sibling
 
 
@@ -307,12 +308,50 @@ def _abbreviation_spans(text: str, abbreviations: Sequence[str]) -> list[tuple[i
     return chosen
 
 
-def _write_csv(path: Path, rows: list[list[str]], lineterminator: str, delimiter: str) -> None:
+def _output_text_index(title_index: int | None, text_index: int | None) -> int | None:
+    """Índice da coluna de texto depois que a irmã de título entra à direita."""
+    if text_index is None:
+        return None
+    if title_index is not None and title_index < text_index:
+        return text_index + 1
+    return text_index
+
+
+def _quote_field(value: str, delimiter: str, *, force: bool) -> str:
+    """Aspas estruturais em volta do campo. O texto interno não ganha nem perde espaço."""
+    if (
+        not force
+        and delimiter not in value
+        and '"' not in value
+        and "\n" not in value
+        and "\r" not in value
+    ):
+        return value
+    return '"' + value.replace('"', '""') + '"'
+
+
+def _write_csv(
+    path: Path,
+    rows: list[list[str]],
+    lineterminator: str,
+    delimiter: str,
+    *,
+    quote_index: int | None = None,
+) -> None:
     handle_fd, tmp_name = tempfile.mkstemp(prefix=".normalize-", suffix=".csv", dir=path.parent)
     tmp_path = Path(tmp_name)
     try:
         with os.fdopen(handle_fd, "w", encoding="utf-8", newline="") as handle:
-            csv.writer(handle, delimiter=delimiter, lineterminator=lineterminator).writerows(rows)
+            for line, row in enumerate(rows):
+                fields = [
+                    _quote_field(
+                        cell,
+                        delimiter,
+                        force=quote_index is not None and line > 0 and index == quote_index,
+                    )
+                    for index, cell in enumerate(row)
+                ]
+                handle.write(delimiter.join(fields) + lineterminator)
         os.replace(tmp_path, path)
     except Exception:
         tmp_path.unlink(missing_ok=True)

@@ -429,10 +429,14 @@ class PlainTextNormalizeTests(SimpleTestCase):
         self.assertEqual(rows[1][0], "10000000")
         self.assertEqual(rows[1][1], "Receitas Correntes")
         self.assertEqual(rows[1][2], "Registra a renda tributária,' de contribuições.'")
-        self.assertNotIn('"', text.splitlines()[1])
+        self.assertTrue(text.splitlines()[1].startswith('10000000;Receitas Correntes;"Registra'))
+        self.assertTrue(text.splitlines()[1].endswith('"'))
+        self.assertNotIn(' "de', text.splitlines()[1])
+        self.assertIn(",' de contribuições.'", text.splitlines()[1])
         self.assertEqual(rows[2][0], "11120400")
         self.assertEqual(rows[2][1], "Imposto sobre a Renda")
         self.assertEqual(rows[2][2], "Registra a renda; b) de proventos.")
+        self.assertTrue(text.splitlines()[2].startswith('11120400;Imposto sobre a Renda;"'))
         self.assertEqual(text.splitlines()[2].count('"'), 2)
 
     def test_middle_text_column_ends_at_the_next_separator(self):
