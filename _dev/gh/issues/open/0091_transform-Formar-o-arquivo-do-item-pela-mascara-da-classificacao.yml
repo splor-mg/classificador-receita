@@ -87,39 +87,39 @@ body: |-
 ---
 # regs
 
-- date: 2026-11-26T13:25:18Z
+- date: 2026-11-26 13:25:18+00:00
   reg: label:added:new-feature
   author: carloshob
 
-- date: 2026-11-26T13:25:19Z
+- date: 2026-11-26 13:25:19+00:00
   reg: milestone:added:Migração de Dados
   author: carloshob
 
-- date: 2026-11-26T13:25:23Z
+- date: 2026-11-26 13:25:23+00:00
   reg: project:added:project
   author: carloshob
 
-- date: 2026-11-26T13:25:25Z
+- date: 2026-11-26 13:25:25+00:00
   reg: project:status_changed:unknown-project:unknown
   author: github-project-automation[bot]
 
-- date: 2026-11-26T15:51:59Z
+- date: 2026-11-26 15:51:59+00:00
   reg: assignee:added:carloshob
   author: carloshob
 
-- date: 2026-11-26T15:52:01Z
+- date: 2026-11-26 15:52:01+00:00
   reg: project:status_changed:unknown-project:unknown
   author: github-project-automation[bot]
 
-- date: 2026-11-26T15:52:05Z
+- date: 2026-11-26 15:52:05+00:00
   reg: project:status_changed:unknown-project:unknown
   author: carloshob
 
-- date: 2026-11-26T15:52:08Z
+- date: 2026-11-26 15:52:08+00:00
   reg: project:status_changed:unknown-project:unknown
   author: carloshob
 
-- date: 2026-11-26T16:19:30Z
+- date: 2026-11-26 16:19:30+00:00
   reg: comment
   author: carloshob
   body: |-
@@ -133,15 +133,27 @@ body: |-
     As duas flags são opcionais e podem vir no mesmo pedido, cada uma com a sua coluna: poetry run task normalize -- <arquivo.csv> --title <coluna-de-título> --text <coluna-de-texto>. Quando nomeiam a mesma coluna, a origem fica só com as aspas trocadas e a irmã recebe a leitura de título.
     Com a aspa dupla fora do texto, o gravador só coloca aspas estruturais quando o campo contém o separador, e esse par abre e fecha na mesma linha. A grade deixa de engolir as linhas seguintes.
 
-- date: 2026-11-26T16:19:34Z
+- date: 2026-11-26 16:19:34+00:00
   reg: assignee:removed:carloshob
   author: carloshob
 
-- date: 2026-11-26T16:19:39Z
+- date: 2026-11-26 16:19:39+00:00
   reg: project:status_changed:unknown-project:unknown
   author: carloshob
 
-- date: 2026-11-26T16:20:18Z
+- date: 2026-11-26 16:20:18+00:00
   reg: project:status_changed:unknown-project:unknown
   author: carloshob
+
+- date: 2026-11-26 17:06:43+00:00
+  reg: comment
+  id: 7198534423
+  author: carloshob
+  body: |-
+    
+    O pedido normalize --text receita_descricao no arquivo de 2004 parou em A linha 15, coluna 'receita_descricao', não é texto. Nenhuma aspa foi trocada. A linha do 11120400 vem embrulhada por aspas, porque a descrição contém ;. O leitor tratou " como aspa de campo, devolveu o registro com duas colunas e a descrição não estava lá.
+    
+    receita_descricao é a última coluna. O fim dela é o fim da linha, não um ";. O ajuste corta pelo separador que o cabeçalho indica: dois ; separam código e nome, e o resto da linha é a descrição, inclusive outro ;. Uma linha embrulhada perde o par externo antes desse corte, e as aspas dobradas voltam a ser uma. No trecho da coluna, aspas duplas viram aspas simples. Na gravação, um par estrutural só entra no campo que ainda contém ;.
+    
+    Com isso o arquivo segue com as 1002 linhas. A descrição do 11120400 guarda o ; de ambos; b) e a grade deixa de engolir as linhas seguintes, porque a aspa do texto não fica mais aberta.
 ---
