@@ -107,9 +107,13 @@ body: |-
   reg: comment
   author: carloshob
   body: |-
-    Ao formar o arquivo de 2004, a grade do CSV mostrava uma única linha de dados, embora o texto do arquivo tivesse as 1002 linhas. A causa era a aspa dupla no texto corrido da descrição. A grade trata `"` como aspa de campo e, quando ela não fecha, engole as linhas seguintes. O arquivo segue separado por ponto e vírgula, e a grade parte na vírgula, então as colunas também não se alinham. Essa segunda parte fica de fora deste ajuste.
+    Ao formar o arquivo de 2004, a grade do CSV mostrava uma única linha de dados, embora o texto do arquivo tivesse as 1002 linhas. A causa era a aspa dupla no texto corrido da descrição. A grade trata " como aspa de campo e, quando ela não fecha, engole as linhas seguintes. O arquivo segue separado por ponto e vírgula, e a grade parte na vírgula, então as colunas também não se alinham. Essa segunda parte fica de fora deste ajuste.
 
-    A normalização de título gravava a leitura numa coluna irmã e deixava a aspa na célula de origem, que é a célula que a grade lê. O pedido `normalize` passa a aceitar `--text <coluna>`: troca aspas duplas, retas ou curvas, por aspas simples, e sobrescreve essa coluna. `--title <coluna>` mantém a leitura em caixa de título na coluna irmã `<coluna>_normalized`. A coluna posicional continua equivalente a `--title`. As duas flags podem vir no mesmo pedido, cada uma com a sua coluna.
+    A normalização de título gravava a leitura numa coluna irmã e deixava a aspa na célula de origem, que é a célula que a grade lê. O pedido normalize passa a distinguir duas normalizações por flag.
 
+    Sem flag, poetry run task normalize -- <arquivo.csv> <coluna> continua a normalização de título: a origem permanece e a leitura entra em <coluna>_normalized.
+    --title <coluna> é essa mesma normalização de título. poetry run task normalize -- <arquivo.csv> --title <coluna> equivale ao pedido sem flag.
+    --text <coluna> é a normalização de texto corrido. Troca aspas duplas, retas ou curvas, por aspas simples e sobrescreve a coluna. Não cria coluna irmã e não aplica caixa de título.
+    As duas flags são opcionais e podem vir no mesmo pedido, cada uma com a sua coluna: poetry run task normalize -- <arquivo.csv> --title <coluna-de-título> --text <coluna-de-texto>. Quando nomeiam a mesma coluna, a origem fica só com as aspas trocadas e a irmã recebe a leitura de título.
     Com a aspa dupla fora do texto, o gravador só coloca aspas estruturais quando o campo contém o separador, e esse par abre e fecha na mesma linha. A grade deixa de engolir as linhas seguintes.
 ---
