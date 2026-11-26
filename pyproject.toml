@@ -1,6 +1,6 @@
 [project]
 name = "classificador-receita"
-version = "0.2.0-rc.2"    # Modelagem dados (#49) - ci fed35ad
+version = "0.2.0-rc.3"
 description = "Sistema de Gestão do Classificador de Natureza de Receita do Estado de Minas Gerais"
 authors = [
     {name = "SPLOR-MG", email = "aid@planejamento.mg.gov.br"}
@@ -69,6 +69,7 @@ validar-dominios = { cmd = "python scripts/validate_domains.py", help = "Valida 
 validar-qualidade = { cmd = "python scripts/validate_quality.py", help = "Aplica as regras de qualityDimensions (quality_rules.yaml) aos dados dos recursos." }
 gerar-erd = { cmd = "python scripts/generate_erd.py", help = "Gera o diagrama de entidade-relacionamento (ERD) do banco de dados." }
 normalize = { cmd = "python scripts/normalize.py", help = "Grava, no mesmo CSV, a coluna <coluna>_normalized imediatamente à direita da coluna nomeada. Uso: poetry run task normalize -- <arquivo.csv> <coluna>." }
+transform = { cmd = "python scripts/transform.py", help = "Forma o CSV de item no schema, no mesmo arquivo. Uso: poetry run task transform -- <arquivo.csv>." }
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

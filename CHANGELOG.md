@@ -6,6 +6,12 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.0-rc.3] - 2026-11-26
+
+### Added
+
+- An item CSV can be shaped to the schema in place, with the item id, level, and parent taken from the open mask of its classification
+
 ### Fixed
 
 - The Vigência search on the series, classification, level, and item lists keeps the chosen year and applies that window, so codes outside it and inactive records stay out of the result
