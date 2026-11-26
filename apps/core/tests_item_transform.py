@@ -208,11 +208,14 @@ class ItemTransformTests(SimpleTestCase):
             item.write_bytes(original)
             transform_csv(item, seed)
             rows = list(csv.reader(item.open(encoding="utf-8", newline=""), delimiter=";"))
+            raw = item.read_text(encoding="utf-8")
         self.assertEqual(len(rows), 3)
         self.assertEqual(self._cell(rows, 1, "receita_cod"), "10000000")
         self.assertIn("de contribuições", self._cell(rows, 1, "receita_descricao"))
         self.assertEqual(self._cell(rows, 2, "item_id"), "IT-11120400")
         self.assertIn("b) de proventos", self._cell(rows, 2, "receita_descricao"))
+        self.assertFalse(self._cell(rows, 2, "receita_descricao").startswith('"'))
+        self.assertIn("Registra a renda; b) de proventos.", raw)
 
     def test_missing_classification_column_is_created_empty(self):
         rows = self._transform(

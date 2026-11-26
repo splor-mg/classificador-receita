@@ -315,8 +315,16 @@ def _read_physical_lines(text: str, delimiter: str) -> list[list[str]]:
         if not line.strip():
             continue
         inner = _unwrap_whole_line(line, delimiter, width)
-        rows.append(inner.split(delimiter, width - 1) if width else [inner])
+        parts = inner.split(delimiter, width - 1) if width else [inner]
+        rows.append([_unwrap_field(part) for part in parts])
     return rows
+
+
+def _unwrap_field(field: str) -> str:
+    """Tira um par de aspas que embrulhava o campo inteiro, não as aspas do texto."""
+    if len(field) >= 2 and field[0] == '"' and field[-1] == '"':
+        return field[1:-1]
+    return field
 
 
 def _unwrap_whole_line(line: str, delimiter: str, width: int) -> str:

@@ -3,7 +3,7 @@ title: (transform) Formar o arquivo do item pela máscara da classificação
 state: O
 author: carloshob
 created: '2026-11-26T13:25:16Z'
-updated: '2026-11-26T13:25:19Z'
+updated: '2026-11-26T16:20:18Z'
 closed: null
 assignees: []
 labels:
@@ -13,11 +13,11 @@ projects:
 - name: Gestão à Vista AID
   number: 13
   id: PVT_kwDOByfrJc4AmH_f
-  Status: Backlog
+  Status: Todo
+  Data início: '2026-11-02'
+  Data de vencimento: '2026-11-30'
   Projeto: null
   Planejado: null
-  Data início: null
-  Data de vencimento: null
   tags: null
 milestone: Migração de Dados
 relationships:
@@ -87,25 +87,40 @@ body: |-
 ---
 # regs
 
-- date: 2026-11-26 13:25:18+00:00
+- date: 2026-11-26T13:25:18Z
   reg: label:added:new-feature
   author: carloshob
 
-- date: 2026-11-26 13:25:19+00:00
+- date: 2026-11-26T13:25:19Z
   reg: milestone:added:Migração de Dados
   author: carloshob
 
-- date: 2026-11-26 13:25:23+00:00
+- date: 2026-11-26T13:25:23Z
   reg: project:added:project
   author: carloshob
 
-- date: 2026-11-26 13:25:25+00:00
+- date: 2026-11-26T13:25:25Z
   reg: project:status_changed:unknown-project:unknown
   author: github-project-automation[bot]
 
-- date: 2026-11-26 16:11:06+00:00
+- date: 2026-11-26T15:51:59Z
+  reg: assignee:added:carloshob
+  author: carloshob
+
+- date: 2026-11-26T15:52:01Z
+  reg: project:status_changed:unknown-project:unknown
+  author: github-project-automation[bot]
+
+- date: 2026-11-26T15:52:05Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-11-26T15:52:08Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-11-26T16:19:30Z
   reg: comment
-  id: 7197491320
   author: carloshob
   body: |-
     Ao formar o arquivo de 2004, a grade do CSV mostrava uma única linha de dados, embora o texto do arquivo tivesse as 1002 linhas. A causa era a aspa dupla no texto corrido da descrição. A grade trata " como aspa de campo e, quando ela não fecha, engole as linhas seguintes. O arquivo segue separado por ponto e vírgula, e a grade parte na vírgula, então as colunas também não se alinham. Essa segunda parte fica de fora deste ajuste.
@@ -117,4 +132,16 @@ body: |-
     --text <coluna> é a normalização de texto corrido. Troca aspas duplas, retas ou curvas, por aspas simples e sobrescreve a coluna. Não cria coluna irmã e não aplica caixa de título.
     As duas flags são opcionais e podem vir no mesmo pedido, cada uma com a sua coluna: poetry run task normalize -- <arquivo.csv> --title <coluna-de-título> --text <coluna-de-texto>. Quando nomeiam a mesma coluna, a origem fica só com as aspas trocadas e a irmã recebe a leitura de título.
     Com a aspa dupla fora do texto, o gravador só coloca aspas estruturais quando o campo contém o separador, e esse par abre e fecha na mesma linha. A grade deixa de engolir as linhas seguintes.
+
+- date: 2026-11-26T16:19:34Z
+  reg: assignee:removed:carloshob
+  author: carloshob
+
+- date: 2026-11-26T16:19:39Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
+
+- date: 2026-11-26T16:20:18Z
+  reg: project:status_changed:unknown-project:unknown
+  author: carloshob
 ---
