@@ -424,3 +424,49 @@ class TransformCommandTests(SimpleTestCase):
         self.assertEqual(cell(1, "nivel_id"), "NIVEL-1")
         self.assertEqual(cell(1, "parent_item_id"), "-")
         self.assertEqual(cell(2, "parent_item_id"), "IT-1000000000")
+
+    def test_matriz_flag_stores_lowercase_and_rejects_other_values(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory_path = Path(directory)
+            seed = directory_path / "niveis.csv"
+            item = directory_path / "itens.csv"
+            seed.write_bytes(_csv_bytes(_level_seed()))
+            original = _csv_bytes(
+                [
+                    ["receita_cod", "receita_nome"],
+                    ["1000000000", "Receitas Correntes"],
+                ]
+            )
+            item.write_bytes(original)
+            stderr = io.StringIO()
+            with redirect_stderr(stderr):
+                refused = main(
+                    ["transform.py", str(item), "--classificacao", CLASS_10, "--matriz", "sim"]
+                )
+            self.assertEqual(refused, 1)
+            self.assertIn("aceita apenas", stderr.getvalue())
+            self.assertEqual(item.read_bytes(), original)
+            with redirect_stdout(io.StringIO()):
+                code = main(
+                    [
+                        "transform.py",
+                        str(item),
+                        "--title",
+                        "receita_nome",
+                        "--classificacao",
+                        CLASS_10,
+                        "--matriz",
+                        "False",
+                    ]
+                )
+            rows = list(csv.reader(item.open(encoding="utf-8", newline="")))
+        self.assertEqual(code, 0)
+        header = rows[0]
+
+        def cell(row_index: int, name: str) -> str:
+            return rows[row_index][header.index(name)]
+
+        self.assertEqual(cell(1, "matriz"), "false")
+        self.assertEqual(cell(1, "classificacao_id"), CLASS_10)
+        self.assertEqual(cell(1, "receita_nome"), "Receitas Correntes")
+        self.assertEqual(cell(1, "nivel_id"), "NIVEL-1")

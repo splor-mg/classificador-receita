@@ -61,17 +61,14 @@ def default_level_seed_path() -> Path:
     return Path(__file__).resolve().parents[2] / "docs" / "assets" / "seed_nivel_hierarquico.csv"
 
 
-def assign_classification(
-    header: list[str], rows: list[list[str]], classification: str
+def assign_column(
+    header: list[str], rows: list[list[str]], column: str, value: str
 ) -> tuple[list[str], list[list[str]]]:
-    """Garante ``classificacao_id`` e preenche cada linha de dados com o mesmo valor."""
-    classification = classification.strip()
-    if classification == "":
-        raise ItemTransformError("Informe o valor de classificacao_id.")
-    matches = [index for index, name in enumerate(header) if name == "classificacao_id"]
+    """Garante ``column`` e preenche cada linha de dados com o mesmo valor."""
+    matches = [index for index, name in enumerate(header) if name == column]
     if len(matches) > 1:
         raise ItemTransformError(
-            "A coluna 'classificacao_id' aparece mais de uma vez no cabeçalho. "
+            f"A coluna '{column}' aparece mais de uma vez no cabeçalho. "
             "O arquivo não foi alterado."
         )
     if matches:
@@ -81,24 +78,51 @@ def assign_classification(
             cells = list(row)
             while len(cells) <= index:
                 cells.append("")
-            cells[index] = classification
+            cells[index] = value
             filled.append(cells)
         return list(header), filled
 
     insert_at = len(header)
-    target = OUTPUT_COLUMNS.index("classificacao_id")
+    target = OUTPUT_COLUMNS.index(column)
     rank = {name: index for index, name in enumerate(OUTPUT_COLUMNS)}
     for index, name in enumerate(header):
         if name in rank and rank[name] > target:
             insert_at = index
             break
-    new_header = header[:insert_at] + ["classificacao_id"] + header[insert_at:]
+    new_header = header[:insert_at] + [column] + header[insert_at:]
     filled = []
     for row in rows:
         cells = list(row)
-        cells.insert(insert_at, classification)
+        cells.insert(insert_at, value)
         filled.append(cells)
     return new_header, filled
+
+
+def assign_classification(
+    header: list[str], rows: list[list[str]], classification: str
+) -> tuple[list[str], list[list[str]]]:
+    """Garante ``classificacao_id`` e preenche cada linha de dados com o mesmo valor."""
+    classification = classification.strip()
+    if classification == "":
+        raise ItemTransformError("Informe o valor de classificacao_id.")
+    return assign_column(header, rows, "classificacao_id", classification)
+
+
+def matriz_value(raw: str) -> str:
+    """Aceita apenas true ou false, e devolve a caixa baixa."""
+    value = raw.strip().casefold()
+    if value not in ("true", "false"):
+        raise ItemTransformError(
+            "A opção '--matriz' aceita apenas 'true' ou 'false'. O arquivo não foi alterado."
+        )
+    return value
+
+
+def assign_matriz(
+    header: list[str], rows: list[list[str]], matriz: str
+) -> tuple[list[str], list[list[str]]]:
+    """Garante ``matriz`` e preenche cada linha com true ou false em caixa baixa."""
+    return assign_column(header, rows, "matriz", matriz_value(matriz))
 
 
 def transform_csv(
@@ -106,11 +130,13 @@ def transform_csv(
     level_seed_path: Path | None = None,
     *,
     classification: str | None = None,
+    matriz: str | None = None,
 ) -> None:
     """Reescreve ``path`` ou não grava nada."""
     forced = None if classification is None else classification.strip()
     if forced == "":
         raise ItemTransformError("Informe o valor de classificacao_id.")
+    forced_matriz = None if matriz is None else matriz_value(matriz)
     path = Path(path)
     seed_path = default_level_seed_path() if level_seed_path is None else Path(level_seed_path)
     if path.suffix.lower() != ".csv":
@@ -144,6 +170,8 @@ def transform_csv(
         item["item_id"] = f"IT-{code}"
         item["receita_cod"] = code
         item["classificacao_id"] = classification
+        if forced_matriz is not None:
+            item["matriz"] = forced_matriz
         if classification:
             mask = _mask_for(masks, classification, line)
             if len(code) != mask.width or not code.isdigit():

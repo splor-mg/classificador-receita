@@ -118,12 +118,13 @@ def normalize_file(
     text_column: str | None = None,
     compare: bool = False,
     classification: str | None = None,
+    matriz: str | None = None,
 ) -> str | None:
     """Aplica título, texto, ou os dois, numa só gravação.
 
     Devolve o nome da coluna irmã quando o título é comparado. Sem comparação, devolve None.
     """
-    if title_column is None and text_column is None and classification is None:
+    if title_column is None and text_column is None and classification is None and matriz is None:
         raise ColumnNormalizeError("Informe a coluna de título ou a coluna de texto.")
 
     path = Path(path)
@@ -145,7 +146,7 @@ def normalize_file(
     rows = _read_rows(text, delimiter)
     named = title_column if title_column is not None else text_column
     if named is None:
-        named = "classificacao_id"
+        named = "classificacao_id" if classification is not None else "matriz"
     if not rows:
         raise ColumnNormalizeError(f"A coluna '{named}' não está no arquivo.")
 
@@ -202,6 +203,16 @@ def normalize_file(
             header_out, data_rows = assign_classification(
                 rewritten[0], rewritten[1:], classification
             )
+        except ItemTransformError as exc:
+            raise ColumnNormalizeError(str(exc)) from exc
+        rewritten = [header_out, *data_rows]
+        if quote_text and text_column is not None and text_column in header_out:
+            quote_index = header_out.index(text_column)
+    if matriz is not None:
+        from apps.core.item_transform import ItemTransformError, assign_matriz
+
+        try:
+            header_out, data_rows = assign_matriz(rewritten[0], rewritten[1:], matriz)
         except ItemTransformError as exc:
             raise ColumnNormalizeError(str(exc)) from exc
         rewritten = [header_out, *data_rows]

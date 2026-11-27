@@ -372,7 +372,8 @@ class NormalizeCommandTests(SimpleTestCase):
             code = main(["normalize.py", "arquivo.csv"])
         self.assertEqual(code, 2)
         self.assertIn(
-            "Informe a coluna de título, a coluna de texto ou --classificacao.", stderr.getvalue()
+            "Informe a coluna de título, a coluna de texto, --classificacao ou --matriz.",
+            stderr.getvalue(),
         )
 
     def test_two_different_title_names_are_refused(self):
@@ -574,3 +575,28 @@ class PlainTextNormalizeTests(SimpleTestCase):
         self.assertEqual(rows[1][0], "Receita Tributária")
         self.assertEqual(rows[1][1], "disse 'oi'")
         self.assertEqual(rows[1][2], "CLASS-RECEITA-UNIAO-2001")
+
+    def test_matriz_flag_stores_lowercase_true_or_false(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "receitas.csv"
+            path.write_bytes(
+                _csv_bytes(
+                    [
+                        ["receita_cod", "receita_nome"],
+                        ["1000000000", "Receitas Correntes"],
+                        ["1100000000", "Receita Tributária"],
+                    ]
+                )
+            )
+            stderr = io.StringIO()
+            with redirect_stderr(stderr):
+                refused = main(["normalize.py", str(path), "--matriz", "sim"])
+            self.assertEqual(refused, 1)
+            self.assertIn("aceita apenas", stderr.getvalue())
+            with redirect_stdout(io.StringIO()):
+                code = main(["normalize.py", str(path), "--matriz", "TRUE"])
+            rows = list(csv.reader(path.open(encoding="utf-8", newline="")))
+
+        self.assertEqual(code, 0)
+        self.assertEqual(rows[0], ["receita_cod", "matriz", "receita_nome"])
+        self.assertEqual([row[1] for row in rows[1:]], ["true", "true"])
