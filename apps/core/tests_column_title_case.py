@@ -171,11 +171,11 @@ class NormalizeCsvTests(SimpleTestCase):
             "A linha 2, coluna 'extra', não é texto.",
         )
 
-    def test_non_utf8_leaves_the_file_unchanged(self):
+    def test_unknown_encoding_leaves_the_file_unchanged(self):
         self._assert_refused(
-            b"nome\n\xff\n",
+            b"nome\n\x81\n",
             "nome",
-            "não é texto UTF-8",
+            "não é UTF-8 nem Windows-1252",
         )
 
     def test_non_csv_leaves_the_file_unchanged(self):
@@ -366,15 +366,46 @@ class NormalizeCommandTests(SimpleTestCase):
         self.assertEqual(rows[0], ["nome", "texto"])
         self.assertEqual(rows[1], ["Imposto de Renda", "cota 'parte'"])
 
-    def test_command_without_a_column_prints_usage(self):
-        stderr = io.StringIO()
-        with redirect_stderr(stderr):
-            code = main(["normalize.py", "arquivo.csv"])
-        self.assertEqual(code, 2)
-        self.assertIn(
-            "Informe a coluna de título, a coluna de texto, --classificacao ou --matriz.",
-            stderr.getvalue(),
-        )
+    def test_path_only_converts_windows_1252_and_semicolons(self):
+        original = 'nome;texto\nReceita Tributária;disse "oi"\n'.encode("cp1252")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "receitas.csv"
+            path.write_bytes(original)
+            stdout = io.StringIO()
+            with redirect_stdout(stdout):
+                code = main(["normalize.py", str(path)])
+            raw = path.read_bytes()
+            rows = list(csv.reader(path.open(encoding="utf-8", newline="")))
+        self.assertEqual(code, 0)
+        self.assertIn("gravado em UTF-8, separado por vírgula", stdout.getvalue())
+        raw.decode("utf-8")
+        self.assertEqual(rows, [["nome", "texto"], ["Receita Tributária", 'disse "oi"']])
+
+    def test_path_only_keeps_a_utf8_comma_file(self):
+        original = "nome,texto\nReceita Tributária,ok\n".encode("utf-8")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "receitas.csv"
+            path.write_bytes(original)
+            stdout = io.StringIO()
+            with redirect_stdout(stdout):
+                code = main(["normalize.py", str(path)])
+            kept = path.read_bytes()
+        self.assertEqual(code, 0)
+        self.assertIn("já está em UTF-8", stdout.getvalue())
+        self.assertEqual(kept, original)
+
+    def test_windows_1252_title_is_written_as_utf8(self):
+        original = "nome\nreceita tributária\n".encode("cp1252")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "nomes.csv"
+            path.write_bytes(original)
+            stdout = io.StringIO()
+            with redirect_stdout(stdout):
+                code = main(["normalize.py", str(path), "--title", "nome"])
+            rows = list(csv.reader(path.open(encoding="utf-8", newline="")))
+        self.assertEqual(code, 0)
+        self.assertEqual(rows[1], ["Receita Tributária"])
+        self.assertIn("Windows-1252", stdout.getvalue())
 
     def test_two_different_title_names_are_refused(self):
         stderr = io.StringIO()
@@ -397,7 +428,7 @@ class PlainTextNormalizeTests(SimpleTestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "receitas.csv"
             path.write_bytes(original)
-            sibling = normalize_file(path, (), text_column="texto")
+            sibling = normalize_file(path, (), text_column="texto").sibling
             rows = list(csv.reader(path.open(encoding="utf-8", newline="")))
 
         self.assertIsNone(sibling)
@@ -412,7 +443,7 @@ class PlainTextNormalizeTests(SimpleTestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "nomes.csv"
             path.write_bytes(original)
-            sibling = normalize_file(path, (), title_column="nome", text_column="nome")
+            sibling = normalize_file(path, (), title_column="nome", text_column="nome").sibling
             rows = list(csv.reader(path.open(encoding="utf-8", newline="")))
 
         self.assertIsNone(sibling)
@@ -426,7 +457,7 @@ class PlainTextNormalizeTests(SimpleTestCase):
             path.write_bytes(original)
             sibling = normalize_file(
                 path, (), title_column="nome", text_column="nome", compare=True
-            )
+            ).sibling
             rows = list(csv.reader(path.open(encoding="utf-8", newline="")))
 
         self.assertEqual(sibling, "nome_normalized")
@@ -459,7 +490,7 @@ class PlainTextNormalizeTests(SimpleTestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "receitas.csv"
             path.write_bytes(original)
-            sibling = normalize_file(path, (), text_column="receita_descricao")
+            sibling = normalize_file(path, (), text_column="receita_descricao").sibling
             text = path.read_text(encoding="utf-8")
             rows = list(csv.reader(io.StringIO(text)))
 

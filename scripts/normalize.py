@@ -6,7 +6,8 @@ título. Com ``--compare``, a origem permanece e a leitura entra em
 ``<coluna>_normalized``. Com ``--text``, aspas duplas da coluna, retas ou curvas,
 viram aspas simples na própria célula. Com ``--classificacao``, toda a coluna ``classificacao_id`` recebe esse valor.
 Com ``--matriz``, toda a coluna ``matriz`` recebe ``true`` ou ``false`` em caixa baixa.
-As opções podem vir juntas.
+As opções podem vir juntas. Só o caminho do arquivo confere a codificação e o
+separador: Windows-1252 vira UTF-8, e ponto e vírgula vira vírgula.
 O separador de entrada é o do cabeçalho. Ponto e vírgula na entrada vira vírgula na gravação.
 
 Uso:
@@ -91,10 +92,6 @@ def _parse_args(
     if positional_title is not None and title is not None and positional_title != title:
         raise _UsageError("A coluna de título foi informada duas vezes.")
     title = title if title is not None else positional_title
-    if title is None and text is None and classification is None and matriz is None:
-        raise _UsageError(
-            "Informe a coluna de título, a coluna de texto, --classificacao ou --matriz."
-        )
     return Path(positionals[0]), title, text, compare, classification, matriz
 
 
@@ -135,7 +132,7 @@ def main(argv: list[str] | None = None, *, abbreviations_path: Path | None = Non
             print(exc, file=sys.stderr)
             return 1
     try:
-        sibling = normalize_file(
+        outcome = normalize_file(
             path,
             abbreviations,
             title_column=title_column,
@@ -147,6 +144,10 @@ def main(argv: list[str] | None = None, *, abbreviations_path: Path | None = Non
     except ColumnNormalizeError as exc:
         print(exc, file=sys.stderr)
         return 1
+    if title_column is None and text_column is None and classification is None and matriz is None:
+        print(_bare_message(path, outcome), end="")
+        return 0
+    sibling = outcome.sibling
     if sibling is not None:
         print(f"Coluna '{sibling}' gravada em {path}.")
     elif title_column is not None:
@@ -157,7 +158,19 @@ def main(argv: list[str] | None = None, *, abbreviations_path: Path | None = Non
         print(f"Coluna 'classificacao_id' gravada com '{classification}' em {path}.")
     if matriz is not None:
         print(f"Coluna 'matriz' gravada com '{matriz.strip().casefold()}' em {path}.")
+    if outcome.encoding != "utf-8":
+        print(f"Arquivo lido como Windows-1252 e gravado em UTF-8 em {path}.")
     return 0
+
+
+def _bare_message(path: Path, outcome) -> str:
+    if not outcome.wrote:
+        return f"Arquivo já está em UTF-8 e separado por vírgula em {path}.\n"
+    if outcome.encoding != "utf-8" and outcome.delimiter_changed:
+        return f"Arquivo gravado em UTF-8, separado por vírgula, em {path}.\n"
+    if outcome.encoding != "utf-8":
+        return f"Arquivo gravado em UTF-8 em {path}.\n"
+    return f"Arquivo gravado separado por vírgula em {path}.\n"
 
 
 if __name__ == "__main__":

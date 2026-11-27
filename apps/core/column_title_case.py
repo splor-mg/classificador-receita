@@ -11,7 +11,9 @@ a coluna. Não cria coluna irmã e não aplica caixa de título. O trecho da col
 começa depois do separador indicado pelo cabeçalho. Se a coluna é a última, o
 trecho vai até o fim da linha, e um ponto e vírgula nesse trecho permanece.
 Um arquivo lido com ponto e vírgula é gravado com vírgula. O campo que contém
-vírgula sai entre aspas.
+vírgula sai entre aspas. Texto que não é UTF-8 é lido como Windows-1252 e
+gravado em UTF-8. Só o caminho do arquivo faz essa leitura e a troca do
+separador.
 """
 
 from __future__ import annotations
@@ -22,6 +24,7 @@ import io
 import os
 import re
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
 
@@ -41,6 +44,16 @@ _DOUBLE_QUOTES = str.maketrans(
 
 class ColumnNormalizeError(Exception):
     """O pedido parou. O CSV de destino não foi gravado."""
+
+
+@dataclass(frozen=True)
+class NormalizeOutcome:
+    """O que a gravação fez. ``encoding`` é a leitura de origem."""
+
+    sibling: str | None = None
+    encoding: str = "utf-8"
+    delimiter_changed: bool = False
+    wrote: bool = True
 
 
 def default_abbreviation_list_path() -> Path:
@@ -107,7 +120,7 @@ def normalize_csv(
     compare: bool = False,
 ) -> str | None:
     """Normaliza ``column`` em caixa de título. Com ``compare``, devolve a coluna irmã."""
-    return normalize_file(path, abbreviations, title_column=column, compare=compare)
+    return normalize_file(path, abbreviations, title_column=column, compare=compare).sibling
 
 
 def normalize_file(
@@ -119,13 +132,14 @@ def normalize_file(
     compare: bool = False,
     classification: str | None = None,
     matriz: str | None = None,
-) -> str | None:
+) -> NormalizeOutcome:
     """Aplica título, texto, ou os dois, numa só gravação.
 
-    Devolve o nome da coluna irmã quando o título é comparado. Sem comparação, devolve None.
+    Sem coluna nem flag, só converte a codificação e o separador. Devolve o que foi gravado.
     """
-    if title_column is None and text_column is None and classification is None and matriz is None:
-        raise ColumnNormalizeError("Informe a coluna de título ou a coluna de texto.")
+    bare = (
+        title_column is None and text_column is None and classification is None and matriz is None
+    )
 
     path = Path(path)
     if path.suffix.lower() != ".csv":
@@ -137,13 +151,23 @@ def normalize_file(
         raw = path.read_bytes()
     except OSError as exc:
         raise ColumnNormalizeError(f"O arquivo '{path}' não pôde ser lido.") from exc
-    try:
-        text = raw.decode("utf-8-sig")
-    except UnicodeDecodeError as exc:
-        raise ColumnNormalizeError(f"O arquivo '{path}' não é texto UTF-8.") from exc
+    text, encoding = _decode_csv_text(raw)
 
-    delimiter = _header_delimiter(text.splitlines()[0] if text else "")
+    header_line = text.splitlines()[0] if text else ""
+    if header_line == "":
+        raise ColumnNormalizeError(f"O arquivo '{path}' não tem cabeçalho.")
+    delimiter = _header_delimiter(header_line)
+    output_delimiter = _output_delimiter(delimiter)
+    delimiter_changed = output_delimiter != delimiter
+    if bare and encoding == "utf-8" and not delimiter_changed:
+        return NormalizeOutcome(encoding=encoding, delimiter_changed=False, wrote=False)
     rows = _read_rows(text, delimiter)
+    lineterminator = "\r\n" if b"\r\n" in raw else "\n"
+    if bare:
+        if not rows:
+            raise ColumnNormalizeError(f"O arquivo '{path}' não tem cabeçalho.")
+        _write_csv(path, rows, lineterminator, output_delimiter)
+        return NormalizeOutcome(encoding=encoding, delimiter_changed=delimiter_changed, wrote=True)
     named = title_column if title_column is not None else text_column
     if named is None:
         named = "classificacao_id" if classification is not None else "matriz"
@@ -193,7 +217,6 @@ def normalize_file(
             cells.insert(title_index + 1, reading)
         rewritten.append(cells)
 
-    lineterminator = "\r\n" if b"\r\n" in raw else "\n"
     quote_text = text_index is not None and not keep_title_source
     quote_index = _output_text_index(title_index, text_index, compare) if quote_text else None
     if classification is not None:
@@ -222,10 +245,29 @@ def normalize_file(
         path,
         rewritten,
         lineterminator,
-        _output_delimiter(delimiter),
+        output_delimiter,
         quote_index=quote_index,
     )
-    return sibling
+    return NormalizeOutcome(
+        sibling=sibling,
+        encoding=encoding,
+        delimiter_changed=delimiter_changed,
+        wrote=True,
+    )
+
+
+def _decode_csv_text(raw: bytes) -> tuple[str, str]:
+    """Lê UTF-8. Se falhar, lê Windows-1252."""
+    try:
+        return raw.decode("utf-8-sig"), "utf-8"
+    except UnicodeDecodeError:
+        pass
+    try:
+        return raw.decode("cp1252"), "cp1252"
+    except UnicodeDecodeError as exc:
+        raise ColumnNormalizeError(
+            "O arquivo não é UTF-8 nem Windows-1252. O arquivo não foi alterado."
+        ) from exc
 
 
 def _column_index(header: list[str], column: str) -> int:
