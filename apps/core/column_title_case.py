@@ -117,12 +117,13 @@ def normalize_file(
     title_column: str | None = None,
     text_column: str | None = None,
     compare: bool = False,
+    classification: str | None = None,
 ) -> str | None:
     """Aplica título, texto, ou os dois, numa só gravação.
 
     Devolve o nome da coluna irmã quando o título é comparado. Sem comparação, devolve None.
     """
-    if title_column is None and text_column is None:
+    if title_column is None and text_column is None and classification is None:
         raise ColumnNormalizeError("Informe a coluna de título ou a coluna de texto.")
 
     path = Path(path)
@@ -143,6 +144,8 @@ def normalize_file(
     delimiter = _header_delimiter(text.splitlines()[0] if text else "")
     rows = _read_rows(text, delimiter)
     named = title_column if title_column is not None else text_column
+    if named is None:
+        named = "classificacao_id"
     if not rows:
         raise ColumnNormalizeError(f"A coluna '{named}' não está no arquivo.")
 
@@ -192,6 +195,18 @@ def normalize_file(
     lineterminator = "\r\n" if b"\r\n" in raw else "\n"
     quote_text = text_index is not None and not keep_title_source
     quote_index = _output_text_index(title_index, text_index, compare) if quote_text else None
+    if classification is not None:
+        from apps.core.item_transform import ItemTransformError, assign_classification
+
+        try:
+            header_out, data_rows = assign_classification(
+                rewritten[0], rewritten[1:], classification
+            )
+        except ItemTransformError as exc:
+            raise ColumnNormalizeError(str(exc)) from exc
+        rewritten = [header_out, *data_rows]
+        if quote_text and text_column is not None and text_column in header_out:
+            quote_index = header_out.index(text_column)
     _write_csv(
         path,
         rewritten,

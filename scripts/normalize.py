@@ -4,14 +4,15 @@
 Sem flag, ou com ``--title``, a coluna é sobrescrita pela leitura em caixa de
 título. Com ``--compare``, a origem permanece e a leitura entra em
 ``<coluna>_normalized``. Com ``--text``, aspas duplas da coluna, retas ou curvas,
-viram aspas simples na própria célula. As opções podem vir juntas.
+viram aspas simples na própria célula. Com ``--classificacao``, toda a coluna
+``classificacao_id`` recebe esse valor. As opções podem vir juntas.
 O separador de entrada é o do cabeçalho. Ponto e vírgula na entrada vira vírgula na gravação.
 
 Uso:
-    python scripts/normalize.py <arquivo.csv> [<coluna>] [--compare]
-    python scripts/normalize.py <arquivo.csv> [--title <coluna>] [--text <coluna>] [--compare]
-    poetry run task normalize -- <arquivo.csv> [<coluna>] [--compare]
-    poetry run task normalize -- <arquivo.csv> [--title <coluna>] [--text <coluna>] [--compare]
+    python scripts/normalize.py <arquivo.csv> [<coluna>] [--compare] [--classificacao <valor>]
+    python scripts/normalize.py <arquivo.csv> [--title <coluna>] [--text <coluna>] [--classificacao <valor>]
+    poetry run task normalize -- <arquivo.csv> [--classificacao <valor>]
+    poetry run task normalize -- <arquivo.csv> [--title <coluna>] [--text <coluna>] [--classificacao <valor>]
 """
 
 from __future__ import annotations
@@ -20,8 +21,8 @@ import sys
 from pathlib import Path
 
 _USAGE = (
-    "Uso: python scripts/normalize.py <arquivo.csv> [<coluna>] [--compare]\n"
-    "     python scripts/normalize.py <arquivo.csv> [--title <coluna>] [--text <coluna>] [--compare]"
+    "Uso: python scripts/normalize.py <arquivo.csv> [<coluna>] [--compare] [--classificacao <valor>]\n"
+    "     python scripts/normalize.py <arquivo.csv> [--title <coluna>] [--text <coluna>] [--classificacao <valor>]"
 )
 
 
@@ -29,12 +30,13 @@ class _UsageError(Exception):
     """O pedido não nomeia arquivo e coluna na forma esperada."""
 
 
-def _parse_args(args: list[str]) -> tuple[Path, str | None, str | None, bool]:
-    """Devolve caminho, coluna de título, coluna de texto e se a origem do título fica."""
+def _parse_args(args: list[str]) -> tuple[Path, str | None, str | None, bool, str | None]:
+    """Devolve caminho, título, texto, comparação e o valor de classificacao_id."""
     positionals: list[str] = []
     title: str | None = None
     text: str | None = None
     compare = False
+    classification: str | None = None
     index = 1
     while index < len(args):
         token = args[index]
@@ -43,6 +45,14 @@ def _parse_args(args: list[str]) -> tuple[Path, str | None, str | None, bool]:
                 raise _UsageError("A opção '--compare' foi informada duas vezes.")
             compare = True
             index += 1
+            continue
+        if token == "--classificacao":
+            if index + 1 >= len(args) or args[index + 1].startswith("--"):
+                raise _UsageError("A opção '--classificacao' precisa do valor.")
+            if classification is not None:
+                raise _UsageError("A opção '--classificacao' foi informada duas vezes.")
+            classification = args[index + 1]
+            index += 2
             continue
         if token in ("--title", "--text"):
             if index + 1 >= len(args) or args[index + 1].startswith("--"):
@@ -69,15 +79,15 @@ def _parse_args(args: list[str]) -> tuple[Path, str | None, str | None, bool]:
     if positional_title is not None and title is not None and positional_title != title:
         raise _UsageError("A coluna de título foi informada duas vezes.")
     title = title if title is not None else positional_title
-    if title is None and text is None:
-        raise _UsageError("Informe a coluna de título ou a coluna de texto.")
-    return Path(positionals[0]), title, text, compare
+    if title is None and text is None and classification is None:
+        raise _UsageError("Informe a coluna de título, a coluna de texto ou --classificacao.")
+    return Path(positionals[0]), title, text, compare, classification
 
 
 def main(argv: list[str] | None = None, *, abbreviations_path: Path | None = None) -> int:
     args = list(sys.argv if argv is None else argv)
     try:
-        path, title_column, text_column, compare = _parse_args(args)
+        path, title_column, text_column, compare, classification = _parse_args(args)
     except _UsageError as exc:
         message = str(exc)
         if message == _USAGE:
@@ -117,6 +127,7 @@ def main(argv: list[str] | None = None, *, abbreviations_path: Path | None = Non
             title_column=title_column,
             text_column=text_column,
             compare=compare,
+            classification=classification,
         )
     except ColumnNormalizeError as exc:
         print(exc, file=sys.stderr)
@@ -127,6 +138,8 @@ def main(argv: list[str] | None = None, *, abbreviations_path: Path | None = Non
         print(f"Coluna '{title_column}' atualizada em {path}.")
     if text_column is not None and text_column != title_column:
         print(f"Coluna '{text_column}' atualizada em {path}.")
+    if classification is not None:
+        print(f"Coluna 'classificacao_id' gravada com '{classification}' em {path}.")
     return 0
 
 

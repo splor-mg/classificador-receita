@@ -371,7 +371,9 @@ class NormalizeCommandTests(SimpleTestCase):
         with redirect_stderr(stderr):
             code = main(["normalize.py", "arquivo.csv"])
         self.assertEqual(code, 2)
-        self.assertIn("Informe a coluna de título ou a coluna de texto.", stderr.getvalue())
+        self.assertIn(
+            "Informe a coluna de título, a coluna de texto ou --classificacao.", stderr.getvalue()
+        )
 
     def test_two_different_title_names_are_refused(self):
         stderr = io.StringIO()
@@ -508,3 +510,67 @@ class PlainTextNormalizeTests(SimpleTestCase):
                 normalize_file(path, (), title_column="nome", text_column="texto", compare=True)
             self.assertIn("já existe", str(caught.exception))
             self.assertEqual(path.read_bytes(), original)
+
+    def test_classification_flag_fills_every_row(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "receitas.csv"
+            path.write_bytes(
+                _csv_bytes(
+                    [
+                        ["receita_cod", "receita_nome", "receita_descricao"],
+                        ["1000000000", "Receitas Correntes", "Registra o total."],
+                        ["1100000000", "Receita Tributária", "Outra"],
+                    ]
+                )
+            )
+            with redirect_stdout(io.StringIO()):
+                code = main(
+                    [
+                        "normalize.py",
+                        str(path),
+                        "--classificacao",
+                        "CLASS-RECEITA-UNIAO-2001",
+                    ]
+                )
+            rows = list(csv.reader(path.open(encoding="utf-8", newline="")))
+
+        self.assertEqual(code, 0)
+        self.assertEqual(
+            rows[0],
+            ["classificacao_id", "receita_cod", "receita_nome", "receita_descricao"],
+        )
+        self.assertEqual(rows[1][0], "CLASS-RECEITA-UNIAO-2001")
+        self.assertEqual(rows[2][0], "CLASS-RECEITA-UNIAO-2001")
+        self.assertEqual(rows[1][2], "Receitas Correntes")
+
+    def test_classification_flag_overwrites_and_keeps_title_and_text(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "receitas.csv"
+            path.write_bytes(
+                _csv_bytes(
+                    [
+                        ["receita_nome", "receita_descricao", "classificacao_id"],
+                        ["receita tributária", 'disse "oi"', "OUTRA"],
+                    ]
+                )
+            )
+            with redirect_stdout(io.StringIO()):
+                code = main(
+                    [
+                        "normalize.py",
+                        str(path),
+                        "--title",
+                        "receita_nome",
+                        "--text",
+                        "receita_descricao",
+                        "--classificacao",
+                        "CLASS-RECEITA-UNIAO-2001",
+                    ]
+                )
+            rows = list(csv.reader(path.open(encoding="utf-8", newline="")))
+
+        self.assertEqual(code, 0)
+        self.assertEqual(rows[0], ["receita_nome", "receita_descricao", "classificacao_id"])
+        self.assertEqual(rows[1][0], "Receita Tributária")
+        self.assertEqual(rows[1][1], "disse 'oi'")
+        self.assertEqual(rows[1][2], "CLASS-RECEITA-UNIAO-2001")

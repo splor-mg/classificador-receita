@@ -64,9 +64,7 @@ def _level_seed() -> list[list[str]]:
     ]
     for nivel_id, numero, estrutura, digits in thirteen:
         classification = CLASS_13 if numero < "8" else "CLASS-RECEITA-MG-2018"
-        rows.append(
-            [nivel_id, classification, numero, estrutura, digits, "9999-12-31 00:00:00"]
-        )
+        rows.append([nivel_id, classification, numero, estrutura, digits, "9999-12-31 00:00:00"])
     return rows
 
 
@@ -303,9 +301,7 @@ class ItemTransformTests(SimpleTestCase):
                     ]
                 )
             )
-            original = _csv_bytes(
-                [["classificacao_id", "receita_cod"], ["CLASS-X", "1000000000"]]
-            )
+            original = _csv_bytes([["classificacao_id", "receita_cod"], ["CLASS-X", "1000000000"]])
             item.write_bytes(original)
             with self.assertRaises(ItemTransformError) as caught:
                 transform_csv(item, seed)
@@ -338,9 +334,7 @@ class ItemTransformTests(SimpleTestCase):
             seed = directory_path / "niveis.csv"
             item = directory_path / "itens.csv"
             seed.write_bytes(_csv_bytes(_level_seed()))
-            original = _csv_bytes(
-                [["classificacao_id", "receita_cod"], _item("0000000000")]
-            )
+            original = _csv_bytes([["classificacao_id", "receita_cod"], _item("0000000000")])
             item.write_bytes(original)
             with self.assertRaises(ItemTransformError) as caught:
                 transform_csv(item, seed)
@@ -351,7 +345,9 @@ class ItemTransformTests(SimpleTestCase):
         masks = load_masks(default_level_seed_path())
         ten = masks[CLASS_10]
         thirteen = masks[CLASS_13]
-        self.assertEqual([segment.numero_digitos for segment in ten.segments], [1, 1, 1, 1, 2, 2, 2])
+        self.assertEqual(
+            [segment.numero_digitos for segment in ten.segments], [1, 1, 1, 1, 2, 2, 2]
+        )
         self.assertEqual(ten.segments[-1].nivel_id, "NIVEL-7")
         self.assertEqual(
             [segment.numero_digitos for segment in thirteen.segments],
@@ -391,3 +387,40 @@ class TransformCommandTests(SimpleTestCase):
             self.assertEqual(code, 1)
             self.assertIn("não pertence ao schema", stderr.getvalue())
             self.assertEqual(item.read_bytes(), original)
+
+    def test_classification_flag_fills_the_column_and_derives_the_level(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory_path = Path(directory)
+            seed = directory_path / "niveis.csv"
+            item = directory_path / "itens.csv"
+            seed.write_bytes(_csv_bytes(_level_seed()))
+            item.write_bytes(
+                _csv_bytes(
+                    [
+                        ["receita_cod", "receita_nome"],
+                        ["1000000000", "Receitas Correntes"],
+                        ["1100000000", "Receita Tributária"],
+                    ]
+                )
+            )
+            with redirect_stdout(io.StringIO()):
+                code = main(
+                    [
+                        "transform.py",
+                        str(item),
+                        "--classificacao",
+                        CLASS_10,
+                    ]
+                )
+            rows = list(csv.reader(item.open(encoding="utf-8", newline="")))
+        self.assertEqual(code, 0)
+        header = rows[0]
+
+        def cell(row_index: int, name: str) -> str:
+            return rows[row_index][header.index(name)]
+
+        self.assertEqual(cell(1, "classificacao_id"), CLASS_10)
+        self.assertEqual(cell(2, "classificacao_id"), CLASS_10)
+        self.assertEqual(cell(1, "nivel_id"), "NIVEL-1")
+        self.assertEqual(cell(1, "parent_item_id"), "-")
+        self.assertEqual(cell(2, "parent_item_id"), "IT-1000000000")

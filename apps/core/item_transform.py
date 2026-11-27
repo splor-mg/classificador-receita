@@ -58,16 +58,59 @@ class Mask:
 
 
 def default_level_seed_path() -> Path:
-    return (
-        Path(__file__).resolve().parents[2]
-        / "docs"
-        / "assets"
-        / "seed_nivel_hierarquico.csv"
-    )
+    return Path(__file__).resolve().parents[2] / "docs" / "assets" / "seed_nivel_hierarquico.csv"
 
 
-def transform_csv(path: Path, level_seed_path: Path | None = None) -> None:
+def assign_classification(
+    header: list[str], rows: list[list[str]], classification: str
+) -> tuple[list[str], list[list[str]]]:
+    """Garante ``classificacao_id`` e preenche cada linha de dados com o mesmo valor."""
+    classification = classification.strip()
+    if classification == "":
+        raise ItemTransformError("Informe o valor de classificacao_id.")
+    matches = [index for index, name in enumerate(header) if name == "classificacao_id"]
+    if len(matches) > 1:
+        raise ItemTransformError(
+            "A coluna 'classificacao_id' aparece mais de uma vez no cabeçalho. "
+            "O arquivo não foi alterado."
+        )
+    if matches:
+        index = matches[0]
+        filled: list[list[str]] = []
+        for row in rows:
+            cells = list(row)
+            while len(cells) <= index:
+                cells.append("")
+            cells[index] = classification
+            filled.append(cells)
+        return list(header), filled
+
+    insert_at = len(header)
+    target = OUTPUT_COLUMNS.index("classificacao_id")
+    rank = {name: index for index, name in enumerate(OUTPUT_COLUMNS)}
+    for index, name in enumerate(header):
+        if name in rank and rank[name] > target:
+            insert_at = index
+            break
+    new_header = header[:insert_at] + ["classificacao_id"] + header[insert_at:]
+    filled = []
+    for row in rows:
+        cells = list(row)
+        cells.insert(insert_at, classification)
+        filled.append(cells)
+    return new_header, filled
+
+
+def transform_csv(
+    path: Path,
+    level_seed_path: Path | None = None,
+    *,
+    classification: str | None = None,
+) -> None:
     """Reescreve ``path`` ou não grava nada."""
+    forced = None if classification is None else classification.strip()
+    if forced == "":
+        raise ItemTransformError("Informe o valor de classificacao_id.")
     path = Path(path)
     seed_path = default_level_seed_path() if level_seed_path is None else Path(level_seed_path)
     if path.suffix.lower() != ".csv":
@@ -89,7 +132,9 @@ def transform_csv(path: Path, level_seed_path: Path | None = None) -> None:
             continue
         values = _row_map(header, row)
         code = values.get("receita_cod", "").strip()
-        classification = values.get("classificacao_id", "").strip()
+        classification = (
+            forced if forced is not None else values.get("classificacao_id", "").strip()
+        )
         if code in codes:
             raise ItemTransformError(
                 f"O código '{code}' aparece mais de uma vez. O arquivo não foi alterado."
@@ -159,9 +204,7 @@ def load_masks(path: Path) -> dict[str, Mask]:
         if name not in header
     ]
     if missing:
-        raise ItemTransformError(
-            f"A semente de nível '{path}' não tem a coluna '{missing[0]}'."
-        )
+        raise ItemTransformError(f"A semente de nível '{path}' não tem a coluna '{missing[0]}'.")
 
     open_rows: list[tuple[str, str, int, int, int]] = []
     for line, row in enumerate(rows[1:], start=2):
@@ -196,9 +239,7 @@ def load_masks(path: Path) -> dict[str, Mask]:
                 f"A classificação '{classification}' tem mais de uma máscara aberta. "
                 "O arquivo não foi alterado."
             )
-    masks_by_width = {
-        width: _mask_from_levels(width, levels) for width, levels in by_width.items()
-    }
+    masks_by_width = {width: _mask_from_levels(width, levels) for width, levels in by_width.items()}
     for classification, widths in widths_of.items():
         masks[classification] = masks_by_width[next(iter(widths))]
     return masks
