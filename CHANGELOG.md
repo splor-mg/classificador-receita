@@ -11,6 +11,7 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 - Title normalization overwrites the named column, and `--compare` keeps that column while writing the reading beside it. A running-text column can be normalized in place, with double quotes replaced by single quotes. A semicolon-separated file is written with commas, and a field that contains a comma is quoted
 - `--classificacao` sets every `classificacao_id` cell to the given value. On transform, that value also selects the mask for the level and the parent
 - `--matriz` sets every `matriz` cell to `true` or `false` in lowercase
+- A row whose parent is absent stays in the formed file with an empty `parent_item_id`, and that row is recorded in `.log/<file>`
 
 ### Fixed
 

@@ -5,8 +5,9 @@ Preenche item_id, nivel_id e parent_item_id a partir da máscara aberta de
 classificacao_id. Com ``--classificacao``, toda essa coluna recebe o valor
 informado. Com ``--matriz``, toda a coluna ``matriz`` recebe ``true`` ou
 ``false`` em caixa baixa. ``--title`` e ``--text`` aplicam a normalização
-antes da formação, na mesma conclusão. Não preenche item_ref. Não grava as
-colunas de registro.
+antes da formação, na mesma conclusão. Pai ausente deixa ``parent_item_id``
+vazio, grava o restante e registra a linha em ``.log/<arquivo>``. Não preenche
+item_ref. Não grava as colunas de registro.
 
 Uso:
     python scripts/transform.py <arquivo.csv> [--classificacao <valor>] [--matriz true]
@@ -90,7 +91,7 @@ def main(argv: list[str] | None = None) -> int:
         load_abbreviations,
         normalize_file,
     )
-    from apps.core.item_transform import ItemTransformError, transform_csv
+    from apps.core.item_transform import ItemTransformError, ParentGap, transform_csv
 
     work = path
     temporary: Path | None = None
@@ -110,7 +111,7 @@ def main(argv: list[str] | None = None) -> int:
                 matriz=matriz,
             )
             work = temporary
-        transform_csv(work, classification=classification, matriz=matriz)
+        gaps = transform_csv(work, classification=classification, matriz=matriz)
         if temporary is not None:
             os.replace(temporary, path)
             temporary = None
@@ -119,8 +120,23 @@ def main(argv: list[str] | None = None) -> int:
             temporary.unlink(missing_ok=True)
         print(exc, file=sys.stderr)
         return 1
+    log_path = root / ".log" / path.name
     print(f"Arquivo formado em {path}.")
+    if gaps:
+        _write_parent_log(log_path, gaps)
+        print(f"Linhas com pai ausente em .log/{path.name}.", file=sys.stderr)
+        return 1
+    log_path.unlink(missing_ok=True)
     return 0
+
+
+def _write_parent_log(path: Path, gaps: list[ParentGap]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    blocks = [
+        f"Linha {gap.line}, código '{gap.code}', não encontra o pai '{gap.parent_code}'.\n{gap.source}"
+        for gap in gaps
+    ]
+    path.write_text("\n\n".join(blocks) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":

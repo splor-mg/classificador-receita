@@ -173,24 +173,43 @@ class ItemTransformTests(SimpleTestCase):
         self.assertEqual(self._cell(rows, 6, "nivel_id"), "NIVEL-6")
         self.assertEqual(self._cell(rows, 6, "parent_item_id"), "IT-1112120000000")
 
-    def test_missing_parent_leaves_the_file(self):
+    def test_missing_parent_keeps_the_row_and_reports_every_gap(self):
         with tempfile.TemporaryDirectory() as directory:
             directory_path = Path(directory)
             seed = directory_path / "niveis.csv"
             item = directory_path / "itens.csv"
             seed.write_bytes(_csv_bytes(_level_seed()))
-            original = _csv_bytes(
-                [
-                    ["classificacao_id", "receita_cod"],
-                    _item("1110000000"),
-                ]
+            item.write_bytes(
+                _csv_bytes(
+                    [
+                        ["classificacao_id", "receita_cod", "receita_nome"],
+                        _item("1000000000", nome="Receitas Correntes"),
+                        _item("1110000000", nome="Imposto sobre a Renda"),
+                        _item("1111000000", nome="Imposto"),
+                        _item("9721010000", nome="Dedução"),
+                    ]
+                )
             )
-            item.write_bytes(original)
-            with self.assertRaises(ItemTransformError) as caught:
-                transform_csv(item, seed)
-            self.assertIn("não encontra o pai '1100000000'", str(caught.exception))
-            self.assertNotIn("--", str(caught.exception))
-            self.assertEqual(item.read_bytes(), original)
+            gaps = transform_csv(item, seed)
+            rows = list(csv.reader(item.open(encoding="utf-8", newline="")))
+        self.assertEqual(
+            [(gap.code, gap.parent_code) for gap in gaps],
+            [
+                ("1110000000", "1100000000"),
+                ("9721010000", "9721000000"),
+            ],
+        )
+        self.assertIn("1110000000", gaps[0].source)
+        self.assertEqual(self._cell(rows, 1, "parent_item_id"), "-")
+        self.assertEqual(self._cell(rows, 1, "nivel_id"), "NIVEL-1")
+        self.assertEqual(self._cell(rows, 2, "item_id"), "IT-1110000000")
+        self.assertEqual(self._cell(rows, 2, "nivel_id"), "NIVEL-3")
+        self.assertEqual(self._cell(rows, 2, "parent_item_id"), "")
+        self.assertEqual(self._cell(rows, 2, "receita_nome"), "Imposto sobre a Renda")
+        self.assertEqual(self._cell(rows, 3, "parent_item_id"), "IT-1110000000")
+        self.assertEqual(self._cell(rows, 3, "nivel_id"), "NIVEL-4")
+        self.assertEqual(self._cell(rows, 4, "parent_item_id"), "")
+        self.assertEqual(self._cell(rows, 4, "nivel_id"), "NIVEL-5")
 
     def test_prose_quotes_keep_every_physical_line(self):
         original = (
@@ -470,3 +489,50 @@ class TransformCommandTests(SimpleTestCase):
         self.assertEqual(cell(1, "classificacao_id"), CLASS_10)
         self.assertEqual(cell(1, "receita_nome"), "Receitas Correntes")
         self.assertEqual(cell(1, "nivel_id"), "NIVEL-1")
+
+    def test_command_logs_missing_parents_and_drops_a_stale_log(self):
+        log_path = Path(__file__).resolve().parents[2] / ".log" / "lacunas.csv"
+        with tempfile.TemporaryDirectory() as directory:
+            item = Path(directory) / "lacunas.csv"
+            item.write_bytes(
+                _csv_bytes(
+                    [
+                        ["receita_cod", "receita_nome"],
+                        ["1000000000", "Receitas Correntes"],
+                        ["1110000000", "Imposto sobre a Renda"],
+                        ["1111000000", "Imposto"],
+                    ]
+                )
+            )
+            stderr = io.StringIO()
+            try:
+                with redirect_stdout(io.StringIO()), redirect_stderr(stderr):
+                    code = main(["transform.py", str(item), "--classificacao", CLASS_10])
+                rows = list(csv.reader(item.open(encoding="utf-8", newline="")))
+                self.assertEqual(code, 1)
+                self.assertIn("Linhas com pai ausente em .log/lacunas.csv.", stderr.getvalue())
+                log = log_path.read_text(encoding="utf-8")
+                self.assertIn("Linha 3, código '1110000000', não encontra o pai '1100000000'.", log)
+                self.assertIn("1110000000,Imposto sobre a Renda", log)
+                self.assertNotIn("9721010000", log)
+                header = rows[0]
+                self.assertEqual(rows[2][header.index("parent_item_id")], "")
+                self.assertEqual(rows[2][header.index("nivel_id")], "NIVEL-3")
+                self.assertEqual(rows[3][header.index("parent_item_id")], "IT-1110000000")
+
+                item.write_bytes(
+                    _csv_bytes(
+                        [
+                            ["receita_cod"],
+                            ["1000000000"],
+                            ["1100000000"],
+                            ["1110000000"],
+                        ]
+                    )
+                )
+                with redirect_stdout(io.StringIO()):
+                    clean = main(["transform.py", str(item), "--classificacao", CLASS_10])
+                self.assertEqual(clean, 0)
+                self.assertFalse(log_path.exists())
+            finally:
+                log_path.unlink(missing_ok=True)

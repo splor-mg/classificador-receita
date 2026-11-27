@@ -3,7 +3,9 @@
 A máscara sai das linhas abertas de ``seed_nivel_hierarquico.csv``: registro
 com fim no sentinela ``9999-12-31``. ``classificacao_id`` escolhe a largura, e
 todo nível aberto dessa largura entra na máscara. ``item_ref`` fica vazio
-quando o arquivo não o traz. As colunas de registro não são gravadas.
+quando o arquivo não o traz. As colunas de registro não são gravadas. Pai
+ausente deixa ``parent_item_id`` vazio e segue; a linha volta na lista de
+lacunas. Os outros erros não gravam o arquivo.
 """
 
 from __future__ import annotations
@@ -42,6 +44,16 @@ RECORD_SENTINEL = "9999-12-31"
 
 class ItemTransformError(Exception):
     """O pedido parou. O CSV de destino não foi gravado."""
+
+
+@dataclass(frozen=True)
+class ParentGap:
+    """Uma linha cujo pai não está no arquivo. ``parent_item_id`` ficou vazio."""
+
+    line: int
+    code: str
+    parent_code: str
+    source: str
 
 
 @dataclass(frozen=True)
@@ -131,8 +143,8 @@ def transform_csv(
     *,
     classification: str | None = None,
     matriz: str | None = None,
-) -> None:
-    """Reescreve ``path`` ou não grava nada."""
+) -> list[ParentGap]:
+    """Reescreve ``path``. Pai ausente fica vazio e volta na lista."""
     forced = None if classification is None else classification.strip()
     if forced == "":
         raise ItemTransformError("Informe o valor de classificacao_id.")
@@ -149,9 +161,11 @@ def transform_csv(
         raise ItemTransformError(f"O arquivo '{path}' não tem cabeçalho.")
     header = [name.strip() for name in rows[0]]
     _refuse_header(header)
+    source_lines = _source_lines(raw, rows, delimiter)
     masks = load_masks(seed_path)
     rewritten = [list(OUTPUT_COLUMNS)]
     codes: dict[str, int] = {}
+    sources: dict[int, str] = {}
     pending: list[tuple[int, str, Mask, int]] = []
     for line, row in enumerate(rows[1:], start=2):
         if not any(cell.strip() for cell in row):
@@ -166,6 +180,7 @@ def transform_csv(
                 f"O código '{code}' aparece mais de uma vez. O arquivo não foi alterado."
             )
         codes[code] = line
+        sources[line] = source_lines[line - 1] if line - 1 < len(source_lines) else ""
         item = {name: values.get(name, "").strip() for name in OUTPUT_COLUMNS}
         item["item_id"] = f"IT-{code}"
         item["receita_cod"] = code
@@ -189,6 +204,7 @@ def transform_csv(
         rewritten.append(item)
 
     by_code = {item["receita_cod"]: item["item_id"] for item in rewritten[1:]}
+    gaps: list[ParentGap] = []
     for line, code, mask, level in pending:
         item = next(row for row in rewritten[1:] if row["receita_cod"] == code)
         if level == 0:
@@ -198,16 +214,16 @@ def transform_csv(
         parent_code = code[:keep] + ("0" * (mask.width - keep))
         parent_id = by_code.get(parent_code)
         if parent_id is None:
-            raise ItemTransformError(
-                f"A linha {line}, código '{code}', não encontra o pai '{parent_code}'. "
-                "O arquivo não foi alterado."
-            )
+            item["parent_item_id"] = ""
+            gaps.append(ParentGap(line, code, parent_code, sources.get(line, "")))
+            continue
         item["parent_item_id"] = parent_id
 
     body = [list(OUTPUT_COLUMNS)]
     body.extend([[item[name] for name in OUTPUT_COLUMNS] for item in rewritten[1:]])
     lineterminator = "\r\n" if b"\r\n" in raw else "\n"
     _write_csv(path, body, lineterminator, delimiter)
+    return gaps
 
 
 def load_masks(path: Path) -> dict[str, Mask]:
@@ -342,6 +358,23 @@ def _refuse_header(header: list[str]) -> None:
                 "O arquivo não foi alterado."
             )
         seen.add(name)
+
+
+def _source_lines(raw: bytes, rows: list[list[str]], delimiter: str) -> list[str]:
+    """Uma linha de origem para cada registro lido, na mesma ordem."""
+    text = raw.decode("utf-8-sig")
+    physical = text.splitlines()
+    if len(physical) == len(rows):
+        return physical
+    kept = [line for index, line in enumerate(physical) if index == 0 or line.strip()]
+    if len(kept) == len(rows):
+        return kept
+    rendered: list[str] = []
+    for row in rows:
+        buffer = io.StringIO()
+        csv.writer(buffer, delimiter=delimiter, lineterminator="").writerow(row)
+        rendered.append(buffer.getvalue())
+    return rendered
 
 
 def _row_map(header: list[str], row: list[str]) -> dict[str, str]:
