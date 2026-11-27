@@ -14,6 +14,7 @@ dependencies = [
     "zensical (>=0.0.15,<0.0.16)",
     "psycopg2-binary>=2.9,<3.0",
     "django (>=6.0,<7.0)",
+    "openpyxl (>=3.1.5,<4.0.0)",
 ]
 
 [project.optional-dependencies]
@@ -70,6 +71,7 @@ validar-qualidade = { cmd = "python scripts/validate_quality.py", help = "Aplica
 gerar-erd = { cmd = "python scripts/generate_erd.py", help = "Gera o diagrama de entidade-relacionamento (ERD) do banco de dados." }
 normalize = { cmd = "python scripts/normalize.py", help = "Normaliza colunas de um CSV no mesmo arquivo. Sem flag, ou com --title, sobrescreve a coluna em caixa de título. Com --compare, preserva a origem e grava <coluna>_normalized à direita. Com --text, troca aspas duplas por aspas simples na própria coluna. Ponto e vírgula na entrada vira vírgula na gravação. Windows-1252 é lido e gravado em UTF-8. Só o caminho do arquivo faz essa conversão e a troca do separador. Com --classificacao, preenche classificacao_id em todas as linhas. Com --matriz, preenche matriz com true ou false. Uso: poetry run task normalize -- <arquivo.csv> [<coluna>] [--title <coluna>] [--text <coluna>] [--compare]." }
 transform = { cmd = "python scripts/transform.py", help = "Forma o CSV de item no schema, no mesmo arquivo. Com --classificacao, toda a coluna classificacao_id recebe esse valor e a máscara deriva nível e pai. Com --matriz, toda a coluna matriz recebe true ou false. --title e --text normalizam antes da formação. --gerado preenche item_gerado. --valid-init e --valid-end preenchem a vigência; o fim vazio vira 9999-12-31. --system-init e --system-end preenchem o registro. Pai ausente deixa parent_item_id vazio e registra a linha em .log/<arquivo>. Uso: poetry run task transform -- <arquivo.csv> [--title <coluna>] [--text <coluna>] [--classificacao <valor>] [--matriz true|false]." }
+prepare = { cmd = "python scripts/prepare.py", help = "Preparo ocasional de um xlsx. O modo 1 junta receita_cod, troca M/D por true/false e grava receita_cod, receita_nome, matriz e receita_descricao em UTF-8 em _dev/.archive. Uso: poetry run task prepare -- <arquivo.xlsx> --mode 1." }
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
