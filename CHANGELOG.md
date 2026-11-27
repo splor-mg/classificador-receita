@@ -14,6 +14,7 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 - A row whose parent is absent stays in the formed file with an empty `parent_item_id`, and that row is recorded in `.log/<file>`
 - `--gerado`, `--valid-init`, `--valid-end`, `--system-init`, and `--system-end` fill the generated flag, the validity dates, and the record dates. An empty validity end becomes `9999-12-31`. The formed file keeps `data_registro_inicio` and `data_registro_fim`
 - Normalize reads a Windows-1252 file and writes UTF-8. A path with no other argument does that check and also rewrites a semicolon-separated file with commas
+- A repeated revenue code stays in the formed file. The parent id is the item id of the first row with that code
 
 ### Fixed
 

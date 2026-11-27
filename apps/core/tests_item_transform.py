@@ -380,25 +380,27 @@ class ItemTransformTests(SimpleTestCase):
             self.assertIn("mais de uma máscara aberta", str(caught.exception))
             self.assertEqual(item.read_bytes(), original)
 
-    def test_duplicated_code_leaves_the_file(self):
-        with tempfile.TemporaryDirectory() as directory:
-            directory_path = Path(directory)
-            seed = directory_path / "niveis.csv"
-            item = directory_path / "itens.csv"
-            seed.write_bytes(_csv_bytes(_level_seed()))
-            original = _csv_bytes(
-                [
-                    ["classificacao_id", "receita_cod"],
-                    _item("1100000000"),
-                    _item("1100000000"),
-                    _item("1110000000"),
-                ]
-            )
-            item.write_bytes(original)
-            with self.assertRaises(ItemTransformError) as caught:
-                transform_csv(item, seed)
-            self.assertIn("aparece mais de uma vez", str(caught.exception))
-            self.assertEqual(item.read_bytes(), original)
+    def test_repeated_code_keeps_every_row_and_uses_the_first_parent(self):
+        rows = self._transform(
+            [
+                ["classificacao_id", "receita_cod", "receita_nome"],
+                _item("1000000000", nome="Receitas Correntes"),
+                _item("1100000000", nome="Receita Tributária"),
+                _item("1100000000", nome="Receita Tributária, segunda"),
+                _item("1100000000", nome="Receita Tributária, terceira"),
+                _item("1110000000", nome="Imposto"),
+            ]
+        )
+        self.assertEqual(
+            [self._cell(rows, index, "item_id") for index in (2, 3, 4)],
+            ["IT-1100000000", "IT-1100000000", "IT-1100000000"],
+        )
+        self.assertEqual(
+            [self._cell(rows, index, "parent_item_id") for index in (2, 3, 4)],
+            ["IT-1000000000", "IT-1000000000", "IT-1000000000"],
+        )
+        self.assertEqual(self._cell(rows, 4, "receita_nome"), "Receita Tributária, terceira")
+        self.assertEqual(self._cell(rows, 5, "parent_item_id"), "IT-1100000000")
 
     def test_zero_code_leaves_the_file(self):
         with tempfile.TemporaryDirectory() as directory:

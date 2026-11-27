@@ -4,9 +4,10 @@ A máscara sai das linhas abertas de ``seed_nivel_hierarquico.csv``: registro
 com fim no sentinela ``9999-12-31``. ``classificacao_id`` escolhe a largura, e
 todo nível aberto dessa largura entra na máscara. ``item_ref`` fica vazio
 quando o arquivo não o traz. As colunas de registro entram no arquivo.
-``data_vigencia_fim`` vazio vira o sentinela ``9999-12-31``. Pai ausente deixa
-``parent_item_id`` vazio e segue; a linha volta na lista de lacunas. Os outros
-erros não gravam o arquivo.
+``data_vigencia_fim`` vazio vira o sentinela ``9999-12-31``. Código repetido
+permanece: o pai usa o ``item_id`` da primeira linha desse código. Pai ausente
+deixa ``parent_item_id`` vazio e segue; a linha volta na lista de lacunas. Os
+outros erros não gravam o arquivo.
 """
 
 from __future__ import annotations
@@ -230,10 +231,9 @@ def transform_csv(
     _refuse_header(header)
     source_lines = _source_lines(raw, rows, delimiter)
     masks = load_masks(seed_path)
-    rewritten = [list(OUTPUT_COLUMNS)]
-    codes: dict[str, int] = {}
+    formed_rows: list[dict[str, str]] = []
     sources: dict[int, str] = {}
-    pending: list[tuple[int, str, Mask, int]] = []
+    pending: list[tuple[int, dict[str, str], str, Mask, int]] = []
     for line, row in enumerate(rows[1:], start=2):
         if not any(cell.strip() for cell in row):
             continue
@@ -242,11 +242,6 @@ def transform_csv(
         classification = (
             forced if forced is not None else values.get("classificacao_id", "").strip()
         )
-        if code in codes:
-            raise ItemTransformError(
-                f"O código '{code}' aparece mais de uma vez. O arquivo não foi alterado."
-            )
-        codes[code] = line
         sources[line] = source_lines[line - 1] if line - 1 < len(source_lines) else ""
         item = {name: values.get(name, "").strip() for name in OUTPUT_COLUMNS}
         item["item_id"] = f"IT-{code}"
@@ -279,13 +274,14 @@ def transform_csv(
                     f"A linha {line}, código '{code}', não tem nível. O arquivo não foi alterado."
                 )
             item["nivel_id"] = mask.segments[level].nivel_id
-            pending.append((line, code, mask, level))
-        rewritten.append(item)
+            pending.append((line, item, code, mask, level))
+        formed_rows.append(item)
 
-    by_code = {item["receita_cod"]: item["item_id"] for item in rewritten[1:]}
+    by_code: dict[str, str] = {}
+    for formed in formed_rows:
+        by_code.setdefault(formed["receita_cod"], formed["item_id"])
     gaps: list[ParentGap] = []
-    for line, code, mask, level in pending:
-        item = next(row for row in rewritten[1:] if row["receita_cod"] == code)
+    for line, item, code, mask, level in pending:
         if level == 0:
             item["parent_item_id"] = PARENT_MISSING
             continue
@@ -299,7 +295,7 @@ def transform_csv(
         item["parent_item_id"] = parent_id
 
     body = [list(OUTPUT_COLUMNS)]
-    body.extend([[item[name] for name in OUTPUT_COLUMNS] for item in rewritten[1:]])
+    body.extend([[item[name] for name in OUTPUT_COLUMNS] for item in formed_rows])
     lineterminator = "\r\n" if b"\r\n" in raw else "\n"
     _write_csv(path, body, lineterminator, delimiter)
     return gaps
