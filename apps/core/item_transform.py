@@ -3,16 +3,19 @@
 A máscara sai das linhas abertas de ``seed_nivel_hierarquico.csv``: registro
 com fim no sentinela ``9999-12-31``. ``classificacao_id`` escolhe a largura, e
 todo nível aberto dessa largura entra na máscara. ``item_ref`` fica vazio
-quando o arquivo não o traz. As colunas de registro não são gravadas. Pai
-ausente deixa ``parent_item_id`` vazio e segue; a linha volta na lista de
-lacunas. Os outros erros não gravam o arquivo.
+quando o arquivo não o traz. As colunas de registro entram no arquivo.
+``data_vigencia_fim`` vazio vira o sentinela ``9999-12-31``. Pai ausente deixa
+``parent_item_id`` vazio e segue; a linha volta na lista de lacunas. Os outros
+erros não gravam o arquivo.
 """
 
 from __future__ import annotations
 
 import csv
+import datetime
 import io
 import os
+import re
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -34,12 +37,18 @@ OUTPUT_COLUMNS = (
     "item_gerado",
     "data_vigencia_inicio",
     "data_vigencia_fim",
+    "data_registro_inicio",
+    "data_registro_fim",
 )
 RECORD_COLUMNS = ("data_registro_inicio", "data_registro_fim")
 DERIVED_COLUMNS = ("item_id", "nivel_id", "parent_item_id")
 REQUIRED_COLUMNS = ("receita_cod",)
 PARENT_MISSING = "-"
 RECORD_SENTINEL = "9999-12-31"
+VALID_END_SENTINEL = "9999-12-31"
+RECORD_END_SENTINEL = "9999-12-31 00:00:00"
+_ISO_DATE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})$")
+_DMY_DATE = re.compile(r"^(\d{2})-(\d{2})-(\d{4})$")
 
 
 class ItemTransformError(Exception):
@@ -120,14 +129,59 @@ def assign_classification(
     return assign_column(header, rows, "classificacao_id", classification)
 
 
-def matriz_value(raw: str) -> str:
+def boolean_value(raw: str, flag: str) -> str:
     """Aceita apenas true ou false, e devolve a caixa baixa."""
     value = raw.strip().casefold()
     if value not in ("true", "false"):
         raise ItemTransformError(
-            "A opção '--matriz' aceita apenas 'true' ou 'false'. O arquivo não foi alterado."
+            f"A opção '{flag}' aceita apenas 'true' ou 'false'. O arquivo não foi alterado."
         )
     return value
+
+
+def matriz_value(raw: str) -> str:
+    """Aceita apenas true ou false, e devolve a caixa baixa."""
+    return boolean_value(raw, "--matriz")
+
+
+def calendar_date(raw: str, flag: str, *, allow_sentinel: bool = False) -> str:
+    """Aceita AAAA-MM-DD ou DD-MM-AAAA e devolve AAAA-MM-DD."""
+    text = raw.strip()
+    if allow_sentinel and text.casefold() == "sentinel":
+        return VALID_END_SENTINEL
+    iso = _ISO_DATE.fullmatch(text)
+    dmy = _DMY_DATE.fullmatch(text)
+    if iso:
+        year, month, day = (int(iso.group(index)) for index in (1, 2, 3))
+    elif dmy:
+        day, month, year = (int(dmy.group(index)) for index in (1, 2, 3))
+    else:
+        raise ItemTransformError(_date_message(flag, allow_sentinel))
+    try:
+        found = datetime.date(year, month, day)
+    except ValueError as exc:
+        raise ItemTransformError(_date_message(flag, allow_sentinel)) from exc
+    return found.isoformat()
+
+
+def record_stamp(raw: str, moment: datetime.datetime) -> str:
+    """Grava a data informada com a hora do sistema."""
+    return f"{calendar_date(raw, '--system-init')} {moment.strftime('%H:%M:%S')}"
+
+
+def _date_message(flag: str, allow_sentinel: bool) -> str:
+    if allow_sentinel:
+        accepted = "uma data em AAAA-MM-DD ou DD-MM-AAAA, ou 'sentinel'"
+    else:
+        accepted = "uma data em AAAA-MM-DD ou DD-MM-AAAA"
+    return f"A opção '{flag}' aceita {accepted}. O arquivo não foi alterado."
+
+
+def _blank_as_sentinel(value: str) -> str:
+    text = value.strip()
+    if text == "" or text.casefold() == "null":
+        return VALID_END_SENTINEL
+    return text
 
 
 def assign_matriz(
@@ -143,12 +197,25 @@ def transform_csv(
     *,
     classification: str | None = None,
     matriz: str | None = None,
+    gerado: str | None = None,
+    valid_init: str | None = None,
+    valid_end: str | None = None,
+    system_init: str | None = None,
+    system_end: bool = False,
+    recorded_at: datetime.datetime | None = None,
 ) -> list[ParentGap]:
     """Reescreve ``path``. Pai ausente fica vazio e volta na lista."""
     forced = None if classification is None else classification.strip()
     if forced == "":
         raise ItemTransformError("Informe o valor de classificacao_id.")
     forced_matriz = None if matriz is None else matriz_value(matriz)
+    forced_gerado = None if gerado is None else boolean_value(gerado, "--gerado")
+    forced_valid_init = None if valid_init is None else calendar_date(valid_init, "--valid-init")
+    forced_valid_end = (
+        None if valid_end is None else calendar_date(valid_end, "--valid-end", allow_sentinel=True)
+    )
+    moment = recorded_at if recorded_at is not None else datetime.datetime.now()
+    forced_system_init = None if system_init is None else record_stamp(system_init, moment)
     path = Path(path)
     seed_path = default_level_seed_path() if level_seed_path is None else Path(level_seed_path)
     if path.suffix.lower() != ".csv":
@@ -187,6 +254,18 @@ def transform_csv(
         item["classificacao_id"] = classification
         if forced_matriz is not None:
             item["matriz"] = forced_matriz
+        if forced_gerado is not None:
+            item["item_gerado"] = forced_gerado
+        if forced_valid_init is not None:
+            item["data_vigencia_inicio"] = forced_valid_init
+        if forced_valid_end is not None:
+            item["data_vigencia_fim"] = forced_valid_end
+        else:
+            item["data_vigencia_fim"] = _blank_as_sentinel(item.get("data_vigencia_fim", ""))
+        if forced_system_init is not None:
+            item["data_registro_inicio"] = forced_system_init
+        if system_end:
+            item["data_registro_fim"] = RECORD_END_SENTINEL
         if classification:
             mask = _mask_for(masks, classification, line)
             if len(code) != mask.width or not code.isdigit():

@@ -12,6 +12,7 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 - `--classificacao` sets every `classificacao_id` cell to the given value. On transform, that value also selects the mask for the level and the parent
 - `--matriz` sets every `matriz` cell to `true` or `false` in lowercase
 - A row whose parent is absent stays in the formed file with an empty `parent_item_id`, and that row is recorded in `.log/<file>`
+- `--gerado`, `--valid-init`, `--valid-end`, `--system-init`, and `--system-end` fill the generated flag, the validity dates, and the record dates. An empty validity end becomes `9999-12-31`. The formed file keeps `data_registro_inicio` and `data_registro_fim`
 
 ### Fixed
 

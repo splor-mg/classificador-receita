@@ -1,6 +1,7 @@
 """Formação do CSV de item pela máscara da classificação."""
 
 import csv
+import datetime
 import io
 import tempfile
 from contextlib import redirect_stderr, redirect_stdout
@@ -211,6 +212,49 @@ class ItemTransformTests(SimpleTestCase):
         self.assertEqual(self._cell(rows, 4, "parent_item_id"), "")
         self.assertEqual(self._cell(rows, 4, "nivel_id"), "NIVEL-5")
 
+    def test_vintage_flags_fill_generated_validity_and_record(self):
+        moment = datetime.datetime(2026, 11, 27, 10, 42, 5)
+        with tempfile.TemporaryDirectory() as directory:
+            directory_path = Path(directory)
+            seed = directory_path / "niveis.csv"
+            item = directory_path / "itens.csv"
+            seed.write_bytes(_csv_bytes(_level_seed()))
+            original = _csv_bytes(
+                [
+                    ["receita_cod", "receita_nome", "item_gerado", "data_vigencia_fim"],
+                    ["1000000000", "Receitas Correntes", "true", "2010-06-15"],
+                ]
+            )
+            item.write_bytes(original)
+            with self.assertRaises(ItemTransformError) as caught:
+                transform_csv(item, seed, gerado="sim", valid_init="2004-01-01")
+            self.assertIn("'--gerado'", str(caught.exception))
+            self.assertEqual(item.read_bytes(), original)
+            with self.assertRaises(ItemTransformError) as bad_date:
+                transform_csv(item, seed, valid_init="2004-13-01")
+            self.assertIn("'--valid-init'", str(bad_date.exception))
+            self.assertEqual(item.read_bytes(), original)
+            transform_csv(
+                item,
+                seed,
+                classification=CLASS_10,
+                matriz="TRUE",
+                gerado="FALSE",
+                valid_init="01-01-2004",
+                valid_end="SENTINEL",
+                system_init="9999-12-31",
+                system_end=True,
+                recorded_at=moment,
+            )
+            rows = list(csv.reader(item.open(encoding="utf-8", newline="")))
+        self.assertEqual(self._cell(rows, 1, "matriz"), "true")
+        self.assertEqual(self._cell(rows, 1, "item_gerado"), "false")
+        self.assertEqual(self._cell(rows, 1, "data_vigencia_inicio"), "2004-01-01")
+        self.assertEqual(self._cell(rows, 1, "data_vigencia_fim"), "9999-12-31")
+        self.assertEqual(self._cell(rows, 1, "data_registro_inicio"), "9999-12-31 10:42:05")
+        self.assertEqual(self._cell(rows, 1, "data_registro_fim"), "9999-12-31 00:00:00")
+        self.assertEqual(self._cell(rows, 1, "nivel_id"), "NIVEL-1")
+
     def test_prose_quotes_keep_every_physical_line(self):
         original = (
             "receita_cod;receita_nome;receita_descricao\n"
@@ -248,17 +292,26 @@ class ItemTransformTests(SimpleTestCase):
         self.assertEqual(self._cell(rows, 1, "parent_item_id"), "")
         self.assertEqual(self._cell(rows, 1, "receita_nome"), "Receitas Correntes")
 
-    def test_headers_are_created_ordered_and_record_columns_drop(self):
+    def test_record_columns_stay_and_empty_valid_end_becomes_the_sentinel(self):
         rows = self._transform(
             [
-                ["receita_nome", "receita_cod", "classificacao_id", "data_registro_inicio"],
-                ["Receitas Correntes", "1000000000", CLASS_10, "2002-01-01 00:00:00"],
+                [
+                    "receita_nome",
+                    "receita_cod",
+                    "classificacao_id",
+                    "data_registro_inicio",
+                    "data_vigencia_fim",
+                ],
+                ["Receitas Correntes", "1000000000", CLASS_10, "2002-01-01 00:00:00", ""],
+                ["Receita Tributária", "1100000000", CLASS_10, "2002-01-01 00:00:00", "2010-06-15"],
             ]
         )
         self.assertEqual(rows[0], list(OUTPUT_COLUMNS))
-        self.assertNotIn("data_registro_inicio", rows[0])
+        self.assertEqual(self._cell(rows, 1, "data_registro_inicio"), "2002-01-01 00:00:00")
+        self.assertEqual(self._cell(rows, 1, "data_registro_fim"), "")
+        self.assertEqual(self._cell(rows, 1, "data_vigencia_fim"), "9999-12-31")
+        self.assertEqual(self._cell(rows, 2, "data_vigencia_fim"), "2010-06-15")
         self.assertEqual(self._cell(rows, 1, "receita_nome"), "Receitas Correntes")
-        self.assertEqual(self._cell(rows, 1, "receita_descricao"), "")
         self.assertEqual(self._cell(rows, 1, "item_ref"), "")
 
     def test_foreign_header_leaves_the_file(self):
@@ -536,3 +589,46 @@ class TransformCommandTests(SimpleTestCase):
                 self.assertFalse(log_path.exists())
             finally:
                 log_path.unlink(missing_ok=True)
+
+    def test_command_accepts_system_end_without_a_value(self):
+        with tempfile.TemporaryDirectory() as directory:
+            item = Path(directory) / "vigencia.csv"
+            item.write_bytes(
+                _csv_bytes(
+                    [
+                        ["receita_cod", "receita_nome"],
+                        ["1000000000", "receitas correntes"],
+                    ]
+                )
+            )
+            with redirect_stdout(io.StringIO()):
+                code = main(
+                    [
+                        "transform.py",
+                        str(item),
+                        "--title",
+                        "receita_nome",
+                        "--classificacao",
+                        CLASS_10,
+                        "--matriz",
+                        "true",
+                        "--gerado",
+                        "false",
+                        "--valid-init",
+                        "2004-01-01",
+                        "--valid-end",
+                        "sentinel",
+                        "--system-init",
+                        "27-11-2026",
+                        "--system-end",
+                    ]
+                )
+            rows = list(csv.reader(item.open(encoding="utf-8", newline="")))
+        self.assertEqual(code, 0)
+        header = rows[0]
+        self.assertEqual(rows[1][header.index("receita_nome")], "Receitas Correntes")
+        self.assertEqual(rows[1][header.index("item_gerado")], "false")
+        self.assertEqual(rows[1][header.index("data_vigencia_inicio")], "2004-01-01")
+        self.assertEqual(rows[1][header.index("data_vigencia_fim")], "9999-12-31")
+        self.assertTrue(rows[1][header.index("data_registro_inicio")].startswith("2026-11-27 "))
+        self.assertEqual(rows[1][header.index("data_registro_fim")], "9999-12-31 00:00:00")
