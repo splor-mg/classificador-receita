@@ -1,6 +1,15 @@
 ----------------------------------------------------------------------------------------------------
 # lista 
 
+## Incorporação de dados históricos
+
+
+ptt prepare -- docs/assets/referencias/ementario_receita_mg_AAAA_sisor.xlsx --mode 1
+mv _dev/.archive/ementario_receita_mg_AAAA_sisor.csv _dev/.archive/receita_mg_AAAA.csv
+ptt normalize -- _dev/.archive/receita_mg_AAAA.csv --title receita_nome --text receita_descricao
+ptt transform -- _dev/.archive/receita_mg_AAAA.csv --classificacao CLASS-RECEITA-MG-2001 --gerado false --valid-init AAAA-01-01 --valid-end sentinel --system-init AAAA-01-01 --system-end
+
+------
 - **itemClassificacao** - formulário de criação
   
   - **mensagem de confirmação de criação** - uma janela pop-up de confirmação de criação, com dados resumidos do que está sendo criado
