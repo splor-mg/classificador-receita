@@ -18,6 +18,7 @@ Assistência Farmacêutica,15,Assist. Farmacêutica,2026-01-01 00:00:00,9999-12-
 Atenção de Média e Alta Complexidade,17,Atenção MAC,2026-01-01 00:00:00,9999-12-31 00:00:00
 Atendimento,16,Atend.,2026-01-01 00:00:00,9999-12-31 00:00:00
 Autorização,18,Autor.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Banco do Nordeste do Brasil,328,BNB,2026-01-01 00:00:00,9999-12-31 00:00:00
 Certificação,20,Certif.,2026-01-01 00:00:00,9999-12-31 00:00:00
 Certificados da Dívida Pública,305,CDP,2026-01-01 00:00:00,9999-12-31 00:00:00
 Cessão do Direito de Operacionalização de Pagamentos,21,Cessão Dir. Operac. Pag.,2026-01-01 00:00:00,9999-12-31 00:00:00
@@ -31,6 +32,7 @@ Contribuição,27,Contrib.,2026-01-01 00:00:00,9999-12-31 00:00:00
 Contribuição de Intervenção no Domínio Econômico,28,CIDE,2026-01-01 00:00:00,9999-12-31 00:00:00
 Contribuição do Militar Ativo,29,Contrib. Militar Ativo,2026-01-01 00:00:00,9999-12-31 00:00:00
 Contribuição do Militar Inativo,30,Contrib. Militar Inativo,2026-01-01 00:00:00,9999-12-31 00:00:00
+Contribuição do Salário Educação,327,QESE,2026-01-01 00:00:00,9999-12-31 00:00:00
 Contribuição do Servidor Civil,31,Contrib. Serv. Civil,2026-01-01 00:00:00,9999-12-31 00:00:00
 Contribuição do Servidor Civil Ativo,32,Contrib. Serv. Civil Ativo,2026-01-01 00:00:00,9999-12-31 00:00:00
 Contribuição do Servidor Civil Inativo,33,Contrib. Serv. Civil Inativo,2026-01-01 00:00:00,9999-12-31 00:00:00
@@ -49,6 +51,7 @@ Contribuições para o Regime Geral de Previdência Social,45,RGPS,2026-01-01 00
 Contribuições Referentes ao Fundo de Garantia do Tempo de Serviço,46,FGTS,2026-01-01 00:00:00,9999-12-31 00:00:00
 Controle,47,Contr.,2026-01-01 00:00:00,9999-12-31 00:00:00
 Coordenadoria Estadual de Gestão do Trânsito,48,CET,2026-01-01 00:00:00,9999-12-31 00:00:00
+Corpo de Bombeiros Militar do Estado de Minas Gerais,313,CBMMG,2026-01-01 00:00:00,9999-12-31 00:00:00
 Cota-Parte da Compensação Financeira de Recursos Minerais,49,CFEM,2026-01-01 00:00:00,9999-12-31 00:00:00
 Cota-Parte da Compensação Financeira pela Exploração de Recursos Minerais,50,CFEM,2026-01-01 00:00:00,9999-12-31 00:00:00
 Cota-Parte da Compensação Financeira pela Exploração de Recursos Minerais - CFEM,51,Cota-Parte CFEM,2026-01-01 00:00:00,9999-12-31 00:00:00
@@ -65,6 +68,8 @@ Delegação para a Prestação dos Serviços de Transporte Rodoviário,61,Deleg.
 Delegação para Exploração da Infraestrutura Aeroportuária,62,Deleg. Exploração Infraest. Aeroportuária,2026-01-01 00:00:00,9999-12-31 00:00:00
 Delegação para Exploração da Infraestrutura de Transporte Rodoviário para o Setor Privado,63,Deleg. Explor. Infra. Transp. Rodoviário Setor Privado,2026-01-01 00:00:00,9999-12-31 00:00:00
 Delegações,64,Deleg.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Departamento de Estradas de Rodagem,311,DER,2026-01-01 00:00:00,9999-12-31 00:00:00
+Departamento de Obras Públicas,316,DEOP,2026-01-01 00:00:00,9999-12-31 00:00:00
 Direito,65,Dir.,2026-01-01 00:00:00,9999-12-31 00:00:00
 Direitos,66,Dir.,2026-01-01 00:00:00,9999-12-31 00:00:00
 Dívida Ativa,67,DA,2026-01-01 00:00:00,9999-12-31 00:00:00
@@ -77,6 +82,9 @@ Expediente,73,Exp.,2026-01-01 00:00:00,9999-12-31 00:00:00
 Exploração,74,Explor.,2026-01-01 00:00:00,9999-12-31 00:00:00
 Exportadores,75,Export.,2026-01-01 00:00:00,9999-12-31 00:00:00
 Fiscalização,76,Fisc.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Fundação Centro Tecnológico de Minas Gerais,323,CETEC,2026-01-01 00:00:00,9999-12-31 00:00:00
+Fundação Hospitalar do Estado de Minas Gerais,326,FHEMIG,2026-01-01 00:00:00,9999-12-31 00:00:00
+Fundação João Pinheiro,325,FJP,2026-01-01 00:00:00,9999-12-31 00:00:00
 Fundo de Desenvolvimento do Turismo,302,FUNDETUR,2026-01-01 00:00:00,9999-12-31 00:00:00
 Fundo de Erradicação da Miséria,77,FEM,2026-01-01 00:00:00,9999-12-31 00:00:00
 Fundo de Manutenção e Desenvolvimento da Educação Básica e de Valorização dos Profissionais da Educação,78,FUNDEB,2026-01-01 00:00:00,9999-12-31 00:00:00
@@ -84,7 +92,10 @@ Fundo de Manutenção e Desenvolvimento do Ensino Fundamental e de Valorização
 Fundo de Participação dos Estados e do Distrito Federal,80,FPE,2026-01-01 00:00:00,9999-12-31 00:00:00
 Fundo de Participação dos Municípios,81,FPM,2026-01-01 00:00:00,9999-12-31 00:00:00
 Fundo Estadual Combate Pobreza - Fundo de Erradicação da Miséria,82,FEM,2026-01-01 00:00:00,9999-12-31 00:00:00
+Fundo Estadual de Assistência Social,321,FEAS,2026-01-01 00:00:00,9999-12-31 00:00:00
 Fundo Estadual de Desenvolvimento de Transportes,83,FUNTRANS,2026-01-01 00:00:00,9999-12-31 00:00:00
+Fundo Estadual de Saúde,330,FES,2026-01-01 00:00:00,9999-12-31 00:00:00
+Fundo Estadual para Infância e Adolescência,324,FIA,2026-01-01 00:00:00,9999-12-31 00:00:00
 Fundo Nacional de Assistência Social,84,FNAS,2026-01-01 00:00:00,9999-12-31 00:00:00
 Fundo Nacional de Desenvolvimento,306,FND,2026-01-01 00:00:00,9999-12-31 00:00:00
 Fundo Nacional de Saúde,85,FNS,2026-01-01 00:00:00,9999-12-31 00:00:00
@@ -109,10 +120,15 @@ Industrializados,100,Indust.,2026-01-01 00:00:00,9999-12-31 00:00:00
 Infraestrutura,101,Infraest.,2026-01-01 00:00:00,9999-12-31 00:00:00
 Inspeção,102,Insp.,2026-01-01 00:00:00,9999-12-31 00:00:00
 Instituições,103,Instit.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Instituto de Pesos e Medidas do Estado de Minas Gerais,320,IPEM,2026-01-01 00:00:00,9999-12-31 00:00:00
 Instituto de Previdência do Legislativo do Estado de Minas Gerais,104,IPLEMG,2026-01-01 00:00:00,9999-12-31 00:00:00
 Instituto de Previdência do Servidor Militar,105,IPSM,2026-01-01 00:00:00,9999-12-31 00:00:00
+Instituto de Terras de Minas Gerais,329,ITER,2026-01-01 00:00:00,9999-12-31 00:00:00
+Instituto Estadual de Florestas,322,IEF,2026-01-01 00:00:00,9999-12-31 00:00:00
+Instituto Mineiro de Agropecuária,317,IMA,2026-01-01 00:00:00,9999-12-31 00:00:00
 Instituto Nacional de Colonização e Reforma Agrária,106,INCRA,2026-01-01 00:00:00,9999-12-31 00:00:00
 Instituto Nacional de Estudos e Pesquisas Educacionais Anísio Teixeira,107,INEP,2026-01-01 00:00:00,9999-12-31 00:00:00
+Instituto Nacional de Metrologia,319,INMETRO,2026-01-01 00:00:00,9999-12-31 00:00:00
 Intraorçamentária,108,Intra.,2026-01-01 00:00:00,9999-12-31 00:00:00
 Judiciais,110,Judic.,2026-01-01 00:00:00,9999-12-31 00:00:00
 Judiciário,111,Judic.,2026-01-01 00:00:00,9999-12-31 00:00:00
@@ -212,6 +228,7 @@ Passageiros,204,Passag.,2026-01-01 00:00:00,9999-12-31 00:00:00
 Patronal,205,Patron.,2026-01-01 00:00:00,9999-12-31 00:00:00
 Permissão,206,Perm.,2026-01-01 00:00:00,9999-12-31 00:00:00
 Poder Judiciário,207,Poder Judic.,2026-01-01 00:00:00,9999-12-31 00:00:00
+Polícia Militar de Minas Gerais,314,PMMG,2026-01-01 00:00:00,9999-12-31 00:00:00
 Prêmio do Seguro Obrigatório de Danos Pessoais Causados por Veículos Automotores de Via Terrestre,219,DPVAT,2026-01-01 00:00:00,9999-12-31 00:00:00
 Prestação,208,Prest.,2026-01-01 00:00:00,9999-12-31 00:00:00
 Principal,209,Princ.,2026-01-01 00:00:00,9999-12-31 00:00:00
@@ -239,6 +256,9 @@ Remuneração dos Recursos do Regime Próprio de Previdência Social - RPPS,231,
 Ressarcimento ao Regime Geral de Previdência Social,232,RGPS,2026-01-01 00:00:00,9999-12-31 00:00:00
 "Retorno de Operações, Juros e Encargos Financeiros",233,Retorno Oper. Juros Encarg. Financeiros,2026-01-01 00:00:00,9999-12-31 00:00:00
 Retorno Oper. Juros Encarg. Financeiros - Multas e Juros de Mora,234,Retorno Oper. Juros Encarg. Financeiros,2026-01-01 00:00:00,9999-12-31 00:00:00
+Secretaria de Estado da Segurança Pública,312,SSP,2026-01-01 00:00:00,9999-12-31 00:00:00
+Secretaria de Estado de Educação de Minas Gerais,318,SEE,2026-01-01 00:00:00,9999-12-31 00:00:00
+Secretaria de Estado de Fazenda,315,SEF,2026-01-01 00:00:00,9999-12-31 00:00:00
 Sentenças,235,Sent.,2026-01-01 00:00:00,9999-12-31 00:00:00
 Serviço Brasileiro de Apoio às Micro e Pequenas Empresas,299,SEBRAE,2026-01-01 00:00:00,9999-12-31 00:00:00
 Serviço Nacional de Aprendizagem Comercial,296,SENAC,2026-01-01 00:00:00,9999-12-31 00:00:00
